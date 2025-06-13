@@ -1,3 +1,6 @@
+# the following paths are used:
+# - Direction_EnKF_InterpTurbine
+
 """
     getWindDirT(WindDir, iT, _)
 
@@ -108,3 +111,40 @@ function getWindDirT(WindDir::AbstractMatrix, iT, t)
     # Return phi for each turbine in iT (broadcasted)
     return fill(phi_val, length(iT))
 end
+
+# function getWindDirT(WindDir, iT, t)
+#     # Ensure t is within bounds
+#     if t < WindDir.Data[1, 1]
+#         @warn "The time $t is out of bounds, will use $(WindDir.Data[1,1]) instead."
+#         t = WindDir.Data[1, 1]
+#     elseif t > WindDir.Data[end, 1]
+#         @warn "The time $t is out of bounds, will use $(WindDir.Data[end,1]) instead."
+#         t = WindDir.Data[end, 1]
+#     end
+
+#     # Linear interpolation (equivalent to interp1 in MATLAB)
+#     phi_val = interp(WindDir.Data[:, 1], WindDir.Data[:, 2], t)
+
+#     # Replicate for all turbines in iT
+#     phi = fill(phi_val, length(iT))
+
+#     # Add correlated noise (assuming CholSig is a Cholesky factor)
+#     phi += (randn(1, length(phi)) * WindDir.CholSig)'
+
+#     return phi
+# end
+
+# Helper function for 1D linear interpolation
+function interp(x, y, t)
+    idx = searchsortedlast(x, t)
+    if idx == length(x)
+        return y[end]
+    elseif idx == 0
+        return y[1]
+    else
+        x0, x1 = x[idx], x[idx+1]
+        y0, y1 = y[idx], y[idx+1]
+        return y0 + (y1 - y0) * (t - x0) / (x1 - x0)
+    end
+end
+
