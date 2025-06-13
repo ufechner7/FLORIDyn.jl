@@ -12,7 +12,17 @@ export Direction_RW_with_Mean
 export getWindDirT, getWindDirT_EnKF
 
 # the different wind direction types (dir_mode)
+"""
+    Direction_Constant
+
+A marker struct used to represent a constant wind direction.
+"""
 struct Direction_Constant end
+"""
+    Direction_Constant_wErrCov
+
+A marker struct used to indicate a wind direction that is constant with associated error covariance.
+"""
 struct Direction_Constant_wErrCov end
 struct Direction_EnKF_InterpTurbine end
 struct Direction_Interpolation end
