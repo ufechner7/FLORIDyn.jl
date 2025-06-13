@@ -82,7 +82,7 @@ function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, WindDir::AbstractMatri
 end
 
 """
-    getWindDirT(WindDir, iT, t)
+    getWindDirT(::Direction_Interpolation, WindDir, iT, t)
 
 # Direction_Interpolation 
 
@@ -97,7 +97,7 @@ Arguments:
 Returns:
 - phi: Array of wind directions for each turbine in iT
 """
-function getWindDirT(WindDir::AbstractMatrix, iT, t)
+function getWindDirT(::Direction_Interpolation, WindDir::AbstractMatrix, iT, t)
     times = WindDir[:, 1]
     phis = WindDir[:, 2]
 
