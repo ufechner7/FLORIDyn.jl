@@ -111,7 +111,7 @@ function getWindDirT(::Direction_Interpolation, WindDir::AbstractMatrix, iT, t)
     end
 
     # Linear interpolation (like interp1 in MATLAB)
-    itp = LinearInterpolation(times, phis, extrapolation_bc=Flat())
+    itp = linear_interpolation(times, phis, extrapolation_bc=Flat())
     phi_val = itp(t)
 
     # Return phi for each turbine in iT (broadcasted)

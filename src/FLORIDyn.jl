@@ -2,7 +2,7 @@ module FLORIDyn
 
 using Interpolations, LinearAlgebra
 
-export Direction_Constant, Direction_Constant_wErrCov, Direction_EnKF_InterpTurbine
+export Direction_Constant, Direction_Constant_wErrCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export getWindDirT, getWindDirT_EnKF
 
 # the different wind direction types (dir_mode)

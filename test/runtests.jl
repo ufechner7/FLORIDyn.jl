@@ -38,4 +38,9 @@ end
     ]
     phi = getWindDirT_EnKF(dir_mode, WindDir, 1, 0.5)
     @test phi ≈ 11.0
+
+    dir_mode = Direction_Interpolation()
+    phi = getWindDirT(dir_mode, WindDir, 1, 0.5)
+    println(phi)
+
 end
