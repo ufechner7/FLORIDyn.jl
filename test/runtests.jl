@@ -10,6 +10,12 @@ struct WindDirType
     CholSig::Matrix{Float64}
 end
 
+# Define a struct for WindDir
+struct WindDirMatrix
+    Data::Matrix{Float64}      # Nx2 matrix: column 1 = time, column 2 = phi
+    CholSig::Matrix{Float64}   # Cholesky factor of covariance matrix (nT x nT)
+end
+
 @testset "FLORIDyn.jl" begin
     dir_mode = Direction_Constant()
     WindDir = 270
@@ -43,4 +49,30 @@ end
     phi = getWindDirT(dir_mode, WindDir, 1, 0.5)
     @test phi[1] ≈ 11.0
 
+    dir_mode = Direction_Interpolation_wErrorCov()
+
+    # Example wind direction data (time, phi)
+    wind_data = [
+        0.0  10.0;
+        5.0  20.0;
+        10.0 30.0
+    ]
+
+    # Example Cholesky factor (for 2 turbines)
+    chol_sig = cholesky([1.0 0.5; 0.5 1.0]).L
+
+    # Create WindDir instance
+    WindDir = WindDirMatrix(wind_data, chol_sig)
+
+    # Example turbine indices (for 2 turbines)
+    iT = [1, 2]
+
+    # Example time
+    t = 7.0
+
+    # Call the function
+    phi = getWindDirT(dir_mode, WindDir, iT, t)
+    @test size(phi) == (2,1)
+    @test phi[1] ≈ 24.92903352636283
+    @test phi[2] ≈ 24.363944731838128
 end
