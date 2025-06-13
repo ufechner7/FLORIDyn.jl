@@ -246,4 +246,27 @@ function getWindDirT(::Direction_InterpTurbine_wErrorCov, WindDir, iT, t)
     return phi
 end
 
+"""
+    getWindDirT(::Direction_RW_with_Mean, WindDirNow, WindDir)
 
+Returns the wind direction at the respective turbine(s).
+
+# Arguments
+- `WindDirNow`: Current value (vector)
+- `WindDir`: Struct with fields:
+    - `Init`: Mean direction (vector or scalar)
+    - `CholSig`: Cholesky factor of covariance matrix (matrix)
+    - `MeanPull`: Scalar mean reversion factor
+
+# Returns
+- `phi`: Updated wind direction(s) (vector)
+"""
+function getWindDirT(::Direction_RW_with_Mean, WindDirNow, WindDir)
+    # Random walk model with mean implementation
+    # Generate random normal vector
+    weightedRandN = randn(1, length(WindDirNow))
+    # Compute new wind direction
+    phi = WindDirNow .+ (weightedRandN * WindDir.CholSig)' .+
+          WindDir.MeanPull .* (WindDir.Init .- WindDirNow)
+    return phi
+end

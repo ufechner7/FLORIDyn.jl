@@ -16,6 +16,12 @@ struct WindDirMatrix
     CholSig::Matrix{Float64}   # Cholesky factor of covariance matrix (nT x nT)
 end
 
+struct WindDirTriple
+    Init::Vector{Float64}
+    CholSig::Matrix{Float64}
+    MeanPull::Float64
+end
+
 @testset "FLORIDyn.jl" begin
     dir_mode = Direction_Constant()
     WindDir = 270
@@ -127,4 +133,19 @@ end
 
     @test length(phi) == 1
     @test phi[1] ≈ 355.5643290977239
+
+    # Suppose we have 3 turbines
+    WindDirNow = [10.0, 20.0, 30.0]           # Current wind directions (degrees)
+    Init = [15.0, 25.0, 35.0]                 # Mean wind directions (degrees)
+    CholSig = [1.0 0.2 0.1;                   # Cholesky factor of covariance matrix
+            0.0 1.0 0.3;
+            0.0 0.0 1.0]
+    MeanPull = 0.05                           # Mean reversion factor
+
+    # Create WindDir struct
+    WindDir = WindDirTriple(Init, CholSig, MeanPull)
+
+    # Call the function
+    phi = getWindDirT(Direction_RW_with_Mean(), WindDirNow, WindDir)
+
 end
