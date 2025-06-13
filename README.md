@@ -19,7 +19,7 @@ julia --project="."
 Then add FLORIDyn from  Julia's package manager, by typing:
 ```julia
 using Pkg
-pkg"add FLORIDyn"
+pkg"add https://github.com/ufechner7/FLORIDyn.jl"
 ``` 
 at the Julia prompt. You can run the unit tests with the command:
 ```julia
