@@ -123,7 +123,6 @@ end
 
     # Create WindDir struct
     WindDir = WindDirMatrix(Data, CholSig)
-
     phi = getWindDirT(Direction_InterpTurbine_wErrorCov(), WindDir, 1, 12.5)
 
     @test length(phi) == 1
