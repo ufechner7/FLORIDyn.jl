@@ -10,4 +10,5 @@ An instance of these structs needs to be passed to the functions that calculate 
 ```@docs
 Direction_Constant
 Direction_Constant_wErrCov
+Direction_EnKF_InterpTurbine
 ```

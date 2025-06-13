@@ -30,6 +30,11 @@ struct Direction_Constant end
 A marker struct used to indicate a wind direction that is constant with associated error covariance.
 """
 struct Direction_Constant_wErrCov end
+"""
+    Direction_EnKF_InterpTurbine
+
+A marker struct used to indicate the use of direction-aware Ensemble Kalman Filter (EnKF) interpolation for turbine modeling.
+"""
 struct Direction_EnKF_InterpTurbine end
 struct Direction_Interpolation end
 struct Direction_Interpolation_wErrorCov end
