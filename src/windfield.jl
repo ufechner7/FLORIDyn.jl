@@ -1,10 +1,13 @@
 # the following paths are used:
 # - Direction_EnKF_InterpTurbine
 
+
+
 """
-    getWindDirT(WindDir, iT, _)
+    getWindDirT(::Direction_Constant, WindDir, iT, _)
 
 Return wind direction in SOWFA-degrees for the requested turbine(s).
+# Direction_Constant
 
 # Arguments
 - `WindDir`: The wind direction (scalar).
@@ -14,12 +17,14 @@ Return wind direction in SOWFA-degrees for the requested turbine(s).
 # Returns
 - `phi`: Array of wind direction values, same size as `iT`.
 """
-function getWindDirT(WindDir, iT, _)
+function getWindDirT(::Direction_Constant, WindDir, iT, _)
     return fill(WindDir, size(iT))
 end
 
 """
     getWindDirT(WindDir, iT)
+
+# Direction_Constant_wErrCov
 
 Return wind direction in SOWFA-deg for the requested turbine(s).
 
@@ -43,6 +48,8 @@ end
 
 """
     getWindDirT_EnKF(WindDir, iT, t)
+
+# Direction_EnKF_InterpTurbine 
 
 Return wind direction in SOWFA-deg for the requested turbine(s).
 
@@ -79,6 +86,8 @@ end
 
 """
     getWindDirT(WindDir, iT, t)
+
+# Direction_Interpolation 
 
 Returns the wind direction at the respective turbine(s).
 Uniform interpolation version - all turbines experience the same changes.

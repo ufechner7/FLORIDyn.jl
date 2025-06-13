@@ -2,9 +2,10 @@ using FLORIDyn
 using Test
 
 @testset "FLORIDyn.jl" begin
+    mode = Direction_Constant()
     WindDir = 270
     iT = [1, 2, 3]
-    phi = getWindDirT(WindDir, iT, nothing)
+    phi = getWindDirT(mode, WindDir, iT, nothing)
     for ph in phi
         @test ph ≈ 270.0
     end

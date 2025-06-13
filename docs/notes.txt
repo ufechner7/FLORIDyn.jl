@@ -1,0 +1,6 @@
+Required wind directions:
+
+Direction_EnKF_RW
+Direction_EnKF_ZOH
+Direction_EnKF_InterpTurbine
+Direction_Wind.Correction.Dir
