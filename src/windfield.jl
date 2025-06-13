@@ -38,8 +38,6 @@ function getWindDirT(WindDir, iT)
     return phi
 end
 
-using Interpolations
-
 """
     getWindDirT_EnKF(WindDir, iT, t)
 
@@ -74,4 +72,39 @@ function getWindDirT_EnKF(WindDir::AbstractMatrix, iT, t)
     end
 
     return phi_out[iT]
+end
+
+"""
+    getWindDirT(WindDir, iT, t)
+
+Returns the wind direction at the respective turbine(s).
+Uniform interpolation version - all turbines experience the same changes.
+
+Arguments:
+- WindDir: Nx2 Array, columns are time and phi (wind direction)
+- iT: single value or array with turbine index/indices
+- t: time of request
+
+Returns:
+- phi: Array of wind directions for each turbine in iT
+"""
+function getWindDirT(WindDir::AbstractMatrix, iT, t)
+    times = WindDir[:, 1]
+    phis = WindDir[:, 2]
+
+    # Clamp t to bounds of times
+    if t < times[1]
+        @warn "The time $t is out of bounds, will use $(times[1]) instead."
+        t = times[1]
+    elseif t > times[end]
+        @warn "The time $t is out of bounds, will use $(times[end]) instead."
+        t = times[end]
+    end
+
+    # Linear interpolation (like interp1 in MATLAB)
+    itp = LinearInterpolation(times, phis, extrapolation_bc=Flat())
+    phi_val = itp(t)
+
+    # Return phi for each turbine in iT (broadcasted)
+    return fill(phi_val, length(iT))
 end
