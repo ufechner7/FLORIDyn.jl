@@ -1,6 +1,8 @@
+# Copyright (c) 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
 # build and display the html documentation locally
 # you must have installed the package LiveServer in your global environment
-
 using Pkg
 
 function globaldependencies()

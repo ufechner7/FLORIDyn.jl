@@ -1,0 +1,21 @@
+version = 1
+
+[[annotations]]
+path = ["Manifest*", "Project.toml", ".gitignore"]
+SPDX-FileCopyrightText = "2025 Uwe Fechner"
+SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["docs/src/*.png", "docs/src/*.md"]
+SPDX-FileCopyrightText = "2025 Uwe Fechner"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = ["README.md"]
+SPDX-FileCopyrightText = "2025 Marcus Becker, Uwe Fechner"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
+path = ["docs/.gitignore", "docs/Project.toml"]
+SPDX-FileCopyrightText = "2025 Uwe Fechner"
+SPDX-License-Identifier = "MIT"
