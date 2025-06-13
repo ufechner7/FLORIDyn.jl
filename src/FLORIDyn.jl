@@ -1,13 +1,13 @@
 module FLORIDyn
 
-using Interpolations
+using Interpolations, LinearAlgebra
 
-export Direction_Constant
+export Direction_Constant, Direction_Constant_wErrCov
 export getWindDirT, getWindDirT_EnKF
 
-# define your different modes for the function
+# the different wind direction types
 struct Direction_Constant end
-struct Mode2 end
+struct Direction_Constant_wErrCov end
 
 include("windfield.jl")
 

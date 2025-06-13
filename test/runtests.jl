@@ -1,5 +1,14 @@
 using FLORIDyn
 using Test
+using LinearAlgebra
+using Random
+
+Random.seed!(1234)
+
+struct WindDirType
+    Data::Float64
+    CholSig::Matrix{Float64}
+end
 
 @testset "FLORIDyn.jl" begin
     mode = Direction_Constant()
@@ -8,6 +17,15 @@ using Test
     phi = getWindDirT(mode, WindDir, iT, nothing)
     for ph in phi
         @test ph ≈ 270.0
+    end
+
+    mode = Direction_Constant_wErrCov()
+    WindDir = WindDirType(270.0, cholesky(Matrix{Float64}(I, 3, 3)).L)
+    iT = [1, 2, 3]
+    phi = getWindDirT(mode, WindDir, iT)
+    result = [269.6402710931765, 271.0872084924286, 269.5804103830612]
+    for (i, ph) in pairs(phi)
+        @test ph ≈ result[i]
     end
     
     # Suppose WindDir is a matrix where each row is [time, phi_T0, phi_T1, ...]

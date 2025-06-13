@@ -7,7 +7,6 @@
     getWindDirT(::Direction_Constant, WindDir, iT, _)
 
 Return wind direction in SOWFA-degrees for the requested turbine(s).
-# Direction_Constant
 
 # Arguments
 - `WindDir`: The wind direction (scalar).
@@ -22,9 +21,7 @@ function getWindDirT(::Direction_Constant, WindDir, iT, _)
 end
 
 """
-    getWindDirT(WindDir, iT)
-
-# Direction_Constant_wErrCov
+    getWindDirT(::Direction_Constant_wErrCov, WindDir, iT)
 
 Return wind direction in SOWFA-deg for the requested turbine(s).
 
@@ -37,7 +34,7 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 # Returns
 - `phi`: Vector of wind directions for the selected turbines, including random perturbation
 """
-function getWindDirT(WindDir, iT)
+function getWindDirT(::Direction_Constant_wErrCov, WindDir, iT)
     n = length(iT)
     phi = fill(WindDir.Data, n)
     # randn(n) gives a vector of n normal random numbers
