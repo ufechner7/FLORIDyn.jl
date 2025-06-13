@@ -238,8 +238,10 @@ function getWindDirT(::Direction_InterpTurbine_wErrorCov, WindDir, iT, t)
     phi = phi_out[iT]
 
     # Add correlated noise
-    noise = randn(length(phi))
-    phi = phi .+ WindDir.CholSig * noise
+    iT_vec = isa(iT, Integer) ? [iT] : iT
+    phi = phi_out[iT_vec]
+    noise = randn(length(iT_vec))
+    phi = phi .+ WindDir.CholSig[iT_vec, iT_vec] * noise
 
     return phi
 end

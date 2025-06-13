@@ -109,5 +109,23 @@ end
     # Create WindDir instance
     WindDir = WindDirMatrix(wind_data, chol_sig)
 
-    # phi = getWindDirT(dir_mode, WindDir, iT, 5.0)
+    # Example time series: 0, 10, 20 seconds
+    times = [0.0, 10.0, 20.0]
+    # Example wind directions for 2 turbines at each time
+    phi_T0 = [350.0, 355.0, 360.0]
+    phi_T1 = [10.0, 15.0, 20.0]
+    # Combine into Data matrix: each row is [time, phi_T0, phi_T1]
+    Data = hcat(times, phi_T0, phi_T1)
+
+    # Example covariance matrix and its Cholesky factor
+    cov = [1.0 0.5; 0.5 1.0]
+    CholSig = cholesky(cov).L
+
+    # Create WindDir struct
+    WindDir = WindDirMatrix(Data, CholSig)
+
+    phi = getWindDirT(Direction_InterpTurbine_wErrorCov(), WindDir, 1, 12.5)
+
+    @test length(phi) == 1
+    @test phi[1] ≈ 355.5643290977239
 end
