@@ -44,7 +44,7 @@ function getWindDirT(::Direction_Constant_wErrCov, WindDir, iT)
 end
 
 """
-    getWindDirT_EnKF(WindDir, iT, t)
+    getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, WindDir, iT, t)
 
 # Direction_EnKF_InterpTurbine 
 
@@ -58,7 +58,7 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 # Returns
 - `phi`: Wind direction(s) at time `t` for turbine(s) `iT`
 """
-function getWindDirT_EnKF(WindDir::AbstractMatrix, iT, t)
+function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, WindDir::AbstractMatrix, iT, t)
     times = WindDir[:, 1]
     n_turbines = size(WindDir, 2) - 1
 
