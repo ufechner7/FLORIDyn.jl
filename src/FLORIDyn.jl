@@ -16,6 +16,12 @@ export getWindDirT, getWindDirT_EnKF
     Direction_Constant
 
 A marker struct used to represent a constant wind direction.
+
+## Example:
+```julia
+dir_mode = Direction_constant()
+phi = getWindDirT(dir_mode, 270, [1,2,3], nothing)
+```
 """
 struct Direction_Constant end
 """
