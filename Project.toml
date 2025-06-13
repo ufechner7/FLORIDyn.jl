@@ -3,7 +3,11 @@ uuid = "fc770985-7669-4833-bc54-a38444eb6027"
 authors = ["Uwe Fechner <u.fechner-1@tudelft.nl> and contributors"]
 version = "1.0.0-DEV"
 
+[deps]
+Interpolations = "a98d9a8b-a2ab-59e6-89dd-64a1c18fca59"
+
 [compat]
+Interpolations = "0.16.1"
 julia = "1.6.7"
 
 [extras]
