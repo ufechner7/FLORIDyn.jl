@@ -1,7 +1,4 @@
-# the following paths are used:
-# - Direction_EnKF_InterpTurbine
-
-
+# Functions to calculate the wind direction depending on time and location.
 
 """
     getWindDirT(::Direction_Constant, WindDir, iT, _)
