@@ -1,5 +1,5 @@
 module FLORIDyn
 
-# Write your package code here.
+include("windfield.jl")
 
 end
