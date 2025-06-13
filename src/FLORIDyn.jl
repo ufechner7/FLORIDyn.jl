@@ -3,7 +3,7 @@ module FLORIDyn
 using Interpolations, LinearAlgebra
 
 export Direction_Constant, Direction_Constant_wErrCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
-export Direction_Interpolation_wErrorCov, Direction_InterpTurbine  
+export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov 
 
 export getWindDirT, getWindDirT_EnKF
 
@@ -14,6 +14,7 @@ struct Direction_EnKF_InterpTurbine end
 struct Direction_Interpolation end
 struct Direction_Interpolation_wErrorCov end
 struct Direction_InterpTurbine end
+struct Direction_InterpTurbine_wErrorCov end
 
 include("windfield.jl")
 

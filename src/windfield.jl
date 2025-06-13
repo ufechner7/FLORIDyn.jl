@@ -203,4 +203,45 @@ function getWindDirT(::Direction_InterpTurbine, WindDir::Matrix{Float64}, iT, t:
     return phi_out[iT]
 end
 
+"""
+    getWindDirT(::Direction_InterpTurbine_wErrorCov, WindDir, iT, t)
+
+Return wind direction in SOWFA-deg for the requested turbine(s).
+
+# Arguments
+- `WindDir`: A struct with fields:
+    - `Data` (Matrix): Each row is [time, phi_T0, phi_T1, ... phi_Tn]
+    - `CholSig` (Matrix): Cholesky factor of the covariance matrix
+- `iT`: Index or indices of the turbines (can be integer or array)
+- `t`: Time of request (Float64)
+
+# Returns
+- `phi`: Wind direction(s) for requested turbine(s), perturbed with noise.
+"""
+function getWindDirT(::Direction_InterpTurbine_wErrorCov, WindDir, iT, t)
+    times = WindDir.Data[:, 1]
+    nTurbines = size(WindDir.Data, 2) - 1
+
+    # Clamp t to available time range, with warning
+    if t < times[1]
+        @warn "The time $t is out of bounds, will use $(times[1]) instead."
+        t = times[1]
+    elseif t > times[end]
+        @warn "The time $t is out of bounds, will use $(times[end]) instead."
+        t = times[end]
+    end
+
+    # Interpolate for each turbine at time t
+    phi_out = [Interpolations.linear_interpolation(times, WindDir.Data[:, j+1])(t) for j in 1:nTurbines]
+
+    # Select requested turbines
+    phi = phi_out[iT]
+
+    # Add correlated noise
+    noise = randn(length(phi))
+    phi = phi .+ WindDir.CholSig * noise
+
+    return phi
+end
+
 

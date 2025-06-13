@@ -94,4 +94,20 @@ end
     # Call the function
     phi = getWindDirT(dir_mode, WindDir, iT, t)
     @test phi ≈ 22.5
+
+    dir_mode = Direction_InterpTurbine_wErrorCov()
+        # Example wind direction data (time, phi)
+    wind_data = [
+        0.0  10.0;
+        5.0  20.0;
+        10.0 30.0
+    ]
+
+    # Example Cholesky factor (for 2 turbines)
+    chol_sig = cholesky([1.0 0.5; 0.5 1.0]).L
+
+    # Create WindDir instance
+    WindDir = WindDirMatrix(wind_data, chol_sig)
+
+    # phi = getWindDirT(dir_mode, WindDir, iT, 5.0)
 end
