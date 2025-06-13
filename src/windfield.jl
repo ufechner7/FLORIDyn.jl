@@ -169,3 +169,38 @@ function interp(x, y, t)
     end
 end
 
+"""
+    getWindDirT(::Direction_InterpTurbine, WindDir, iT, t)
+
+Return wind direction in SOWFA-degrees for the requested turbine(s).
+
+# Arguments
+- `WindDir::Matrix{Float64}`: Each row is `[time, phi_T0, phi_T1, ...]`.
+- `iT::Union{Int, AbstractVector{Int}}`: Index or indices of turbines (1-based).
+- `t::Float64`: Time of request.
+
+# Returns
+- `phi::Vector{Float64}`: Wind direction(s) for the selected turbine(s) at time `t`.
+"""
+function getWindDirT(::Direction_InterpTurbine, WindDir::Matrix{Float64}, iT, t::Float64)
+    # Check time bounds
+    tmin = WindDir[1, 1]
+    tmax = WindDir[end, 1]
+    if t < tmin
+        @warn "The time $t is out of bounds, will use $tmin instead."
+        t = tmin
+    elseif t > tmax
+        @warn "The time $t is out of bounds, will use $tmax instead."
+        t = tmax
+    end
+
+    # Interpolate for all turbines at time t
+    times = WindDir[:, 1]
+    phis = WindDir[:, 2:end]  # Each column is a turbine
+    phi_out = [interp(times, phis[:, j], t) for j in 1:size(phis, 2)]
+
+    # Select requested turbines
+    return phi_out[iT]
+end
+
+
