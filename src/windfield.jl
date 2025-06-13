@@ -69,7 +69,7 @@ function getWindDirT_EnKF(WindDir::AbstractMatrix, iT, t)
     # Prepare interpolation for each turbine
     phi_out = similar(WindDir[1, 2:end])
     for j in 1:n_turbines
-        itp = LinearInterpolation(times, WindDir[:, j+1], extrapolation_bc=Flat())
+        itp = linear_interpolation(times, WindDir[:, j+1], extrapolation_bc=Flat())
         phi_out[j] = itp(t)
     end
 
