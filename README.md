@@ -7,4 +7,22 @@ A dynamic wind farm simulation software, translated from https://github.com/TUDe
 
 His code uses one engineering model from the quasi static wind farm simulation software [FLORIS](https://github.com/NREL/floris), developed by NREL.
 
+## Installation
+Install [Julia 1.10](https://ufechner7.github.io/2024/08/09/installing-julia-with-juliaup.html) or later, if you haven't already.
+
+Before installing this software it is suggested to create a new project, for example like this:
+```bash
+mkdir test
+cd test
+julia --project="."
+```
+Then add FLORIDyn from  Julia's package manager, by typing:
+```julia
+using Pkg
+pkg"add FLORIDyn"
+``` 
+at the Julia prompt. You can run the unit tests with the command:
+```julia
+pkg"test FLORIDyn"
+```
 
