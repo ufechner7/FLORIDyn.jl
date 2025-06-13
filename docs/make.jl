@@ -28,6 +28,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/ufechner7/KiteUtils.jl",
+    repo="github.com/ufechner7/FLORIDyn.jl",
     devbranch="main",
 )
