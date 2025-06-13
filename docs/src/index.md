@@ -2,6 +2,6 @@
 CurrentModule = FLORIDyn
 ```
 
-# KiteUtils
+# FLORIDyn
 
-Documentation for [KiteUtils](https://github.com/ufechner7/FLORIDyn.jl).
+Documentation for [FLORIDyn](https://github.com/ufechner7/FLORIDyn.jl).

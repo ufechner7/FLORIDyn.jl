@@ -1,7 +1,7 @@
-using KiteUtils
+using FLORIDyn
 using Pkg
 if ("TestEnv" ∈ keys(Pkg.project().dependencies))
-    if ! ("Documents" ∈ keys(Pkg.project().dependencies))
+    if ! ("Documenter" ∈ keys(Pkg.project().dependencies))
         using TestEnv; TestEnv.activate()
     end
 end
