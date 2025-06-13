@@ -41,6 +41,6 @@ end
 
     dir_mode = Direction_Interpolation()
     phi = getWindDirT(dir_mode, WindDir, 1, 0.5)
-    println(phi)
+    @test phi[1] ≈ 11.0
 
 end

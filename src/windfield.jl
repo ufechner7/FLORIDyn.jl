@@ -118,27 +118,42 @@ function getWindDirT(::Direction_Interpolation, WindDir::AbstractMatrix, iT, t)
     return fill(phi_val, length(iT))
 end
 
-# function getWindDirT(WindDir, iT, t)
-#     # Ensure t is within bounds
-#     if t < WindDir.Data[1, 1]
-#         @warn "The time $t is out of bounds, will use $(WindDir.Data[1,1]) instead."
-#         t = WindDir.Data[1, 1]
-#     elseif t > WindDir.Data[end, 1]
-#         @warn "The time $t is out of bounds, will use $(WindDir.Data[end,1]) instead."
-#         t = WindDir.Data[end, 1]
-#     end
+"""
+    getWindDirT(::Direction_Interpolation_wErrorCov, WindDir, iT, t)
 
-#     # Linear interpolation (equivalent to interp1 in MATLAB)
-#     phi_val = interp(WindDir.Data[:, 1], WindDir.Data[:, 2], t)
+Returns the wind direction at the respective turbine(s).
+Uniform interpolation version - all turbines experience the same changes.
 
-#     # Replicate for all turbines in iT
-#     phi = fill(phi_val, length(iT))
+Arguments:
+- WindDir.Data   = (t,phi) pairs between which is linearly interpolated
+- WindDir.ColSig = nT x nT, col(Covariance Matrix)
+- iT: single value or array with turbine index/indices
+- t: time of request
 
-#     # Add correlated noise (assuming CholSig is a Cholesky factor)
-#     phi += (randn(1, length(phi)) * WindDir.CholSig)'
+Returns:
+- phi: Array of wind directions for each turbine in iT
+"""
+function getWindDirT(::Direction_Interpolation_wErrorCov, WindDir, iT, t)
+    # Ensure t is within bounds
+    if t < WindDir.Data[1, 1]
+        @warn "The time $t is out of bounds, will use $(WindDir.Data[1,1]) instead."
+        t = WindDir.Data[1, 1]
+    elseif t > WindDir.Data[end, 1]
+        @warn "The time $t is out of bounds, will use $(WindDir.Data[end,1]) instead."
+        t = WindDir.Data[end, 1]
+    end
 
-#     return phi
-# end
+    # Linear interpolation (equivalent to interp1 in MATLAB)
+    phi_val = interp(WindDir.Data[:, 1], WindDir.Data[:, 2], t)
+
+    # Replicate for all turbines in iT
+    phi = fill(phi_val, length(iT))
+
+    # Add correlated noise (assuming CholSig is a Cholesky factor)
+    phi += (randn(1, length(phi)) * WindDir.CholSig)'
+
+    return phi
+end
 
 # Helper function for 1D linear interpolation
 function interp(x, y, t)

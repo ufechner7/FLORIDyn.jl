@@ -3,6 +3,8 @@ module FLORIDyn
 using Interpolations, LinearAlgebra
 
 export Direction_Constant, Direction_Constant_wErrCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
+export Direction_Interpolation_wErrorCov
+
 export getWindDirT, getWindDirT_EnKF
 
 # the different wind direction types (dir_mode)
@@ -10,6 +12,7 @@ struct Direction_Constant end
 struct Direction_Constant_wErrCov end
 struct Direction_EnKF_InterpTurbine end
 struct Direction_Interpolation end
+struct Direction_Interpolation_wErrorCov end
 
 include("windfield.jl")
 
