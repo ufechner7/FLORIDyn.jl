@@ -5,7 +5,7 @@ module FLORIDyn
 
 using Interpolations, LinearAlgebra
 
-export Direction_Constant, Direction_Constant_wErrCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
+export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
 export Direction_RW_with_Mean
 
@@ -25,11 +25,11 @@ phi = getWindDirT(dir_mode, 270, [1,2,3], nothing)
 """
 struct Direction_Constant end
 """
-    Direction_Constant_wErrCov
+    Direction_Constant_wErrorCov
 
 A marker struct used to indicate a wind direction that is constant with associated error covariance.
 """
-struct Direction_Constant_wErrCov end
+struct Direction_Constant_wErrorCov end
 """
     Direction_EnKF_InterpTurbine
 

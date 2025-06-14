@@ -3,6 +3,9 @@
 
 # Functions to calculate the wind direction depending on time and location.
 
+# helper function
+issquare(A) = size(A, 1) == size(A, 2)
+
 """
     getWindDirT(::Direction_Constant, WindDir, iT, _)
 
@@ -21,7 +24,7 @@ function getWindDirT(::Direction_Constant, WindDir, iT, _)
 end
 
 """
-    getWindDirT(::Direction_Constant_wErrCov, WindDir, iT)
+    getWindDirT(::Direction_Constant_wErrorCov, WindDir, iT)
 
 Return wind direction in SOWFA-deg for the requested turbine(s).
 
@@ -34,11 +37,12 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 # Returns
 - `phi`: Vector of wind directions for the selected turbines, including random perturbation
 """
-function getWindDirT(::Direction_Constant_wErrCov, WindDir, iT)
+function getWindDirT(::Direction_Constant_wErrorCov, WindDir, iT)
     n = length(iT)
     phi = fill(WindDir.Data, n)
     # randn(n) gives a vector of n normal random numbers
     # WindDir.CholSig should
+    @assert issquare(WindDir.CholSig)
     phi .= phi .+ WindDir.CholSig * randn(n)
     return phi
 end
