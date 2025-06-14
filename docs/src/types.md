@@ -11,4 +11,9 @@ An instance of these structs needs to be passed to the functions that calculate 
 Direction_Constant
 Direction_Constant_wErrCov
 Direction_EnKF_InterpTurbine
+Direction_Interpolation
+Direction_Interpolation_wErrorCov
+Direction_InterpTurbine
+Direction_InterpTurbine_wErrorCov
+Direction_RW_with_Mean
 ```
