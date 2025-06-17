@@ -3,13 +3,16 @@
 
 module FLORIDyn
 
-using Interpolations, LinearAlgebra
+using Interpolations, LinearAlgebra, Random
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
 export Direction_RW_with_Mean
 
 export getWindDirT, getWindDirT_EnKF
+
+# global variables
+RNG::AbstractRNG = Random.default_rng()
 
 # the different wind direction types (dir_mode)
 """
@@ -66,6 +69,11 @@ struct Direction_InterpTurbine_wErrorCov end
 A marker struct used to indicate the use of a random walk direction model with a mean component.
 """
 struct Direction_RW_with_Mean end
+
+function set_rng(rng)
+    global RNG
+    RNG = rng
+end
 
 include("windfield.jl")
 

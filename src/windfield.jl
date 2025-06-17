@@ -40,10 +40,10 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 function getWindDirT(::Direction_Constant_wErrorCov, WindDir, iT)
     n = length(iT)
     phi = fill(WindDir.Data, n)
-    # randn(n) gives a vector of n normal random numbers
+    # randn(RNG,n) gives a vector of n normal random numbers
     # WindDir.CholSig should
     @assert issquare(WindDir.CholSig)
-    phi .= phi .+ WindDir.CholSig * randn(n)
+    phi .= phi .+ WindDir.CholSig * randn(RNG,n)
     return phi
 end
 
@@ -154,7 +154,7 @@ function getWindDirT(::Direction_Interpolation_wErrorCov, WindDir, iT, t)
     phi = fill(phi_val, length(iT))
 
     # Add correlated noise (assuming CholSig is a Cholesky factor)
-    phi += (randn(1, length(phi)) * WindDir.CholSig)'
+    phi += (randn(RNG,1, length(phi)) * WindDir.CholSig)'
 
     return phi
 end
@@ -244,7 +244,7 @@ function getWindDirT(::Direction_InterpTurbine_wErrorCov, WindDir, iT, t)
     # Add correlated noise
     iT_vec = isa(iT, Integer) ? [iT] : iT
     phi = phi_out[iT_vec]
-    noise = randn(length(iT_vec))
+    noise = randn(RNG,length(iT_vec))
     phi = phi .+ WindDir.CholSig[iT_vec, iT_vec] * noise
 
     return phi
@@ -268,7 +268,7 @@ Returns the wind direction at the respective turbine(s).
 function getWindDirT(::Direction_RW_with_Mean, WindDirNow, WindDir)
     # Random walk model with mean implementation
     # Generate random normal vector
-    weightedRandN = randn(1, length(WindDirNow))
+    weightedRandN = randn(RNG,1, length(WindDirNow))
     # Compute new wind direction
     phi = WindDirNow .+ (weightedRandN * WindDir.CholSig)' .+
           WindDir.MeanPull .* (WindDir.Init .- WindDirNow)

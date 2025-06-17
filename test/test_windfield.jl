@@ -38,7 +38,7 @@ end
     WindDir = WindDirType(270.0, cholesky(Matrix{Float64}(I, 3, 3)).L)
     iT = [1, 2, 3]
     phi = getWindDirT(dir_mode, WindDir, iT)
-    result = [269.6402710931765, 271.0872084924286, 269.5804103830612]
+    result = [269.0527533560426, 270.54014974707036, 269.78339785902375]
     for (i, ph) in pairs(phi)
         @test ph ≈ result[i]
     end
@@ -82,8 +82,8 @@ end
     # Call the function
     phi = getWindDirT(dir_mode, WindDir, iT, t)
     @test size(phi) == (2,1)
-    @test phi[1] ≈ 24.92903352636283
-    @test phi[2] ≈ 24.363944731838128
+    @test phi[1] ≈ 25.84752589085377
+    @test phi[2] ≈ 25.140544918823198128
 
     dir_mode = Direction_InterpTurbine()
     # Example wind direction data:
@@ -135,7 +135,7 @@ end
     phi = getWindDirT(Direction_InterpTurbine_wErrorCov(), WindDir, 1, 12.5)
 
     @test length(phi) == 1
-    @test phi[1] ≈ 355.5643290977239
+    @test phi[1] ≈ 355.84437113031197
 
     # Suppose we have 3 turbines
     WindDirNow = [10.0, 20.0, 30.0]           # Current wind directions (degrees)
@@ -152,3 +152,4 @@ end
     phi = getWindDirT(Direction_RW_with_Mean(), WindDirNow, WindDir)
 
 end
+nothing

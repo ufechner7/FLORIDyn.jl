@@ -14,10 +14,6 @@ end
 filename="test/randn.mat"
 randn_vec=vec(matread(filename)["vec"])
 
-# const DNG = Iterators.Stateful(randn_vec)
-# randn() = popfirst!(DNG)
-# randn(n) = collect(Iterators.take(DNG, n))
-
 mutable struct FileRNG <: AbstractRNG
     const data::Vector{Float64}
     idx::Int
@@ -39,10 +35,9 @@ function Base.rand(rng::FileRNG, ::Type{T}) where {T}
     error("FileRNG only supports Float64")
 end
 
-# Optionally, support randn
 Random.randn(rng::FileRNG) = rand(rng)
 
 rng = FileRNG(randn_vec)
+FLORIDyn.set_rng(rng)
 
-
-# include("test_windfield.jl")
+include("test_windfield.jl")
