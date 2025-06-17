@@ -43,6 +43,8 @@ end
         @test ph ≈ result[i]
     end
 
+    #########################################
+
     dir_mode = Direction_EnKF_InterpTurbine()
 
     # Suppose WindDir is a matrix where each row is [time, phi_T0, phi_T1, ...]
@@ -57,6 +59,8 @@ end
     dir_mode = Direction_Interpolation()
     phi = getWindDirT(dir_mode, WindDir, 1, 0.5)
     @test phi[1] ≈ 11.0
+
+    ##############################################
 
     dir_mode = Direction_Interpolation_wErrorCov()
 
@@ -85,6 +89,8 @@ end
     @test phi[1] ≈ 25.84752589085377
     @test phi[2] ≈ 25.140544918823198128
 
+    ###################################
+
     dir_mode = Direction_InterpTurbine()
     # Example wind direction data:
     # Columns: time, phi_T0, phi_T1, phi_T2
@@ -103,6 +109,8 @@ end
     # Call the function
     phi = getWindDirT(dir_mode, WindDir, iT, t)
     @test phi ≈ 22.5
+
+    ##############################################
 
     dir_mode = Direction_InterpTurbine_wErrorCov()
         # Example wind direction data (time, phi)
