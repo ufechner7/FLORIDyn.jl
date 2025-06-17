@@ -19,3 +19,8 @@ SPDX-License-Identifier = "CC-BY-4.0"
 path = ["docs/.gitignore", "docs/Project.toml"]
 SPDX-FileCopyrightText = "2025 Uwe Fechner"
 SPDX-License-Identifier = "MIT"
+
+[[annotations]]
+path = ["docs/.gitignore", "test/randn.mat"]
+SPDX-FileCopyrightText = "2025 Uwe Fechner"
+SPDX-License-Identifier = "MIT"
