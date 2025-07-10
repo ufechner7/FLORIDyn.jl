@@ -1,7 +1,7 @@
 using Interpolations
 
 """
-    getWindShearT(WindShear, z)
+    getWindShearT(::Shear_Interpolation, WindShear, z)
 
 Compute the wind shear at a given height `z` using the specified `WindShear` model.
 
@@ -22,7 +22,7 @@ z, (u_z/u0)
 There is a linear interpolation between every pair.
 In case z IS OUT OF BOUNDS the function will use the closest available setpoint.
 """
-function getWindShearT(WindShear, z)
+function getWindShearT(::Shear_Interpolation, WindShear, z)
     # Extract columns
     heights = WindShear[:, 1]
     speeds = WindShear[:, 2]

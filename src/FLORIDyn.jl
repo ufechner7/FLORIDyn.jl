@@ -8,6 +8,7 @@ using Interpolations, LinearAlgebra, Random
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
 export Direction_RW_with_Mean
+export Shear_Interpolation, Shear_LogLaw, Shear_PowerLaw
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
@@ -70,6 +71,39 @@ struct Direction_InterpTurbine_wErrorCov end
 A marker struct used to indicate the use of a random walk direction model with a mean component.
 """
 struct Direction_RW_with_Mean end
+
+"""
+    Shear_Interpolation
+
+A marker struct used to represent the linear interpolation for wind shear profiles.
+
+# See also
+- [`Shear_LogLaw`](@ref)
+- [`Shear_PowerLaw`](@ref)
+"""
+struct Shear_Interpolation end
+
+"""
+    Shear_LogLaw
+
+A type representing the logarithmic law for modeling wind shear profiles.
+
+# See also
+- [`Shear_Interpolation`](@ref)
+- [`Shear_Constant`](@ref)
+"""
+struct Shear_LogLaw end
+
+"""
+    Shear_PowerLaw
+
+A type representing the logarithmic law for modeling wind shear profiles.
+
+# See also
+- [`Shear_LogLaw`](@ref)
+- [`Shear_Interpolation`](@ref)
+"""
+struct Shear_PowerLaw end
 
 function set_rng(rng)
     global RNG
