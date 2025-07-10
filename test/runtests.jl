@@ -42,3 +42,4 @@ FLORIDyn.set_rng(rng)
 
 include("test_windfield.jl")
 include("test_shear.jl")
+include("test_tit.jl")

@@ -9,9 +9,11 @@ export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTu
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
 export Direction_RW_with_Mean
 export Shear_Interpolation, Shear_PowerLaw, WindShear
+export TI_Constant, TI_EnKF_InterpTurbine, TI_Interpolation, TI_InterpTurbine
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
+export getWindTiT
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
@@ -103,6 +105,11 @@ A type representing the logarithmic law for modeling wind shear profiles.
 """
 struct Shear_PowerLaw end
 
+struct TI_Constant end
+struct TI_EnKF_InterpTurbine end
+struct TI_Interpolation end
+struct TI_InterpTurbine end
+
 function set_rng(rng)
     global RNG
     RNG = rng
@@ -125,5 +132,6 @@ end
 
 include("windfield_interpolation.jl")
 include("windfield_shear.jl")
+include("windfield_turbulence.jl")
 
 end
