@@ -64,6 +64,32 @@ end
 
     ##############################################
 
+    # Example wind direction data: times in first column, turbines in next columns
+    WindDir = [
+        0.0  10.0  20.0;
+        1.0  15.0  25.0;
+        2.0  20.0  30.0
+    ]
+
+    # Test cases
+    @testset "getWindDirT" begin
+        # Test for interpolation at t = 0.5 (between 0.0 and 1.0)
+        @test getWindDirT(Direction_InterpTurbine(), WindDir, 1, 0.5) ≈ 12.5
+        @test getWindDirT(Direction_InterpTurbine(), WindDir, 2, 0.5) ≈ 22.5
+
+        # Test for exact time at t = 1.0
+        @test getWindDirT(Direction_InterpTurbine(), WindDir, 1, 1.0) == 15.0
+        @test getWindDirT(Direction_InterpTurbine(), WindDir, 2, 1.0) == 25.0
+
+        # Test for time below minimum (should clamp to tmin)
+        @test getWindDirT(Direction_InterpTurbine(), WindDir, 1, -1.0) == 10.0
+
+        # Test for time above maximum (should clamp to tmax)
+        @test getWindDirT(Direction_InterpTurbine(), WindDir, 2, 5.0) == 30.0
+    end
+
+    ##############################################
+
     dir_mode = Direction_Interpolation_wErrorCov()
 
     # Example wind direction data (time, phi)
