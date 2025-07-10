@@ -75,6 +75,6 @@ function set_rng(rng)
     RNG = rng
 end
 
-include("windfield.jl")
+include("windfield_interpolation.jl")
 
 end
