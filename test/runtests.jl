@@ -41,3 +41,4 @@ rng = FileRNG(randn_vec)
 FLORIDyn.set_rng(rng)
 
 include("test_windfield.jl")
+include("test_shear.jl")

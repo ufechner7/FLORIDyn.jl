@@ -10,6 +10,7 @@ export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_Int
 export Direction_RW_with_Mean
 
 export getWindDirT, getWindDirT_EnKF
+export getWindShearT
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
@@ -76,5 +77,6 @@ function set_rng(rng)
 end
 
 include("windfield_interpolation.jl")
+include("windfield_shear.jl")
 
 end
