@@ -8,7 +8,7 @@ using Interpolations, LinearAlgebra, Random
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
 export Direction_RW_with_Mean
-export Shear_Interpolation, Shear_PowerLaw
+export Shear_Interpolation, Shear_PowerLaw, WindShear
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
