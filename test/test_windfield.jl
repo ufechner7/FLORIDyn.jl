@@ -186,6 +186,11 @@ end
 
     # Call the function
     phi = getWindDirT(Direction_RW_with_Mean(), WindDirNow, WindDir)
+    @test size(phi) == (3,1)
+    @test phi[1] ≈ 9.80509368889485
+    @test phi[2] ≈ 21.48940455337165
+    @test phi[3] ≈ 31.437827702779927
+    
 
 end
 nothing
