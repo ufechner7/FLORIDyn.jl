@@ -22,6 +22,5 @@ Direction_RW_with_Mean
 An instance of these structs needs to be passed to the functions that calculate the wind shear.
 ```@docs
 Shear_Interpolation
-Shear_LogLaw
 Shear_PowerLaw
 ```

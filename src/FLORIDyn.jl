@@ -8,7 +8,7 @@ using Interpolations, LinearAlgebra, Random
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
 export Direction_RW_with_Mean
-export Shear_Interpolation, Shear_LogLaw, Shear_PowerLaw
+export Shear_Interpolation, Shear_PowerLaw
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
@@ -78,21 +78,20 @@ struct Direction_RW_with_Mean end
 A marker struct used to represent the linear interpolation for wind shear profiles.
 
 # See also
-- [`Shear_LogLaw`](@ref)
 - [`Shear_PowerLaw`](@ref)
 """
 struct Shear_Interpolation end
 
-"""
-    Shear_LogLaw
+# """
+#     Shear_LogLaw
 
-A type representing the logarithmic law for modeling wind shear profiles.
+# A type representing the logarithmic law for modeling wind shear profiles.
 
-# See also
-- [`Shear_Interpolation`](@ref)
-- [`Shear_PowerLaw`](@ref)
-"""
-struct Shear_LogLaw end
+# # See also
+# - [`Shear_Interpolation`](@ref)
+# - [`Shear_PowerLaw`](@ref)
+# """
+# struct Shear_LogLaw end
 
 """
     Shear_PowerLaw
@@ -100,7 +99,6 @@ struct Shear_LogLaw end
 A type representing the logarithmic law for modeling wind shear profiles.
 
 # See also
-- [`Shear_LogLaw`](@ref)
 - [`Shear_Interpolation`](@ref)
 """
 struct Shear_PowerLaw end
@@ -108,6 +106,21 @@ struct Shear_PowerLaw end
 function set_rng(rng)
     global RNG
     RNG = rng
+end
+
+"""
+    WindShear
+
+A struct representing the wind shear profile. This type is used to model the variation of wind speed with height, 
+which is important in atmospheric and wind energy simulations.
+
+# Fields
+- z0::Float64: Reference height (not used in the [`getWindShearT`](@ref))
+- alpha::Float64: Shear coefficient
+"""
+struct WindShear
+    z0::Float64
+    alpha::Float64
 end
 
 include("windfield_interpolation.jl")
