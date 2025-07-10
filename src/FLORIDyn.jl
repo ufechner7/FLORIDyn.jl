@@ -90,7 +90,7 @@ A type representing the logarithmic law for modeling wind shear profiles.
 
 # See also
 - [`Shear_Interpolation`](@ref)
-- [`Shear_Constant`](@ref)
+- [`Shear_PowerLaw`](@ref)
 """
 struct Shear_LogLaw end
 

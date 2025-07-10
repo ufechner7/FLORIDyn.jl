@@ -17,3 +17,11 @@ Direction_InterpTurbine
 Direction_InterpTurbine_wErrorCov
 Direction_RW_with_Mean
 ```
+
+## Markers for defining the wind shear
+An instance of these structs needs to be passed to the functions that calculate the wind shear.
+```@docs
+Shear_Interpolation
+Shear_LogLaw
+Shear_PowerLaw
+```

@@ -20,7 +20,7 @@ z, (u_z/u0)
 z, (u_z/u0)
 ```
 There is a linear interpolation between every pair.
-In case z IS OUT OF BOUNDS the function will use the closest available setpoint.
+In case z is out of bounds the function will use the closest available setpoint.
 """
 function getWindShearT(::Shear_Interpolation, WindShear, z)
     # Extract columns

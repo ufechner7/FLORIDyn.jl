@@ -9,3 +9,8 @@ CurrentModule = FLORIDyn
 getWindDirT
 getWindDirT_EnKF
 ```
+
+# Defining the wind shear
+```@docs
+getWindShearT
+```
