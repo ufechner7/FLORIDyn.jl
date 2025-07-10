@@ -1,28 +1,27 @@
-# function shear = getWindShearT(WindShear,z)
-# %GETWINDSHEART returns the relative reduction (or speed-up) by wind shear
-# % Expects a .csv file called "WindShearProfile.csv" with a normalized wind
-# % speed profile for different heights:
-# %   z, (u_z/u0)
-# %   z, (u_z/u0)
-# %   z, (u_z/u0)
-# % There is a linear interpolation between every pair
-# % IN CASE z IS OUT OF BOUNDS the function will use the closest available
-# % setpoint
-# % ======================================================================= %
-# % WindShear = normalized wind speed at different heights
-# % z         = height(s)
-# % ======================================================================= %
-# % Out of bounds handling
-# maxZ = max(WindShear(:,1));
-# minZ = min(WindShear(:,1));
-# z(z>maxZ) = maxZ;
-# z(z<minZ) = minZ;
-# % Interpolate
-# shear = interp1(WindShear(:,1),WindShear(:,2),z);
-# end
-
 using Interpolations
 
+"""
+    getWindShearT(WindShear, z)
+
+Compute the wind shear at a given height `z` using the specified `WindShear` model.
+
+# Arguments
+- `WindShear`: An object or parameter set describing the wind shear profile.
+- `z`: The height (in meters) at which to evaluate the wind shear.
+
+# Returns
+- The wind shear value at height `z`.
+
+# REMARKS
+Expects a .csv file called "WindShearProfile.csv" with a normalized wind speed profile for different heights:
+```
+z, (u_z/u0)
+z, (u_z/u0)
+z, (u_z/u0)
+```
+There is a linear interpolation between every pair.
+In case z IS OUT OF BOUNDS the function will use the closest available setpoint.
+"""
 function getWindShearT(WindShear, z)
     # Extract columns
     heights = WindShear[:, 1]
@@ -36,6 +35,4 @@ function getWindShearT(WindShear, z)
     # Linear interpolation
     itp = linear_interpolation(heights, speeds, extrapolation_bc=Flat())
     shear = itp(z_clamped)
-
-    return shear
 end
