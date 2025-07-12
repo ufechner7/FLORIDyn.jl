@@ -7,6 +7,7 @@
 Return turbulence intensity for the requested turbine(s).
 
 # Arguments
+- `::TI_Constant`: type parameter to indicate constant wind turbulence
 - `WindTi`: Constant value (turbulence intensity)
 - `iT`: Index or indices of the turbines
 
@@ -51,6 +52,7 @@ end
 Return turbulence intensity for the requested turbine(s) at time `t`.
 
 # Arguments
+- `::TI_EnKF_InterpTurbine`: type parameter to indicate Individual Turbine value implementation
 - `WindTi`: Matrix where each row is [time, TI_T0, TI_T1, ... TI_Tn]
 - `iT`: Index or indices of the turbines (1-based)
 - `t`: Time of request
@@ -110,7 +112,7 @@ end
 Interpolates the wind turbulence intensity (TI) at a given time `t` using the specified `TI_Interpolation` method.
 
 # Arguments
-- `::TI_Interpolation`: The use linear interpolation to calculate the turbulence intensity.
+- `::TI_Interpolation`: Use linear interpolation to calculate the turbulence intensity.
 - `WindTi::Matrix{<:Real}`: Matrix containing wind turbulence intensity values over time.
 - `iT`: Index/indices of the turbines (can be Int or array).
 - `t::Real`: The specific time at which to interpolate the turbulence intensity.
@@ -156,3 +158,80 @@ function getWindTiT(::TI_Interpolation, WindTi::Matrix{<:Real}, iT, t::Real)
     # If iT is a single Int, return scalar; if array, return array
     fill(Ti_val, length(iT))
 end
+
+# function Ti = getWindTiT(WindTi,iT,t)
+# %GETWINDTI Return turbulence intensity for the requested turbine(s)
+# % ======================================================================= %
+# % Individual Turbine value implementation
+# %   requires a .csv in the simulation folder called WindTITurbine.csv
+# %   where each row is a
+# %       time, TI_T0, TI_T1, ... TI_Tn
+# %   setpoint in time. The values are interploated linearly between the
+# %   setpoints.
+# % ======= Input ======
+# % WindTi    = (t,TI_T0, TI_T1, ... TI_Tn)
+# % iT        = Index/Indeces of the turbines
+# % t         = time of request
+# % ======================================================================= %
+
+# if t<WindTi(1,1)
+#     warning(['The time ' num2str(t) ' is out of bounds, will use '...
+#         num2str(WindTi(1,1)) ' instead.']);
+#     t = WindTi(1,1);
+# elseif t>WindTi(end,1)
+#     warning(['The time ' num2str(t) ' is out of bounds, will use '...
+#         num2str(WindTi(end,1)) ' instead.']);
+#     t = WindTi(end,1);
+# end
+# Ti_out = interp1(WindTi(:,1),WindTi(:,2:end),t);
+# Ti = Ti_out(iT);
+# end
+
+"""
+    getWindTiT(::TI_InterpTurbine, WindTi, iT, t)
+
+Retrieve the wind turbulence intensity (TI) for a specific turbine at a given time.
+
+# Arguments
+- `::TI_InterpTurbine`: The turbulence intensity interpolation object for the turbine.
+- `WindTi`: Array or data structure containing wind turbulence intensity values.
+- `iT`: Index of the turbine for which the TI is requested.
+- `t`: Time at which the TI value is needed.
+
+# Returns
+- The interpolated wind turbulence intensity value for the specified turbine at time `t`.
+
+# Notes
+- This function is typically used in wind field simulations to obtain time-dependent turbulence intensity for individual turbines.
+"""
+function getWindTiT(::TI_InterpTurbine, WindTi, iT, t)
+    # WindTi: Matrix (time, TI_T0, TI_T1, ..., TI_Tn)
+    # iT: Index or indices of turbines (1-based)
+    # t: Requested time
+
+    times = WindTi[:, 1]
+    n_turbines = size(WindTi, 2) - 1
+
+    # Clamp t to the bounds of times
+    if t < times[1]
+        @warn "The time $t is out of bounds, will use $(times[1]) instead."
+        t = times[1]
+    elseif t > times[end]
+        @warn "The time $t is out of bounds, will use $(times[end]) instead."
+        t = times[end]
+    end
+
+    # Interpolate for each turbine
+    Ti_out = [interp1d(times, WindTi[:, j+1], t) for j in 1:n_turbines]
+
+    # Return value(s) for the requested turbine(s)
+    return Ti_out[iT]
+end
+
+# Helper function for linear interpolation at a single point
+function interp1d(x, y, xi)
+    itp = LinearInterpolation(x, y, extrapolation_bc=Flat())
+    return itp(xi)
+end
+
+

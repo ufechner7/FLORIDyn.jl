@@ -14,3 +14,9 @@ getWindDirT_EnKF
 ```@docs
 getWindShearT
 ```
+
+# Defining the wind turbulence
+```@docs
+getWindTiT
+getWindTiT_EnKF
+```
