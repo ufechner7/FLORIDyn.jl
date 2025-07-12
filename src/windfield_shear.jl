@@ -9,7 +9,8 @@ using Interpolations
 Compute the wind shear at a given height `z` using the specified `WindShear` model.
 
 # Arguments
-- `WindShear`: An object or parameter set describing the wind shear profile.
+- `::Shear_Interpolation`: (Type only) Use interpolation to determine the wind shear.
+- `WindShear`: A matrix describing the wind shear profile.
 - `z`: The height (in meters) at which to evaluate the wind shear.
 
 # Returns
@@ -60,6 +61,7 @@ end
 Return the shear factor `u_eff = shear * u_referenceHeight` using the power law.
 
 # Arguments
+- `Shear_PowerLaw`: (type only, unused) Specifies that this method applies to the power law model
 - `WindShear`: A struct of type (`WindShear`)(@ref)
     - `z0`: Reference height (not used in this function)
     - `alpha`: Shear coefficient
