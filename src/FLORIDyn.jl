@@ -13,7 +13,7 @@ export TI_Constant, TI_EnKF_InterpTurbine, TI_Interpolation, TI_InterpTurbine
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
-export getWindTiT
+export getWindTiT, getWindTiT_EnKF
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
