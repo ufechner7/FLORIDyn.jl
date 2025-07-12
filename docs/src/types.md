@@ -24,3 +24,11 @@ An instance of these structs needs to be passed to the functions that calculate 
 Shear_Interpolation
 Shear_PowerLaw
 ```
+
+## Markers for defining the wind turbulence
+An instance of these structs needs to be passed to the functions that calculate the wind turbulence.
+```@docs
+ TI_Constant
+ TI_EnKF_InterpTurbine
+ TI_Interpolation
+```

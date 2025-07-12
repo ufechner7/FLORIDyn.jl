@@ -98,15 +98,32 @@ struct Shear_Interpolation end
 """
     Shear_PowerLaw
 
-A type representing the logarithmic law for modeling wind shear profiles.
+A marker struct representing the logarithmic law for modeling wind shear profiles.
 
 # See also
 - [`Shear_Interpolation`](@ref)
 """
 struct Shear_PowerLaw end
 
+"""
+    TI_Constant
+
+A marker struct representing a constant turbulence intensity. 
+"""
 struct TI_Constant end
+
+"""
+    TI_EnKF_InterpTurbine
+
+A marker struct representing the Turbulence Intensity (TI) Ensemble Kalman Filter (EnKF) interpolation model.
+"""
 struct TI_EnKF_InterpTurbine end
+
+"""
+    TI_Interpolation
+
+A marker struct representing the interpolation method for modeling the turbulence.
+"""
 struct TI_Interpolation end
 struct TI_InterpTurbine end
 
