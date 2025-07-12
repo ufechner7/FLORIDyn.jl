@@ -104,12 +104,26 @@ end
 # Ti = ones(size(iT))*interp1(WindTi(:,1),WindTi(:,2),t);
 # end
 
+"""
+    getWindTiT(::TI_Interpolation, WindTi::Matrix{<:Real}, iT, t::Real)
+
+Interpolates the wind turbulence intensity (TI) at a given time `t` using the specified `TI_Interpolation` method.
+
+# Arguments
+- `::TI_Interpolation`: The use linear interpolation to calculate the turbulence intensity.
+- `WindTi::Matrix{<:Real}`: Matrix containing wind turbulence intensity values over time.
+- `iT`: Index/indices of the turbines (can be Int or array).
+- `t::Real`: The specific time at which to interpolate the turbulence intensity.
+
+# Returns
+- The interpolated turbulence for the requested turbine(s) at time `t`.
+
+# Notes
+- The function assumes that `WindTi` contains the necessary data for interpolation
+  as (time, TI) pairs (n×2 matrix)
+- Uniform interpolation version - all turbines experience the same changes.
+"""
 function getWindTiT(::TI_Interpolation, WindTi::Matrix{<:Real}, iT, t::Real)
-    # GETWINDTIT Return turbulence intensity for the requested turbine(s)
-    # Uniform interpolation version - all turbines experience the same changes
-    # WindTi: (time, TI) pairs (n×2 matrix)
-    # iT: Index/indices of the turbines (can be Int or array)
-    # t: time of request (scalar)
 
     # Extract time and TI columns
     times = WindTi[:, 1]
