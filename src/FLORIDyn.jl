@@ -125,6 +125,13 @@ struct TI_EnKF_InterpTurbine end
 A marker struct representing the interpolation method for modeling the turbulence.
 """
 struct TI_Interpolation end
+
+
+"""
+    TI_InterpTurbine
+
+A marker struct representing an interpolated turbine model for turbulence intensity calculations.
+"""
 struct TI_InterpTurbine end
 
 function set_rng(rng)

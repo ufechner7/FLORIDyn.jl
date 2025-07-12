@@ -200,9 +200,6 @@ Retrieve the wind turbulence intensity (TI) for a specific turbine at a given ti
 
 # Returns
 - The interpolated wind turbulence intensity value for the specified turbine at time `t`.
-
-# Notes
-- This function is typically used in wind field simulations to obtain time-dependent turbulence intensity for individual turbines.
 """
 function getWindTiT(::TI_InterpTurbine, WindTi, iT, t)
     # WindTi: Matrix (time, TI_T0, TI_T1, ..., TI_Tn)

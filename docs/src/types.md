@@ -31,4 +31,5 @@ An instance of these structs needs to be passed to the functions that calculate 
  TI_Constant
  TI_EnKF_InterpTurbine
  TI_Interpolation
+ TI_InterpTurbine
 ```

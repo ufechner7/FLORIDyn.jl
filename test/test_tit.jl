@@ -50,4 +50,28 @@ WindTi = [
     @test getWindTiT_EnKF(TI_EnKF_InterpTurbine(), WindTi, 2, 1.5) ≈ 0.4
 end
 
+@testset "getWindTiT" begin
+    # Example wind TI data: columns are [time, TI_T1, TI_T2]
+    WindTi = [
+        0.0  0.10  0.20;
+        1.0  0.15  0.25;
+        2.0  0.20  0.30
+    ]
+
+    ti_interp = TI_InterpTurbine()
+
+    # Test interpolation at t=0.5 for turbine 1
+    @test getWindTiT(ti_interp, WindTi, 1, 0.5) ≈ 0.125 atol=1e-8
+    # Test interpolation at t=1.5 for turbine 2
+    @test getWindTiT(ti_interp, WindTi, 2, 1.5) ≈ 0.275 atol=1e-8
+
+    # Test clamping below range: t = -1.0
+    @test getWindTiT(ti_interp, WindTi, 1, -1.0) ≈ 0.10 atol=1e-8
+    # Test clamping above range: t = 3.0
+    @test getWindTiT(ti_interp, WindTi, 2, 3.0) ≈ 0.30 atol=1e-8
+
+    # Test exact time point
+    @test getWindTiT(ti_interp, WindTi, 2, 1.0) ≈ 0.25 atol=1e-8
+end
+
 end
