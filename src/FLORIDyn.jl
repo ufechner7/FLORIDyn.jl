@@ -21,7 +21,7 @@ export WindVelType
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
 export getWindTiT, getWindTiT_EnKF
-export getWindSpeedT
+export getWindSpeedT, getWindSpeedT_EnKF
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()

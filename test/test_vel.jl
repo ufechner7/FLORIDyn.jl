@@ -6,6 +6,7 @@ using Test
 using LinearAlgebra
 using Statistics
 using Random
+using Logging
 
 @testset "wind velocity  " begin
     @testset "getWindSpeedT(Velocity_Constant(), ...)" begin
@@ -73,4 +74,57 @@ using Random
         vel3 = getWindSpeedT(Velocity_Constant_wErrorCov(), wind3, [1, 2])
         @test length(vel3) == 2
     end
+    WindVel = [
+        0.0   6.0   8.0;
+        5.0   10.0  12.0;
+        10.0  14.0  18.0
+    ]
+
+    # Reference to the function for clarity
+    getWS = getWindSpeedT_EnKF
+
+    @testset "getWindSpeedT_EnKF Unit Tests" begin
+
+        let model = Velocity_EnKF_InterpTurbine()
+
+            @testset "Exact time matches" begin
+                @test getWS(model, WindVel, 1, 0.0) ≈ 6.0
+                @test getWS(model, WindVel, 2, 10.0) ≈ 18.0
+            end
+
+            @testset "Interpolated values at midpoints" begin
+                @test getWS(model, WindVel, 1, 2.5) ≈ 8.0  # halfway between 6.0 and 10.0
+                @test getWS(model, WindVel, 2, 7.5) ≈ 15.0 # halfway between 12.0 and 18.0
+            end
+
+            @testset "Multiple turbine indices" begin
+                result = getWS(model, WindVel, [1, 2], 2.5)
+                @test result ≈ [8.0, 10.0]
+            end
+
+            @testset "Out-of-bounds: before first timestamp" begin
+                buff = IOBuffer()
+                with_logger(ConsoleLogger(buff)) do
+                    result = getWS(model, WindVel, 1, -3.0)
+                    @test result ≈ 6.0  # clamped to t = 0.0
+                end
+                seekstart(buff)
+                log_output = String(take!(buff))
+                @test occursin("out of bounds", log_output)
+            end
+
+            @testset "Out-of-bounds: after last timestamp" begin
+                logbuffer = IOBuffer()
+                with_logger(ConsoleLogger(logbuffer)) do
+                    result = getWS(model, WindVel, 2, 15.0)
+                    @test result ≈ 18.0  # clamped to t = 10.0
+                end
+                seekstart(logbuffer)
+                logs = String(take!(logbuffer))
+                @test occursin("out of bounds", logs)
+            end
+
+        end
+    end
+
 end

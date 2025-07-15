@@ -42,4 +42,37 @@ function getWindSpeedT(::Velocity_Constant_wErrorCov, WindVel::WindVelType, iT)
     return Vel
 end
 
+using Interpolations
+
+"""
+    getWindSpeedT_EnKF(::Velocity_EnKF_InterpTurbine, WindVel::Matrix, iT, t)
+
+Returns the wind speed at the turbine index or indices `iT` at time `t`, using linear interpolation of the measurement table `WindVel`. 
+
+- WindVel: A matrix of size (ntimes, nturbines+1). First column is time, rest are wind speeds for each turbine.
+- iT: Index or array of indices of turbines for output.
+- t: Time at which to query wind speed.
+"""
+function getWindSpeedT_EnKF(::Velocity_EnKF_InterpTurbine, WindVel::Matrix, iT, t)
+    times  = WindVel[:, 1]
+    speeds = WindVel[:, 2:end]  # size: (N_time, N_turbines)
+
+    # Clamp time to in-bounds with warning
+    mint, maxt = times[1], times[end]
+    if t < mint
+        @warn "The time $t is out of bounds, will use $mint instead."
+        t = mint
+    elseif t > maxt
+        @warn "The time $t is out of bounds, will use $maxt instead."
+        t = maxt
+    end
+
+    # Interpolate each turbine column independently
+    wind_at_t = [LinearInterpolation(times, speeds[:, j], extrapolation_bc=Flat())(t) for j in 1:size(speeds, 2)]
+
+    # Select desired turbine(s)
+    return wind_at_t[iT]
+end
+
+
 
