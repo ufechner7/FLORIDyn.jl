@@ -74,6 +74,7 @@ A marker struct used to indicate the use of a random walk direction model with a
 """
 struct Direction_RW_with_Mean end
 
+# the different shear types (shear_mode)
 """
     Shear_Interpolation
 
@@ -105,6 +106,7 @@ A marker struct representing the logarithmic law for modeling wind shear profile
 """
 struct Shear_PowerLaw end
 
+# the different wind turbulence types (turb_mode)
 """
     TI_Constant
 
