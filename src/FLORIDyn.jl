@@ -28,6 +28,7 @@ end
 include("structs_dir.jl")
 include("structs_shear.jl")
 include("structs_turb.jl")
+include("structs_vel.jl")
 
 """
     WindShear
