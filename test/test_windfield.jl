@@ -142,7 +142,8 @@ end
     ##############################################
 
     dir_mode = Direction_InterpTurbine_wErrorCov()
-        # Example wind direction data (time, phi)
+    
+    # Example wind direction data (time, phi)
     wind_data = [
         0.0  10.0;
         5.0  20.0;
@@ -169,10 +170,14 @@ end
 
     # Create WindDir struct
     WindDir = WindDirMatrix(Data, CholSig)
-    phi = getWindDirT(Direction_InterpTurbine_wErrorCov(), WindDir, 1, 12.5)
+    phi = getWindDirT(dir_mode, WindDir, 1, 12.5)
 
     @test length(phi) == 1
     @test phi[1] ≈ 355.84437113031197
+
+    ##############################################
+
+    dir_mode = Direction_RW_with_Mean()
 
     # Suppose we have 3 turbines
     WindDirNow = [10.0, 20.0, 30.0]           # Current wind directions (degrees)
@@ -186,7 +191,7 @@ end
     WindDir = WindDirTriple(Init, CholSig, MeanPull)
 
     # Call the function
-    phi = getWindDirT(Direction_RW_with_Mean(), WindDirNow, WindDir)
+    phi = getWindDirT(dir_mode, WindDirNow, WindDir)
     @test size(phi) == (3,1)
     @test phi[1] ≈ 9.80509368889485
     @test phi[2] ≈ 21.48940455337165
