@@ -24,20 +24,18 @@ function getWindDirT(::Direction_Constant, WindDir, iT, _)
 end
 
 """
-    getWindDirT(::Direction_Constant_wErrorCov, WindDir, iT)
+    getWindDirT(::Direction_Constant_wErrorCov, WindDir::WindDirType, iT)
 
 Return wind direction in SOWFA-deg for the requested turbine(s).
 
 # Arguments
-- `WindDir`: Struct with fields
-    - `Data::Float64`: wind direction value
-    - `CholSig::AbstractMatrix`: Cholesky factor of covariance matrix (nT x nT)
+- `WindDir::WindDirType`: [WindDirType](@ref)
 - `iT`: Vector of turbine indices (can be any indexable collection)
 
 # Returns
 - `phi`: Vector of wind directions for the selected turbines, including random perturbation
 """
-function getWindDirT(::Direction_Constant_wErrorCov, WindDir, iT)
+function getWindDirT(::Direction_Constant_wErrorCov, WindDir::WindDirType, iT)
     n = length(iT)
     phi = fill(WindDir.Data, n)
     # randn(RNG,n) gives a vector of n normal random numbers

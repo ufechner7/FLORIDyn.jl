@@ -36,6 +36,7 @@ An instance of these structs needs to be passed to the functions that calculate 
 
 ## Types for storing the wind field parameters
 ```@docs
+WindDirType
 WindDirMatrix
 WindDirTriple
 ```

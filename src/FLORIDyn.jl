@@ -44,6 +44,13 @@ struct WindShear
     alpha::Float64
 end
 
+"""
+     WindDirType
+
+# Fields
+- Data::Float64: wind direction value
+- CholSig::Matrix{Float64}: Cholesky factor of covariance matrix (nT x nT)
+"""
 struct WindDirType
     Data::Float64
     CholSig::Matrix{Float64}
