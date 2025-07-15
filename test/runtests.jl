@@ -45,4 +45,5 @@ FLORIDyn.set_rng(rng)
     include("test_dir.jl")
     include("test_shear.jl")
     include("test_tit.jl")
+    include("test_vel.jl")
 end
