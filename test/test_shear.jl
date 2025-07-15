@@ -15,7 +15,7 @@ using Random
     @test shear[2] ≈ 0.85
     @test shear[3] ≈ 0.95
     @test shear[4] ≈ 1.0
-    @testset "getWindShearT Power Law Tests" begin
+    @testset "getWindShearT(Shear_PowerLaw(), ...)" begin
         shear_mode = Shear_PowerLaw()
         # Test with scalar z_norm
         ws = WindShear(10.0, 0.14)

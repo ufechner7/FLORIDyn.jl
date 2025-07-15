@@ -71,8 +71,7 @@ end
         2.0  20.0  30.0
     ]
 
-    # Test cases
-    @testset "getWindDirT" begin
+    @testset "getWindDirT(Direction_InterpTurbine(), ...)" begin
         dir_mode = Direction_InterpTurbine()
         # Test for interpolation at t = 0.5 (between 0.0 and 1.0)
         @test getWindDirT(dir_mode, WindDir, 1, 0.5) ≈ 12.5
@@ -235,6 +234,5 @@ end
 end
 
 end
-
 
 nothing
