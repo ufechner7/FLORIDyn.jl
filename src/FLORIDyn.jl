@@ -10,12 +10,17 @@ export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_Int
 export Direction_RW_with_Mean
 export Shear_Interpolation, Shear_PowerLaw, WindShear
 export TI_Constant, TI_EnKF_InterpTurbine, TI_Interpolation, TI_InterpTurbine
+export Velocity_Constant, Velocity_Constant_wErrorCov, Velocity_EnKF_InterpTurbine
+export Velocity_I_and_I, Velocity_Interpolation, Velocity_Interpolation_wErrorCov
+export Velocity_InterpTurbine, Velocity_InterpTurbine_wErrorCov, Velocity_RW_with_Mean
+export Velocity_ZOH_wErrorCov
 
 export WindDirType, WindDirMatrix, WindDirTriple
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
 export getWindTiT, getWindTiT_EnKF
+export getWindSpeedT
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
