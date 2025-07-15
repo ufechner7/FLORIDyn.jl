@@ -123,21 +123,20 @@ function getWindDirT(::Direction_Interpolation, WindDir::AbstractMatrix, iT, t)
 end
 
 """
-    getWindDirT(::Direction_Interpolation_wErrorCov, WindDir, iT, t)
+    getWindDirT(::Direction_Interpolation_wErrorCov, WindDir::WindDirMatrix, iT, t)
 
 Returns the wind direction at the respective turbine(s).
 Uniform interpolation version - all turbines experience the same changes.
 
 Arguments:
-- WindDir.Data   = (t,phi) pairs between which is linearly interpolated
-- WindDir.ColSig = nT x nT, col(Covariance Matrix)
+- WindDir::WindDirMatrix: [WindDirMatrix](@ref)
 - iT: single value or array with turbine index/indices
 - t: time of request
 
 Returns:
 - phi: Array of wind directions for each turbine in iT
 """
-function getWindDirT(::Direction_Interpolation_wErrorCov, WindDir, iT, t)
+function getWindDirT(::Direction_Interpolation_wErrorCov, WindDir::WindDirMatrix, iT, t)
     # Ensure t is within bounds
     if t < WindDir.Data[1, 1]
         @warn "The time $t is out of bounds, will use $(WindDir.Data[1,1]) instead."
