@@ -40,6 +40,6 @@ Random.randn(rng::FileRNG) = rand(rng)
 rng = FileRNG(randn_vec)
 FLORIDyn.set_rng(rng)
 
-include("test_windfield.jl")
+include("test_dir.jl")
 include("test_shear.jl")
 include("test_tit.jl")
