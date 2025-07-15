@@ -251,21 +251,18 @@ function getWindDirT(::Direction_InterpTurbine_wErrorCov, WindDir, iT, t)
 end
 
 """
-    getWindDirT(::Direction_RW_with_Mean, WindDirNow, WindDir)
+    getWindDirT(::Direction_RW_with_Mean, WindDirNow, WindDir::WindDirTriple)
 
 Returns the wind direction at the respective turbine(s).
 
 # Arguments
 - `WindDirNow`: Current value (vector)
-- `WindDir`: Struct with fields:
-    - `Init`: Mean direction (vector or scalar)
-    - `CholSig`: Cholesky factor of covariance matrix (matrix)
-    - `MeanPull`: Scalar mean reversion factor
+- `WindDir::WindDirTriple`: [`WindDirTriple`](@ref)
 
 # Returns
 - `phi`: Updated wind direction(s) (vector)
 """
-function getWindDirT(::Direction_RW_with_Mean, WindDirNow, WindDir)
+function getWindDirT(::Direction_RW_with_Mean, WindDirNow, WindDir::WindDirTriple)
     # Random walk model with mean implementation
     # Generate random normal vector
     weightedRandN = randn(RNG,1, length(WindDirNow))

@@ -8,23 +8,6 @@ using Random
 
 Random.seed!(1234)
 
-struct WindDirType
-    Data::Float64
-    CholSig::Matrix{Float64}
-end
-
-# Define a struct for WindDir
-struct WindDirMatrix
-    Data::Matrix{Float64}      # Nx2 matrix: column 1 = time, column 2 = phi
-    CholSig::Matrix{Float64}   # Cholesky factor of covariance matrix (nT x nT)
-end
-
-struct WindDirTriple
-    Init::Vector{Float64}
-    CholSig::Matrix{Float64}
-    MeanPull::Float64
-end
-
 @testset "wind dir       " begin
     dir_mode = Direction_Constant()
     WindDir = 270
@@ -195,6 +178,8 @@ end
     @test phi[1] ≈ 9.80509368889485
     @test phi[2] ≈ 21.48940455337165
     @test phi[3] ≈ 31.437827702779927
+
+    ##############################################
 
     @testset "getWindTiT(TI_Interpolation(), ...)" begin
     dir_mode = TI_Interpolation()

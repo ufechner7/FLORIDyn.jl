@@ -11,6 +11,8 @@ export Direction_RW_with_Mean
 export Shear_Interpolation, Shear_PowerLaw, WindShear
 export TI_Constant, TI_EnKF_InterpTurbine, TI_Interpolation, TI_InterpTurbine
 
+export WindDirType, WindDirMatrix, WindDirTriple
+
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
 export getWindTiT, getWindTiT_EnKF
@@ -42,6 +44,34 @@ struct WindShear
     alpha::Float64
 end
 
+struct WindDirType
+    Data::Float64
+    CholSig::Matrix{Float64}
+end
+
+# Define a struct for WindDir
+struct WindDirMatrix
+    Data::Matrix{Float64}      # Nx2 matrix: column 1 = time, column 2 = phi
+    CholSig::Matrix{Float64}   # Cholesky factor of covariance matrix (nT x nT)
+end
+
+"""
+    WindDirTriple
+
+A structure representing a wind direction triple. 
+
+# Fields
+- Init::Vector{Float64}      # Mean direction (vector or scalar)
+- CholSig::Matrix{Float64}   # Cholesky factor of covariance matrix (nT x nT)
+- MeanPull::Float64          # Scalar mean reversion factor
+"""
+struct WindDirTriple
+    Init::Vector{Float64}      # Mean direction (vector or scalar)
+    CholSig::Matrix{Float64}   # Cholesky factor of covariance matrix (nT x nT)
+    MeanPull::Float64          # Scalar mean reversion factor
+end
+
+# functions for calculating the wind field
 include("windfield_direction.jl")
 include("windfield_shear.jl")
 include("windfield_turbulence.jl")
