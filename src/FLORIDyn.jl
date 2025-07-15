@@ -154,7 +154,7 @@ struct WindShear
     alpha::Float64
 end
 
-include("windfield_interpolation.jl")
+include("windfield_direction.jl")
 include("windfield_shear.jl")
 include("windfield_turbulence.jl")
 
