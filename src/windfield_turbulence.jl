@@ -227,7 +227,7 @@ end
 
 # Helper function for linear interpolation at a single point
 function interp1d(x, y, xi)
-    itp = LinearInterpolation(x, y, extrapolation_bc=Flat())
+    itp = linear_interpolation(x, y, extrapolation_bc=Flat())
     return itp(xi)
 end
 
