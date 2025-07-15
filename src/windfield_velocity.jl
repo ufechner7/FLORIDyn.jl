@@ -17,3 +17,29 @@ Returns the wind speed at a given time index `iT` for a constant velocity wind f
 function getWindSpeedT(::Velocity_Constant, WindVel, iT)
     WindVel .* ones(eltype(WindVel), size(iT))
 end
+
+"""
+    getWindSpeedT(::Velocity_Constant_wErrorCov, WindVel::WindVelType, iT, _)
+
+Compute the wind speed at a given time step `iT` using a constant velocity model with error covariance.
+
+# Arguments
+- `::Velocity_Constant_wErrorCov`: Type indicating the constant velocity model with error covariance.
+- `WindVel::WindVelType`: [WindVelType](@ref)
+- `iT`: Scalar or array of turbine indices
+- `_`: Placeholder for additional arguments (unused).
+
+# Returns
+- The wind speed at the respective turbine(s)
+"""
+function getWindSpeedT(::Velocity_Constant_wErrorCov, WindVel::WindVelType, iT)
+    # Create a vector of the same size as iT filled with WindVel.Data
+    Vel = fill(WindVel.Data, length(iT))
+
+    # Add Gaussian noise scaled by WindVel.CholSig
+    Vel .+= (randn(1, length(Vel)) * WindVel.CholSig)'
+
+    return Vel
+end
+
+
