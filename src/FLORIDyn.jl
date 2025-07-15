@@ -157,5 +157,6 @@ end
 include("windfield_direction.jl")
 include("windfield_shear.jl")
 include("windfield_turbulence.jl")
+include("windfield_velocity.jl")
 
 end
