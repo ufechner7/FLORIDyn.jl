@@ -1,4 +1,7 @@
-# list all functions of FLORIDyn
+# Copyright (c) 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
+# List all methods of FLORIDyn
 using FLORIDyn
 
 exported_names = names(FLORIDyn)
