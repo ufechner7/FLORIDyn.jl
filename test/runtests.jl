@@ -6,6 +6,7 @@ using Test
 using LinearAlgebra
 using MAT
 using Random
+using Suppressor
 
 if basename(pwd()) == "test"
     cd("..")
@@ -40,6 +41,8 @@ Random.randn(rng::FileRNG) = rand(rng)
 rng = FileRNG(randn_vec)
 FLORIDyn.set_rng(rng)
 
-include("test_dir.jl")
-include("test_shear.jl")
-include("test_tit.jl")
+@suppress_err begin
+    include("test_dir.jl")
+    include("test_shear.jl")
+    include("test_tit.jl")
+end

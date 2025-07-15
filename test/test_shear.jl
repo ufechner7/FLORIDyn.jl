@@ -6,7 +6,7 @@ using Test
 using LinearAlgebra
 using Random
 
-@testset "windshear" begin
+@testset "wind shear     " begin
     shear_mode = Shear_Interpolation()
     wind_shear = [10 0.8; 20 0.9; 30 1.0]  # Example data
     z = [5, 15, 25, 35]                   # Heights to interpolate at

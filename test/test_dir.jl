@@ -25,7 +25,7 @@ struct WindDirTriple
     MeanPull::Float64
 end
 
-@testset "windfield.jl" begin
+@testset "wind dir       " begin
     dir_mode = Direction_Constant()
     WindDir = 270
     iT = [1, 2, 3]
@@ -196,9 +196,8 @@ end
     @test phi[1] ≈ 9.80509368889485
     @test phi[2] ≈ 21.48940455337165
     @test phi[3] ≈ 31.437827702779927
-end
 
-@testset "getWindTiT(TI_Interpolation(), ...)" begin
+    @testset "getWindTiT(TI_Interpolation(), ...)" begin
     dir_mode = TI_Interpolation()
 
     WindTi = [
@@ -234,5 +233,8 @@ end
     Ti5 = getWindTiT(dir_mode, WindTi, iT5, t5)
     @test Ti5 ≈ fill(0.25, 1)  # (0.20 + (0.30-0.20)*5/10) = 0.25
 end
+
+end
+
 
 nothing
