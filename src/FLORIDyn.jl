@@ -49,7 +49,13 @@ struct WindDirType
     CholSig::Matrix{Float64}
 end
 
-# Define a struct for WindDir
+"""
+    struct WindDirMatrix
+
+# Fields
+- Data::Matrix{Float64}:    Nx2 matrix: column 1 = time, column 2 = phi
+- CholSig::Matrix{Float64}: Cholesky factor of covariance matrix (nT x nT)
+"""
 struct WindDirMatrix
     Data::Matrix{Float64}      # Nx2 matrix: column 1 = time, column 2 = phi
     CholSig::Matrix{Float64}   # Cholesky factor of covariance matrix (nT x nT)
@@ -61,9 +67,9 @@ end
 A structure representing a wind direction triple. 
 
 # Fields
-- Init::Vector{Float64}      # Mean direction (vector or scalar)
-- CholSig::Matrix{Float64}   # Cholesky factor of covariance matrix (nT x nT)
-- MeanPull::Float64          # Scalar mean reversion factor
+- Init::Vector{Float64}:    Mean direction (vector or scalar)
+- CholSig::Matrix{Float64}: Cholesky factor of covariance matrix (nT x nT)
+- MeanPull::Float64:        Scalar mean reversion factor
 """
 struct WindDirTriple
     Init::Vector{Float64}      # Mean direction (vector or scalar)

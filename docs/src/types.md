@@ -34,7 +34,8 @@ An instance of these structs needs to be passed to the functions that calculate 
  TI_InterpTurbine
 ```
 
-### Types for storing the wind field parameters
+## Types for storing the wind field parameters
 ```@docs
+WindDirMatrix
 WindDirTriple
 ```
