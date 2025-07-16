@@ -128,7 +128,7 @@ using Logging
 
         end
     end
-    @testset "getWindSpeedT Tests" begin
+    @testset "getWindSpeedT(Velocity_InterpTurbine(), ...)" begin
         vel_mode = Velocity_InterpTurbine()
         
         # Sample data: each row is [time, turbine_1_speed, turbine_2_speed]
