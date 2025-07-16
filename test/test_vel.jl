@@ -8,7 +8,7 @@ using Statistics
 using Random
 using Logging
 
-@testset "wind velocity  " begin
+@testset verbose=true "wind velocity  " begin
     @testset "getWindSpeedT(Velocity_Constant(), ...)" begin
         vc = Velocity_Constant()
 
@@ -43,7 +43,7 @@ using Logging
             @test length(result) == 0
         end
     end
-    @testset "get_wind_speed_t Unit Tests" begin
+    @testset "getWindSpeedT(Velocity_Constant_wErrorCov(), ...)" begin
         # Set fixed random seed for consistent results
         Random.seed!(1234)
 
@@ -83,7 +83,7 @@ using Logging
     # Reference to the function for clarity
     getWS = getWindSpeedT_EnKF
 
-    @testset "getWindSpeedT_EnKF Unit Tests" begin
+    @testset "getWindSpeedT_EnKF(Velocity_EnKF_InterpTurbine(), ...)" begin
 
         let model = Velocity_EnKF_InterpTurbine()
 
