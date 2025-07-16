@@ -74,5 +74,134 @@ function getWindSpeedT_EnKF(::Velocity_EnKF_InterpTurbine, WindVel::Matrix, iT, 
     return wind_at_t[iT]
 end
 
+mutable struct TurbineProps
+    FluidDensity::Float64
+    RotorRadius::Float64
+    GearboxRatio::Float64
+    GearboxEff::Float64
+    InertiaTotal::Float64
+    CpFun::Function
+end
+
+mutable struct WSEStruct
+    V::Vector{Float64}
+    Ee::Vector{Float64}
+    omega::Vector{Float64}
+    beta::Float64
+    gamma::Float64
+    dt_SOWF::Float64
+    T_prop::TurbineProps
+end
+
+function WindSpeedEstimatorIandI_FLORIDyn(WSE, Rotor_Speed, Blade_pitch, Gen_Torque, yaw, p_p)
+    # === Wind Speed Estimator (I&I Method) ===
+    # Based on Liu et al., IEEE Control Systems Letters, 2021
+    #
+    # Inputs:
+    #   WSE: Wind speed estimator state (mutable object)
+    #   Rotor_Speed: Rotor speed [rpm]
+    #   Blade_pitch: Blade pitch [deg]
+    #   Gen_Torque: Generator torque [Nm]
+    #   yaw: Yaw angle difference [rad]
+    #   p_p: Exponent for yaw correction
+    #
+    # Returns:
+    #   V_out: Estimated wind speed
+    #   WSE: Updated estimator state
+
+    # === Unpack turbine and estimator parameters ===
+    ρ = WSE.T_prop.FluidDensity          # Air density [kg/m^3]
+    R = WSE.T_prop.RotorRadius           # Rotor radius [m]
+    A = π * R^2                          # Rotor swept area [m^2]
+    γ = WSE.gamma                        # Estimator gain γ
+    β = WSE.beta                         # Estimator gain β
+    G = WSE.T_prop.GearboxRatio          # Gearbox ratio
+    I = WSE.T_prop.InertiaTotal          # Total inertia
+    η = WSE.T_prop.GearboxEff            # Gearbox efficiency
+    dt = WSE.dt_SOWF                     # Simulation time step [s]
+
+    # === Calculate Tip Speed Ratio ===
+    TSR = (Rotor_Speed * π * R) ./ (WSE.V * 30)  # Note: Rotor_Speed in RPM
+
+    # === Evaluate power coefficient and correct for yaw ===
+    Cp_raw = WSE.T_prop.CpFun(TSR, Blade_pitch) # Assumes interpolation func: CpFun(tsr, pitch)
+    Cp = max.(Cp_raw, 0.0) .* ρ .* cos.(yaw).^p_p
+
+    # === Handle NaN in Cp ===
+    if any(isnan.(Cp))
+        println("Warning: Cp out of range. TSR = $TSR, Pitch = $Blade_pitch deg.")
+        println("Assuming wind speed estimate remains unchanged.")
+    else
+        # === Estimate aerodynamic torque ===
+        aerodynamicTorque = 0.5 * ρ * A .* (WSE.V.^3) ./ (Rotor_Speed * π / 30) .* Cp
+
+        # Clip torque to be non-negative
+        aerodynamicTorque = max.(aerodynamicTorque, 0.0)
+
+        # === Update estimator state (Extended I&I) ===
+        omega_dot = (-(η * Gen_Torque .* G .- aerodynamicTorque)) ./ I
+        WSE.omega .= WSE.omega .+ dt .* omega_dot
+        diff_omega = -WSE.omega .+ Rotor_Speed .* π ./ 30
+        WSE.Ee     .= WSE.Ee .+ dt .* diff_omega
+        WSE.V      .= β .* WSE.Ee .+ γ .* diff_omega
+    end
+
+    return WSE.V, WSE
+end
+
+function getWindSpeedT(WindVel, iT, SimTime, WindDir, p_p)
+    # Returns the wind speed at the respective turbine(s)
+    # iT        = single value or array with turbine index/indices
+    # WindVel   = Data for I&I wind speed estimator
+    # SimTime   = Current simulation time
+    # Returns:
+    # U         = Velocity
+    # WindVel   = Updated struct for I&I estimator
+    
+    if SimTime == WindVel.StartTime
+        U = WindVel.WSE.V[iT]
+        return U, WindVel
+    end
+
+    # Calculate current and previous index
+    indCurr = round(Int, (SimTime - WindVel.StartTime) / WindVel.WSE.dt_SOWF)
+    indPrev = Int((WindVel.TimePrev - WindVel.StartTime) / WindVel.WSE.dt_SOWF + 1)
+
+    # Number of Turbines
+    nT = WindVel.WSE.nT
+
+    # Run I&I estimator from last time step to current one
+    for i in indPrev:indCurr
+        try
+            idx = (1:nT) .+ nT * (i-1)
+            Rotor_Speed = WindVel.WSE.rotorSpeed[idx, 3]
+        catch
+            println("Failed to get Wind Speed")
+            # Optionally break or continue, depending on the desired error handling
+        end
+        Blade_pitch = WindVel.WSE.bladePitch[idx, 3]
+        Gen_Torque  = WindVel.WSE.genTorque[idx, 3]
+
+        yaw = deg2rad.(WindDir .- WindVel.WSE.nacelleYaw[idx, 3])
+
+        # Run estimator (assumes WindSpeedEstimatorIandI_FLORIDyn is implemented elsewhere)
+        V_out, WindVel.WSE = WindSpeedEstimatorIandI_FLORIDyn(
+            WindVel.WSE, Rotor_Speed, Blade_pitch, Gen_Torque, yaw, p_p
+        )
+    end
+
+    # Update previous time
+    WindVel.TimePrev = indCurr * WindVel.WSE.dt_SOWF + WindVel.StartTime
+
+    if (SimTime - WindVel.StartTime) > WindVel.WSE.Offset
+        U = WindVel.WSE.V[iT]
+    else
+        U = WindVel.WSE.Vinit[iT]
+    end
+
+    return U, WindVel
+end
+
+
 
 
