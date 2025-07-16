@@ -16,7 +16,7 @@ export Velocity_InterpTurbine, Velocity_InterpTurbine_wErrorCov, Velocity_RW_wit
 export Velocity_ZOH_wErrorCov
 
 export WindDirType, WindDirMatrix, WindDirTriple
-export WindVelType
+export WindVelType, WindVelMatrix
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
@@ -85,6 +85,18 @@ end
 struct WindDirMatrix
     Data::Matrix{Float64}      # Nx2 matrix: column 1 = time, column 2 = phi
     CholSig::Matrix{Float64}   # Cholesky factor of covariance matrix (nT x nT)
+end
+
+"""
+    struct WindVelMatrix
+
+# Fields
+- Data::Matrix{Float64}:    Nx2 matrix: column 1 = time, column 2 = wind speed
+- CholSig::Matrix{Float64}: Cholesky factor of covariance matrix (nT x nT)
+"""
+struct WindVelMatrix
+    Data::Matrix{Float64}
+    CholSig::Matrix{Float64}
 end
 
 """
