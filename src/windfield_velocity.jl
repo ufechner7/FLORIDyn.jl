@@ -284,5 +284,39 @@ function getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatri
 
     return Vel
 end
+"""
+    getWindSpeedT(::Velocity_InterpTurbine, WindVel::Matrix{Float64}, iT, t::Float64)
+
+Returns the wind speed at the specific turbine(s) and time.
+The values are interpolated linearly between the set points.
+
+# Arguments
+- `::Velocity_InterpTurbine`: Marker for velocity interpolation at the turbine.
+- `WindVel::Matrix{Float64}`: Matrix where each row is time, U_T0, U_T1, ... U_Tn.
+- `iT`: Index of the turbine for which the wind speed is requested.
+- `t::Float64`: Time at which the wind speed is to be interpolated.
+
+# Returns
+- The interpolated wind speed at the specified turbine(s) and time as a `Float64`.
+"""
+function getWindSpeedT(::Velocity_InterpTurbine, WindVel::Matrix{Float64}, iT, t::Float64)
+    times = WindVel[:, 1]
+    wind_data = WindVel[:, 2:end]
+
+    if t < times[1]
+        @warn "The time $t is out of bounds, using $(times[1]) instead."
+        t = times[1]
+    elseif t > times[end]
+        @warn "The time $t is out of bounds, using $(times[end]) instead."
+        t = times[end]
+    end
+
+    # Interpolate specific turbine column
+    turbine_data = wind_data[:, iT]
+    itp = interpolate((times,), turbine_data, Gridded(Linear()))
+    return itp(t)
+end
+
+
 
 

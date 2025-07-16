@@ -47,6 +47,8 @@ using Logging
         # Set fixed random seed for consistent results
         Random.seed!(1234)
 
+        vel_mode = Velocity_Constant_wErrorCov()
+
         # Test 1: Single turbine, zero covariance → should return constant mean
         CholZero = zeros(1, 1)
         wind = WindVelType(10.0, CholZero)
@@ -85,27 +87,27 @@ using Logging
 
     @testset "getWindSpeedT_EnKF(Velocity_EnKF_InterpTurbine(), ...)" begin
 
-        let model = Velocity_EnKF_InterpTurbine()
+        let vel_mode = Velocity_EnKF_InterpTurbine()
 
             @testset "Exact time matches" begin
-                @test getWS(model, WindVel, 1, 0.0) ≈ 6.0
-                @test getWS(model, WindVel, 2, 10.0) ≈ 18.0
+                @test getWS(vel_mode, WindVel, 1, 0.0) ≈ 6.0
+                @test getWS(vel_mode, WindVel, 2, 10.0) ≈ 18.0
             end
 
             @testset "Interpolated values at midpoints" begin
-                @test getWS(model, WindVel, 1, 2.5) ≈ 8.0  # halfway between 6.0 and 10.0
-                @test getWS(model, WindVel, 2, 7.5) ≈ 15.0 # halfway between 12.0 and 18.0
+                @test getWS(vel_mode, WindVel, 1, 2.5) ≈ 8.0  # halfway between 6.0 and 10.0
+                @test getWS(vel_mode, WindVel, 2, 7.5) ≈ 15.0 # halfway between 12.0 and 18.0
             end
 
             @testset "Multiple turbine indices" begin
-                result = getWS(model, WindVel, [1, 2], 2.5)
+                result = getWS(vel_mode, WindVel, [1, 2], 2.5)
                 @test result ≈ [8.0, 10.0]
             end
 
             @testset "Out-of-bounds: before first timestamp" begin
                 buff = IOBuffer()
                 with_logger(ConsoleLogger(buff)) do
-                    result = getWS(model, WindVel, 1, -3.0)
+                    result = getWS(vel_mode, WindVel, 1, -3.0)
                     @test result ≈ 6.0  # clamped to t = 0.0
                 end
                 seekstart(buff)
@@ -116,7 +118,7 @@ using Logging
             @testset "Out-of-bounds: after last timestamp" begin
                 logbuffer = IOBuffer()
                 with_logger(ConsoleLogger(logbuffer)) do
-                    result = getWS(model, WindVel, 2, 15.0)
+                    result = getWS(vel_mode, WindVel, 2, 15.0)
                     @test result ≈ 18.0  # clamped to t = 10.0
                 end
                 seekstart(logbuffer)
@@ -124,6 +126,49 @@ using Logging
                 @test occursin("out of bounds", logs)
             end
 
+        end
+    end
+    @testset "getWindSpeedT Tests" begin
+        vel_mode = Velocity_InterpTurbine()
+        
+        # Sample data: each row is [time, turbine_1_speed, turbine_2_speed]
+        WindVel = [
+            0.0  5.0  6.0;
+            1.0  7.0  8.0;
+            2.0  9.0 10.0
+        ]
+
+        @testset "Midpoint interpolation" begin
+            # At time 0.5 → linear interpolation between times 0.0 and 1.0
+            result = getWindSpeedT(vel_mode, WindVel, 1, 0.5)
+            @test isapprox(result, 6.0, atol=1e-8)
+            
+            result2 = getWindSpeedT(vel_mode, WindVel, 2, 0.5)
+            @test isapprox(result2, 7.0, atol=1e-8)
+        end
+
+        @testset "Exact match on time points" begin
+            @test getWindSpeedT(vel_mode, WindVel, 1, 0.0) == 5.0
+            @test getWindSpeedT(vel_mode, WindVel, 2, 1.0) == 8.0
+            @test getWindSpeedT(vel_mode, WindVel, 1, 2.0) == 9.0
+        end
+
+        @testset "Time before start (clamp lower bound)" begin
+            result = getWindSpeedT(vel_mode, WindVel, 1, -1.0)
+            @test result == 5.0
+        end
+
+        @testset "Time after end (clamp upper bound)" begin
+            result = getWindSpeedT(vel_mode, WindVel, 2, 5.0)
+            @test result == 10.0
+        end
+
+        @testset "Multiple index types" begin
+            t = 1.5
+            expected = [8.0, 9.0]
+            for (i, expect) in enumerate(expected)
+                @test isapprox(getWindSpeedT(vel_mode, WindVel, i, t), expect, atol=1e-8)
+            end
         end
     end
 

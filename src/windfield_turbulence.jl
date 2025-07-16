@@ -25,11 +25,11 @@ end
 # %   requires a .csv in the simulation folder called WindTITurbine.csv
 # %   where each row is a
 # %       time, TI_T0, TI_T1, ... TI_Tn
-# %   setpoint in time. The values are interploated linearly between the
+# %   setpoint in time. The values are interpolated linearly between the
 # %   setpoints.
 # % ======= Input ======
 # % WindTi    = (t,TI_T0, TI_T1, ... TI_Tn)
-# % iT        = Index/Indeces of the turbines
+# % iT        = Index/Indices of the turbines
 # % t         = time of request
 # % ======================================================================= %
 
