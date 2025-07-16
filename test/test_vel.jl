@@ -127,4 +127,33 @@ using Logging
         end
     end
 
+    @testset "getWindSpeedT(Velocity_Interpolation(), ...)" begin
+        # Example wind data (time, wind_speed)
+        WindVel = [0.0 5.0; 10.0 10.0; 20.0 15.0]
+        interp = Velocity_Interpolation()
+
+        # Test 1: Exact time match
+        @test getWindSpeedT(interp, WindVel, [1], 10.0) == [10.0]
+
+        # Test 2: Interpolation between 10.0 and 20.0 (expected 12.5 => speed = 11.25)
+        result = getWindSpeedT(interp, WindVel, [1,2,3], 12.5)
+        @test all(x -> isapprox(x, 11.25, atol=1e-6), result)
+
+        # Test 3: Lower bound clamp
+        result_low = getWindSpeedT(interp, WindVel, [1,2], -5.0)
+        @test result_low == [5.0, 5.0]
+
+        # Test 4: Upper bound clamp
+        result_high = getWindSpeedT(interp, WindVel, [1], 30.0)
+        @test result_high == [15.0]
+
+        # Test 5: Empty turbine index list
+        result_empty = getWindSpeedT(interp, WindVel, Int[], 10.0)
+        @test result_empty == []
+
+        # Test 6: Single turbine index
+        result_single = getWindSpeedT(interp, WindVel, [42], 15.0)
+        @test result_single == [12.5]
+    end
+
 end

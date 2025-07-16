@@ -202,6 +202,39 @@ function getWindSpeedT(WindVel, iT, SimTime, WindDir, p_p)
     return U, WindVel
 end
 
+"""
+    getWindSpeedT(::Velocity_Interpolation, WindVel::Matrix{Float64}, iT, t::Float64)
+
+Interpolates the wind speed at a given time `t` using the provided wind velocity matrix `WindVel`.
+Uniform interpolation - all turbines experience the same changes.
+
+# Arguments
+- `::Velocity_Interpolation`: Specifies the interpolation strategy to use.
+- `WindVel::Matrix{Float64}`: A 2-column matrix: [time, wind_speed].
+- `iT`: A single index or array of turbine indices.
+- `t::Float64`: The requested time at which to interpolate the wind speed.
+
+# Returns
+- Interpolated wind speed at the respective turbine(s).
+"""
+function getWindSpeedT(::Velocity_Interpolation, WindVel::Matrix{Float64}, iT, t::Float64)
+    times = WindVel[:, 1]
+    speeds = WindVel[:, 2]
+
+    if t < times[1]
+        @warn "The time $t is out of bounds, will use $(times[1]) instead."
+        t = times[1]
+    elseif t > times[end]
+        @warn "The time $t is out of bounds, will use $(times[end]) instead."
+        t = times[end]
+    end
+
+    itp = LinearInterpolation(times, speeds, extrapolation_bc=Flat())
+    u = itp(t)
+
+    # Return a vector of wind speeds, one for each turbine index
+    return fill(u, length(iT))
+end
 
 
 
