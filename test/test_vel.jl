@@ -273,7 +273,7 @@ using Logging
 
         #####################################################################
         # @testset "Clamping t below and above range" begin
-        #     WindVel = (; Data, CholSig=CholSig_zero)
+        #     WindVel = WindVelMatrix(Data, CholSig_zero)
 
         #     # Below range
         #     vel_lo = getWindSpeedT(vel_mode, WindVel, [1], -5.0)
@@ -286,7 +286,7 @@ using Logging
 
         #####################################################################
         # @testset "Noise is applied when CholSig is identity" begin
-        #     WindVel = (; Data, CholSig=CholSig_identity)
+        #     WindVel = WindVelMatrix(Data, CholSig_identity)
 
         #     t_test = 10.0
         #     iT = [1, 2]
@@ -304,7 +304,7 @@ using Logging
 
         #####################################################################
         # @testset "Single index access works" begin
-        #     WindVel = (; Data, CholSig=CholSig_zero)
+        #     WindVel = WindVelMatrix(Data, CholSig_zero)
         #     t_test = 10.0
         #     vel = getWindSpeedT(vel_mode, WindVel, 1, t_test)
         #     @test isapprox(vel[1], 10.0)
