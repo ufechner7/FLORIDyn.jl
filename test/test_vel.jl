@@ -243,5 +243,84 @@ using Logging
         # @test length(vel_scalar) == 1
         # @test isapprox(vel_scalar[1], 10.0; atol=3.0)
     end
+    @testset "getWindSpeedT(Velocity_InterpTurbine_wErrorCov(), ...)" begin
+        vel_mode = Velocity_InterpTurbine_wErrorCov()
+        
+        # Fixed Random Seed
+        RNG = MersenneTwister(1234)
+
+        # Define mock data: times = [0.0, 10.0, 20.0], wind speed at 2 turbines
+        Data = [
+            0.0   5.0  6.0;
+            10.0 10.0 12.0;
+            20.0 15.0 18.0
+        ]
+        
+        # Cholesky factor: Identity matrix for no coupling, deterministic noise
+        CholSig_zero = zeros(2,2)
+        CholSig_identity = Matrix{Float64}(I, 2, 2)
+
+        #####################################################################
+        @testset "Interpolation without noise" begin
+            WindVel = WindVelMatrix(Data, CholSig_zero)
+            t_test = 5.0
+            iT = [1, 2]
+
+            vel = getWindSpeedT(vel_mode, WindVel, iT, t_test)
+            expected = [7.5, 9.0]  # Linear interpolation at t=5.0
+            @test isapprox(vel, expected, atol=1e-10)
+        end
+
+        #####################################################################
+        # @testset "Clamping t below and above range" begin
+        #     WindVel = (; Data, CholSig=CholSig_zero)
+
+        #     # Below range
+        #     vel_lo = getWindSpeedT(vel_mode, WindVel, [1], -5.0)
+        #     @test isapprox(vel_lo[1], 5.0)
+
+        #     # Above range
+        #     vel_hi = getWindSpeedT(vel_mode, WindVel, [2], 30.0)
+        #     @test isapprox(vel_hi[1], 18.0)
+        # end
+
+        #####################################################################
+        # @testset "Noise is applied when CholSig is identity" begin
+        #     WindVel = (; Data, CholSig=CholSig_identity)
+
+        #     t_test = 10.0
+        #     iT = [1, 2]
+
+        #     # Use fixed seed so we can predict noise
+        #     Random.seed!(RNG)
+        #     vel1 = getWindSpeedT(vel_mode, WindVel, iT, t_test)
+
+        #     Random.seed!(RNG)  # Reset RNG to get same result
+        #     vel2 = getWindSpeedT(vel_mode, WindVel, iT, t_test)
+
+        #     @test vel1 == vel2        # Result is repeatable with fixed RNG
+        #     @test vel1 != [10.0, 12.0]  # Should differ from ground truth due to added noise
+        # end
+
+        #####################################################################
+        # @testset "Single index access works" begin
+        #     WindVel = (; Data, CholSig=CholSig_zero)
+        #     t_test = 10.0
+        #     vel = getWindSpeedT(vel_mode, WindVel, 1, t_test)
+        #     @test isapprox(vel[1], 10.0)
+        # end
+
+        #####################################################################
+        @testset "Interpolation at exact time point" begin
+            WindVel = WindVelMatrix(Data, CholSig_zero)
+
+            vel = getWindSpeedT(vel_mode, WindVel, [1,2], 0.0)
+            @test isequal(vel, [5.0, 6.0])
+
+            vel2 = getWindSpeedT(vel_mode, WindVel, [1,2], 20.0)
+            @test isequal(vel2, [15.0, 18.0])
+        end
+        
+    end
 
 end

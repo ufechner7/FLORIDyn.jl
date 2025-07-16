@@ -317,6 +317,48 @@ function getWindSpeedT(::Velocity_InterpTurbine, WindVel::Matrix{Float64}, iT, t
     return itp(t)
 end
 
+"""
+    getWindSpeedT(::Velocity_InterpTurbine_wErrorCov, WindVel::WindVelMatrix, iT, t)
+
+Returns the wind speed at the specified turbine(s) and time `t`,
+including noise based on the covariance structure given in WindVel.
+
+- WindVel::WindVelMatrix: see [WindVelMatrix](@ref)
+- iT: index or vector of indices of turbines
+- t: time at which to query wind speed
+
+Returns: Vector of wind speeds (with covariance noise) for iT at time t.
+"""
+function getWindSpeedT(::Velocity_InterpTurbine_wErrorCov, WindVel::WindVelMatrix, iT, t)
+    times = WindVel.Data[:,1]
+    speeds = WindVel.Data[:,2:end]
+
+    # Bounds check (clamp t)
+    t_min = times[1]
+    t_max = times[end]
+    if t < t_min
+        @warn "The time $t is out of bounds, will use $t_min instead."
+        t = t_min
+    elseif t > t_max
+        @warn "The time $t is out of bounds, will use $t_max instead."
+        t = t_max
+    end
+
+    # Create individual interpolants for each turbine column
+    n_turbines = size(speeds, 2)
+    interpolants = [interpolate((times,), speeds[:, i], Gridded(Linear())) for i in 1:n_turbines]
+
+    # Evaluate all turbines at time `t`
+    wind_vel_out = [itp(t) for itp in interpolants]
+
+    vel = wind_vel_out[iT]               # select turbine(s) of interest
+
+    # Add random error with given covariance (via Cholesky factor)
+    # Simulate a noise vector (randn) multiplied by Cholesky factor
+    noise = (WindVel.CholSig * randn(length(vel)))
+    vel_noisy = vel + noise
+    return vel_noisy
+end
 
 
 
