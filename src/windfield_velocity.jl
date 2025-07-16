@@ -236,5 +236,53 @@ function getWindSpeedT(::Velocity_Interpolation, WindVel::Matrix{Float64}, iT, t
     return fill(u, length(iT))
 end
 
+"""
+    getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatrix, iT::Union{Int, AbstractVector{<:Int}}, 
+                  t::Float64)
+
+Compute the wind speed at a given time `t` for the specified indices `iT` using the provided wind velocity data 
+`WindVel` and a velocity interpolation method with error covariance. 
+Applies the same interpolated value across requested turbine indices.
+Adds random noise from a given Cholesky decomposition matrix.
+
+# Arguments
+- `::Velocity_Interpolation_wErrorCov`: The interpolation method that includes error covariance handling.
+- `WindVel::WindVelMatrix`: See: [WindVelMatrix](@ref)
+- `iT::Union{Int, AbstractVector{<:Int}}`: Index or indices specifying which wind speed(s) to retrieve.
+- `t::Float64`: The time at which to interpolate the wind speed.
+
+# Returns
+- The interpolated wind speed(s) at time `t` for the specified indices.
+"""
+function getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatrix, 
+                       iT::Union{Int, AbstractVector{<:Int}}, t::Float64)
+    times = WindVel.Data[:, 1]
+    speeds = WindVel.Data[:, 2]
+
+    # Clamp time within data bounds
+    if t < times[1]
+        @warn "The time $t is out of bounds, using $(times[1]) instead."
+        t_clamped = times[1]
+    elseif t > times[end]
+        @warn "The time $t is out of bounds, using $(times[end]) instead."
+        t_clamped = times[end]
+    else
+        t_clamped = t
+    end
+
+    # Perform interpolation
+    u = LinearInterpolation(times, speeds, extrapolation_bc=Flat())(t_clamped)
+
+    # Initialize velocities
+    n = length(iT)
+    Vel = fill(u, n)
+
+    # Add randomness using Cholesky
+    # noise = (randn(1, n) * WindVel.CholSig)'  # Ensure column vector
+    noise = (randn(RNG,1, n) * WindVel.CholSig)'
+    Vel .= Vel .+ noise
+
+    return Vel
+end
 
 

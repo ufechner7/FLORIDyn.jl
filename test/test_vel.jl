@@ -156,4 +156,47 @@ using Logging
         @test result_single == [12.5]
     end
 
+    @testset "getWindSpeedT(Velocity_Interpolation_wErrorCov(), ...)" begin
+        Random.seed!(42)  # Ensure reproducibility
+        
+        # Simple linear data: speed = 5 at t=0, speed = 15 at t=10
+        times = [0.0, 10.0]
+        speeds = [5.0, 15.0]
+        data = hcat(times, speeds)
+
+        # Simple 2x2 identity Cholesky: noise still generated but uncorrelated
+        chol = cholesky(Matrix(1.0I, 2, 2)).L
+
+        wind = WindVelMatrix(data, chol)
+        method = Velocity_Interpolation_wErrorCov()
+
+        # Test 1: Midpoint interpolation
+        iT = [1, 2]
+        t = 5.0
+        vel = getWindSpeedT(method, wind, iT, t)
+        @test length(vel) == length(iT)
+        @test isapprox(mean(vel), 10.0; atol=3.0)  # Within noise bounds
+
+        # Test 2: Out-of-bounds time (before)
+        t2 = -5.0
+        vel2 = getWindSpeedT(method, wind, iT, t2)
+        @test isapprox(mean(vel2), 5.0; atol=3.0)
+
+        # Test 3: Out-of-bounds time (after)
+        t3 = 20.0
+        vel3 = getWindSpeedT(method, wind, iT, t3)
+        @test isapprox(mean(vel3), 15.0; atol=3.0)
+
+        # Test 4: Check that returned values differ (confirming noise)
+        vels = [getWindSpeedT(method, wind, iT, 5.0) for _ in 1:10]
+        means = [mean(v) for v in vels]
+        @test std(means) > 0.0  # Some variability due to random noise
+
+        # # Test 5: Single turbine (scalar iT input)
+        # iT_scalar = 1
+        # vel_scalar = getWindSpeedT(method, wind, iT_scalar, 5.0)
+        # @test length(vel_scalar) == 1
+        # @test isapprox(vel_scalar[1], 10.0; atol=3.0)
+    end
+
 end
