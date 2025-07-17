@@ -323,6 +323,7 @@ end
 Returns the wind speed at the specified turbine(s) and time `t`,
 including noise based on the covariance structure given in WindVel.
 
+- ::Velocity_InterpTurbine_wErrorCov: Model type indicating interpolation with covariance.
 - WindVel::WindVelMatrix: see [WindVelMatrix](@ref)
 - iT: index or vector of indices of turbines
 - t: time at which to query wind speed
@@ -359,6 +360,52 @@ function getWindSpeedT(::Velocity_InterpTurbine_wErrorCov, WindVel::WindVelMatri
     vel_noisy = vel + noise
     return vel_noisy
 end
+
+# The following code cannot work, because the original Matlab function is not well defined.
+#
+# """
+#     getWindSpeedT(::Velocity_RW_with_Mean, WindVelNow, WindVel::WindVelInitType)
+
+# Calculates the wind speed at a given time step using a velocity model that includes both random walk and mean wind components.
+
+# # Arguments
+# - `::Velocity_RW_with_Mean`: The wind velocity model type indicating the use of random walk with mean wind.
+# - `WindVelNow::WindVelInitType`: Initial wind velocity and covariance.
+# - `WindVel`: The current wind velocity.
+
+# # Returns
+# - The computed wind speed at the current time step.
+# """
+# function getWindSpeedT(::Velocity_RW_with_Mean, WindVelNow::WindVelInitType, WindVel)
+#     weightedRandN = randn(length(WindVelNow))
+#     Vel = WindVelNow .+ (WindVel.CholSig' * weightedRandN) .+ WindVel.MeanPull .* (WindVel.Init .- WindVelNow)
+# end
+
+"""
+    getWindSpeedT(::Velocity_ZOH_wErrorCov, Vel::Vector{Float64}, WindVelCholSig::Matrix{Float64})
+
+Computes the wind speed at a given time step using the zero-order hold (ZOH) method with error covariance.
+
+# Arguments
+- `::Velocity_ZOH_wErrorCov`: Type indicator for dispatch, representing the ZOH method with error covariance.
+- `Vel::Vector{Float64}`: The velocity at the previous time step.
+- `WindVelCholSig::Matrix{Float64}`: The Cholesky factor of the wind velocity error covariance matrix.
+
+# Returns
+- `wind_speed::Vector{Float64}`: The computed wind speed vector at the current time step.
+"""
+function getWindSpeedT(:: Velocity_ZOH_wErrorCov, Vel::Vector{Float64}, WindVelCholSig::Matrix{Float64})
+    # Generate standard normal random vector of same length as Vel
+    noise = randn(length(Vel))
+
+    # Multiply by Cholesky factor to induce correlation
+    correlated_noise = WindVelCholSig * noise
+
+    # Add the correlated noise to Vel
+    Vel .+= correlated_noise
+end
+
+
 
 
 
