@@ -10,3 +10,6 @@ wind, sim, con = setup("data/2021_9T_Data.yaml")
 # create settings struct
 set = Settings(wind)
 
+sim.dyn.op_iteration
+# addpath(['FLORIDynCL/' Sim.Dyn.OPiteration]);
+
