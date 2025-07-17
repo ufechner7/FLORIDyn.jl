@@ -23,6 +23,8 @@ export getWindShearT
 export getWindTiT, getWindTiT_EnKF
 export getWindSpeedT, getWindSpeedT_EnKF
 
+export discretizeRotor
+
 # global variables
 RNG::AbstractRNG = Random.default_rng()
 function set_rng(rng)
@@ -120,5 +122,7 @@ include("windfield/windfield_direction.jl")
 include("windfield/windfield_shear.jl")
 include("windfield/windfield_turbulence.jl")
 include("windfield/windfield_velocity.jl")
+
+include("floris/discretization.jl")
 
 end

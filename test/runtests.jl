@@ -47,3 +47,4 @@ FLORIDyn.set_rng(rng)
     include("test_tit.jl")
     include("test_vel.jl")
 end
+include("test_floris.jl")

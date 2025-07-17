@@ -277,8 +277,8 @@ using Interpolations
 
             times = WindVel.Data[:,1]
             speeds = WindVel.Data[:,2:end]
-            println("times:  ", times)
-            println("speeds: ", speeds)
+            # println("times:  ", times)
+            # println("speeds: ", speeds)
 
             # Bounds check (clamp t)
             t_min = times[1]
@@ -296,7 +296,7 @@ using Interpolations
             n_turbines = size(speeds, 2)
             interpolants = [interpolate((times,), speeds[:, i], Gridded(Linear())) for i in 1:n_turbines]
             wind_vel_out = [itp(t) for itp in interpolants]
-            println("wind_vel_out: ", wind_vel_out)
+            # println("wind_vel_out: ", wind_vel_out)
 
             vel = wind_vel_out[iT]
             # noise = (WindVel.CholSig * randn(FLORIDyn.RNG, length(vel)))
