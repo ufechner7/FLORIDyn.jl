@@ -4,7 +4,8 @@
 
 using FLORIDyn, YAML
 
-YAML.load_file("data/2021_9T_Data.yaml")
+# get the settings for the wind field
+wind = setup("data/2021_9T_Data.yaml")
 
-# Get the settings for the wind field, visualization, controller and Sim.
+# get the settings for the wind field, visualization, controller and Sim.
 # Wind, Vis, Sim, Con = setup("2021_9T_Data")

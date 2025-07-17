@@ -3,9 +3,9 @@
 
 module FLORIDyn
 
-using Interpolations, LinearAlgebra, Random
+using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters
 
-export addPaths
+export setup
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
@@ -119,24 +119,7 @@ struct WindDirTriple
     MeanPull::Float64          # Scalar mean reversion factor
 end
 
-function addPaths()
-    # %disp(['Current folder:' pwd])
-    @info "Current folder: $(pwd())"
-    # % Add basic paths
-    # addpath(genpath(['.' filesep 'Visualization']));
-    # addpath(['.' filesep 'FLORIDynCL']);
-    # addpath(['.' filesep 'Data' filesep 'TurbineData']);
-    # addpath(['.' filesep 'Data' filesep 'StoreData']);
-    # addpath(['.' filesep 'Correction' filesep 'Functions'])
-    # addpath(['.' filesep 'EnsembleKalmanFilter'])
-    # addpath(['.' filesep 'ClosedLoopControl'])
-    # addpath(['.' filesep 'Correction' filesep 'GetData'])
-
-    # % Load simulation folder
-    # addpath(genpath(['.' filesep 'Simulations' filesep pathToSimulation]));
-    # rmpath(genpath(['.' filesep 'Simulations' filesep pathToSimulation filesep 'Results']))
-end
-
+include("settings.jl")
 # functions for calculating the wind field
 include("windfield/windfield_direction.jl")
 include("windfield/windfield_shear.jl")
