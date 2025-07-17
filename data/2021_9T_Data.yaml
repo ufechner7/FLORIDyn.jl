@@ -14,4 +14,31 @@ wind:
     dir_sigma: 0.5
     ti: 0
     ti_sigma: 0.005
-    
+
+sim:
+  floris: gaussian
+  start_time: 20000
+  end_time: 21200
+  time_step: 4
+  rotor_discret: isocell
+  rotor_points: 50
+  dyn:
+    advection: 1
+    advection_mod: linear
+    op_iteration: iterate_ops_basic
+    op_iter_weights: [0.7, 0.3]
+    vel:
+      iter_sigma_dw: 256
+      iter_sigma_cw: 256
+      iter_sigma_time: 50
+    dir:
+      iter_sigma_dw: 512
+      iter_sigma_cw: 512
+      iter_sigma_time: 50
+  init: noinit
+  save_init_state: false
+  save_final_state: false
+  
+
+
+
