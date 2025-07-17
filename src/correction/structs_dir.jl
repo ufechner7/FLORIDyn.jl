@@ -1,0 +1,4 @@
+struct Direction_All end
+struct Direction_Influence end
+struct Direction_None end
+struct Direction_wGaspariAndCohn end

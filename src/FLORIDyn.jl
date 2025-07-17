@@ -45,6 +45,7 @@ include("windfield/structs_dir.jl")
 include("windfield/structs_shear.jl")
 include("windfield/structs_turb.jl")
 include("windfield/structs_vel.jl")
+include("correction/structs_dir.jl")
 
 """
     WindShear
@@ -134,5 +135,7 @@ include("windfield/windfield_velocity.jl")
 
 include("floris/discretization.jl")
 include("floris/gaussian.jl")
+
+include("correction/direction.jl")
 
 end

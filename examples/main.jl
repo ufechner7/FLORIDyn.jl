@@ -13,9 +13,6 @@ wind, sim, con = setup("data/2021_9T_Data.yaml")
     dir_mode = str2type("Direction_" * wind.input_dir)
     turb_mode = str2type("TI_" * wind.input_ti)
     shear_mode = str2type("Shear_" * wind.input_shear)
-    # addpath(['WindField/Shear_' Wind.Input_Shr]);
-    # addpath(['FLORIS/Discretization/' Sim.RotorDiscret]);
-    # addpath(['Controller/Yaw_' Con.Yaw]);
     # addpath(['Correction/Direction_' Wind.Correction.Dir]);
     # addpath(['Correction/Velocity_' Wind.Correction.Vel]);
     # addpath(['Correction/TI_' Wind.Correction.TI]);
