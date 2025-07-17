@@ -5,6 +5,8 @@ module FLORIDyn
 
 using Interpolations, LinearAlgebra, Random
 
+export addPaths
+
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
 export Direction_RW_with_Mean
@@ -115,6 +117,24 @@ struct WindDirTriple
     Init::Vector{Float64}      # Mean direction (vector or scalar)
     CholSig::Matrix{Float64}   # Cholesky factor of covariance matrix (nT x nT)
     MeanPull::Float64          # Scalar mean reversion factor
+end
+
+function addPaths()
+    # %disp(['Current folder:' pwd])
+    @info "Current folder: $(pwd())"
+    # % Add basic paths
+    # addpath(genpath(['.' filesep 'Visualization']));
+    # addpath(['.' filesep 'FLORIDynCL']);
+    # addpath(['.' filesep 'Data' filesep 'TurbineData']);
+    # addpath(['.' filesep 'Data' filesep 'StoreData']);
+    # addpath(['.' filesep 'Correction' filesep 'Functions'])
+    # addpath(['.' filesep 'EnsembleKalmanFilter'])
+    # addpath(['.' filesep 'ClosedLoopControl'])
+    # addpath(['.' filesep 'Correction' filesep 'GetData'])
+
+    # % Load simulation folder
+    # addpath(genpath(['.' filesep 'Simulations' filesep pathToSimulation]));
+    # rmpath(genpath(['.' filesep 'Simulations' filesep pathToSimulation filesep 'Results']))
 end
 
 # functions for calculating the wind field
