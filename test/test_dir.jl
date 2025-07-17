@@ -123,43 +123,42 @@ Random.seed!(1234)
         @test phi ≈ 22.5
     end
 
-    ##############################################
+    @testset "getWindDirT(Direction_InterpTurbine_wErrorCov(), ...)" begin
 
-    dir_mode = Direction_InterpTurbine_wErrorCov()
-    
-    # Example wind direction data (time, phi)
-    wind_data = [
-        0.0  10.0;
-        5.0  20.0;
-        10.0 30.0
-    ]
+        dir_mode = Direction_InterpTurbine_wErrorCov()
+        
+        # Example wind direction data (time, phi)
+        wind_data = [
+            0.0  10.0;
+            5.0  20.0;
+            10.0 30.0
+        ]
 
-    # Example Cholesky factor (for 2 turbines)
-    chol_sig = cholesky([1.0 0.5; 0.5 1.0]).L
+        # Example Cholesky factor (for 2 turbines)
+        chol_sig = cholesky([1.0 0.5; 0.5 1.0]).L
 
-    # Create WindDir instance
-    WindDir = WindDirMatrix(wind_data, chol_sig)
+        # Create WindDir instance
+        WindDir = WindDirMatrix(wind_data, chol_sig)
 
-    # Example time series: 0, 10, 20 seconds
-    times = [0.0, 10.0, 20.0]
-    # Example wind directions for 2 turbines at each time
-    phi_T0 = [350.0, 355.0, 360.0]
-    phi_T1 = [10.0, 15.0, 20.0]
-    # Combine into Data matrix: each row is [time, phi_T0, phi_T1]
-    Data = hcat(times, phi_T0, phi_T1)
+        # Example time series: 0, 10, 20 seconds
+        times = [0.0, 10.0, 20.0]
+        # Example wind directions for 2 turbines at each time
+        phi_T0 = [350.0, 355.0, 360.0]
+        phi_T1 = [10.0, 15.0, 20.0]
+        # Combine into Data matrix: each row is [time, phi_T0, phi_T1]
+        Data = hcat(times, phi_T0, phi_T1)
 
-    # Example covariance matrix and its Cholesky factor
-    cov = [1.0 0.5; 0.5 1.0]
-    CholSig = cholesky(cov).L
+        # Example covariance matrix and its Cholesky factor
+        cov = [1.0 0.5; 0.5 1.0]
+        CholSig = cholesky(cov).L
 
-    # Create WindDir struct
-    WindDir = WindDirMatrix(Data, CholSig)
-    phi = getWindDirT(dir_mode, WindDir, 1, 12.5)
+        # Create WindDir struct
+        WindDir = WindDirMatrix(Data, CholSig)
+        phi = getWindDirT(dir_mode, WindDir, 1, 12.5)
 
-    @test length(phi) == 1
-    @test phi[1] ≈ 355.84437113031197
-
-    ##############################################
+        @test length(phi) == 1
+        @test phi[1] ≈ 355.84437113031197
+    end
 
     dir_mode = Direction_RW_with_Mean()
 
