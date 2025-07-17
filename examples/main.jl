@@ -15,6 +15,5 @@ wind, sim, con = setup("data/2021_9T_Data.yaml")
     shear_mode = str2type("Shear_" * wind.input_shear)
     cor_dir_mode = str2type("Direction_" * wind.correction.dir)
     cor_vel_mode = str2type("Velocity_" * wind.correction.vel)
-    # addpath(['Correction/Velocity_' Wind.Correction.Vel]);
     # addpath(['Correction/TI_' Wind.Correction.TI]);
 
