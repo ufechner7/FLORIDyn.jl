@@ -21,6 +21,7 @@ export WindDirType, WindDirMatrix, WindDirTriple
 export WindVelType, WindVelMatrix
 
 export Direction_All, Direction_Influence, Direction_None, Direction_wGaspariAndCohn
+export Velocity_Influence, Velocity_None, Velocity_wGaspariAndCohn
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
@@ -48,6 +49,7 @@ include("windfield/structs_shear.jl")
 include("windfield/structs_turb.jl")
 include("windfield/structs_vel.jl")
 include("correction/structs_dir.jl")
+include("correction/structs_vel.jl")
 
 """
     WindShear
@@ -139,5 +141,6 @@ include("floris/discretization.jl")
 include("floris/gaussian.jl")
 
 include("correction/direction.jl")
+include("correction/velocity.jl")
 
 end
