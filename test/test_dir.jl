@@ -8,13 +8,15 @@ using Random
 
 Random.seed!(1234)
 
-@testset "wind dir       " begin
-    dir_mode = Direction_Constant()
-    WindDir = 270
-    iT = [1, 2, 3]
-    phi = getWindDirT(dir_mode, WindDir, iT, nothing)
-    for ph in phi
-        @test ph ≈ 270.0
+@testset verbose = true "wind dir                                                " begin
+    @testset "getWindDirT(Direction_Constant(), ...)" begin
+        dir_mode = Direction_Constant()
+        WindDir = 270.0
+        iT = [1, 2, 3]
+        phi = getWindDirT(dir_mode, WindDir, iT, nothing)
+        for ph in phi
+            @test ph ≈ 270.0
+        end
     end
 
     #########################################
