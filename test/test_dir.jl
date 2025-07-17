@@ -43,11 +43,11 @@ Random.seed!(1234)
         @test phi ≈ 11.0
     end
 
-    dir_mode = Direction_Interpolation()
-    phi = getWindDirT(dir_mode, WindDir, 1, 0.5)
-    @test phi[1] ≈ 11.0
-
-    ##############################################
+    @testset "getWindDirT_EnKF(Direction_Interpolation(), ...)" begin
+        dir_mode = Direction_Interpolation()
+        phi = getWindDirT(dir_mode, WindDir, 1, 0.5)
+        @test phi[1] ≈ 11.0
+    end
 
     # Example wind direction data: times in first column, turbines in next columns
     WindDir = [
