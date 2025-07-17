@@ -7,6 +7,7 @@ using LinearAlgebra
 using Statistics
 using Random
 using Logging
+using Interpolations
 
 @testset verbose=true "wind velocity  " begin
     @testset "getWindSpeedT(Velocity_Constant(), ...)" begin
@@ -271,17 +272,43 @@ using Logging
         end
 
         #####################################################################
-        # @testset "Clamping t below and above range" begin
-        #     WindVel = WindVelMatrix(Data, CholSig_zero)
+        @testset "Clamping t below and above range" begin
+            WindVel = WindVelMatrix(Data, CholSig_zero)
 
-        #     # Below range
-        #     vel_lo = getWindSpeedT(vel_mode, WindVel, [1], -5.0)
-        #     @test isapprox(vel_lo[1], 5.0)
+            times = WindVel.Data[:,1]
+            speeds = WindVel.Data[:,2:end]
+            println("times:  ", times)
+            println("speeds: ", speeds)
 
-        #     # Above range
-        #     vel_hi = getWindSpeedT(vel_mode, WindVel, [2], 30.0)
-        #     @test isapprox(vel_hi[1], 18.0)
-        # end
+            # Bounds check (clamp t)
+            t_min = times[1]
+            t_max = times[end]
+            t = -5
+            iT = [1]
+            if t < t_min
+                @warn "The time $t is out of bounds, will use $t_min instead."
+                t = t_min
+            elseif t > t_max
+                @warn "The time $t is out of bounds, will use $t_max instead."
+                t = t_max
+            end
+
+            n_turbines = size(speeds, 2)
+            interpolants = [interpolate((times,), speeds[:, i], Gridded(Linear())) for i in 1:n_turbines]
+            wind_vel_out = [itp(t) for itp in interpolants]
+            println("wind_vel_out: ", wind_vel_out)
+
+            vel = wind_vel_out[iT]
+            # noise = (WindVel.CholSig * randn(FLORIDyn.RNG, length(vel)))
+
+            # # Below range
+            # vel_lo = getWindSpeedT(vel_mode, WindVel, [1], -5.0)
+            # @test isapprox(vel_lo[1], 5.0)
+
+            # # Above range
+            # vel_hi = getWindSpeedT(vel_mode, WindVel, [2], 30.0)
+            # @test isapprox(vel_hi[1], 18.0)
+        end
 
         ####################################################################
         @testset "Noise is applied when CholSig is identity" begin
