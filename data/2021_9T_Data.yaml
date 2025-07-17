@@ -1,0 +1,17 @@
+wind:
+  input_vel: constant
+  input_dir: interpolation
+  input_ti: constant
+  input_shear: power_law
+  correction:
+    vel: none
+    dir: all
+    ti: none
+  pertubation:
+    vel: 0
+    vel_sigma: 0.2
+    dir: 0
+    dir_sigma: 0.5
+    ti: 0
+    ti_sigma: 0.005
+    
