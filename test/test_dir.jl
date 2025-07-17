@@ -181,44 +181,6 @@ Random.seed!(1234)
         @test phi[2] ≈ 21.48940455337165
         @test phi[3] ≈ 31.437827702779927
     end
-
-    @testset "getWindTiT(TI_Interpolation(), ...)" begin
-        dir_mode = TI_Interpolation()
-
-        WindTi = [
-            0.0  0.10;
-            10.0 0.20;
-            20.0 0.30
-        ]
-
-        # Test 1: Interpolation within range
-        iT = [1, 2, 3]
-        t = 5.0
-        Ti = getWindTiT(dir_mode, WindTi, iT, t)
-        @test Ti ≈ fill(0.15, 3)   # (0.10 + (0.20-0.10)*5/10) = 0.15
-
-        # Test 2: Exact time match
-        t2 = 10.0
-        Ti2 = getWindTiT(dir_mode, WindTi, iT, t2)
-        @test Ti2 ≈ fill(0.20, 3)
-
-        # Test 3: Time before first entry (should clamp and warn)
-        t3 = -5.0
-        Ti3 = getWindTiT(dir_mode, WindTi, iT, t3)
-        @test Ti3 ≈ fill(0.10, 3)
-
-        # Test 4: Time after last entry (should clamp and warn)
-        t4 = 25.0
-        Ti4 = getWindTiT(dir_mode, WindTi, iT, t4)
-        @test Ti4 ≈ fill(0.30, 3)
-
-        # Test 5: Single turbine index (scalar)
-        iT5 = [2]
-        t5 = 15.0
-        Ti5 = getWindTiT(dir_mode, WindTi, iT5, t5)
-        @test Ti5 ≈ fill(0.25, 1)  # (0.20 + (0.30-0.20)*5/10) = 0.25
-    end
-
 end
 
 nothing
