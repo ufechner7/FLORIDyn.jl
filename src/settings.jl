@@ -71,3 +71,15 @@ function setup(filename)
     wind, sim, con
 end
 
+function Settings(wind::Wind)
+    vel_mode = str2type("Velocity_" * wind.input_vel)
+    dir_mode = str2type("Direction_" * wind.input_dir)
+    turb_mode = str2type("TI_" * wind.input_ti)
+    shear_mode = str2type("Shear_" * wind.input_shear)
+    cor_dir_mode = str2type("Direction_" * wind.correction.dir)
+    cor_vel_mode = str2type("Velocity_" * wind.correction.vel)
+    cor_turb_mode = str2type("TI_" * wind.correction.ti)
+
+    Settings(vel_mode, dir_mode, turb_mode, shear_mode, cor_dir_mode, cor_vel_mode, cor_turb_mode)
+end
+
