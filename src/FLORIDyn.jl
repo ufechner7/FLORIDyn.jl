@@ -5,7 +5,7 @@ module FLORIDyn
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters
 
-export setup, str2type
+export setup, str2type, Settings
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
@@ -42,6 +42,16 @@ function str2type(name)
     typename = Symbol(name)
     t = getfield(Main, typename)
     instance = t()
+end
+
+struct Settings
+    vel_mode
+    dir_mode
+    turb_mode
+    shear_mode
+    cor_dir_mode
+    cor_vel_mode
+    cor_turb_mode
 end
 
 # marker structs
