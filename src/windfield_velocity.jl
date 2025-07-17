@@ -396,7 +396,7 @@ Computes the wind speed at a given time step using the zero-order hold (ZOH) met
 """
 function getWindSpeedT(:: Velocity_ZOH_wErrorCov, Vel::Vector{Float64}, WindVelCholSig::Matrix{Float64})
     # Generate standard normal random vector of same length as Vel
-    noise = randn(length(Vel))
+    noise = randn(RNG, length(Vel))
 
     # Multiply by Cholesky factor to induce correlation
     correlated_noise = WindVelCholSig * noise

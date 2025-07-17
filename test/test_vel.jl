@@ -45,7 +45,7 @@ using Logging
     end
     @testset "getWindSpeedT(Velocity_Constant_wErrorCov(), ...)" begin
         # Set fixed random seed for consistent results
-        Random.seed!(1234)
+        # Random.seed!(1234)
 
         vel_mode = Velocity_Constant_wErrorCov()
 
@@ -322,5 +322,38 @@ using Logging
         end
         
     end
+    @testset "getWindSpeedT(Velocity_ZOH_wErrorCov(), ...)" begin
+        @testset "getWindSpeedT basic behavior" begin
+            # Setup: make inputs deterministic for testing
+            Vel = [1.0, 2.0]
+            WindVelCholSig = Matrix{Float64}(I, 2, 2)  # identity => noise stays uncorrelated
+            
+            # Copy initial
+            Vel_copy = copy(Vel)
+            
+            # Test with deterministic random seed
+            FLORIDyn.set_rng(MersenneTwister(1234))
+            noise = randn(FLORIDyn.RNG, 2)
+            expected = Vel_copy .+ WindVelCholSig * noise
+            
+            # Call actual function with the same seed
+            FLORIDyn.set_rng(MersenneTwister(1234))
+            getWindSpeedT(Velocity_ZOH_wErrorCov(), Vel, WindVelCholSig)
+            @test isapprox(Vel, expected, atol=1e-10)
+        end
 
+        @testset "getWindSpeedT zero noise" begin
+            Vel = [3.0, -1.0, 7.0]
+            WindVelCholSig = zeros(3, 3)  # zero matrix, noise always zero
+            Vel_copy = copy(Vel)
+            getWindSpeedT(Velocity_ZOH_wErrorCov(), Vel, WindVelCholSig)
+            @test Vel == Vel_copy
+        end
+
+        @testset "getWindSpeedT size mismatch throws" begin
+            Vel = [1.0, 2.0]
+            WindVelCholSig = Matrix{Float64}(I, 3, 3)
+            @test_throws DimensionMismatch getWindSpeedT(Velocity_ZOH_wErrorCov(), Vel, WindVelCholSig)
+        end
+    end
 end
