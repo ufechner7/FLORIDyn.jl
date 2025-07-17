@@ -23,6 +23,7 @@ export WindVelType, WindVelMatrix
 export Direction_All, Direction_Influence, Direction_None, Direction_wGaspariAndCohn
 export Velocity_Influence, Velocity_None, Velocity_wGaspariAndCohn
 export TI_Influence, TI_None, TI_wGaspariAndCohn
+export IterateOPs_average, IterateOPs_basic, IterateOPs_buffer, IterateOPs_maximum, IterateOPs_weighted
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
@@ -52,6 +53,7 @@ struct Settings
     cor_dir_mode
     cor_vel_mode
     cor_turb_mode
+    iterate_mode
 end
 
 # marker structs
@@ -62,6 +64,7 @@ include("windfield/structs_vel.jl")
 include("correction/structs_dir.jl")
 include("correction/structs_vel.jl")
 include("correction/structs_turb.jl")
+include("floridyn_cl/structs.jl")
 
 """
     WindShear
