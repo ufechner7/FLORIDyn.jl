@@ -30,4 +30,19 @@
         @test all(abs.(RPs2[:,3]) .<= 0.5)
         @test isapprox(sum(w2), 1.0; atol=1e-14)
     end
+    @testset "CalcCt" begin
+        # Test typical values
+        @test isapprox(CalcCt(0.0, nothing), 0.0)
+        @test isapprox(CalcCt(0.25, nothing), 4 * 0.25 * 0.75)
+        @test isapprox(CalcCt(0.5, nothing), 4 * 0.5 * 0.5)
+        
+        # Test edge cases
+        @test isapprox(CalcCt(1.0, nothing), 0.0)
+        @test isapprox(CalcCt(-0.1, nothing), 4 * -0.1 * (1 + 0.1))  # input out of typical range
+        
+        # Test vectorized input
+        a_values = [0.0, 0.1, 0.2, 0.3]
+        expected = 4 .* a_values .* (1 .- a_values)
+        @test all(isapprox.(CalcCt.(a_values, Ref(nothing)), expected))
+    end
 end
