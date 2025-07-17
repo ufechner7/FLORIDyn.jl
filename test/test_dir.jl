@@ -30,18 +30,18 @@ Random.seed!(1234)
         end
     end
 
-    #########################################
+    @testset "getWindDirT_EnKF(Direction_EnKF_InterpTurbine(), ...)" begin
+        dir_mode = Direction_EnKF_InterpTurbine()
 
-    dir_mode = Direction_EnKF_InterpTurbine()
-
-    # Suppose WindDir is a matrix where each row is [time, phi_T0, phi_T1, ...]
-    WindDir = [
-        0.0  10.0  20.0
-        1.0  12.0  22.0
-        2.0  14.0  24.0
-    ]
-    phi = getWindDirT_EnKF(dir_mode, WindDir, 1, 0.5)
-    @test phi ≈ 11.0
+        # Suppose WindDir is a matrix where each row is [time, phi_T0, phi_T1, ...]
+        WindDir = [
+            0.0  10.0  20.0
+            1.0  12.0  22.0
+            2.0  14.0  24.0
+        ]
+        phi = getWindDirT_EnKF(dir_mode, WindDir, 1, 0.5)
+        @test phi ≈ 11.0
+    end
 
     dir_mode = Direction_Interpolation()
     phi = getWindDirT(dir_mode, WindDir, 1, 0.5)
