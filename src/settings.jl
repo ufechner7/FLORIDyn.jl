@@ -23,19 +23,19 @@ end
 end
 
 @with_kw struct Vel
-    iter_sigma_dw::Int
-    iter_sigma_cw::Int
-    iter_sigma_time::Int
+    iter_sigma_dw::Int64
+    iter_sigma_cw::Int64
+    iter_sigma_time::Int64
 end
 
 @with_kw struct Dir
-    iter_sigma_dw::Int
-    iter_sigma_cw::Int
-    iter_sigma_time::Int
+    iter_sigma_dw::Int64
+    iter_sigma_cw::Int64
+    iter_sigma_time::Int64
 end
 
 @with_kw struct Dyn
-    advection::Int
+    advection::Int64
     advection_mod::String
     op_iteration::String
     op_iter_weights::Vector{Float64}
@@ -45,15 +45,19 @@ end
 
 @with_kw struct Sim
     floris::String
-    start_time::Int
-    end_time::Int
-    time_step::Int
+    start_time::Int64
+    end_time::Int64
+    time_step::Int64
     rotor_discret::String
-    rotor_points::Int
+    rotor_points::Int64
     dyn::Dyn
     init::String
     save_init_state::Bool
     save_final_state::Bool
+end
+
+@with_kw struct Con
+    yaw::String
 end
 
 function setup(filename)
@@ -62,6 +66,8 @@ function setup(filename)
     wind = convertdict(Wind, wind_data)
     sim_data = data["sim"]
     sim = convertdict(Sim, sim_data)
-    wind, sim
+    con_data = data["con"]
+    con = convertdict(Con, con_data)
+    wind, sim, con
 end
 

@@ -5,7 +5,5 @@
 using FLORIDyn, YAML
 
 # get the settings for the wind field and the simulator
-wind, sim = setup("data/2021_9T_Data.yaml")
+wind, sim, con = setup("data/2021_9T_Data.yaml")
 
-# get the settings for the wind field, visualization, controller and Sim.
-# Wind, Vis, Sim, Con = setup("2021_9T_Data")

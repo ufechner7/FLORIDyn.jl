@@ -38,7 +38,10 @@ sim:
   init: noinit
   save_init_state: false
   save_final_state: false
-  
+
+con:
+  yaw: sowfa
+
 
 
 
