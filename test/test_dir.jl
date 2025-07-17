@@ -19,15 +19,15 @@ Random.seed!(1234)
         end
     end
 
-    #########################################
-
-    dir_mode = Direction_Constant_wErrorCov()
-    WindDir = WindDirType(270.0, cholesky(Matrix{Float64}(I, 3, 3)).L)
-    iT = [1, 2, 3]
-    phi = getWindDirT(dir_mode, WindDir, iT)
-    result = [269.0527533560426, 270.54014974707036, 269.78339785902375]
-    for (i, ph) in pairs(phi)
-        @test ph ≈ result[i]
+    @testset "getWindDirT(Direction_Constant_wErrorCov(), ...)" begin
+        dir_mode = Direction_Constant_wErrorCov()
+        WindDir = WindDirType(270.0, cholesky(Matrix{Float64}(I, 3, 3)).L)
+        iT = [1, 2, 3]
+        phi = getWindDirT(dir_mode, WindDir, iT)
+        result = [269.0527533560426, 270.54014974707036, 269.78339785902375]
+        for (i, ph) in pairs(phi)
+            @test ph ≈ result[i]
+        end
     end
 
     #########################################
