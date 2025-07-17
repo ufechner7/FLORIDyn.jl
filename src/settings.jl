@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Marcus Becker, Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
 @with_kw struct WindPerturbation
     vel::Float64
     vel_sigma::Float64

@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Marcus Becker, Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
 function discretizeRotor(nRP)
     # DISCRETIZEROTOR discretizes the rotor plane into nRP segments.
     # The algorithm returns the normalized center location ∈ [-0.5, 0.5] and the

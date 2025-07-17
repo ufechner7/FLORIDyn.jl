@@ -1,7 +1,8 @@
-## MainFLORIDyn Center-Line model
-# Improved FLORIDyn approach over the gaussian FLORIDyn model
-# Link folder with simulation data
+# Copyright (c) 2025 Marcus Becker, Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
 
+# MainFLORIDyn Center-Line model
+# Improved FLORIDyn approach over the gaussian FLORIDyn model
 using FLORIDyn, YAML
 
 # get the settings for the wind field, simulator and controller
