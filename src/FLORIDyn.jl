@@ -20,6 +20,8 @@ export Velocity_ZOH_wErrorCov
 export WindDirType, WindDirMatrix, WindDirTriple
 export WindVelType, WindVelMatrix
 
+export Direction_All, Direction_Influence, Direction_None, Direction_wGaspariAndCohn
+
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
 export getWindTiT, getWindTiT_EnKF
