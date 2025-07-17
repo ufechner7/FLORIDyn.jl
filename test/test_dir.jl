@@ -102,26 +102,26 @@ Random.seed!(1234)
         @test phi[2] ≈ 25.140544918823198128
     end
 
-    ###################################
+    @testset "getWindDirT(Direction_InterpTurbine(), ...)" begin
+        dir_mode = Direction_InterpTurbine()
+        # Example wind direction data:
+        # Columns: time, phi_T0, phi_T1, phi_T2
+        WindDir = [
+            0.0   10.0  20.0  30.0;
+            10.0  15.0  25.0  35.0;
+            20.0  20.0  30.0  40.0
+        ]
 
-    dir_mode = Direction_InterpTurbine()
-    # Example wind direction data:
-    # Columns: time, phi_T0, phi_T1, phi_T2
-    WindDir = [
-        0.0   10.0  20.0  30.0;
-        10.0  15.0  25.0  35.0;
-        20.0  20.0  30.0  40.0
-    ]
+        # Turbine index (1-based): e.g., 2 for phi_T1
+        iT = 2
 
-    # Turbine index (1-based): e.g., 2 for phi_T1
-    iT = 2
+        # Time at which to interpolate wind direction
+        t = 5.0
 
-    # Time at which to interpolate wind direction
-    t = 5.0
-
-    # Call the function
-    phi = getWindDirT(dir_mode, WindDir, iT, t)
-    @test phi ≈ 22.5
+        # Call the function
+        phi = getWindDirT(dir_mode, WindDir, iT, t)
+        @test phi ≈ 22.5
+    end
 
     ##############################################
 
