@@ -31,10 +31,10 @@ function set_rng(rng)
 end
 
 # marker structs
-include("structs_dir.jl")
-include("structs_shear.jl")
-include("structs_turb.jl")
-include("structs_vel.jl")
+include("windfield/structs_dir.jl")
+include("windfield/structs_shear.jl")
+include("windfield/structs_turb.jl")
+include("windfield/structs_vel.jl")
 
 """
     WindShear
@@ -116,9 +116,9 @@ struct WindDirTriple
 end
 
 # functions for calculating the wind field
-include("windfield_direction.jl")
-include("windfield_shear.jl")
-include("windfield_turbulence.jl")
-include("windfield_velocity.jl")
+include("windfield/windfield_direction.jl")
+include("windfield/windfield_shear.jl")
+include("windfield/windfield_turbulence.jl")
+include("windfield/windfield_velocity.jl")
 
 end
