@@ -149,7 +149,7 @@ function WindSpeedEstimatorIandI_FLORIDyn(WSE, Rotor_Speed, Blade_pitch, Gen_Tor
     return WSE.V, WSE
 end
 
-function getWindSpeedT(WindVel, iT, SimTime, WindDir, p_p)
+function getWindSpeedT(::Velocity_I_and_I, WindVel, iT, SimTime, WindDir, p_p)
     # Returns the wind speed at the respective turbine(s)
     # iT        = single value or array with turbine index/indices
     # WindVel   = Data for I&I wind speed estimator
