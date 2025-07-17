@@ -37,7 +37,7 @@ function getWindSpeedT(::Velocity_Constant_wErrorCov, WindVel::WindVelType, iT)
     Vel = fill(WindVel.Data, length(iT))
 
     # Add Gaussian noise scaled by WindVel.CholSig
-    Vel .+= (randn(1, length(Vel)) * WindVel.CholSig)'
+    Vel .+= (randn(RNG, 1, length(Vel)) * WindVel.CholSig)'
 
     return Vel
 end
@@ -278,7 +278,6 @@ function getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatri
     Vel = fill(u, n)
 
     # Add randomness using Cholesky
-    # noise = (randn(1, n) * WindVel.CholSig)'  # Ensure column vector
     noise = (randn(RNG,1, n) * WindVel.CholSig)'
     Vel .= Vel .+ noise
 
@@ -356,7 +355,7 @@ function getWindSpeedT(::Velocity_InterpTurbine_wErrorCov, WindVel::WindVelMatri
 
     # Add random error with given covariance (via Cholesky factor)
     # Simulate a noise vector (randn) multiplied by Cholesky factor
-    noise = (WindVel.CholSig * randn(length(vel)))
+    noise = (WindVel.CholSig * randn(RNG, length(vel)))
     vel_noisy = vel + noise
     return vel_noisy
 end

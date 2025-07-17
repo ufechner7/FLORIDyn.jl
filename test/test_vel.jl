@@ -45,7 +45,7 @@ using Logging
     end
     @testset "getWindSpeedT(Velocity_Constant_wErrorCov(), ...)" begin
         # Set fixed random seed for consistent results
-        # Random.seed!(1234)
+        FLORIDyn.set_rng(MersenneTwister(1234))
 
         vel_mode = Velocity_Constant_wErrorCov()
 
@@ -202,7 +202,7 @@ using Logging
     end
 
     @testset "getWindSpeedT(Velocity_Interpolation_wErrorCov(), ...)" begin
-        Random.seed!(42)  # Ensure reproducibility
+        FLORIDyn.set_rng(MersenneTwister(1234))
         
         # Simple linear data: speed = 5 at t=0, speed = 15 at t=10
         times = [0.0, 10.0]
@@ -247,7 +247,7 @@ using Logging
         vel_mode = Velocity_InterpTurbine_wErrorCov()
         
         # Fixed Random Seed
-        RNG = MersenneTwister(1234)
+        FLORIDyn.set_rng(MersenneTwister(1234))
 
         # Define mock data: times = [0.0, 10.0, 20.0], wind speed at 2 turbines
         Data = [
@@ -260,7 +260,6 @@ using Logging
         CholSig_zero = zeros(2,2)
         CholSig_identity = Matrix{Float64}(I, 2, 2)
 
-        #####################################################################
         @testset "Interpolation without noise" begin
             WindVel = WindVelMatrix(Data, CholSig_zero)
             t_test = 5.0
@@ -284,23 +283,24 @@ using Logging
         #     @test isapprox(vel_hi[1], 18.0)
         # end
 
-        #####################################################################
-        # @testset "Noise is applied when CholSig is identity" begin
-        #     WindVel = WindVelMatrix(Data, CholSig_identity)
+        ####################################################################
+        @testset "Noise is applied when CholSig is identity" begin
+            WindVel = WindVelMatrix(Data, CholSig_identity)
 
-        #     t_test = 10.0
-        #     iT = [1, 2]
+            t_test = 10.0
+            iT = [1, 2]
 
-        #     # Use fixed seed so we can predict noise
-        #     Random.seed!(RNG)
-        #     vel1 = getWindSpeedT(vel_mode, WindVel, iT, t_test)
+            # Test with deterministic random seed
+            FLORIDyn.set_rng(MersenneTwister(1234))
+            vel1 = getWindSpeedT(vel_mode, WindVel, iT, t_test)
 
-        #     Random.seed!(RNG)  # Reset RNG to get same result
-        #     vel2 = getWindSpeedT(vel_mode, WindVel, iT, t_test)
+            # Test with deterministic random seed
+            FLORIDyn.set_rng(MersenneTwister(1234))
+            vel2 = getWindSpeedT(vel_mode, WindVel, iT, t_test)
 
-        #     @test vel1 == vel2        # Result is repeatable with fixed RNG
-        #     @test vel1 != [10.0, 12.0]  # Should differ from ground truth due to added noise
-        # end
+            @test vel1 == vel2        # Result is repeatable with fixed RNG
+            @test vel1 != [10.0, 12.0]  # Should differ from ground truth due to added noise
+        end
 
         #####################################################################
         # @testset "Single index access works" begin
