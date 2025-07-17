@@ -4,8 +4,11 @@
 
 using FLORIDyn, YAML
 
-# get the settings for the wind field and the simulator
+# get the settings for the wind field, simulator and controller
 wind, sim, con = setup("data/2021_9T_Data.yaml")
 
 # create settings struct
 set = Settings(wind, sim)
+
+# % Load linked data
+# turbProp        = turbineArrayProperties();
