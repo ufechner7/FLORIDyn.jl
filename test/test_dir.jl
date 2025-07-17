@@ -160,25 +160,27 @@ Random.seed!(1234)
         @test phi[1] ≈ 355.84437113031197
     end
 
-    dir_mode = Direction_RW_with_Mean()
+    @testset "getWindDirT(Direction_RW_with_Mean(), ...)" begin
+        dir_mode = Direction_RW_with_Mean()
 
-    # Suppose we have 3 turbines
-    WindDirNow = [10.0, 20.0, 30.0]           # Current wind directions (degrees)
-    Init = [15.0, 25.0, 35.0]                 # Mean wind directions (degrees)
-    CholSig = [1.0 0.2 0.1;                   # Cholesky factor of covariance matrix
-            0.0 1.0 0.3;
-            0.0 0.0 1.0]
-    MeanPull = 0.05                           # Mean reversion factor
+        # Suppose we have 3 turbines
+        WindDirNow = [10.0, 20.0, 30.0]           # Current wind directions (degrees)
+        Init = [15.0, 25.0, 35.0]                 # Mean wind directions (degrees)
+        CholSig = [1.0 0.2 0.1;                   # Cholesky factor of covariance matrix
+                0.0 1.0 0.3;
+                0.0 0.0 1.0]
+        MeanPull = 0.05                           # Mean reversion factor
 
-    # Create WindDir struct
-    WindDir = WindDirTriple(Init, CholSig, MeanPull)
+        # Create WindDir struct
+        WindDir = WindDirTriple(Init, CholSig, MeanPull)
 
-    # Call the function
-    phi = getWindDirT(dir_mode, WindDirNow, WindDir)
-    @test size(phi) == (3,1)
-    @test phi[1] ≈ 9.80509368889485
-    @test phi[2] ≈ 21.48940455337165
-    @test phi[3] ≈ 31.437827702779927
+        # Call the function
+        phi = getWindDirT(dir_mode, WindDirNow, WindDir)
+        @test size(phi) == (3,1)
+        @test phi[1] ≈ 9.80509368889485
+        @test phi[2] ≈ 21.48940455337165
+        @test phi[3] ≈ 31.437827702779927
+    end
 
     ##############################################
 
