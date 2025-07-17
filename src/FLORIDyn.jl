@@ -5,7 +5,7 @@ module FLORIDyn
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters
 
-export setup
+export setup, str2type
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
@@ -32,6 +32,12 @@ RNG::AbstractRNG = Random.default_rng()
 function set_rng(rng)
     global RNG
     RNG = rng
+end
+
+function str2type(name)
+    typename = Symbol(name)
+    t = getfield(Main, typename)
+    instance = t()
 end
 
 # marker structs

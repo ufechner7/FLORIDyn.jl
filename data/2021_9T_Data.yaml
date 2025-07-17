@@ -1,8 +1,8 @@
 wind:
-  input_vel: constant
-  input_dir: interpolation
-  input_ti: constant
-  input_shear: power_law
+  input_vel: Constant
+  input_dir: Interpolation
+  input_ti: Constant
+  input_shear: PowerLaw
   correction:
     vel: none
     dir: all

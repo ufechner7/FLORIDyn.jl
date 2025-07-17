@@ -6,9 +6,10 @@ using Test
 
 @testset verbose=true "wind turbulence                                         " begin
      @testset "getWindTiT(TI_Constant(), ...)" begin
+        turb_mode = TI_Constant()
         WindTi = 0.1
         iT = [1, 2, 3]
-        Ti = getWindTiT(TI_Constant(), WindTi, iT)
+        Ti = getWindTiT(turb_mode, WindTi, iT)
         # Ti will be [0.1, 0.1, 0.1]
         @test length(Ti) == 3
         @test Ti[1] ≈ 0.1

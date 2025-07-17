@@ -11,35 +11,35 @@ using Interpolations
 
 @testset verbose=true "wind velocity  " begin
     @testset "getWindSpeedT(Velocity_Constant(), ...)" begin
-        vc = Velocity_Constant()
+        vel_mode = Velocity_Constant()
 
         @testset "Scalar index test" begin
-            result = getWindSpeedT(vc, 10.0, 1)
+            result = getWindSpeedT(vel_mode, 10.0, 1)
             @test result ≈ 10.0
             @test typeof(result) == Float64
         end
 
         @testset "Array of indices test" begin
-            result = getWindSpeedT(vc, 5.0, [1,2,3])
+            result = getWindSpeedT(vel_mode, 5.0, [1,2,3])
             @test result ≈ [5.0, 5.0, 5.0]
             @test typeof(result) == Vector{Float64}
         end
 
         @testset "Higher-dimensional index array" begin
             idx = [1 2; 3 4]
-            result = getWindSpeedT(vc, 7.5, idx)
+            result = getWindSpeedT(vel_mode, 7.5, idx)
             @test result ≈ [7.5 7.5; 7.5 7.5]
             @test size(result) == (2, 2)
         end
 
         @testset "WindVel as Int" begin
-            result = getWindSpeedT(vc, 3, [10, 20])
+            result = getWindSpeedT(vel_mode, 3, [10, 20])
             @test result == [3, 3]
             @test eltype(result) == Int
         end
 
         @testset "Empty index array" begin
-            result = getWindSpeedT(vc, 6.0, Int[])
+            result = getWindSpeedT(vel_mode, 6.0, Int[])
             @test result == Float64[]
             @test length(result) == 0
         end
@@ -176,29 +176,29 @@ using Interpolations
     @testset "getWindSpeedT(Velocity_Interpolation(), ...)" begin
         # Example wind data (time, wind_speed)
         WindVel = [0.0 5.0; 10.0 10.0; 20.0 15.0]
-        interp = Velocity_Interpolation()
+        vel_mode = Velocity_Interpolation()
 
         # Test 1: Exact time match
-        @test getWindSpeedT(interp, WindVel, [1], 10.0) == [10.0]
+        @test getWindSpeedT(vel_mode, WindVel, [1], 10.0) == [10.0]
 
         # Test 2: Interpolation between 10.0 and 20.0 (expected 12.5 => speed = 11.25)
-        result = getWindSpeedT(interp, WindVel, [1,2,3], 12.5)
+        result = getWindSpeedT(vel_mode, WindVel, [1,2,3], 12.5)
         @test all(x -> isapprox(x, 11.25, atol=1e-6), result)
 
         # Test 3: Lower bound clamp
-        result_low = getWindSpeedT(interp, WindVel, [1,2], -5.0)
+        result_low = getWindSpeedT(vel_mode, WindVel, [1,2], -5.0)
         @test result_low == [5.0, 5.0]
 
         # Test 4: Upper bound clamp
-        result_high = getWindSpeedT(interp, WindVel, [1], 30.0)
+        result_high = getWindSpeedT(vel_mode, WindVel, [1], 30.0)
         @test result_high == [15.0]
 
         # Test 5: Empty turbine index list
-        result_empty = getWindSpeedT(interp, WindVel, Int[], 10.0)
+        result_empty = getWindSpeedT(vel_mode, WindVel, Int[], 10.0)
         @test result_empty == []
 
         # Test 6: Single turbine index
-        result_single = getWindSpeedT(interp, WindVel, [42], 15.0)
+        result_single = getWindSpeedT(vel_mode, WindVel, [42], 15.0)
         @test result_single == [12.5]
     end
 
@@ -214,33 +214,33 @@ using Interpolations
         chol = cholesky(Matrix(1.0I, 2, 2)).L
 
         wind = WindVelMatrix(data, chol)
-        method = Velocity_Interpolation_wErrorCov()
+        vel_mode = Velocity_Interpolation_wErrorCov()
 
         # Test 1: Midpoint interpolation
         iT = [1, 2]
         t = 5.0
-        vel = getWindSpeedT(method, wind, iT, t)
+        vel = getWindSpeedT(vel_mode, wind, iT, t)
         @test length(vel) == length(iT)
         @test isapprox(mean(vel), 10.0; atol=3.0)  # Within noise bounds
 
         # Test 2: Out-of-bounds time (before)
         t2 = -5.0
-        vel2 = getWindSpeedT(method, wind, iT, t2)
+        vel2 = getWindSpeedT(vel_mode, wind, iT, t2)
         @test isapprox(mean(vel2), 5.0; atol=3.0)
 
         # Test 3: Out-of-bounds time (after)
         t3 = 20.0
-        vel3 = getWindSpeedT(method, wind, iT, t3)
+        vel3 = getWindSpeedT(vel_mode, wind, iT, t3)
         @test isapprox(mean(vel3), 15.0; atol=3.0)
 
         # Test 4: Check that returned values differ (confirming noise)
-        vels = [getWindSpeedT(method, wind, iT, 5.0) for _ in 1:10]
+        vels = [getWindSpeedT(vel_mode, wind, iT, 5.0) for _ in 1:10]
         means = [mean(v) for v in vels]
         @test std(means) > 0.0  # Some variability due to random noise
 
         # # Test 5: Single turbine (scalar iT input)
         # iT_scalar = 1
-        # vel_scalar = getWindSpeedT(method, wind, iT_scalar, 5.0)
+        # vel_scalar = getWindSpeedT(vel_mode, wind, iT_scalar, 5.0)
         # @test length(vel_scalar) == 1
         # @test isapprox(vel_scalar[1], 10.0; atol=3.0)
     end
@@ -350,6 +350,8 @@ using Interpolations
         
     end
     @testset "getWindSpeedT(Velocity_ZOH_wErrorCov(), ...)" begin
+        vel_mode = Velocity_ZOH_wErrorCov()
+
         @testset "getWindSpeedT basic behavior" begin
             # Setup: make inputs deterministic for testing
             Vel = [1.0, 2.0]
@@ -365,7 +367,7 @@ using Interpolations
             
             # Call actual function with the same seed
             FLORIDyn.set_rng(MersenneTwister(1234))
-            getWindSpeedT(Velocity_ZOH_wErrorCov(), Vel, WindVelCholSig)
+            getWindSpeedT(vel_mode, Vel, WindVelCholSig)
             @test isapprox(Vel, expected, atol=1e-10)
         end
 
@@ -373,14 +375,14 @@ using Interpolations
             Vel = [3.0, -1.0, 7.0]
             WindVelCholSig = zeros(3, 3)  # zero matrix, noise always zero
             Vel_copy = copy(Vel)
-            getWindSpeedT(Velocity_ZOH_wErrorCov(), Vel, WindVelCholSig)
+            getWindSpeedT(vel_mode, Vel, WindVelCholSig)
             @test Vel == Vel_copy
         end
 
         @testset "getWindSpeedT size mismatch throws" begin
             Vel = [1.0, 2.0]
             WindVelCholSig = Matrix{Float64}(I, 3, 3)
-            @test_throws DimensionMismatch getWindSpeedT(Velocity_ZOH_wErrorCov(), Vel, WindVelCholSig)
+            @test_throws DimensionMismatch getWindSpeedT(vel_mode, Vel, WindVelCholSig)
         end
     end
 end
