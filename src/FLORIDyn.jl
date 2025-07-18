@@ -3,7 +3,7 @@
 
 module FLORIDyn
 
-using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters
+using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames
 
 export setup, str2type, Settings
 

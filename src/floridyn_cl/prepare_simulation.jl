@@ -14,7 +14,6 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
         wind.Vel.WSE = WSEParameters(nT, sim.PathToSim, sim.TimeStep)
         wind.Vel.TimePrev = sim.StartTime
         wind.Vel.StartTime = sim.StartTime
-    end
     # elseif input_vel == "Interpolation"
     #     try
     #         wind.Vel = CSV.read("WindVel.csv", DataFrame)
@@ -29,13 +28,14 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     #         generateDemoCSV(vel_file_dir, "WindVelTurbine.csv", 3, size(turbProp.Pos, 1), [sim.StartTime, 8], [sim.EndTime, 10])
     #         push!(loadDataWarnings, "WindVelTurbine.csv not found, default created. Units: [s, ms^-1]")
     #     end
-    # elseif input_vel == "Constant"
-    #     try
-    #         wind.Vel = CSV.read("WindVelConstant.csv", DataFrame)
-    #     catch
-    #         generateDemoCSV(vel_file_dir, "WindVelConstant.csv", 1, nothing, 8, nothing)
-    #         push!(loadDataWarnings, "WindVelConstant.csv not found, default created. Unit: [ms^-1]")
-    #     end
+    elseif input_vel == "Constant"
+        try
+            wind.Vel = CSV.read("WindVelConstant.csv", DataFrame)
+        catch
+            generateDemoCSV(vel_file_dir, "WindVelConstant.csv", 1, nothing, 8, nothing)
+            push!(loadDataWarnings, "WindVelConstant.csv not found, default created. Unit: [ms^-1]")
+        end
+    end
     # elseif input_vel in ["ZOH_wErrorCov", "RW_with_Mean", "Interpolation_wErrorCov", "InterpTurbine_wErrorCov", "Constant_wErrorCov"]
     #     wind.Vel.Data = CSV.read("WindVelConstant.csv", DataFrame)
     #     VelCov = CSV.read("WindVelCovariance.csv", DataFrame)
@@ -136,12 +136,12 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     # end
 
     # # ========= Warnings if data was generated ==========
-    # if !isempty(loadDataWarnings)
-    #     for w in loadDataWarnings
-    #         @warn w
-    #     end
-    #     error("Data not loaded properly. Default files generated. Please overwrite with appropriate data.")
-    # end
+    if !isempty(loadDataWarnings)
+        for w in loadDataWarnings
+            @warn w
+        end
+        error("Data not loaded properly. Default files generated. Please overwrite with appropriate data.")
+    end
     T = nothing
 
     return T, wind, sim, con, paramFLORIS
