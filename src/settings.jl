@@ -63,6 +63,21 @@ end
     yaw::String
 end
 
+
+"""
+    setup(filename)
+
+Initializes or configures the system using the provided `filename`. The `filename` should specify the path to a configuration or settings file required for setup.
+
+# Arguments
+- `filename::String`: Path to the `.yaml` file to be used for setup.
+
+# Returns
+- The tuple `(wind, sim, con)` where:
+  - `wind`: An instance of the `Wind` struct containing wind-related parameters.
+  - `sim`: An instance of the `Sim` struct containing simulation parameters.
+  - `con`: An instance of the `Con` struct containing controller parameters.
+"""
 function setup(filename)
     data = YAML.load_file(filename)
     wind_data = data["wind"]
@@ -74,7 +89,25 @@ function setup(filename)
     wind, sim, con
 end
 
-function Settings(wind::Wind, sim)
+"""
+    Settings(wind::Wind, sim::Sim)
+
+Create and return a [`Settings`](@ref) object using the provided `wind` and `sim` parameters.
+
+# Arguments
+- `wind::Wind`: An instance of the `Wind` struct containing wind-related parameters.
+- `sim`: An instance of the `Sim` struct containing the simulation parameters.
+
+# Returns
+- A `Settings` struct configured with the given wind and simulation parameters.
+
+# Notes
+- The function uses the `str2type` helper to convert string representations of model types 
+  into their corresponding Julia types.
+- The `Settings` struct encapsulates various model configurations for velocity, direction, 
+  turbulence intensity, shear, and correction modes.
+"""
+function Settings(wind::Wind, sim::Sim)
     vel_mode = str2type("Velocity_" * wind.input_vel)
     dir_mode = str2type("Direction_" * wind.input_dir)
     turb_mode = str2type("TI_" * wind.input_ti)
