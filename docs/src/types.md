@@ -3,12 +3,17 @@
 ```@meta
 CurrentModule = FLORIDyn
 ```
+## Settings and abstract types
+```@docs
+Settings
+DirModel
+```
 
 ## Markers for defining the wind direction
-An instance of these structs needs to be passed to the functions that calculate the wind direction.
+An instance of these structs needs to be passed to the functions that calculate the wind direction. They are
+all subtypes of [`DirModel`](@ref)
 
 ```@docs
-DirModel
 Direction_Constant
 Direction_Constant_wErrorCov
 Direction_EnKF_InterpTurbine
@@ -35,9 +40,11 @@ An instance of these structs needs to be passed to the functions that calculate 
  TI_InterpTurbine
 ```
 
-## Types for storing the wind field parameters
+## Types for storing wind field params
 ```@docs
 WindDirType
 WindDirMatrix
 WindDirTriple
+WindVelType
+WindVelMatrix
 ```

@@ -55,6 +55,21 @@ include("correction/structs_vel.jl")
 include("correction/structs_turb.jl")
 include("floridyn_cl/structs.jl")
 
+"""
+    Settings
+
+A struct that holds configuration parameters for the FLORIDyn simulation environment.
+
+# Fields
+- vel_mode::VelModel
+- dir_mode::DirModel
+- turb_mode
+- shear_mode
+- cor_dir_mode
+- cor_vel_mode
+- cor_turb_mode
+- iterate_mode
+"""
 struct Settings
     vel_mode::VelModel
     dir_mode::DirModel
