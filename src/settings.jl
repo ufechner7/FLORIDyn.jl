@@ -16,13 +16,22 @@ end
     ti::String
 end
 
-@with_kw struct Wind
+@with_kw struct Shear
+    alpha::Float64
+    z0::Float64
+end
+
+@with_kw mutable struct Wind
     input_vel::String
     input_dir::String
     input_ti::String
     input_shear::String
     correction::WindCorrection
     pertubation::WindPerturbation
+    vel::Union{Nothing, Float64} = nothing
+    dir::Union{Nothing, Matrix{Float64}} = nothing
+    ti::Union{Nothing, Float64} = nothing
+    shear::Union{Nothing, Shear} = nothing
 end
 
 @with_kw struct Vel

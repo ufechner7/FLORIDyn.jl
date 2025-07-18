@@ -11,9 +11,9 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     input_vel = wind.input_vel
 
     if input_vel == "I_and_I"
-        wind.Vel.WSE = WSEParameters(nT, sim.PathToSim, sim.TimeStep)
-        wind.Vel.TimePrev = sim.StartTime
-        wind.Vel.StartTime = sim.StartTime
+        wind.vel.WSE = WSEParameters(nT, sim.PathToSim, sim.TimeStep)
+        wind.vel.TimePrev = sim.StartTime
+        wind.vel.StartTime = sim.StartTime
     # elseif input_vel == "Interpolation"
     #     try
     #         wind.Vel = CSV.read("WindVel.csv", DataFrame)
@@ -29,11 +29,15 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     #         push!(loadDataWarnings, "WindVelTurbine.csv not found, default created. Units: [s, ms^-1]")
     #     end
     elseif input_vel == "Constant"
-        try
-            wind.Vel = CSV.read("WindVelConstant.csv", DataFrame)
+        try 
+            path = joinpath(vel_file_dir, "WindVelConstant.csv")
+            if !isfile(path)
+                @error "WindVelConstant.csv not found in $vel_file_dir"
+            end
+            df = CSV.read(path, DataFrame; header=false)
+            wind.vel = df[1,1]
         catch
-            generateDemoCSV(vel_file_dir, "WindVelConstant.csv", 1, nothing, 8, nothing)
-            push!(loadDataWarnings, "WindVelConstant.csv not found, default created. Unit: [ms^-1]")
+            push!(loadDataWarnings, "WindVelConstant.csv not found!")
         end
     end
     # elseif input_vel in ["ZOH_wErrorCov", "RW_with_Mean", "Interpolation_wErrorCov", "InterpTurbine_wErrorCov", "Constant_wErrorCov"]
