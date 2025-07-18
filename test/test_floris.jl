@@ -48,4 +48,22 @@
         expected = 4 .* a_values .* (1 .- a_values)
         @test all(isapprox.(CalcCt.(a_values, Ref(nothing)), expected))
     end
+    @testset "States function" begin
+        s = States()
+
+        # Test type
+        @test isa(s, States)
+
+        # Test Turbine states
+        @test s.T_names == ["a", "yaw", "TI"]
+        @test s.Turbine == 3
+
+        # Test Observation Point states
+        @test s.OP_names == ["x0", "y0", "z0", "x1", "y1", "z1"]
+        @test s.OP == 6
+
+        # Test Wind Field states
+        @test s.WF_names == ["wind_vel", "wind_dir", "TI0"]
+        @test s.WF == 3
+    end
 end

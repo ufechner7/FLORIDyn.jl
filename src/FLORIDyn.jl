@@ -30,7 +30,7 @@ export getWindShearT
 export getWindTiT, getWindTiT_EnKF
 export getWindSpeedT, getWindSpeedT_EnKF
 
-export discretizeRotor, CalcCt
+export discretizeRotor, CalcCt, States
 export turbineArrayProperties
 export prepareSimulation
 
