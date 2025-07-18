@@ -161,6 +161,8 @@ struct WindDirTriple
 end
 
 include("settings.jl")
+include("init_turbines.jl")
+
 # functions for calculating the wind field
 include("windfield/windfield_direction.jl")
 include("windfield/windfield_shear.jl")

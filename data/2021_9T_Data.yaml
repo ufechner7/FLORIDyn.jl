@@ -42,6 +42,85 @@ sim:
 con:
   yaw: sowfa
 
+turbines:
+    - id: 1
+      type: DTU 10MW
+      x: 600
+      y: 2400
+      z: 0
+      a: 0.33
+      yaw: 0
+      ti: 0.06
+    - id: 2
+      type: DTU 10MW
+      x: 1500
+      y: 2400
+      z: 0
+      a: 0.33
+      yaw: 0
+      ti: 0.06
+    - id: 3
+      type: DTU 10MW
+      x: 2400
+      y: 2400
+      z: 0
+      a: 0.33
+      yaw: 0
+      ti: 0.06
+    - id: 4
+      type: DTU 10MW
+      x: 600
+      y: 1500
+      z: 0
+      a: 0.33
+      yaw: 0
+      ti: 0.06
+    - id: 5
+      type: DTU 10MW
+      x: 1500
+      y: 1500
+      z: 0
+      a: 0.33
+      yaw: 0
+      ti: 0.06
+    - id: 6
+      type: DTU 10MW
+      x: 2400
+      y: 1500
+      z: 0
+      a: 0.33
+      yaw: 0
+      ti: 0.06
+    - id: 7
+      type: DTU 10MW
+      x: 600
+      y: 600
+      z: 0
+      a: 0.33
+      yaw: 0
+      ti: 0.06
+    - id: 8
+      type: DTU 10MW
+      x: 1500
+      y: 600
+      z: 0
+      a: 0.33
+      yaw: 0
+      ti: 0.06
+    - id: 9
+      type: DTU 10MW
+      x: 2400
+      y: 600
+      z: 0
+      a: 0.33
+      yaw: 0
+      ti: 0.06
+
+
+
+
+
+
 
 
 
