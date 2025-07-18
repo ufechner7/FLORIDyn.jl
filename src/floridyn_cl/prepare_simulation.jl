@@ -61,25 +61,25 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     T[:posNac] = t_data.NacPos
     T[:D] = t_data.D
 
-    # states = States()
-    # if paramFLORIDyn.twf_model == "heterogeneous"
-    #     push!(states.WF_names, "OP_ori")
-    #     states.WF = length(states.WF_names)
-    # elseif paramFLORIDyn.twf_model != "homogeneous"
-    #     error("Unknown TWF model $(paramFLORIDyn.twf_model). Use 'homogeneous' or 'heterogeneous'")
-    # end
+    states = States()
+    if paramFLORIDyn.twf_model == "heterogeneous"
+        push!(states.WF_names, "OP_ori")
+        states.WF = length(states.WF_names)
+    elseif paramFLORIDyn.twf_model != "homogeneous"
+        error("Unknown TWF model $(paramFLORIDyn.twf_model). Use 'homogeneous' or 'heterogeneous'")
+    end
     
-    # # OP State and turbine initialization
-    # n_op = paramFLORIDyn.n_op
-    # T[:States_OP] = zeros(n_op * T[:nT], states.OP)
-    # T[:Names_OP] = states.OP_names
-    # T[:States_T]  = zeros(n_op * T[:nT], states.Turbine)
-    # T[:Names_T]   = states.T_names
-    # T[:States_WF] = zeros(n_op * T[:nT], states.WF)
-    # T[:Names_WF]  = states.WF_names
-    # T[:StartI]    = 1:n_op:(n_op * T[:nT])
-    # T[:nOP]       = n_op
-    # T[:red_arr]   = ones(T[:nT], T[:nT])
+    # OP State and turbine initialization
+    n_op = paramFLORIDyn.n_op
+    T[:States_OP] = zeros(n_op * T[:nT], states.OP)
+    T[:Names_OP] = states.OP_names
+    T[:States_T]  = zeros(n_op * T[:nT], states.Turbine)
+    T[:Names_T]   = states.T_names
+    T[:States_WF] = zeros(n_op * T[:nT], states.WF)
+    T[:Names_WF]  = states.WF_names
+    T[:StartI]    = 1:n_op:(n_op * T[:nT])
+    T[:nOP]       = n_op
+    T[:red_arr]   = ones(T[:nT], T[:nT])
 
     # # deltaUW fallback
     # if !haskey(paramFLORIDyn, :deltaUW)

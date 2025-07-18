@@ -18,7 +18,7 @@ function CalcCt(a, _)
     return Ct
 end
 
-struct States
+mutable struct States
     T_names::Vector{String}
     Turbine::Int
     OP_names::Vector{String}
