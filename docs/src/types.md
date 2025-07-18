@@ -8,6 +8,7 @@ CurrentModule = FLORIDyn
 An instance of these structs needs to be passed to the functions that calculate the wind direction.
 
 ```@docs
+DirModel
 Direction_Constant
 Direction_Constant_wErrorCov
 Direction_EnKF_InterpTurbine

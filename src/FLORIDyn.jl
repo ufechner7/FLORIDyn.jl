@@ -45,17 +45,6 @@ function str2type(name)
     instance = t()
 end
 
-struct Settings
-    vel_mode
-    dir_mode
-    turb_mode
-    shear_mode
-    cor_dir_mode
-    cor_vel_mode
-    cor_turb_mode
-    iterate_mode
-end
-
 # marker structs
 include("windfield/structs_dir.jl")
 include("windfield/structs_shear.jl")
@@ -65,6 +54,17 @@ include("correction/structs_dir.jl")
 include("correction/structs_vel.jl")
 include("correction/structs_turb.jl")
 include("floridyn_cl/structs.jl")
+
+struct Settings
+    vel_mode::VelModel
+    dir_mode::DirModel
+    turb_mode
+    shear_mode
+    cor_dir_mode
+    cor_vel_mode
+    cor_turb_mode
+    iterate_mode
+end
 
 """
     WindShear
