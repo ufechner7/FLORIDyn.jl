@@ -53,13 +53,13 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     # end
 
     # # ========== Turbine Setup ==========
-    # T = Dict()
-    # T[:posBase] = turbProp.Pos
-    # T[:nT] = size(turbProp.Pos, 1)
+    T = Dict()
+    T[:posBase] = turbProp.Pos
+    T[:nT] = size(turbProp.Pos, 1)
     
-    # t_data = getTurbineData(turbProp.Type)
-    # T[:posNac] = t_data.NacPos
-    # T[:D] = t_data.D
+    t_data = getTurbineData(turbProp.Type)
+    T[:posNac] = t_data.NacPos
+    T[:D] = t_data.D
 
     # states = States()
     # if paramFLORIDyn.twf_model == "heterogeneous"
@@ -146,7 +146,6 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
         end
         error("Data not loaded properly. Default files generated. Please overwrite with appropriate data.")
     end
-    T = nothing
 
     return T, wind, sim, con, paramFLORIS
 end

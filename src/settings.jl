@@ -159,3 +159,40 @@ function Settings(wind::Wind, sim::Sim)
     Settings(vel_mode, dir_mode, turb_mode, shear_mode, cor_dir_mode, cor_vel_mode, cor_turb_mode, iterate_mode)
 end
 
+function getTurbineData(names::Vector{String})
+    # Initialize data containers
+    num = length(names)
+    NacPos = Vector{NTuple{3, Float64}}(undef, num)
+    D = zeros(Float64, num)
+
+    for i in 1:num
+        name = names[i]
+        if name == "DTU 10MW"
+            NacPos[i] = (0.0, 0.0, 119.0)
+            D[i] = 178.4
+        elseif name == "DTU 5MW"
+            NacPos[i] = (0.0, 0.0, 119.0)  # Placeholder
+            D[i] = 178.4                  # Placeholder
+        elseif name == "Senvion 6.2M"
+            NacPos[i] = (0.0, 0.0, 152.0 - 29.0)
+            D[i] = 126.0
+        elseif name == "V116"
+            NacPos[i] = (0.0, 0.0, 84.0)
+            D[i] = 116.0
+        elseif name == "V117"
+            NacPos[i] = (0.0, 0.0, 84.0)
+            D[i] = 117.0
+        elseif name == "V162"
+            NacPos[i] = (0.0, 0.0, 119.0)
+            D[i] = 162.0
+        elseif name == "GE Haliade X"
+            NacPos[i] = (0.0, 0.0, 150.0)
+            D[i] = 220.0
+        else
+            error("Turbine type '$name' not known or misspelled.")
+        end
+    end
+
+    # Return results as a named tuple or struct
+    return (NacPos = NacPos, D = D)
+end
