@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 @testset "Turbine Array Properties                                " begin
-    tProp = turbineArrayProperties()
+    tProp = turbineArrayProperties("data/2021_9T_Data.yaml")
 
     # Test dimensions of position matrix
     @test size(tProp.Pos) == (9, 3)

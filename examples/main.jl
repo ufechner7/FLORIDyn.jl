@@ -12,4 +12,4 @@ wind, sim, con = setup("data/2021_9T_Data.yaml")
 set = Settings(wind, sim)
 
 # % Load linked data
-# turbProp        = turbineArrayProperties();
+turbProp        = turbineArrayProperties("data/2021_9T_Data.yaml");
