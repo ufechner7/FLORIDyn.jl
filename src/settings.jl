@@ -220,11 +220,12 @@ function importSOWFAFile(filename::String, dataLines::Union{UnitRange{Int}, Vect
         missingstring="",
         header=[:Turbine, :Times, :Var3, :nacelle],
         types=Dict(:Turbine=>Float64, :Times=>Float64, :nacelle=>Float64, :Var3=>String),
-        silencewarnings=true
+        silencewarnings=true,
+        ignoreemptyrows=true
     )
 
     # Filter rows if needed
-    if dataLines isa UnitRange
+    if dataLines isa UnitRange && dataLines != 2:typemax(Int)
         df = df[dataLines, :]
     elseif dataLines isa Vector
         keep_rows = falses(nrow(df))
