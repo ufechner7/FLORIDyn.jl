@@ -58,6 +58,14 @@ floris:
            # This is in contrast to previous literature which assumed a fixed box area and the
            # turbines therein as source of higher TI.
 
+florydyn:
+  n_op: 200
+  deltaUW: 10.0
+  deltaDW: 0.5
+  deltaCW: 3.0
+  dynStateChange: "None"
+  twf_model: "heterogeneous"
+
 turbines:
     - id: 1
       type: DTU 10MW

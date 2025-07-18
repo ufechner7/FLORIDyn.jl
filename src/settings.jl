@@ -78,6 +78,15 @@ end
     TIexp::Int
 end
 
+@with_kw struct FloryDyn
+    n_op::Int
+    deltaUW::Float64
+    deltaDW::Float64
+    deltaCW::Float64
+    dynStateChange::String
+    twf_model::String
+end
+
 
 """
     setup(filename)
@@ -93,6 +102,7 @@ Initializes or configures the system using the provided `filename`. The `filenam
   - `sim`: An instance of the `Sim` struct containing simulation parameters.
   - `con`: An instance of the `Con` struct containing controller parameters.
   - `floris`: An instance of the `Floris` struct containing FLORIS model parameters.
+  - `florydyn`: An instance of the `FloryDyn` struct containing FLORIDyn model parameters.
 """
 function setup(filename)
     data = YAML.load_file(filename)
@@ -104,7 +114,9 @@ function setup(filename)
     con = convertdict(Con, con_data)
     floris_data = data["floris"]
     floris = convertdict(Floris, floris_data)
-    wind, sim, con, floris
+    florydyn_data = data["florydyn"]
+    florydyn = convertdict(FloryDyn, florydyn_data)
+    wind, sim, con, floris, florydyn
 end
 
 """
