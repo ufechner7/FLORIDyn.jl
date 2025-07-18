@@ -28,6 +28,7 @@ makedocs(;
         "Home" => "index.md",
         "Exported Types" => "types.md",
         "Exported Functions" => "functions.md",
+        "Settings" => "settings.md",
     ],
 )
 

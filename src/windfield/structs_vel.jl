@@ -3,6 +3,12 @@
 
 # the different wind velocity types (vel_mode)
 
+"""
+    VelModel
+
+Abstract type representing a velocity model in the wind field module.
+Subtypes of `VelModel` implement specific velocity field representations or models.
+"""
 abstract type VelModel end
 
 struct Velocity_Constant <: VelModel end

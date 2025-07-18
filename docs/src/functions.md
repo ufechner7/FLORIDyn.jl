@@ -27,8 +27,3 @@ CalcCt
 discretizeRotor
 ```
 
-# Settings
-```@docs
-setup
-Settings(wind::Wind, sim::Sim)
-```

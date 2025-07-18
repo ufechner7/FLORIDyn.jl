@@ -8,6 +8,7 @@
 
 An abstract type representing a directional wind field model. 
 Subtypes of `DirModel` should implement specific models for wind directionality.
+See: [Markers defining the wind direction model](@ref) for more details.
 """
 abstract type DirModel end
 
