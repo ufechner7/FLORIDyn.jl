@@ -176,4 +176,6 @@ include("floris/gaussian.jl")
 include("correction/direction.jl")
 include("correction/velocity.jl")
 
+include("floridyn_cl/prepare_simulation.jl")
+
 end

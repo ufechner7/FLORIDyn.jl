@@ -58,7 +58,7 @@ floris:
            # This is in contrast to previous literature which assumed a fixed box area and the
            # turbines therein as source of higher TI.
 
-florydyn:
+floridyn:
   n_op: 200
   deltaUW: 10.0
   deltaDW: 0.5

@@ -8,7 +8,7 @@ using FLORIDyn, YAML
 settings_file = "data/2021_9T_Data.yaml"
 
 # get the settings for the wind field, simulator and controller
-wind, sim, con, floris, florydyn = setup(settings_file)
+wind, sim, con, floris, floridyn = setup(settings_file)
 
 # create settings struct
 set = Settings(wind, sim)
@@ -16,4 +16,4 @@ set = Settings(wind, sim)
 # % Load linked data
 turbProp        = turbineArrayProperties(settings_file)
 paramFLORIS     = floris
-paramFLORIDyn   = florydyn
+paramFLORIDyn   = floridyn

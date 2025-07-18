@@ -78,7 +78,7 @@ end
     TIexp::Int
 end
 
-@with_kw struct FloryDyn
+@with_kw struct FloriDyn
     n_op::Int
     deltaUW::Float64
     deltaDW::Float64
@@ -114,9 +114,9 @@ function setup(filename)
     con = convertdict(Con, con_data)
     floris_data = data["floris"]
     floris = convertdict(Floris, floris_data)
-    florydyn_data = data["florydyn"]
-    florydyn = convertdict(FloryDyn, florydyn_data)
-    wind, sim, con, floris, florydyn
+    floridyn_data = data["floridyn"]
+    floridyn = convertdict(FloriDyn, floridyn_data)
+    wind, sim, con, floris, floridyn
 end
 
 """
