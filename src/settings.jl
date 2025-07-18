@@ -196,3 +196,49 @@ function getTurbineData(names::Vector{String})
     # Return results as a named tuple or struct
     return (NacPos = NacPos, D = D)
 end
+
+using CSV
+using DataFrames
+
+"""
+    importSOWFAFile(filename::String, dataLines::Union{UnitRange{Int}, Vector{Tuple{Int,Int}}} = 2:typemax(Int))
+
+Reads from a custom-formatted text file and extracts columns: Turbine, Times, and nacelle.
+
+- `filename`: The path to the input file.
+- `dataLines`: A single range (e.g., `2:Inf`) or vector of tuple ranges (e.g., `[(2, Inf)]`) for rows to import.
+
+Returns:
+- A Matrix{Float64} with the selected column data.
+"""
+function importSOWFAFile(filename::String, dataLines::Union{UnitRange{Int}, Vector{Tuple{Int,Int}}} = 2:typemax(Int))
+
+    # Read full table first
+    df = CSV.read(filename, DataFrame;
+        delim=' ',
+        ignorerepeated=true,
+        missingstring="",
+        header=[:Turbine, :Times, :Var3, :nacelle],
+        types=Dict(:Turbine=>Float64, :Times=>Float64, :nacelle=>Float64, :Var3=>String),
+        silencewarnings=true
+    )
+
+    # Filter rows if needed
+    if dataLines isa UnitRange
+        df = df[dataLines, :]
+    elseif dataLines isa Vector
+        keep_rows = falses(nrow(df))
+        for (start, stop) in dataLines
+            keep_rows[start:min(stop, nrow(df))] .= true
+        end
+        df = df[keep_rows, :]
+    end
+
+    # Select specific columns
+    selected_df = df[:, [:Turbine, :Times, :nacelle]]
+
+    # Convert to Matrix
+    nacelleYaw = Matrix(selected_df)
+    return nacelleYaw
+end
+

@@ -32,7 +32,7 @@ export getWindSpeedT, getWindSpeedT_EnKF
 
 export discretizeRotor, CalcCt, States
 export turbineArrayProperties
-export prepareSimulation
+export prepareSimulation, importSOWFAFile
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()

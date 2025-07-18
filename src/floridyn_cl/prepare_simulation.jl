@@ -86,28 +86,28 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     #     paramFLORIDyn.deltaUW = paramFLORIDyn.deltaDW
     # end
 
-    # # ========== Control Setup ==========
-    # yaw_method = con.Yaw
-    # if yaw_method == "Constant"
-    #     try
-    #         con.YawData = CSV.read("Control_YawConstant.csv", DataFrame)
-    #     catch
-    #         generateDemoCSV(vel_file_dir, "Control_YawConstant.csv", 1, nothing, 270, nothing)
-    #         push!(loadDataWarnings, "Control_YawConstant.csv not found, default created. Unit: [deg]")
-    #     end
-    # elseif yaw_method == "InterpTurbine"
-    #     try
-    #         con.YawData = CSV.read("Control_YawInterpolation.csv", DataFrame)
-    #     catch
-    #         generateDemoCSV(vel_file_dir, "Control_YawInterpolation.csv", 3, nT, [sim.StartTime, 270], [sim.EndTime, 250])
-    #         push!(loadDataWarnings, "Control_YawInterpolation.csv not found, default created. Unit: [deg]")
-    #     end
-    # elseif yaw_method == "SOWFA"
-    #     nacelleYaw = importSOWFAFile(joinpath(vel_file_dir, "SOWFA_nacelleYaw.csv"))
-    #     con.YawData = condenseSOWFAYaw([nacelleYaw[1:T[:nT]:end, 2] reshape(nacelleYaw[:,3], T[:nT], :)'])
-    # else
-    #     error("Unknown yaw method: $yaw_method")
-    # end
+    # ========== Control Setup ==========
+    yaw_method = con.yaw
+    if yaw_method == "Constant"
+        try
+            con.YawData = CSV.read("Control_YawConstant.csv", DataFrame)
+        catch
+            generateDemoCSV(vel_file_dir, "Control_YawConstant.csv", 1, nothing, 270, nothing)
+            push!(loadDataWarnings, "Control_YawConstant.csv not found, default created. Unit: [deg]")
+        end
+    elseif yaw_method == "InterpTurbine"
+        try
+            con.YawData = CSV.read("Control_YawInterpolation.csv", DataFrame)
+        catch
+            generateDemoCSV(vel_file_dir, "Control_YawInterpolation.csv", 3, nT, [sim.StartTime, 270], [sim.EndTime, 250])
+            push!(loadDataWarnings, "Control_YawInterpolation.csv not found, default created. Unit: [deg]")
+        end
+    elseif yaw_method == "sowfa"
+        nacelleYaw = importSOWFAFile(joinpath(vel_file_dir, "SOWFA_nacelleYaw.csv"))
+        con.YawData = condenseSOWFAYaw([nacelleYaw[1:T[:nT]:end, 2] reshape(nacelleYaw[:,3], T[:nT], :)'])
+    else
+        error("Unknown yaw method: $yaw_method")
+    end
 
     # if !haskey(con, :tanhYaw)
     #     con.tanhYaw = false
