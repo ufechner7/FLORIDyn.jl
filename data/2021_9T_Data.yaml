@@ -42,6 +42,22 @@ sim:
 con:
   yaw: sowfa
 
+floris:
+  alpha: 2.32
+  beta: 0.154
+  k_a: 0.3837
+  k_b: 0.0037
+  k_fa: 0.73
+  k_fb: 0.8325
+  k_fc: 0.0325
+  k_fd: -0.32
+  eta: 1
+  p_p: 2.2
+  airDen: 1.225 # kg/m^3 (SOWFA)
+  TIexp: 3 # TI crosswind distribution is modelled as a factor of sigma_y and sigma_z.
+           # This is in contrast to previous literature which assumed a fixed box area and the
+           # turbines therein as source of higher TI.
+
 turbines:
     - id: 1
       type: DTU 10MW
