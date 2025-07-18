@@ -15,3 +15,4 @@ set = Settings(wind, sim)
 
 # % Load linked data
 turbProp        = turbineArrayProperties(settings_file)
+# paramFLORIS     = parameterFLORIS();
