@@ -63,6 +63,21 @@ end
     yaw::String
 end
 
+@with_kw struct Floris
+    alpha::Float64
+    beta::Float64
+    k_a::Float64
+    k_b::Float64
+    k_fa::Float64
+    k_fb::Float64
+    k_fc::Float64
+    k_fd::Float64
+    eta::Int
+    p_p::Float64
+    airDen::Float64
+    TIexp::Int
+end
+
 
 """
     setup(filename)
@@ -77,6 +92,7 @@ Initializes or configures the system using the provided `filename`. The `filenam
   - `wind`: An instance of the `Wind` struct containing wind-related parameters.
   - `sim`: An instance of the `Sim` struct containing simulation parameters.
   - `con`: An instance of the `Con` struct containing controller parameters.
+  - `floris`: An instance of the `Floris` struct containing FLORIS model parameters.
 """
 function setup(filename)
     data = YAML.load_file(filename)
@@ -86,7 +102,9 @@ function setup(filename)
     sim = convertdict(Sim, sim_data)
     con_data = data["con"]
     con = convertdict(Con, con_data)
-    wind, sim, con
+    floris_data = data["floris"]
+    floris = convertdict(Floris, floris_data)
+    wind, sim, con, floris
 end
 
 """
