@@ -1,18 +1,32 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-function discretizeRotor(nRP)
+"""
+    discretizeRotor(nRP::Int)
+
+Discretizes the rotor into a `nRP` segments. The algorithm returns the normalized center location ∈ [-0.5, 0.5] and the
+relative area the segment represents.
+
+# Arguments
+- `nRP::Int`: The number of radial points to discretize the rotor into.
+
+# Returns
+- The tuple `(RPs, w)` where:
+  - `RPs`: A matrix of size `(nC, 3)` where `nC` is the number of segments. The first column is all zeros, 
+     the second and third columns contain the normalized radial positions.
+  - `w`: A vector of weights corresponding to each segment, summing to approximately 1.
+
+# Notes
+- The algorithm returns the normalized center location in the range `[-0.5, 0.5]` and the
+  relative area that each segment represents.
+- The isocell algorithm is used, which may not yield exactly `nRP` cells but aims to achieve a similar number.
+- For details, see the publication by Masset et al.:
+  [Masset et al. (2009)](https://orbi.uliege.be/bitstream/2268/91953/1/masset_isocell_orbi.pdf)
+- The choice of `N1 = 3` is made here, but values of `4` or `5` are also viable options. The choice of `3` is close to optimal.
+"""
+function discretizeRotor(nRP::Int)
     # DISCRETIZEROTOR discretizes the rotor plane into nRP segments.
-    # The algorithm returns the normalized center location ∈ [-0.5, 0.5] and the
-    # relative area the segment represents.
     #
-    # The isocell algorithm
-    # It faces certain limitations and aims to achieve nRP cells but might end
-    # up with a slightly different number. For details, see the publication of
-    # Masset et al.:
-    #  https://orbi.uliege.be/bitstream/2268/91953/1/masset_isocell_orbi.pdf
-    # We choose N1 = 3 here, 4 or 5 are also viable options, 3 is close to
-    # optimal
 
     N1 = 3
     n = round(Int, sqrt(nRP / N1))
@@ -23,7 +37,7 @@ function discretizeRotor(nRP)
     nC = N1 * n^2
 
     # RPs matrix: nC rows, 3 columns
-    # Columns: (I think MATLAB first is 1-based; in Julia too)
+    # Columns:
     # RPs[:, 1] corresponds to RPs(:,1) in MATLAB, but unused in original code (remains zeros)
     RPs = zeros(nC, 3)
 

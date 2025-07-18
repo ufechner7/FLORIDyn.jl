@@ -20,3 +20,9 @@ getWindShearT
 getWindTiT
 getWindTiT_EnKF
 ```
+
+# FLORIS
+```@docs
+CalcCt
+discretizeRotor
+```
