@@ -18,6 +18,4 @@ turbProp        = turbineArrayProperties(settings_file)
 paramFLORIS     = floris
 paramFLORIDyn   = floridyn
 
-T, Wind, Sim, Con, paramFLORIS, Vis = prepareSimulation(
-    wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim, nothing
-)
+T, wind, sim, con, paramFLORIS = prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)

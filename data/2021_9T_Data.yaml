@@ -36,6 +36,7 @@ sim:
       iter_sigma_cw: 512
       iter_sigma_time: 50
   init: noinit
+  path_to_data: "data/2021_9T_Data"
   save_init_state: false
   save_final_state: false
 

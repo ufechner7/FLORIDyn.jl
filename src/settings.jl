@@ -55,6 +55,7 @@ end
     rotor_points::Int64
     dyn::Dyn
     init::String
+    path_to_data::String
     save_init_state::Bool
     save_final_state::Bool
 end
