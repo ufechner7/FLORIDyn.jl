@@ -243,3 +243,15 @@ function importSOWFAFile(filename::String, dataLines::Union{UnitRange{Int}, Vect
     return nacelleYaw
 end
 
+function condenseSOWFAYaw(YawData::Array{T,2}) where T
+    # Compute difference between adjacent rows (excluding the first and last rows)
+    diff = sum(
+        abs.(YawData[2:end-1, 2:end] .- YawData[1:end-2, 2:end]) .+
+        abs.(YawData[2:end-1, 2:end] .- YawData[3:end, 2:end]),
+        dims=2
+    )
+    # Find the rows where the difference is significant
+    ind_important = vcat(1, findall(x -> x > 0, vec(diff)) .+ 1, size(YawData, 1))
+    # Select the important rows
+    return YawData[ind_important, :]
+end
