@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-@testset verbose=true "floris" begin
+@testset verbose=true "floris                                                  " begin
     @testset "discretizeRotor" begin
 
         # Test 1: Check output sizes
