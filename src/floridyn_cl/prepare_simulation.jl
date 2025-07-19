@@ -11,22 +11,20 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     input_vel = wind.input_vel
 
     if input_vel == "I_and_I"
-        wind.vel.WSE = WSEParameters(nT, sim.PathToSim, sim.TimeStep)
-        wind.vel.TimePrev = sim.StartTime
-        wind.vel.StartTime = sim.StartTime
+        wind.vel.WSE = WSEParameters(nT, sim.path_to_data, sim.TimeStep)
+        wind.vel.TimePrev = sim.start_time
+        wind.vel.start_time = sim.start_time
     # elseif input_vel == "Interpolation"
     #     try
     #         wind.Vel = CSV.read("WindVel.csv", DataFrame)
     #     catch
-    #         generateDemoCSV(vel_file_dir, "WindVel.csv", 2, nothing, [sim.StartTime, 8], [sim.EndTime, 10])
-    #         push!(loadDataWarnings, "WindVel.csv not found, default created. Units: [s, ms^-1]")
+    #         push!(loadDataWarnings, "WindVel.csv not found.")
     #     end
     # elseif input_vel == "InterpTurbine"
     #     try
     #         wind.Vel = CSV.read("WindVelTurbine.csv", DataFrame)
     #     catch
-    #         generateDemoCSV(vel_file_dir, "WindVelTurbine.csv", 3, size(turbProp.Pos, 1), [sim.StartTime, 8], [sim.EndTime, 10])
-    #         push!(loadDataWarnings, "WindVelTurbine.csv not found, default created. Units: [s, ms^-1]")
+    #         push!(loadDataWarnings, "WindVelTurbine.csv not found, default created.")
     #     end
     elseif input_vel == "Constant"
         try 
@@ -56,12 +54,12 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     # Assuming the following global-like variables/structures:
     # wind.input_dir : String
     # wind.dir : Custom structure or Dict
-    # Sim.PathToSim : String
-    # Sim.StartTime : Float64 (or other numeric)
-    # Sim.EndTime : Float64
+    # Sim.path_to_data : String
+    # Sim.start_time : Float64 (or other numeric)
+    # Sim.end_time : Float64
     # turbProp.Pos : Matrix or Vector
     # loadDataWarnings : Vector{String}
-    # Define your own readCovMatrix and generateDemoCSV functions before using them
+    # Define your own readCovMatrix function before using them
 
     nT = size(turbProp.Pos, 1)
     data_path = sim.path_to_data
@@ -166,8 +164,7 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
         try
             con.YawData = CSV.read("Control_YawInterpolation.csv", DataFrame)
         catch
-            generateDemoCSV(vel_file_dir, "Control_YawInterpolation.csv", 3, nT, [sim.StartTime, 270], [sim.EndTime, 250])
-            push!(loadDataWarnings, "Control_YawInterpolation.csv not found, default created. Unit: [deg]")
+            push!(loadDataWarnings, "Control_YawInterpolation.csv not found.")
         end
     elseif yaw_method == "sowfa"
         nacelleYaw = importSOWFAFile(joinpath(vel_file_dir, "SOWFA_nacelleYaw.csv"))
@@ -185,12 +182,12 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     # T[:States_OP], T[:States_T], T[:States_WF] = InitStates(T, wind, turbProp.Init_States, paramFLORIS, sim)
 
     # # ========== Simulation Setup ==========
-    # sim.nSimSteps = length(sim.StartTime:sim.TimeStep:sim.EndTime)
+    # sim.nSimSteps = length(sim.start_time:sim.TimeStep:sim.end_time)
     # paramFLORIS.RotorPoints = sim.RotorPoints
 
     # # ========== Visualization ==========
     # if Vis.FlowField.Plot.Online
-    #     Vis.Film.MovFileEffU = joinpath(sim.PathToSim, "Results", "EffectiveWindSpeed.avi")
+    #     Vis.Film.MovFileEffU = joinpath(sim.path_to_data, "Results", "EffectiveWindSpeed.avi")
     #     Vis.Film.FrmFileEffU = Vector{Any}(undef, sim.nSimSteps)
     #     Vis.Film.InProgress = true
     # else
