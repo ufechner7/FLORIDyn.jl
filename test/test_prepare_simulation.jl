@@ -26,5 +26,6 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(wind, con, paramFLORIDyn, par
                     20900.0  195.0
                     21200.0  195.0
                     ]
+    @test wind.ti == 0.0620
 end
 nothing

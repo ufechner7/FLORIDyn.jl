@@ -109,6 +109,32 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
         error("Method for wind direction $(wind.input_dir) unknown.")
     end
 
+    # ============= TI =============        
+    if wind.input_ti == "Interpolation"
+        try
+            wind.ti = CSV.read("WindTI.csv", DataFrame)
+        catch e
+            push!(loadDataWarnings, "WindTI.csv not found.")
+        end
+    elseif wind.input_ti == "InterpTurbine"
+        try
+            path = joinpath(data_path, "WindTITurbine.csv")
+            wind.ti = CSV.read(path, DataFrame)
+        catch e
+            push!(loadDataWarnings, "WindTITurbine.csv not found.")
+        end
+    elseif wind.input_ti == "Constant"
+        try
+            path = joinpath(data_path, "WindTIConstant.csv")
+            df = CSV.read(path, DataFrame; header=false)
+            wind.ti = df[1,1]
+        catch e
+            push!(loadDataWarnings, "WindTIConstant.csv not found.")
+        end
+    else
+        error("Method for turbulence intensity $(wind.input_ti) unknown.")
+    end
+
     # ========== Turbine Setup ==========
     T = Dict()
     T[:posBase] = turbProp.Pos
