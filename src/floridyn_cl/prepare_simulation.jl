@@ -49,14 +49,13 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     # else
     #     error("Unknown wind velocity method: $input_vel")
     # end
-    # using DelimitedFiles
 
     # Assuming the following global-like variables/structures:
     # wind.input_dir : String
     # wind.dir : Custom structure or Dict
-    # Sim.path_to_data : String
-    # Sim.start_time : Float64 (or other numeric)
-    # Sim.end_time : Float64
+    # sim.path_to_data : String
+    # sim.start_time : Float64 (or other numeric)
+    # sim.end_time : Float64
     # turbProp.Pos : Matrix or Vector
     # loadDataWarnings : Vector{String}
     # Define your own readCovMatrix function before using them
@@ -110,14 +109,7 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
         error("Method for wind direction $(wind.input_dir) unknown.")
     end
 
-    # Note:
-    # - Define `readCovMatrix` in Julia with consistent signatures.
-    # - CSV processing can optionally use CSV.jl and DataFrames.jl if CSV files are complex.
-    # - readdlm is suitable for basic CSVs; for more complex cases, use:
-    #     CSV.read("filename.csv", DataFrame)
-
-
-    # # ========== Turbine Setup ==========
+    # ========== Turbine Setup ==========
     T = Dict()
     T[:posBase] = turbProp.Pos
     T[:nT] = size(turbProp.Pos, 1)
