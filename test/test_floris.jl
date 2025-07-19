@@ -48,7 +48,7 @@
         expected = 4 .* a_values .* (1 .- a_values)
         @test all(isapprox.(CalcCt.(a_values, Ref(nothing)), expected))
     end
-    @testset "States function" begin
+    @testset "States() constructor" begin
         s = States()
 
         # Test type

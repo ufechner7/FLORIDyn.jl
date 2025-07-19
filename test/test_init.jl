@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-@testset "Turbine Array Properties                                " begin
+@testset "turbineArrayProperties                                  " begin
     tProp = turbineArrayProperties("data/2021_9T_Data.yaml")
 
     # Test dimensions of position matrix
