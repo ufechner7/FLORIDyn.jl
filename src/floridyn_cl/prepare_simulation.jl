@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
+function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     loadDataWarnings = String[]
 
     # ========== WIND: Velocity ==========
@@ -212,7 +212,7 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     # end
 
     # # ========== Init State ===========
-    T[:States_OP], T[:States_T], T[:States_WF] = InitStates(T, wind, turbProp.Init_States, paramFLORIS, sim)
+    T[:States_OP], T[:States_T], T[:States_WF] = InitStates(set, T, wind, turbProp.Init_States, paramFLORIS, sim)
 
     # # ========== Simulation Setup ==========
     # sim.nSimSteps = length(sim.start_time:sim.TimeStep:sim.end_time)

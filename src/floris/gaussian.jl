@@ -43,7 +43,7 @@ function States()
     return States(T_names, Turbine, OP_names, OP, WF_names, WF)
 end
 
-function InitStates(T, Wind, InitTurb, paramFLORIS, Sim)
+function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
     # Unpack state arrays and parameters
     States_OP   = copy(T[:States_OP])
     States_T    = copy(T[:States_T])
@@ -56,11 +56,11 @@ function InitStates(T, Wind, InitTurb, paramFLORIS, Sim)
     for iT = 1:nT
         # Retrieve wind field data
         if Wind.input_vel == "I_and_I"
-            U, _ = getWindSpeedT(Wind.vel, iT, startTime)
+            U, _ = getWindSpeedT(set.vel_mode, Wind.vel, iT, startTime)
         elseif Wind.input_vel in ["ZOH_wErrorCov", "RW_with_Mean"]
             U = Wind.vel.Init
         else
-            U, _ = getWindSpeedT(Wind.vel, iT, startTime)
+            U, _ = getWindSpeedT(set.vel_mode, Wind.vel, iT, startTime)
         end
 
         if Wind.input_dir == "RW_with_Mean"

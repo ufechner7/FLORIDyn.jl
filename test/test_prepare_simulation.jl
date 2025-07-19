@@ -16,7 +16,7 @@ turbProp        = turbineArrayProperties(settings_file)
 paramFLORIS     = floris
 paramFLORIDyn   = floridyn
 
-T, wind, sim, con, paramFLORIS = prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
+T, wind, sim, con, paramFLORIS = prepareSimulation(set, wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
 
 @testset "prepare_simulation                                      " begin
     @test wind.vel == 8.2
