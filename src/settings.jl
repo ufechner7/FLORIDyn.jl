@@ -162,6 +162,7 @@ end
 function getTurbineData(names::Vector{String})
     # Initialize data containers
     num = length(names)
+    #TODO: NacPos should be a matrix, not a vector of tuples
     NacPos = Vector{NTuple{3, Float64}}(undef, num)
     D = zeros(Float64, num)
 

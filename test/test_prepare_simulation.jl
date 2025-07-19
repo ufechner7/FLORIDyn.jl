@@ -44,5 +44,6 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(wind, con, paramFLORIDyn, par
 
     @test T[:posBase] == expected_posBase
     @test T[:nT] == 9
+    #TODO T[:posNac] is a vector of tuples, but should be a matrix
 end
 nothing
