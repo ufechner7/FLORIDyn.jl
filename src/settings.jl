@@ -72,6 +72,7 @@ end
 @with_kw mutable struct Con
     yaw::String
     yaw_data::Union{Nothing, Matrix{Float64}} = nothing
+    tanh_yaw::Bool = false
 end
 
 @with_kw struct Floris
