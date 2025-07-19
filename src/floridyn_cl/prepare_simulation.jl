@@ -51,6 +51,73 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     # else
     #     error("Unknown wind velocity method: $input_vel")
     # end
+    # using DelimitedFiles
+
+    # Assuming the following global-like variables/structures:
+    # wind.input_dir : String
+    # wind.dir : Custom structure or Dict
+    # Sim.PathToSim : String
+    # Sim.StartTime : Float64 (or other numeric)
+    # Sim.EndTime : Float64
+    # turbProp.Pos : Matrix or Vector
+    # loadDataWarnings : Vector{String}
+    # Define your own readCovMatrix and generateDemoCSV functions before using them
+
+    nT = size(turbProp.Pos, 1)
+    data_path = sim.path_to_data
+
+    if wind.input_dir == "Interpolation"
+        try
+            path = joinpath(data_path, "WindDir.csv")
+            wind.dir = readdlm(path, ',', Float64)
+        catch
+            push!(loadDataWarnings, "WindDir.csv not found.")
+        end
+    elseif wind.input_dir == "InterpTurbine"
+        try
+            path = joinpath(data_path, "WindDirTurbine.csv")
+            wind.dir = readdlm(path, ',', Float64)
+        catch
+            push!(loadDataWarnings, "WindDirTurbine.csv not found")
+        end
+    elseif wind.input_dir == "Constant"
+        try
+            path = joinpath(data_path, "WindDirConstant.csv")
+            wind.dir = readdlm(path, ',', Float64)
+        catch
+            push!(loadDataWarnings, "WindDirConstant.csv not found.")
+        end
+    elseif wind.input_dir == "Interpolation_wErrorCov"
+        wind.dir = Dict()
+        wind.dir[:Data] = readdlm("WindDir.csv", ',', Float64)
+        DirCov = readdlm("WindDirCovariance.csv", ',', Float64)
+        _, wind.dir[:CholSig] = readCovMatrix(DirCov, nT, "WindDir")
+    elseif wind.input_dir == "InterpTurbine_wErrorCov"
+        wind.dir = Dict()
+        wind.dir[:Data] = readdlm("WindDirTurbine.csv", ',', Float64)
+        DirCov = readdlm("WindDirCovariance.csv", ',', Float64)
+        _, wind.dir[:CholSig] = readCovMatrix(DirCov, nT, "WindDir")
+    elseif wind.input_dir == "Constant_wErrorCov"
+        wind.dir = Dict()
+        wind.dir[:Data] = readdlm("WindDirConstant.csv", ',', Float64)
+        DirCov = readdlm("WindDirCovariance.csv", ',', Float64)
+        _, wind.dir[:CholSig] = readCovMatrix(DirCov, nT, "WindDir")
+    elseif wind.input_dir == "RW_with_Mean"
+        wind.dir = Dict()
+        wind.dir[:Init] = readdlm("WindDirConstant.csv", ',', Float64)
+        DirCov = readdlm("WindDirCovariance.csv", ',', Float64)
+        _, wind.dir[:CholSig] = readCovMatrix(DirCov, nT, "WindDir")
+        wind.dir[:MeanPull] = 1
+    else
+        error("Method for wind direction $(wind.input_dir) unknown.")
+    end
+
+    # Note:
+    # - Define `readCovMatrix` in Julia with consistent signatures.
+    # - CSV processing can optionally use CSV.jl and DataFrames.jl if CSV files are complex.
+    # - readdlm is suitable for basic CSVs; for more complex cases, use:
+    #     CSV.read("filename.csv", DataFrame)
+
 
     # # ========== Turbine Setup ==========
     T = Dict()
@@ -104,7 +171,8 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
         end
     elseif yaw_method == "sowfa"
         nacelleYaw = importSOWFAFile(joinpath(vel_file_dir, "SOWFA_nacelleYaw.csv"))
-        con.YawData = condenseSOWFAYaw([nacelleYaw[1:T[:nT]:end, 2] reshape(nacelleYaw[:,3], T[:nT], :)'])
+        # TODO: Make the following line work
+        # con.YawData = condenseSOWFAYaw([nacelleYaw[1:T[:nT]:end, 2] reshape(nacelleYaw[:,3], T[:nT], :)'])
     else
         error("Unknown yaw method: $yaw_method")
     end
@@ -144,7 +212,7 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
         for w in loadDataWarnings
             @warn w
         end
-        error("Data not loaded properly. Default files generated. Please overwrite with appropriate data.")
+        error("Data not loaded properly. Please provide the required files.")
     end
 
     return T, wind, sim, con, paramFLORIS
