@@ -67,5 +67,6 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(wind, con, paramFLORIDyn, par
     @test T[:Names_WF]  == ["wind_vel", "wind_dir", "TI0", "OP_ori"]
     @test T[:StartI]    == [1 201 401 601 801 1001 1201 1401 1601]
     @test T[:nOP]       == 200
+    @test T[:red_arr]   == ones(9,9)
 end
 nothing
