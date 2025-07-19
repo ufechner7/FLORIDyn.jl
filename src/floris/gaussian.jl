@@ -43,3 +43,71 @@ function States()
     return States(T_names, Turbine, OP_names, OP, WF_names, WF)
 end
 
+function InitStates(T, Wind, InitTurb, paramFLORIS, Sim)
+    # Unpack state arrays and parameters
+    States_OP   = copy(T[:States_OP])
+    States_T    = copy(T[:States_T])
+    States_WF   = copy(T[:States_WF])
+    nT          = T[:nT]
+    nOP         = T[:nOP]
+    deltaT      = Sim.time_step
+    startTime   = Sim.start_time
+
+    for iT = 1:nT
+        # Retrieve wind field data
+        if Wind.input_vel == "I_and_I"
+            U, _ = getWindSpeedT(Wind.vel, iT, startTime)
+        elseif Wind.input_vel in ["ZOH_wErrorCov", "RW_with_Mean"]
+            U = Wind.vel.Init
+        else
+            U, _ = getWindSpeedT(Wind.vel, iT, startTime)
+        end
+
+        if Wind.input_dir == "RW_with_Mean"
+            phiS = Wind.Dir.Init
+        else
+            phiS = getWindDirT(Wind.Dir, iT, startTime)
+        end
+
+        TI = getWindTiT(Wind.TI, iT, startTime)
+
+        rangeOPs = ((iT-1)*nOP+1):(iT*nOP)
+
+        # Initialize the States of the OPs and turbines
+        States_WF[rangeOPs, 1] .= U
+        States_WF[rangeOPs, 2] .= phiS
+        States_WF[rangeOPs, 3] .= TI
+
+        # Add orientation if used
+        if length(T.Names_WF) == 4
+            States_WF[rangeOPs, 4] .= phiS
+        end
+
+        # Downwind distance (wake coord)
+        States_OP[rangeOPs, 4] .= (collect(0:(nOP-1)) .* deltaT .* U)
+
+        # Init turbine states
+        States_T[rangeOPs, :] = ones(nOP, 1) * InitTurb[iT, :]
+
+        # Crosswind position
+        States_OP[rangeOPs, 5:6] = Centerline(States_OP[rangeOPs, :], States_T[rangeOPs, :],
+                                              States_WF[rangeOPs, :], paramFLORIS, T.D[iT])
+
+        # Convert wind dir in fitting radians
+        phiW = angSOWFA2world(States_WF[rangeOPs, 2])
+
+        # World coordinate position x0 and y0 including tower base and nacelle pos
+        States_OP[rangeOPs, 1] .= cos.(phiW) .* States_OP[rangeOPs, 4] .-
+                                   sin.(phiW) .* States_OP[rangeOPs, 5] .+
+                                   T.posBase[iT, 1] + T.posNac[iT, 1]
+        States_OP[rangeOPs, 2] .= sin.(phiW) .* States_OP[rangeOPs, 4] .+
+                                   cos.(phiW) .* States_OP[rangeOPs, 5] .+
+                                   T.posBase[iT, 2] + T.posNac[iT, 2]
+        States_OP[rangeOPs, 3] .= States_OP[rangeOPs, 6] .+
+                                   T.posBase[iT, 3] + T.posNac[iT, 3]
+    end
+
+    return States_OP, States_T, States_WF
+end
+
+

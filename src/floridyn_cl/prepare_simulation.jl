@@ -212,7 +212,7 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     # end
 
     # # ========== Init State ===========
-    # T[:States_OP], T[:States_T], T[:States_WF] = InitStates(T, wind, turbProp.Init_States, paramFLORIS, sim)
+    T[:States_OP], T[:States_T], T[:States_WF] = InitStates(T, wind, turbProp.Init_States, paramFLORIS, sim)
 
     # # ========== Simulation Setup ==========
     # sim.nSimSteps = length(sim.start_time:sim.TimeStep:sim.end_time)
