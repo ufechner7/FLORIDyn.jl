@@ -56,16 +56,14 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(wind, con, paramFLORIDyn, par
         0.0 0.0 119.0
     ]
 
-    @test T[:posNac] == expected
+    @test T[:posNac]    == expected
 
-    expected = fill(178.4, 9)
-    @test T[:D] == expected
+    @test T[:D]         == fill(178.4, 9)
     @test T[:States_OP] == zeros(1800,6)
-    expected = ["x0", "y0", "z0", "x1", "y1", "z1"]
-    @test T[:Names_OP] == expected
-    @test T[:States_T] == zeros(1800,3)
-    @test T[:Names_T] == ["a", "yaw", "TI"]
+    @test T[:Names_OP]  == ["x0", "y0", "z0", "x1", "y1", "z1"]
+    @test T[:States_T]  == zeros(1800,3)
+    @test T[:Names_T]   == ["a", "yaw", "TI"]
     @test T[:States_WF] == zeros(1800,4)
-    @test T[:Names_WF] == ["wind_vel", "wind_dir", "TI0", "OP_ori"]
+    @test T[:Names_WF]  == ["wind_vel", "wind_dir", "TI0", "OP_ori"]
 end
 nothing
