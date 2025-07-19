@@ -202,8 +202,6 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
         end
     elseif yaw_method == "sowfa"
         nacelleYaw = importSOWFAFile(joinpath(vel_file_dir, "SOWFA_nacelleYaw.csv"))
-        # con.yaw_data = nacelleYaw
-        # TODO: Make the following line work
         con.yaw_data = condenseSOWFAYaw([nacelleYaw[1:T[:nT]:end, 2] reshape(nacelleYaw[:,3], T[:nT], :)'])
     else
         error("Unknown yaw method: $yaw_method")
