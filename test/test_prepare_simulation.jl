@@ -68,5 +68,7 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(wind, con, paramFLORIDyn, par
     @test T[:StartI]    == [1 201 401 601 801 1001 1201 1401 1601]
     @test T[:nOP]       == 200
     @test T[:red_arr]   == ones(9,9)
+
+    @test paramFLORIDyn.deltaUW == 10.0
 end
 nothing
