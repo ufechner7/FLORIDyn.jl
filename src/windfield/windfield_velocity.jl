@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    getWindSpeedT(::Velocity_Constant, WindVel::Number, iT)
+    getWindSpeedT(::Velocity_Constant, WindVel::Number, iT, _)
 
 Returns the wind speed at a given time index `iT` for a constant velocity wind field.
 
@@ -10,11 +10,12 @@ Returns the wind speed at a given time index `iT` for a constant velocity wind f
 - `::Velocity_Constant`: Type indicator for constant wind velocity.
 - `WindVel::Number`: The scalar wind velocity.
 - `iT`: Single value or array with turbine index/indices.
+- `_`: unused
 
 # Returns
 - The wind speed for the respective turbine(s), scalar or vector.
 """
-function getWindSpeedT(::Velocity_Constant, WindVel, iT)
+function getWindSpeedT(::Velocity_Constant, WindVel, iT, _)
     WindVel .* ones(eltype(WindVel), size(iT))
 end
 
