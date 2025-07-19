@@ -222,10 +222,6 @@ function getTurbineData(names::Vector{String})
     return (NacPos = NacPos, D = D)
 end
 
-
-using CSV
-using DataFrames
-
 """
     importSOWFAFile(filename::String, dataLines::Union{UnitRange{Int}, Vector{Tuple{Int,Int}}} = 2:typemax(Int))
 

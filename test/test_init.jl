@@ -5,11 +5,11 @@
     tProp = turbineArrayProperties("data/2021_9T_Data.yaml")
 
     # Test dimensions of position matrix
-    @test size(tProp.Pos) == (9, 3)
+    @test size(tProp.Pos)   == (9, 3)
     @test eltype(tProp.Pos) <: Real
 
     # Test position values of first and last turbine
-    @test tProp.Pos[1, :] == [600, 2400, 0]
+    @test tProp.Pos[1, :]   == [600, 2400, 0]
     @test tProp.Pos[end, :] == [2400, 600, 0]
 
     # Test turbine types
