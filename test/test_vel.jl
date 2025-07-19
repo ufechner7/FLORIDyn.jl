@@ -14,32 +14,32 @@ using Interpolations
         vel_mode = Velocity_Constant()
 
         @testset "Scalar index test" begin
-            result = getWindSpeedT(vel_mode, 10.0, 1)
+            result = getWindSpeedT(vel_mode, 10.0, 1, nothing)
             @test result ≈ 10.0
             @test typeof(result) == Float64
         end
 
         @testset "Array of indices test" begin
-            result = getWindSpeedT(vel_mode, 5.0, [1,2,3])
+            result = getWindSpeedT(vel_mode, 5.0, [1,2,3], nothing)
             @test result ≈ [5.0, 5.0, 5.0]
             @test typeof(result) == Vector{Float64}
         end
 
         @testset "Higher-dimensional index array" begin
             idx = [1 2; 3 4]
-            result = getWindSpeedT(vel_mode, 7.5, idx)
+            result = getWindSpeedT(vel_mode, 7.5, idx, nothing)
             @test result ≈ [7.5 7.5; 7.5 7.5]
             @test size(result) == (2, 2)
         end
 
         @testset "WindVel as Int" begin
-            result = getWindSpeedT(vel_mode, 3, [10, 20])
+            result = getWindSpeedT(vel_mode, 3, [10, 20], nothing)
             @test result == [3, 3]
             @test eltype(result) == Int
         end
 
         @testset "Empty index array" begin
-            result = getWindSpeedT(vel_mode, 6.0, Int[])
+            result = getWindSpeedT(vel_mode, 6.0, Int[], nothing)
             @test result == Float64[]
             @test length(result) == 0
         end
