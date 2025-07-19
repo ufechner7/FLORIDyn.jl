@@ -57,5 +57,8 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(wind, con, paramFLORIDyn, par
     ]
 
     @test T[:posNac] == expected
+    
+    expected = fill(178.4, 9)
+    @test T[:D] == expected
 end
 nothing
