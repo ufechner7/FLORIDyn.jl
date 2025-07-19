@@ -27,5 +27,7 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(wind, con, paramFLORIDyn, par
                     21200.0  195.0
                     ]
     @test wind.ti == 0.0620
+    @test wind.shear.z0 == 1.0
+    @test wind.shear.alpha == 0.08
 end
 nothing
