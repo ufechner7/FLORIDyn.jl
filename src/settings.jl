@@ -69,8 +69,9 @@ end
     save_final_state::Bool
 end
 
-@with_kw struct Con
+@with_kw mutable struct Con
     yaw::String
+    yaw_data::Union{Nothing, Matrix{Float64}} = nothing
 end
 
 @with_kw struct Floris
@@ -245,7 +246,8 @@ function importSOWFAFile(filename::String, dataLines::Union{UnitRange{Int}, Vect
         header=[:Turbine, :Times, :Var3, :nacelle],
         types=Dict(:Turbine=>Float64, :Times=>Float64, :nacelle=>Float64, :Var3=>String),
         silencewarnings=true,
-        ignoreemptyrows=true
+        ignoreemptyrows=true,
+        skipto=2
     )
 
     # Filter rows if needed

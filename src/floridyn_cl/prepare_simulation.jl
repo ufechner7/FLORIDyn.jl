@@ -192,8 +192,7 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
         try
             con.YawData = CSV.read("Control_YawConstant.csv", DataFrame)
         catch
-            generateDemoCSV(vel_file_dir, "Control_YawConstant.csv", 1, nothing, 270, nothing)
-            push!(loadDataWarnings, "Control_YawConstant.csv not found, default created. Unit: [deg]")
+            push!(loadDataWarnings, "Control_YawConstant.csv not found.")
         end
     elseif yaw_method == "InterpTurbine"
         try
@@ -203,8 +202,9 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
         end
     elseif yaw_method == "sowfa"
         nacelleYaw = importSOWFAFile(joinpath(vel_file_dir, "SOWFA_nacelleYaw.csv"))
+        # con.yaw_data = nacelleYaw
         # TODO: Make the following line work
-        # con.YawData = condenseSOWFAYaw([nacelleYaw[1:T[:nT]:end, 2] reshape(nacelleYaw[:,3], T[:nT], :)'])
+        con.yaw_data = condenseSOWFAYaw([nacelleYaw[1:T[:nT]:end, 2] reshape(nacelleYaw[:,3], T[:nT], :)'])
     else
         error("Unknown yaw method: $yaw_method")
     end

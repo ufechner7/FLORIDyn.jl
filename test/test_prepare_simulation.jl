@@ -70,5 +70,7 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(wind, con, paramFLORIDyn, par
     @test T[:red_arr]   == ones(9,9)
 
     @test paramFLORIDyn.deltaUW == 10.0
+    @test size(con.yaw_data) == (603, 10)
+    @test sum(con.yaw_data) ≈ 1.37333255e7
 end
 nothing
