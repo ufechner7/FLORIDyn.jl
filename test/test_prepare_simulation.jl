@@ -29,5 +29,19 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(wind, con, paramFLORIDyn, par
     @test wind.ti == 0.0620
     @test wind.shear.z0 == 1.0
     @test wind.shear.alpha == 0.08
+    # Define the expected matrix
+    expected_posBase = [
+        600.0  2400.0    0.0;
+       1500.0  2400.0    0.0;
+       2400.0  2400.0    0.0;
+        600.0  1500.0    0.0;
+       1500.0  1500.0    0.0;
+       2400.0  1500.0    0.0;
+        600.0   600.0    0.0;
+       1500.0   600.0    0.0;
+       2400.0   600.0    0.0
+    ]
+
+    @test T[:posBase] == expected_posBase
 end
 nothing
