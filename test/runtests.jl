@@ -49,3 +49,4 @@ FLORIDyn.set_rng(rng)
 end
 include("test_floris.jl")
 include("test_init.jl")
+include("test_prepare_simulation.jl")
