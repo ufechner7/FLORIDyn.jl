@@ -177,7 +177,7 @@ function prepareSimulation(wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     T[:Names_T]   = states.T_names
     T[:States_WF] = zeros(n_op * T[:nT], states.WF)
     T[:Names_WF]  = states.WF_names
-    T[:StartI]    = 1:n_op:(n_op * T[:nT])
+    T[:StartI]    = collect(1:n_op:(n_op * T[:nT]))'
     T[:nOP]       = n_op
     T[:red_arr]   = ones(T[:nT], T[:nT])
 
