@@ -19,4 +19,5 @@ setup
 Settings
 Settings(wind::Wind, sim::Sim)
 turbineArrayProperties
+getTurbineData
 ```

@@ -159,44 +159,67 @@ function Settings(wind::Wind, sim::Sim)
     Settings(vel_mode, dir_mode, turb_mode, shear_mode, cor_dir_mode, cor_vel_mode, cor_turb_mode, iterate_mode)
 end
 
+"""
+    getTurbineData(names::Vector{String}) -> NamedTuple
+
+Retrieve nacelle positions and rotor diameters for a given list of wind turbine types.
+
+# Arguments
+- `names::Vector{String}`: A vector of wind turbine type names. Supported types include:
+  - `"DTU 10MW"`
+  - `"DTU 5MW"`
+  - `"Senvion 6.2M"`
+  - `"V116"`
+  - `"V117"`
+  - `"V162"`
+  - `"GE Haliade X"`
+
+# Returns
+- A `NamedTuple` with the following fields:
+  - `NacPos::Matrix{Float64}`: An `N × 3` matrix where each row corresponds to the (x, y, z) coordinates of the nacelle position for each turbine.
+  - `D::Vector{Float64}`: A vector of rotor diameters corresponding to each turbine.
+
+# Raises
+- `ArgumentError` if an unknown or misspelled turbine name is encountered.
+
+"""
 function getTurbineData(names::Vector{String})
-    # Initialize data containers
     num = length(names)
-    #TODO: NacPos should be a matrix, not a vector of tuples
-    NacPos = Vector{NTuple{3, Float64}}(undef, num)
+    # Initialize NacPos as a num x 3 Matrix
+    NacPos = zeros(Float64, num, 3)
     D = zeros(Float64, num)
 
     for i in 1:num
         name = names[i]
         if name == "DTU 10MW"
-            NacPos[i] = (0.0, 0.0, 119.0)
+            NacPos[i, :] = [0.0, 0.0, 119.0]
             D[i] = 178.4
         elseif name == "DTU 5MW"
-            NacPos[i] = (0.0, 0.0, 119.0)  # Placeholder
-            D[i] = 178.4                  # Placeholder
+            NacPos[i, :] = [0.0, 0.0, 119.0]  # Placeholder
+            D[i] = 178.4                      # Placeholder
         elseif name == "Senvion 6.2M"
-            NacPos[i] = (0.0, 0.0, 152.0 - 29.0)
+            NacPos[i, :] = [0.0, 0.0, 152.0 - 29.0]
             D[i] = 126.0
         elseif name == "V116"
-            NacPos[i] = (0.0, 0.0, 84.0)
+            NacPos[i, :] = [0.0, 0.0, 84.0]
             D[i] = 116.0
         elseif name == "V117"
-            NacPos[i] = (0.0, 0.0, 84.0)
+            NacPos[i, :] = [0.0, 0.0, 84.0]
             D[i] = 117.0
         elseif name == "V162"
-            NacPos[i] = (0.0, 0.0, 119.0)
+            NacPos[i, :] = [0.0, 0.0, 119.0]
             D[i] = 162.0
         elseif name == "GE Haliade X"
-            NacPos[i] = (0.0, 0.0, 150.0)
+            NacPos[i, :] = [0.0, 0.0, 150.0]
             D[i] = 220.0
         else
             error("Turbine type '$name' not known or misspelled.")
         end
     end
 
-    # Return results as a named tuple or struct
     return (NacPos = NacPos, D = D)
 end
+
 
 using CSV
 using DataFrames
