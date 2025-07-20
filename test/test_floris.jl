@@ -70,9 +70,30 @@
         # Define dummy parameters
         States_OP = zeros(200, 6)
         States_OP[:, 4] = (0.0:0.0328:6.5272) * 1e3
-        # States_T = rand(10, 3)   # 10 turbines
-        # States_WF = rand(10, 3)  # 10 wind field states
-        # paramFLORIS = (k_a=0.1, k_b=0.2, alpha=0.3, beta=0.4)
+        States_T = zeros(200, 3)
+        States_T[:, 1] .= 0.33
+        States_T[:, 3] .= 0.06 # Example turbulence intensity
+        States_WF = zeros(200, 4)
+        States_WF[:, 4] .= 255
+        States_WF[:, 3] .= 0.0620 
+        States_WF[:, 2] .= 255
+        States_WF[:, 1] .= 8.2
+
+        paramFLORIS = FLORIDyn.Floris(
+            2.32,      # alpha
+            0.154,     # beta
+            0.3837,    # k_a
+            0.0037,    # k_b
+            0.73,      # k_fa
+            0.8325,    # k_fb
+            0.0325,    # k_fc
+            -0.32,     # k_fd
+            1,         # eta
+            2.2,       # p_p
+            1.225,     # airDen
+            3          # TIexp
+        )
+
         # D = 126.0  # Example diameter
 
         # # Call the function
