@@ -59,11 +59,8 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(set, wind, con, paramFLORIDyn
     @test T[:posNac]    == expected
 
     @test T[:D]         == fill(178.4, 9)
-    # @test T[:States_OP] == zeros(1800,6)
     @test T[:Names_OP]  == ["x0", "y0", "z0", "x1", "y1", "z1"]
-    # @test T[:States_T]  == zeros(1800,3)
     @test T[:Names_T]   == ["a", "yaw", "TI"]
-    # @test T[:States_WF] == zeros(1800,4)
     @test T[:Names_WF]  == ["wind_vel", "wind_dir", "TI0", "OP_ori"]
     @test T[:StartI]    == [1 201 401 601 801 1001 1201 1401 1601]
     @test T[:nOP]       == 200
@@ -74,6 +71,10 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(set, wind, con, paramFLORIDyn
     @test sum(con.yaw_data) ≈ 1.37333255e7
     @test con.tanh_yaw == false
 
+    @test size(T[:States_OP]) == (1800, 6)
     @test sum(T[:States_OP]) ≈ 1.8683e+07 rtol=1e-4
+
+    @test size(T[:States_T]) == (1800, 3)
+    @test size(T[:States_WF]) == (1800, 4)
 end
 nothing
