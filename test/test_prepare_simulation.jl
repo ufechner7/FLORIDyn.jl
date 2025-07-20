@@ -81,5 +81,6 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(set, wind, con, paramFLORIDyn
     @test sum(T[:States_WF]) ≈ 9.3287e+05 rtol=1e-4
 
     @test sim.n_sim_steps == 301
+    @test  paramFLORIS.rotor_points == 50
 end
 nothing

@@ -17,7 +17,8 @@ Prepares the simulation environment for a wind farm analysis using the provided 
 
 # Arguments that get modified
 - `wind`: Updated with wind velocity, direction, turbulence intensity, and shear profile.
-- `con`: Updated with control parameters, including yaw data.
+- `con`: Updated with yaw data.
+- `sim`: Updated with the number of simulation steps.
 - `paramFLORIS`: May include additional parameters for the FLORIS model.
 
 # Returns
@@ -243,7 +244,7 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
 
     # # ========== Simulation Setup ==========
     sim.n_sim_steps = length(sim.start_time:sim.time_step:sim.end_time)
-    # paramFLORIS.RotorPoints = sim.RotorPoints
+    paramFLORIS.rotor_points = sim.rotor_points
 
     # # ========== Visualization ==========
     # if Vis.FlowField.Plot.Online

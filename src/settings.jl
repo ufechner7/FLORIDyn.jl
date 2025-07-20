@@ -76,7 +76,7 @@ end
     tanh_yaw::Bool = false
 end
 
-@with_kw struct Floris
+@with_kw mutable struct Floris
     alpha::Float64
     beta::Float64
     k_a::Float64
@@ -89,6 +89,7 @@ end
     p_p::Float64
     airDen::Float64
     TIexp::Int
+    rotor_points::Union{Nothing, Int64} = nothing
 end
 
 @with_kw struct FloriDyn
