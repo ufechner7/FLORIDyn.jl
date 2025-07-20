@@ -43,6 +43,24 @@ function States()
     return States(T_names, Turbine, OP_names, OP, WF_names, WF)
 end
 
+"""
+    Centerline(States_OP, States_T, States_WF, paramFLORIS, D)
+
+Compute the centerline wake properties for a wind farm simulation.
+
+# Arguments
+- `States_OP`: Operational states of the turbines (e.g., yaw, pitch, etc.).
+- `States_T`: Turbine-specific states (e.g., rotor speed, torque, etc.).
+- `States_WF`: Wind farm-level states (e.g., wind direction, wind speed, etc.).
+- `paramFLORIS`: Parameters for the FLORIS wake model.
+- `D`: Rotor diameter or characteristic length scale.
+
+# Returns
+- The computed centerline wake properties `delta`, which includes the deflection in the y and z directions.
+
+# Notes
+This function is part of the Gaussian wake model implementation for wind farm simulations using the FLORIDyn.jl package.
+"""
 function Centerline(States_OP, States_T, States_WF, paramFLORIS, D)
     # Parameters
     k_a   = paramFLORIS.k_a

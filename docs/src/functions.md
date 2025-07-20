@@ -24,6 +24,12 @@ getWindTiT_EnKF
 # FLORIS
 ```@docs
 CalcCt
+Centerline
 discretizeRotor
+```
+
+# FLORIDyn
+```@docs
+prepareSimulation
 ```
 
