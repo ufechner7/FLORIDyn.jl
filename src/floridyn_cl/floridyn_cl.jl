@@ -10,18 +10,18 @@ function angSOWFA2world(deg_SOWFA)
     return rad_World
 end
 
-function initSimulation(T, Wind, Sim, Con, Vis, paramFLORIDyn, paramFLORIS)
+function initSimulation(T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
     # Initialize the simulation or load an initialized state
-    sim_init = lowercase(Sim.Init)
+    sim_init = lowercase(Sim.init)
 
     if sim_init == "init"
         if getfield(Sim, :SaveInitState) # or Sim.SaveInitState if Sim is mutable struct
             # Save the initialization state to a file
-            jldsave(joinpath(Sim.PathToSim, "T_init.jld2"); T)
+            jldsave(joinpath(Sim.path_to_data, "T_init.jld2"); T)
         end
     elseif sim_init == "load"
         try
-            data = load(joinpath(Sim.PathToSim, "T_init.jld2"))
+            data = load(joinpath(Sim.path_to_data, "T_init.jld2"))
             T = data["T"]
         catch e
             @warn "Could not load T_init.jld2 from $(Sim.PathToSim)\nWill proceed with initialized data." exception=e
