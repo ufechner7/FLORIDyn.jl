@@ -150,17 +150,17 @@ function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
                                               States_WF[rangeOPs, :], paramFLORIS, T[:D][iT])
 
         # Convert wind dir in fitting radians
-        phiW = angSOWFA2world(States_WF[rangeOPs, 2])
+        phiW = angSOWFA2world.(States_WF[rangeOPs, 2])
 
         # World coordinate position x0 and y0 including tower base and nacelle pos
         States_OP[rangeOPs, 1] .= cos.(phiW) .* States_OP[rangeOPs, 4] .-
                                    sin.(phiW) .* States_OP[rangeOPs, 5] .+
-                                   T[:posBase][iT, 1] + T[:posNac][iT, 1]
+                                   T[:posBase][iT, 1] .+ T[:posNac][iT, 1]
         States_OP[rangeOPs, 2] .= sin.(phiW) .* States_OP[rangeOPs, 4] .+
                                    cos.(phiW) .* States_OP[rangeOPs, 5] .+
-                                   T[:posBase][iT, 2] + T[:posNac][iT, 2]
+                                   T[:posBase][iT, 2] .+ T[:posNac][iT, 2]
         States_OP[rangeOPs, 3] .= States_OP[rangeOPs, 6] .+
-                                   T[:posBase][iT, 3] + T[:posNac][iT, 3]
+                                   T[:posBase][iT, 3] .+ T[:posNac][iT, 3]
     end
 
     return States_OP, States_T, States_WF
