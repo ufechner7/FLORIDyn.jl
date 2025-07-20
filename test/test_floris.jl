@@ -66,4 +66,24 @@
         @test s.WF_names == ["wind_vel", "wind_dir", "TI0"]
         @test s.WF == 3
     end
+    @testset "Centerline function" begin
+        # Define dummy parameters
+        States_OP = zeros(200, 6)
+        States_OP[:, 4] = (0.0:0.0328:6.5272) * 1e3
+        # States_T = rand(10, 3)   # 10 turbines
+        # States_WF = rand(10, 3)  # 10 wind field states
+        # paramFLORIS = (k_a=0.1, k_b=0.2, alpha=0.3, beta=0.4)
+        # D = 126.0  # Example diameter
+
+        # # Call the function
+        # result = Centerline(States_OP, States_T, States_WF, paramFLORIS, D)
+
+        # # Check output size
+        # @test size(result) == (10, 6)
+
+        # # Check some properties of the output
+        # @test all(result[:,1] .>= 0)  # x_0 should be non-negative
+        # @test all(result[:,2] .>= 0)  # sig_y should be non-negative
+        # @test all(result[:,3] .>= 0)  # sig_z should be non-negative
+    end
 end

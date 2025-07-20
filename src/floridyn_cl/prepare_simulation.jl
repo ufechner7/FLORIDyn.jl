@@ -213,7 +213,7 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
 
     # # ========== Init State ===========
     #TODO implement Centerline
-    #T[:States_OP], T[:States_T], T[:States_WF] = InitStates(set, T, wind, turbProp.Init_States, paramFLORIS, sim)
+    T[:States_OP], T[:States_T], T[:States_WF] = InitStates(set, T, wind, turbProp.Init_States, paramFLORIS, sim)
 
     # # ========== Simulation Setup ==========
     # sim.nSimSteps = length(sim.start_time:sim.TimeStep:sim.end_time)
