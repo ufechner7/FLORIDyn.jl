@@ -1,6 +1,8 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+using FLORIDyn, Test
+
 @testset verbose=true "floris                                                  " begin
     @testset "discretizeRotor" begin
 
@@ -98,11 +100,8 @@
         result = Centerline(States_OP, States_T, States_WF, paramFLORIS, D)
 
         # # Check output size
-        # @test size(result) == (10, 6)
-
-        # # Check some properties of the output
-        # @test all(result[:,1] .>= 0)  # x_0 should be non-negative
-        # @test all(result[:,2] .>= 0)  # sig_y should be non-negative
-        # @test all(result[:,3] .>= 0)  # sig_z should be non-negative
+        @test size(result) == (200, 2)
+        @test result == zeros(200, 2)
     end
 end
+nothing

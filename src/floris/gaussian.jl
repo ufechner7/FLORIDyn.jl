@@ -80,13 +80,13 @@ function Centerline(States_OP, States_T, States_WF, paramFLORIS, D)
     delta_nfw = Theta .* min.(OPdw, x_0)
 
     delta_fw_1 = Theta ./ 14.7 .* sqrt.(cos.(yaw) ./ (k_y .* k_z .* C_T)) .* (2.9 .+ 1.3 .* sqrt.(1 .- C_T) .- C_T)
-    delta_fw_2 = log.(
+    delta_fw_2 = log.(Complex.(
         (1.6 .+ sqrt.(C_T)) .* 
         (1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (D^2 .* cos.(yaw))) .- sqrt.(C_T)) ./
         ((1.6 .- sqrt.(C_T)) .*
         (1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (D^2 .* cos.(yaw))) .+ sqrt.(C_T)))
-    )
-
+    ))
+    # println("delta_fw_2: ", delta_fw_2)
     # Use signbit and broadcasting for the sign/(2) + 0.5 logic
     factor = (sign.(OPdw .- x_0) ./ 2 .+ 0.5)
 
