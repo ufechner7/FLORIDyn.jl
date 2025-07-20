@@ -32,7 +32,7 @@ export getWindSpeedT, getWindSpeedT_EnKF
 
 export discretizeRotor, CalcCt, States
 export turbineArrayProperties
-export prepareSimulation, importSOWFAFile, Centerline
+export prepareSimulation, importSOWFAFile, Centerline, angSOWFA2world
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
@@ -173,6 +173,7 @@ include("windfield/windfield_velocity.jl")
 
 include("floris/discretization.jl")
 include("floris/gaussian.jl")
+include("floridyn_cl/floridyn_cl.jl")
 
 include("correction/direction.jl")
 include("correction/velocity.jl")
