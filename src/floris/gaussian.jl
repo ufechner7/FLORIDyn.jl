@@ -43,6 +43,62 @@ function States()
     return States(T_names, Turbine, OP_names, OP, WF_names, WF)
 end
 
+function Centerline(States_OP, States_T, States_WF, paramFLORIS, D)
+    # Parameters
+    k_a   = paramFLORIS.k_a
+    k_b   = paramFLORIS.k_b
+    alpha = paramFLORIS.alpha
+    beta  = paramFLORIS.beta
+
+    # States
+    C_T   = CalcCt(States_T[:,1], States_T[:,2])
+    yaw   = .-deg2rad.(States_T[:,2])
+    I     = sqrt.(States_T[:,3].^2 .+ States_WF[:,3].^2)
+    OPdw  = States_OP[:,4]
+
+    # Calc x_0 (Core length)
+    x_0 = (cos.(yaw) .* (1 .+ sqrt.(1 .- C_T)) ./ 
+         (sqrt(2) .* (alpha .* I .+ beta .* (1 .- sqrt.(1 .- C_T))))) .* D
+
+    # Calc k_z and k_y based on I
+    k_y = k_a .* I .+ k_b
+    k_z = k_y
+
+    # Get field width y
+    zs = zeros(size(OPdw))
+    sig_y = max.(OPdw .- x_0, zs) .* k_y .+
+        min.(OPdw ./ x_0, zs .+ 1) .* cos.(yaw) .* D ./ sqrt(8)
+
+    # Get field width z
+    sig_z = max.(OPdw .- x_0, zs) .* k_z .+
+        min.(OPdw ./ x_0, zs .+ 1) .* D ./ sqrt(8)
+
+    # Calc Theta
+    Theta = 0.3 .* yaw ./ cos.(yaw) .* (1 .- sqrt.(1 .- C_T .* cos.(yaw)))
+
+    # Calc Delta/Deflection
+    delta_nfw = Theta .* min.(OPdw, x_0)
+
+    delta_fw_1 = Theta ./ 14.7 .* sqrt.(cos.(yaw) ./ (k_y .* k_z .* C_T)) .* (2.9 .+ 1.3 .* sqrt.(1 .- C_T) .- C_T)
+    delta_fw_2 = log.(
+        (1.6 .+ sqrt.(C_T)) .* 
+        (1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (D^2 .* cos.(yaw))) .- sqrt.(C_T)) ./
+        ((1.6 .- sqrt.(C_T)) .*
+        (1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (D^2 .* cos.(yaw))) .+ sqrt.(C_T)))
+    )
+
+    # Use signbit and broadcasting for the sign/(2) + 0.5 logic
+    factor = (sign.(OPdw .- x_0) ./ 2 .+ 0.5)
+
+    deltaY = delta_nfw .+ factor .* delta_fw_1 .* delta_fw_2 .* D
+    
+    # Deflection in y and z direction
+    delta = hcat(deltaY, zeros(size(deltaY)))
+    
+    return delta
+end
+
+
 function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
     # Unpack state arrays and parameters
     States_OP   = copy(T[:States_OP])
