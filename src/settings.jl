@@ -55,11 +55,12 @@ end
     dir::Dir
 end
 
-@with_kw struct Sim
+@with_kw mutable struct Sim
     floris::String
     start_time::Int64
     end_time::Int64
     time_step::Int64
+    n_sim_steps::Union{Nothing, Int64} = nothing
     rotor_discret::String
     rotor_points::Int64
     dyn::Dyn

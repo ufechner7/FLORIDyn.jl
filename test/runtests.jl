@@ -51,5 +51,5 @@ FLORIDyn.set_rng(rng)
     include("test_floris.jl")
     include("test_floridyn_cl.jl")
     include("test_init.jl")
-    # include("test_prepare_simulation.jl")
+    include("test_prepare_simulation.jl")
 end

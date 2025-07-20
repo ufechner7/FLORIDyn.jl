@@ -1,6 +1,33 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+"""
+    prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
+
+Prepares the simulation environment for a wind farm analysis using the provided settings and parameters.
+
+# Arguments
+- `set::Settings`: Simulation settings containing configuration options.
+- `wind`: Wind conditions or wind field data required for the simulation.
+- `con`: Controller or control parameters for the turbines.
+- `paramFLORIDyn`: Parameters specific to the FLORIDyn model.
+- `paramFLORIS`: Parameters specific to the FLORIS model.
+- `turbProp`: Properties of the turbines involved in the simulation.
+- `sim`: Simulation-specific parameters or state.
+
+# Arguments that get modified
+- `wind`: Updated with wind velocity, direction, turbulence intensity, and shear profile.
+- `con`: Updated with control parameters, including yaw data.
+- `paramFLORIS`: May include additional parameters for the FLORIS model.
+
+# Returns
+- Returns the tuple `(T, wind, sim, con, paramFLORIS)` where:
+  - `T`: Dictionary containing turbine states and positions.
+  - `wind`: Updated wind conditions.
+  - `sim`: Updated simulation parameters.
+  - `con`: Updated controller parameters.
+  - `paramFLORIS`: Parameters for the FLORIS model.
+"""
 function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
     loadDataWarnings = String[]
 
@@ -212,11 +239,10 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
     # end
 
     # # ========== Init State ===========
-    #TODO implement Centerline
     T[:States_OP], T[:States_T], T[:States_WF] = InitStates(set, T, wind, turbProp.Init_States, paramFLORIS, sim)
 
     # # ========== Simulation Setup ==========
-    # sim.nSimSteps = length(sim.start_time:sim.TimeStep:sim.end_time)
+    sim.n_sim_steps = length(sim.start_time:sim.time_step:sim.end_time)
     # paramFLORIS.RotorPoints = sim.RotorPoints
 
     # # ========== Visualization ==========
