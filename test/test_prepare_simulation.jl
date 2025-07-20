@@ -75,6 +75,9 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(set, wind, con, paramFLORIDyn
     @test sum(T[:States_OP]) ≈ 1.8683e+07 rtol=1e-4
 
     @test size(T[:States_T]) == (1800, 3)
+    @test sum(T[:States_T]) ≈ 702 rtol=1e-4
+
     @test size(T[:States_WF]) == (1800, 4)
+    @test sum(T[:States_WF]) ≈ 9.3287e+05 rtol=1e-4
 end
 nothing
