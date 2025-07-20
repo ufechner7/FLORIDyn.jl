@@ -87,7 +87,7 @@ function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
         States_OP[rangeOPs, 4] .= (collect(0:(nOP-1)) .* deltaT .* U)
 
         # Init turbine states
-        States_T[rangeOPs, :] = ones(nOP, 1) * InitTurb[iT, :]
+        States_T[rangeOPs, :] = ones(nOP, 1) * InitTurb[iT, :]'
 
         # Crosswind position
         States_OP[rangeOPs, 5:6] = Centerline(States_OP[rangeOPs, :], States_T[rangeOPs, :],
