@@ -99,6 +99,64 @@ function findTurbineGroups(T, paramFLORIDyn)
     return Tdep
 end
 
+function interpolateOPs(T)
+    # T[:nT] :: Int
+    # T[:StartI] :: Vector{Int}
+    # T[:dep] :: Vector{Vector{Int}}
+    # T[:States_OP] :: Matrix{Float64}
+    # T[:posBase] :: Matrix{Float64}
+    # T[:nOP] :: Int
+
+    intOPs = Vector{Matrix{Float64}}(undef, T[:nT])  # Cell equivalent in Julia
+
+    for iT in 1:T[:nT]  # For every turbine
+        intOPs[iT] = zeros(length(T[:dep][iT]), 4)
+
+        for iiT in 1:length(T[:dep][iT])  # for every influencing turbine
+            iiaT = T[:dep][iT][iiT]  # actual turbine index
+
+            # Compute distances from OPs of turbine iiaT to current turbine
+            start_idx = T[:StartI][iiaT]
+            OP_positions = T[:States_OP][start_idx:start_idx + T[:nOP] - 1, 1:2]
+            turb_pos = T[:posBase][iT, 1:2]
+
+            # Euclidean distances to the turbine position
+            dist = sqrt.(sum((OP_positions' .- turb_pos).^2, dims=2))
+            dist = vec(dist)  # make it a flat vector
+
+            # Indices of sorted distances
+            sorted_indices = sortperm(dist)
+
+            if sorted_indices[1] == 1
+                # Closest is first OP (unlikely)
+                intOPs[iT][iiT, :] = [T[:StartI][iiaT], 1.0, T[:StartI][iiaT] + 1, 0.0]
+            elseif sorted_indices[1] == T[:nOP]
+                # Closest is last OP (possible)
+                intOPs[iT][iiT, :] = [T[:StartI][iiaT] + T[:nOP] - 2, 0.0, T[:StartI][iiaT] + T[:nOP] - 1, 1.0]
+            else
+                # Use two closest OPs for interpolation
+                indOP1 = T[:StartI][iiaT] - 1 + sorted_indices[1]
+                indOP2 = T[:StartI][iiaT] - 1 + sorted_indices[2]
+
+                a = T[:States_OP][indOP1, 1:2]
+                b = T[:States_OP][indOP2, 1:2]
+                c = T[:posBase][iT, 1:2]
+
+                ab = b .- a
+                ac = c .- a
+                d = dot(ab, ac) / dot(ab, ab)
+                d = clamp(d, 0.0, 1.0)
+
+                r1 = 1.0 - d
+                r2 = d
+
+                intOPs[iT][iiT, :] = [indOP1, r1, indOP2, r2]
+            end
+        end
+    end
+
+    return intOPs
+end
 
 function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
     # OUTPUTS:
@@ -125,7 +183,7 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
 
         # ========== Get FLORIS reductions ==========
         T[:dep] = findTurbineGroups(T, paramFLORIDyn)
-    #     T.intOPs = interpolateOPs(T)
+        T[:intOPs] = interpolateOPs(T)
     #     tmpM, T = setUpTmpWFAndRun(T, paramFLORIS, Wind)
     #     M[(it-1)*nT+1 : it*nT, 2:4] = tmpM
     #     M[(it-1)*nT+1 : it*nT, 1] = SimTime
