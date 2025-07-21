@@ -16,11 +16,6 @@ end
     ti::String
 end
 
-@with_kw struct Shear
-    alpha::Float64
-    z0::Float64
-end
-
 @with_kw mutable struct Wind
     input_vel::String
     input_dir::String
@@ -31,7 +26,7 @@ end
     vel::Union{Nothing, Float64} = nothing
     dir::Union{Nothing, Matrix{Float64}} = nothing
     ti::Union{Nothing, Float64} = nothing
-    shear::Union{Nothing, Shear} = nothing
+    shear::Union{Nothing, WindShear} = nothing
 end
 
 @with_kw struct Vel

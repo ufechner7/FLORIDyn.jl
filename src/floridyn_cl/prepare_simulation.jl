@@ -163,12 +163,12 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
         error("Method for turbulence intensity $(wind.input_ti) unknown.")
     end
 
-    # ============= Shear =============
+    # ============= WindShear =============
     if wind.input_shear == "PowerLaw"
         path = joinpath(data_path, "WindShearPowerLaw.csv")
         alpha = CSV.read(path, DataFrame; header=false)[1,1] # Assuming alpha is in the first row, first column
         z0 = 1.0 # Default roughness length
-        wind.shear = Shear(alpha, z0)
+        wind.shear = WindShear(alpha, z0)
     elseif wind.input_shear == "Interpolation"
         path = joinpath(data_path, "WindShearProfile.csv")
         wind.shear = CSV.read(path, DataFrame)

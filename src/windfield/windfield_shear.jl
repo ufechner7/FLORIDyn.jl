@@ -64,7 +64,7 @@ Return the shear factor `u_eff = shear * u_referenceHeight` using the power law.
 - `Shear_PowerLaw`: (type only, unused) Specifies that this method applies to the power law model
 - `WindShear`: A struct of type (`WindShear`)(@ref)
     - `z0`: Reference height (not used in this function)
-    - `alpha`: Shear coefficient
+    - `alpha`: WindShear coefficient
 - `z_norm`: Height(s) (can be scalar or array)
 
 # Returns

@@ -184,7 +184,7 @@ function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
     return States_OP, States_T, States_WF
 end
 
-function runFLORIS(set, LocationT, States_WF, States_T, D, paramFLORIS, WindShear)
+function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS, windshear)
 
     # Get rotor points
     if D[end] > 0
@@ -207,7 +207,7 @@ function runFLORIS(set, LocationT, States_WF, States_T, D, paramFLORIS, WindShea
     if length(D) == 1
         println("size(Rpl): ", size(RPl))
         println("size(LocationT): ", LocationT)
-        redShear = getWindShearT(set.shear_mode, WindShear, RPl[:, 3] ./ LocationT'[end, 3])
+        redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ LocationT'[end, 3])
         println(size(redShear))
         T_red_arr = RPw' * redShear
         T_aTI_arr, T_Ueff, T_weight = nothing, nothing, nothing
@@ -293,7 +293,7 @@ function runFLORIS(set, LocationT, States_WF, States_T, D, paramFLORIS, WindShea
         T_aTI_arr[iT] = T_addedTI_tmp * dot(RPw, exp_y .* exp_z)
     end
 
-    redShear = getWindShearT(WindShear, RPl[:, 3] ./ LocationT[end, 3])
+    redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ LocationT[end, 3])
     T_red_arr[end] = dot(RPw, redShear)
 
     T_red = prod(T_red_arr)

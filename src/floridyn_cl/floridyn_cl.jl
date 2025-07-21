@@ -206,9 +206,9 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
         end
 
         for iiT in 1:(tmp_nT - 1)
-            OP1_i, OP1_r, OP2_i, OP2_r = T.intOPs[iT][iiT, :]  # Assumes row-major
+            OP1_i, OP1_r, OP2_i, OP2_r = T[:intOPs][iT][iiT, :]  # Assumes row-major
 
-            OPi_l = OP1_r * T.States_OP[OP1_i, :] + OP2_r * T.States_OP[OP2_i, :]
+            OPi_l = OP1_r * T[:States_OP][OP1_i, :] + OP2_r * T[:States_OP][OP2_i, :]
             tmp_Tpos[iiT, :] = OPi_l[1:3]
             tmp_Tst[iiT, :] = OP1_r * T[:States_T][OP1_i, :] + OP2_r * T[:States_T][OP2_i, :]
             tmp_WF[iiT, :]  = OP1_r * T[:States_WF][OP1_i, :] + OP2_r * T[:States_WF][OP2_i, :]
@@ -246,8 +246,8 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
             plot_WF = zeros(tmp_nT - 1, size(T[:States_WF], 2))
             plot_OP = zeros(tmp_nT - 1, 2)
             for iiT in 1:(tmp_nT - 1)
-                OP1_i, OP1_r, OP2_i, OP2_r = T.intOPs[iT][iiT, :]
-                OPi_l = OP1_r * T.States_OP[OP1_i, :] + OP2_r * T.States_OP[OP2_i, :]
+                OP1_i, OP1_r, OP2_i, OP2_r = T[:intOPs][iT][iiT, :]
+                OPi_l = OP1_r * T[:States_OP][OP1_i, :] + OP2_r * T[:States_OP][OP2_i, :]
                 plot_OP[iiT, :] = OPi_l[1:2]
                 plot_WF[iiT, :] = OP1_r * T[:States_WF][OP1_i, :] + OP2_r * T[:States_WF][OP2_i, :]
                 dists[iiT] = norm(OPi_l[1:2] .- T[:posBase][iT,1:2])

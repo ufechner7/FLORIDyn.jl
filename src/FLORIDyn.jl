@@ -93,7 +93,7 @@ which is important in atmospheric and wind energy simulations.
 
 # Fields
 - z0::Float64: Reference height (not used in the [`getWindShearT`](@ref))
-- alpha::Float64: Shear coefficient
+- alpha::Float64: WindShear coefficient
 """
 struct WindShear
     z0::Float64

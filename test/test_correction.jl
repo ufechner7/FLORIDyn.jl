@@ -12,7 +12,7 @@ end
 
 correction = FLORIDyn.WindCorrection("None", "All", "None")
 pertubation = FLORIDyn.WindPerturbation(0.0, 0.2, 0.0, 0.5, 0.0, 0.005)
-shear = FLORIDyn.Shear(0.08, 1.0)
+shear = FLORIDyn.WindShear(0.08, 1.0)
 
 dir_array = [
     0.0 255.0;
