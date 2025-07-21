@@ -195,7 +195,9 @@ function runFLORIS(LocationT, States_WF, States_T, D, paramFLORIS, WindShear)
     end
 
     # Yaw rotation for last turbine
-    tmp_yaw = deg2rad.(States_T[end, 2])
+    println("--> ", size(States_T))
+    tmp_yaw = deg2rad(States_T'[end, 2])
+    println(tmp_yaw)
     R = [cos(tmp_yaw)  sin(tmp_yaw)  0.0;
         -sin(tmp_yaw)  cos(tmp_yaw)  0.0;
          0.0           0.0           1.0]
@@ -203,7 +205,10 @@ function runFLORIS(LocationT, States_WF, States_T, D, paramFLORIS, WindShear)
     RPl = (R * (RPl .* D[end])')' .+ LocationT[end, :]
 
     if length(D) == 1
-        redShear = getWindShearT(WindShear, RPl[:, 3] ./ LocationT[end, 3])
+        println("size(Rpl): ", size(RPl))
+        println("size(LocationT): ", LocationT)
+        redShear = getWindShearT(WindShear, RPl[:, 3] ./ LocationT'[end, 3])
+        println(size(redShear))
         T_red_arr = RPw' * redShear
         T_aTI_arr, T_Ueff, T_weight = nothing, nothing, nothing
         return T_red_arr, T_aTI_arr, T_Ueff, T_weight
