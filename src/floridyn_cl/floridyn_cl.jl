@@ -322,7 +322,7 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
 
         # ========== Wind field corrections ==========
         T, Wind = correctVel(set.cor_vel_mode, set, T, Wind, SimTime, paramFLORIS, tmpM)
-    #     T = correctDir(T, Wind, SimTime)
+        correctDir!(set.cor_dir_mode, set, T, Wind, SimTime)
     #     T = correctTi(T, Wind, SimTime)
 
     #     # Save free wind speed as measurement
