@@ -8,19 +8,9 @@ function correctTi(::TI_None, set, T, Wind, SimTime)
     # Get new turbulent intensity value
     TI = getDataTI(set, Wind, T, SimTime)
 
-    # Check if TI is numeric and a matrix
-    if eltype(TI) <: Number && ndims(TI) ≤ 2
-        if length(TI) > 1
-            @warn "TI is not scalar. Using first element."
-            TI = TI[1]
-        end
-    else
-        error("TI must be numeric.")
-    end
-
     # Update the TI value in the States_WF matrix
     try
-        T[:States_WF][T[:StartI], 3] .= TI
+        T[:States_WF][T[:StartI], 3] .= TI'
     catch e
         error("Error updating T[:States_WF]: $(e.msg)")
     end
