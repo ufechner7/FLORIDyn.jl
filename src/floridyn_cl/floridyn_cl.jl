@@ -328,11 +328,11 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
         # Save free wind speed as measurement
         M[(it-1)*nT+1 : it*nT, 5] = T[:States_WF][T[:StartI], 1]
 
-    #     # ========== Get Control settings ==========
-    #     T[:States_T][T[:StartI], 2] = (
-    #         T[:States_WF][T[:StartI], 2] .-
-    #         getYaw(Con.YawData, collect(1:nT), SimTime)'
-    #     )
+        # ========== Get Control settings ==========
+        T[:States_T][T[:StartI], 2] = (
+            T[:States_WF][T[:StartI], 2] .-
+            getYaw(set.control_mode, Con.yaw_data, collect(1:nT), SimTime)'
+        )
 
     #     # ========== Calculate Power ==========
     #     P = getPower(T, tmpM, paramFLORIS, Con)

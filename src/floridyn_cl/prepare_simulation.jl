@@ -228,7 +228,7 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
         catch
             push!(loadDataWarnings, "Control_YawInterpolation.csv not found.")
         end
-    elseif yaw_method == "sowfa"
+    elseif yaw_method == "SOWFA"
         nacelleYaw = importSOWFAFile(joinpath(vel_file_dir, "SOWFA_nacelleYaw.csv"))
         con.yaw_data = condenseSOWFAYaw([nacelleYaw[1:T[:nT]:end, 2] reshape(nacelleYaw[:,3], T[:nT], :)'])
     else

@@ -25,6 +25,7 @@ export Direction_All, Direction_Influence, Direction_None, Direction_wGaspariAnd
 export Velocity_Influence, Velocity_None, Velocity_wGaspariAndCohn
 export TI_Influence, TI_None, TI_wGaspariAndCohn
 export IterateOPs_average, IterateOPs_basic, IterateOPs_buffer, IterateOPs_maximum, IterateOPs_weighted
+export Yaw_Constant, Yaw_InterpTurbine, Yaw_SOWFA
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
@@ -59,6 +60,7 @@ include("correction/structs_dir.jl")
 include("correction/structs_vel.jl")
 include("correction/structs_turb.jl")
 include("floridyn_cl/structs.jl")
+include("controller/structs_controller.jl")
 
 """
     Settings
@@ -74,6 +76,7 @@ A struct that holds configuration parameters for the FLORIDyn simulation environ
 - cor_vel_mode
 - cor_turb_mode
 - iterate_mode
+- control_mode
 """
 struct Settings
     vel_mode::VelModel
@@ -84,6 +87,7 @@ struct Settings
     cor_vel_mode
     cor_turb_mode
     iterate_mode
+    control_mode
 end
 
 """
@@ -184,5 +188,7 @@ include("correction/turbulence.jl")
 
 include("floridyn_cl/prepare_simulation.jl")
 include("floridyn_cl/iterate.jl")
+
+include("controller/controller.jl")
 
 end

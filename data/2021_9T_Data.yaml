@@ -41,7 +41,7 @@ sim:
   save_final_state: false
 
 con:
-  yaw: sowfa
+  yaw: SOWFA
 
 floris:
   alpha: 2.32
