@@ -30,7 +30,7 @@ function initSimulation(T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
     return T
 end
 
-function FLORIDynCL(T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
+function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
     # OUTPUTS:
     # T := Simulation state (OP states, Turbine states, wind field states(OPs))
     # Mt := Measurements from the simulation (Power, tbd)
@@ -48,7 +48,7 @@ function FLORIDynCL(T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
         Sim.sim_step = it
 
         # ========== PREDICTION ==========
-        T = iterateOPs(T, Sim, paramFLORIS, paramFLORIDyn)
+        T = iterateOPs!(set.iterate_mode, T, Sim, paramFLORIS, paramFLORIDyn)
 
         # ========== Wind Field Perturbation ==========
         T = pertubationOfTheWF(T, Wind)

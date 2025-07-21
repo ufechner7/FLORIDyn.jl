@@ -34,7 +34,7 @@ export correctDir!
 export discretizeRotor, CalcCt, States
 export turbineArrayProperties
 export prepareSimulation, importSOWFAFile, Centerline, angSOWFA2world
-export FLORIDynCL
+export FLORIDynCL, iterateOPs!
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
@@ -181,5 +181,6 @@ include("correction/direction.jl")
 include("correction/velocity.jl")
 
 include("floridyn_cl/prepare_simulation.jl")
+include("floridyn_cl/iterate.jl")
 
 end
