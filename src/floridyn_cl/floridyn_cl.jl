@@ -158,7 +158,7 @@ function interpolateOPs(T)
     return intOPs
 end
 
-function setUpTmpWFAndRun(T, paramFLORIS, Wind)
+function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
     # Initialize outputs
     M = zeros(T[:nT], 3)
     T[:Weight] = Vector{Any}(undef, T[:nT])
@@ -179,6 +179,7 @@ function setUpTmpWFAndRun(T, paramFLORIS, Wind)
         if isempty(T[:dep][iT])
             # Single turbine case
             T_red_arr, _, _ = runFLORIS(
+                set,
                 T[:posBase][iT,:] + T[:posNac][iT,:],
                 iTWFState,
                 T[:States_T][T[:StartI][iT], :],
@@ -307,7 +308,7 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
         # ========== Get FLORIS reductions ==========
         T[:dep] = findTurbineGroups(T, paramFLORIDyn)
         T[:intOPs] = interpolateOPs(T)
-        tmpM, T = setUpTmpWFAndRun(T, paramFLORIS, Wind)
+        tmpM, T = setUpTmpWFAndRun(set, T, paramFLORIS, Wind)
     #     M[(it-1)*nT+1 : it*nT, 2:4] = tmpM
     #     M[(it-1)*nT+1 : it*nT, 1] = SimTime
     #     T[:States_T][T[:StartI], 3] = tmpM[:, 2]
