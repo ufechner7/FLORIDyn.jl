@@ -239,8 +239,7 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
             tmp_Tpos[iiT, 3] -= OPi_l[6]
         end
 
-        # Run FLORIS
-        # Main.@infiltrate                    
+        # Run FLORIS                
         T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, tmp_Tpos, tmp_WF, tmp_Tst, tmp_D, paramFLORIS, Wind.shear)
 
         T_red = prod(T_red_arr)
@@ -316,13 +315,13 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
         T[:dep] = findTurbineGroups(T, paramFLORIDyn)
         T[:intOPs] = interpolateOPs(T)
         tmpM, T = setUpTmpWFAndRun(set, T, paramFLORIS, Wind)
-    #     M[(it-1)*nT+1 : it*nT, 2:4] = tmpM
-    #     M[(it-1)*nT+1 : it*nT, 1] = SimTime
-    #     T[:States_T][T[:StartI], 3] = tmpM[:, 2]
-    #     M_int[it] = T[:red_arr]
+        M[(it-1)*nT+1 : it*nT, 2:4] .= tmpM
+        M[(it-1)*nT+1 : it*nT, 1]   .= SimTime
+        T[:States_T][T[:StartI], 3] = tmpM[:, 2]
+        M_int[it] = T[:red_arr]
 
-    #     # ========== Wind field corrections ==========
-    #     T, Wind = correctVel(T, Wind, SimTime, paramFLORIS, tmpM)
+        # ========== Wind field corrections ==========
+    #    T, Wind = correctVel(T, Wind, SimTime, paramFLORIS, tmpM)
     #     T = correctDir(T, Wind, SimTime)
     #     T = correctTi(T, Wind, SimTime)
 
