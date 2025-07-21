@@ -184,4 +184,118 @@ function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
     return States_OP, States_T, States_WF
 end
 
+function runFLORIS(LocationT, States_WF, States_T, D, paramFLORIS, WindShear)
+
+    # Get rotor points
+    if D[end] > 0
+        RPl, RPw = discretizeRotor(paramFLORIS.rotor_points)
+    else
+        RPl = [0.0 0.0 0.0]
+        RPw = [1.0]
+    end
+
+    # Yaw rotation for last turbine
+    tmp_yaw = deg2rad.(States_T[end, 2])
+    R = [cos(tmp_yaw)  sin(tmp_yaw)  0.0;
+        -sin(tmp_yaw)  cos(tmp_yaw)  0.0;
+         0.0           0.0           1.0]
+
+    RPl = (R * (RPl .* D[end])')' .+ LocationT[end, :]
+
+    if length(D) == 1
+        redShear = getWindShearT(WindShear, RPl[:, 3] ./ LocationT[end, 3])
+        T_red_arr = RPw' * redShear
+        T_aTI_arr, T_Ueff, T_weight = nothing, nothing, nothing
+        return T_red_arr, T_aTI_arr, T_Ueff, T_weight
+    end
+
+    # Initialize outputs
+    nT = length(D)
+    T_red_arr = ones(nT)
+    T_aTI_arr = zeros(nT - 1)
+    T_weight = zeros(nT - 1)
+
+    for iT in 1:(nT - 1)
+
+        tmp_phi = size(States_WF,2) == 4 ? angSOWFA2world(States_WF[iT, 4]) :
+                                           angSOWFA2world(States_WF[iT, 2])
+
+        tmp_RPs = RPl .- LocationT[iT, :]
+        R_phi = [cos(tmp_phi)  sin(tmp_phi)  0.0;
+                -sin(tmp_phi)  cos(tmp_phi)  0.0;
+                 0.0           0.0           1.0]
+
+        tmp_RPs = (R_phi * tmp_RPs')'
+
+        if tmp_RPs[1, 1] <= 10
+            continue
+        end
+
+        a = States_T[iT, 1]
+        yaw_deg = States_T[iT, 2]
+        yaw = -deg2rad(yaw_deg)
+        TI = States_T[iT, 3]
+        Ct = CalcCt(a, yaw_deg)
+        TI0 = States_WF[iT, 3]
+
+        sig_y, sig_z, C_T, x_0, delta, pc_y, pc_z = getVars(
+            tmp_RPs, a, Ct, yaw, TI, TI0, paramFLORIS, D[iT]
+        )
+
+        cw_y = tmp_RPs[:, 2] .- delta[:, 1]
+        cw_z = tmp_RPs[:, 3] .- delta[:, 2]
+        phi_cw = atan.(cw_z, cw_y)
+        r_cw = sqrt.(cw_y.^2 .+ cw_z.^2)
+
+        core = (r_cw .< sqrt.((0.5 .* pc_y .* cos.(phi_cw)).^2 .+
+                              (0.5 .* pc_z .* sin.(phi_cw)).^2)) .|
+               (tmp_RPs[:, 1] .== 0.0)
+
+        nw = tmp_RPs[:, 1] .< x_0
+
+        tmp_RPs_r = zeros(size(RPw))
+        tmp_RPs_r[core] .= 1 .- sqrt(1 .- C_T)
+
+        fw = .!nw
+        gaussAbs = zeros(size(RPw))
+        gaussAbs[nw] .= 1 .- sqrt(1 .- C_T)
+        gaussAbs[fw] .= 1 .- sqrt(1 .- C_T .* cos(yaw) ./ (8 .* sig_y[fw] .* sig_z[fw] ./ D[iT]^2))
+
+        gaussWght = ones(size(RPw))
+        not_core = .!core
+        if any(not_core)
+            exp_y = @. exp(-0.5 * ((cw_y[not_core] - cos(phi_cw[not_core]) .* pc_y[not_core] * 0.5) ./ sig_y[not_core])^2)
+            exp_z = @. exp(-0.5 * ((cw_z[not_core] - sin(phi_cw[not_core]) .* pc_z[not_core] * 0.5) ./ sig_z[not_core])^2)
+
+            gaussWght[not_core] .= exp_y .* exp_z
+            tmp_RPs_r[not_core] .= gaussAbs[not_core] .* gaussWght[not_core]
+        end
+
+        T_weight[iT] = sum(gaussWght)
+        T_red_arr[iT] = 1 .- dot(RPw, tmp_RPs_r)
+
+        # Added TI
+        T_addedTI_tmp = paramFLORIS.k_fa * (
+            a^paramFLORIS.k_fb *
+            TI0^paramFLORIS.k_fc *
+            (mean(tmp_RPs[:, 1]) / D[iT])^paramFLORIS.k_fd
+        )
+
+        TIexp = paramFLORIS.TIexp
+        exp_y = @. exp(-0.5 * ((cw_y - cos(phi_cw) .* pc_y * 0.5) ./ (TIexp .* sig_y))^2)
+        exp_z = @. exp(-0.5 * ((cw_z - sin(phi_cw) .* pc_z * 0.5) ./ (TIexp .* sig_z))^2)
+
+        T_aTI_arr[iT] = T_addedTI_tmp * dot(RPw, exp_y .* exp_z)
+    end
+
+    redShear = getWindShearT(WindShear, RPl[:, 3] ./ LocationT[end, 3])
+    T_red_arr[end] = dot(RPw, redShear)
+
+    T_red = prod(T_red_arr)
+    T_Ueff = States_WF[end, 1] * T_red
+
+    return T_red_arr, T_aTI_arr, T_Ueff, T_weight
+end
+
+
 

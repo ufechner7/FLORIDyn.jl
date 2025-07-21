@@ -179,12 +179,12 @@ function setUpTmpWFAndRun(T, paramFLORIS, Wind)
         if isempty(T[:dep][iT])
             # Single turbine case
             T_red_arr, _, _ = runFLORIS(
-                T.posBase[iT,:] + T.posNac[iT,:],
+                T[:posBase][iT,:] + T[:posNac][iT,:],
                 iTWFState,
                 T[:States_T][T[:StartI][iT], :],
                 T[:D][iT],
                 paramFLORIS,
-                Wind.Shear
+                Wind.shear
             )
             M[iT, :] = [T_red_arr, 0, T_red_arr * T[:States_WF][T[:StartI][iT], 1]]
             T[:red_arr][iT, iT] = T_red_arr
@@ -194,7 +194,7 @@ function setUpTmpWFAndRun(T, paramFLORIS, Wind)
         # Multi-turbine setup
         tmp_nT = length(T[:dep][iT]) + 1
 
-        tmp_Tpos = repeat([T.posBase[iT,:] + T.posNac[iT,:]], tmp_nT)
+        tmp_Tpos = repeat([T[:posBase][iT,:] + T[:posNac][iT,:]], tmp_nT)
         tmp_WF = repeat([iTWFState], tmp_nT)
         tmp_Tst = repeat([T[:States_T][T[:StartI][iT], :]], tmp_nT)
 
@@ -233,7 +233,7 @@ function setUpTmpWFAndRun(T, paramFLORIS, Wind)
         end
 
         # Run FLORIS
-        T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(tmp_Tpos, tmp_WF, tmp_Tst, tmp_D, paramFLORIS, Wind.Shear)
+        T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(tmp_Tpos, tmp_WF, tmp_Tst, tmp_D, paramFLORIS, Wind.shear)
 
         T_red = prod(T_red_arr)
         T[:red_arr][iT, vcat(T[:dep][iT], iT)] = T_red_arr
@@ -249,7 +249,7 @@ function setUpTmpWFAndRun(T, paramFLORIS, Wind)
                 OPi_l = OP1_r * T.States_OP[OP1_i, :] + OP2_r * T.States_OP[OP2_i, :]
                 plot_OP[iiT, :] = OPi_l[1:2]
                 plot_WF[iiT, :] = OP1_r * T[:States_WF][OP1_i, :] + OP2_r * T[:States_WF][OP2_i, :]
-                dists[iiT] = norm(OPi_l[1:2] .- T.posBase[iT,1:2])
+                dists[iiT] = norm(OPi_l[1:2] .- T[:posBase][iT,1:2])
             end
 
             I = sortperm(dists)
@@ -259,7 +259,7 @@ function setUpTmpWFAndRun(T, paramFLORIS, Wind)
             else
                 a = plot_OP[I[1], :]'
                 b = plot_OP[I[2], :]'
-                c = T.posBase[iT, 1:2]'
+                c = T[:posBase][iT, 1:2]'
                 d = clamp((dot(b - a, c - a)) / dot(b - a, b - a), 0.0, 1.0)
                 r1, r2 = 1.0 - d, d
                 Ufree = r1 * plot_WF[I[1], 1] + r2 * plot_WF[I[2], 1]
