@@ -4,6 +4,7 @@
 module FLORIDyn
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
+using Statistics
 
 export setup, str2type, Settings, getTurbineData, initSimulation
 

@@ -24,3 +24,4 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(set, wind, con, paramFLORIDyn
 T = initSimulation(T, wind, sim, con, paramFLORIDyn, paramFLORIS)
 
 T, M, Mint = FLORIDynCL(set, T, wind, sim, con, paramFLORIDyn, paramFLORIS)
+nothing

@@ -215,8 +215,6 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
             # OP1_i, OP1_r, OP2_i, OP2_r = T[:intOPs][iT][iiT, :]  # Assumes row-major
 
             OPi_l = OP1_r * T[:States_OP][OP1_i, :] + OP2_r * T[:States_OP][OP2_i, :]
-            println("OPi_l: ", OPi_l)
-            println("tmp_Tpos[iiT, :]: ", tmp_Tpos[iiT, :])
             tmp_Tpos[iiT, :] = OPi_l[1:3]
             tmp_Tst[iiT, :] = OP1_r * T[:States_T][OP1_i, :] + OP2_r * T[:States_T][OP2_i, :]
             tmp_WF[iiT, :]  = OP1_r * T[:States_WF][OP1_i, :] + OP2_r * T[:States_WF][OP2_i, :]

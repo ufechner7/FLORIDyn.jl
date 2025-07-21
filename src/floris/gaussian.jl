@@ -184,9 +184,76 @@ function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
     return States_OP, States_T, States_WF
 end
 
-# runFLORIS(LocationT, States_WF, States_T, D, paramFLORIS, WindShear)
-function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS, windshear)
+function getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
+    # Unpack parameters
+    k_a   = param.k_a
+    k_b   = param.k_b
+    alpha = param.alpha
+    beta  = param.beta
 
+    # States
+    I = sqrt.(TI.^2 .+ TI0.^2)
+    OPdw = RPs[:, 1]
+
+    # Core length x_0
+    x_0 = (cos.(yaw) .* (1 .+ sqrt.(1 .- C_T)) ./ 
+          (sqrt(2) .* (alpha .* I .+ beta .* (1 .- sqrt.(1 .- C_T))))) .* D
+
+    # Compute k_y and k_z
+    k_y = k_a .* I .+ k_b
+    k_z = k_y
+
+    # Helper zero array
+    zs = zeros(size(OPdw))
+
+    # sig_y calculation (field width in y)
+    sig_y = max.(OPdw .- x_0, zs) .* k_y .+
+            min.(OPdw ./ x_0, zs .+ 1) .* cos.(yaw) .* D / sqrt(8)
+
+    # sig_z calculation (field width in z)
+    sig_z = max.(OPdw .- x_0, zs) .* k_z .+
+            min.(OPdw ./ x_0, zs .+ 1) .* D / sqrt(8)
+
+    # Theta
+    Theta = 0.3 .* yaw ./ cos.(yaw) .* (1 .- sqrt.(1 .- C_T .* cos.(yaw)))
+
+    # Deflection delta - near wake
+    delta_nfw = Theta .* map((opdw, x0) -> min(opdw, x0), OPdw, x_0)
+
+    # delta_fw parts
+    delta_fw_1 = Theta ./ 14.7 .* sqrt.(cos.(yaw) ./ (k_y .* k_z .* C_T)) .* 
+                 (2.9 .+ 1.3 .* sqrt.(1 .- C_T) .- C_T)
+
+    # Intermediate term
+    term = 1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (D.^2 .* cos.(yaw)))
+
+    delta_fw_2 = log.(((1.6 .+ sqrt.(C_T)) .* (term .- sqrt.(C_T))) ./ 
+                      ((1.6 .- sqrt.(C_T)) .* (term .+ sqrt.(C_T))))
+
+    # Condition mask: OPdw > x_0 => 1.0, else 0.0
+    mask = (OPdw .> x_0)
+    blend = 0.5 .* sign.(OPdw .- x_0) .+ 0.5
+
+    # Total delta in y
+    deltaY = delta_nfw .+ blend .* delta_fw_1 .* delta_fw_2 .* D
+    delta = hcat(deltaY, zeros(size(deltaY)))  # [delta_y, delta_z]
+
+    # Potential core
+    u_r_0 = (C_T .* cos.(yaw)) ./ 
+            (2 .* (1 .- sqrt.(1 .- C_T .* cos.(yaw))) .* sqrt.(1 .- C_T))
+
+    pc_y = D .* cos.(yaw) .* sqrt.(u_r_0) .* max.(1 .- OPdw ./ x_0, zs)
+    pc_z = D .* sqrt.(u_r_0) .* max.(1 .- OPdw ./ x_0, zs)
+
+    # For points exactly at the rotor plane
+    rp = OPdw .== 0
+    pc_y[rp] .= D .* cos.(yaw)
+    pc_z[rp] .= D
+
+    return sig_y, sig_z, C_T, x_0, delta, pc_y, pc_z
+end
+
+function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS, windshear)
     if D[end] > 0
         RPl, RPw = discretizeRotor(paramFLORIS.rotor_points)
     else
@@ -258,7 +325,7 @@ function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS
         fw = .!nw
         gaussAbs = zeros(size(RPw))
         gaussAbs[nw] .= 1 .- sqrt(1 .- C_T)
-        gaussAbs[fw] .= 1 .- sqrt(1 .- C_T .* cos(yaw) ./ (8 .* sig_y[fw] .* sig_z[fw] ./ D[iT]^2))
+        gaussAbs[fw] .= 1 .- sqrt.(1 .- C_T .* cos(yaw) ./ (8 .* sig_y[fw] .* sig_z[fw] ./ D[iT]^2))
 
         gaussWght = ones(size(RPw))
         not_core = .!core
