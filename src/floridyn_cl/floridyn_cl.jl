@@ -195,9 +195,9 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
         # Multi-turbine setup
         tmp_nT = length(T[:dep][iT]) + 1
 
-        tmp_Tpos = repeat([T[:posBase][iT,:] + T[:posNac][iT,:]], tmp_nT)
-        tmp_WF = repeat([iTWFState], tmp_nT)
-        tmp_Tst = repeat([T[:States_T][T[:StartI][iT], :]], tmp_nT)
+        tmp_Tpos = repeat(T[:posBase][iT,:]' + T[:posNac][iT,:]', tmp_nT)
+        tmp_WF   = repeat(iTWFState', tmp_nT)
+        tmp_Tst  = repeat((T[:States_T][T[:StartI][iT], :])', tmp_nT)
 
         tmp_D = if T[:D][end] > 0
             vcat(T[:D][T[:dep][iT]], T[:D][iT])
@@ -206,9 +206,17 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
         end
 
         for iiT in 1:(tmp_nT - 1)
-            OP1_i, OP1_r, OP2_i, OP2_r = T[:intOPs][iT][iiT, :]  # Assumes row-major
+            OP1_i = Int(T[:intOPs][iT][iiT, 1])  # Index OP 1
+            OP1_r = T[:intOPs][iT][iiT, 2]       # Ratio OP 1
+            OP2_i = Int(T[:intOPs][iT][iiT, 3])  # Index OP 2
+            OP2_r = T[:intOPs][iT][iiT, 4]       # Ratio OP 2
+            # println("OP1_i: ", OP1_i, " OP2_i: ", OP2_i, " iiT: ", iiT)
+            # println("OP1_r: ", OP1_r, " OP2_r: ", OP2_r)
+            # OP1_i, OP1_r, OP2_i, OP2_r = T[:intOPs][iT][iiT, :]  # Assumes row-major
 
             OPi_l = OP1_r * T[:States_OP][OP1_i, :] + OP2_r * T[:States_OP][OP2_i, :]
+            println("OPi_l: ", OPi_l)
+            println("tmp_Tpos[iiT, :]: ", tmp_Tpos[iiT, :])
             tmp_Tpos[iiT, :] = OPi_l[1:3]
             tmp_Tst[iiT, :] = OP1_r * T[:States_T][OP1_i, :] + OP2_r * T[:States_T][OP2_i, :]
             tmp_WF[iiT, :]  = OP1_r * T[:States_WF][OP1_i, :] + OP2_r * T[:States_WF][OP2_i, :]
@@ -234,7 +242,7 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
         end
 
         # Run FLORIS
-        T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(tmp_Tpos, tmp_WF, tmp_Tst, tmp_D, paramFLORIS, Wind.shear)
+        T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, tmp_Tpos, tmp_WF, tmp_Tst, tmp_D, paramFLORIS, Wind.shear)
 
         T_red = prod(T_red_arr)
         T[:red_arr][iT, vcat(T[:dep][iT], iT)] = T_red_arr
