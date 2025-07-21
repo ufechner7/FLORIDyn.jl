@@ -60,6 +60,7 @@ end
     start_time::Int64
     end_time::Int64
     time_step::Int64
+    sim_step::Union{Nothing, Int64} = nothing
     n_sim_steps::Union{Nothing, Int64} = nothing
     rotor_discret::String
     rotor_points::Int64

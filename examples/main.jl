@@ -23,4 +23,4 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(set, wind, con, paramFLORIDyn
 # Run initial conditions until no more change happens (wrong comment in original code)
 T = initSimulation(T, wind, sim, con, paramFLORIDyn, paramFLORIS)
 
-# T, M, Mint = FLORIDynCL(T, wind, sim, con, paramFLORIDyn, paramFLORIS)
+T, M, Mint = FLORIDynCL(T, wind, sim, con, paramFLORIDyn, paramFLORIS)
