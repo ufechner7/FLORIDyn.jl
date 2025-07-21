@@ -180,6 +180,7 @@ include("floridyn_cl/floridyn_cl.jl")
 
 include("correction/direction.jl")
 include("correction/velocity.jl")
+include("correction/turbulence.jl")
 
 include("floridyn_cl/prepare_simulation.jl")
 include("floridyn_cl/iterate.jl")
