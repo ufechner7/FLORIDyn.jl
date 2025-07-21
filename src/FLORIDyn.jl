@@ -96,8 +96,8 @@ which is important in atmospheric and wind energy simulations.
 - alpha::Float64: WindShear coefficient
 """
 struct WindShear
-    z0::Float64
     alpha::Float64
+    z0::Float64
 end
 
 """

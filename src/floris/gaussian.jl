@@ -184,27 +184,25 @@ function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
     return States_OP, States_T, States_WF
 end
 
+# runFLORIS(LocationT, States_WF, States_T, D, paramFLORIS, WindShear)
 function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS, windshear)
 
-    # Get rotor points
     if D[end] > 0
         RPl, RPw = discretizeRotor(paramFLORIS.rotor_points)
     else
         RPl = [0.0 0.0 0.0]
         RPw = [1.0]
     end
-
     # Yaw rotation for last turbine
-    tmp_yaw = deg2rad(States_T'[end, 2])
-    println(tmp_yaw)
+    tmp_yaw = deg2rad(States_T[end, 2])
     R = [cos(tmp_yaw)  sin(tmp_yaw)  0.0;
         -sin(tmp_yaw)  cos(tmp_yaw)  0.0;
          0.0           0.0           1.0]
 
-    RPl = (R * (RPl .* D[end])')' .+ LocationT[end, :]
+    RPl = (R * (RPl .* D[end])')' .+ LocationT[end, :]'
 
     if length(D) == 1
-         redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ LocationT'[end, 3])
+        redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ LocationT[3])
         T_red_arr = RPw' * redShear
         T_aTI_arr, T_Ueff, T_weight = nothing, nothing, nothing
         return T_red_arr, T_aTI_arr, T_Ueff, T_weight
@@ -221,7 +219,7 @@ function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS
         tmp_phi = size(States_WF,2) == 4 ? angSOWFA2world(States_WF[iT, 4]) :
                                            angSOWFA2world(States_WF[iT, 2])
 
-        tmp_RPs = RPl .- LocationT[iT, :]
+        tmp_RPs = RPl .- LocationT[iT, :]'
         R_phi = [cos(tmp_phi)  sin(tmp_phi)  0.0;
                 -sin(tmp_phi)  cos(tmp_phi)  0.0;
                  0.0           0.0           1.0]

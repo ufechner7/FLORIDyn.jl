@@ -180,9 +180,9 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
             # Single turbine case
             T_red_arr, _, _ = runFLORIS(
                 set,
-                T[:posBase][iT,:] + T[:posNac][iT,:],
-                iTWFState,
-                T[:States_T][T[:StartI][iT], :],
+                (T[:posBase][iT,:] + T[:posNac][iT,:])',
+                iTWFState',
+                T[:States_T][T[:StartI][iT], :]',
                 T[:D][iT],
                 paramFLORIS,
                 Wind.shear
@@ -242,6 +242,7 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
         end
 
         # Run FLORIS
+        # Main.@infiltrate                    
         T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, tmp_Tpos, tmp_WF, tmp_Tst, tmp_D, paramFLORIS, Wind.shear)
 
         T_red = prod(T_red_arr)
