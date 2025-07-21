@@ -30,6 +30,27 @@ function initSimulation(T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
     return T
 end
 
+function pertubationOfTheWF!(T, Wind)
+    # pertubationOfTheWF! adds noise to the entire wind field state
+    
+    # Velocity
+    if Wind.pertubation.vel
+        T[:States_WF][:, 1] .+= Wind.pertubation.vel_sigma * randn(T[:nOP] * T[:nT])
+    end
+
+    # Direction
+    if Wind.pertubation.dir
+        T[:States_WF][:, 2] .+= Wind.pertubation.dir_sigma * randn(T[:nOP] * T[:nT])
+    end
+
+    # Turbulence Intensity
+    if Wind.pertubation.ti
+        T[:States_WF][:, 3] .+= Wind.pertubation.ti_sigma * randn(T[:nOP] * T[:nT])
+    end
+
+    return nothing
+end
+
 function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
     # OUTPUTS:
     # T := Simulation state (OP states, Turbine states, wind field states(OPs))
@@ -50,8 +71,8 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
         # ========== PREDICTION ==========
         T = iterateOPs!(set.iterate_mode, T, Sim, paramFLORIS, paramFLORIDyn)
 
-    #     # ========== Wind Field Perturbation ==========
-    #     T = pertubationOfTheWF(T, Wind)
+        # ========== Wind Field Perturbation ==========
+        pertubationOfTheWF!(T, Wind)
 
     #     # ========== Get FLORIS reductions ==========
     #     T.dep = findTurbineGroups(T, paramFLORIDyn)
@@ -68,11 +89,11 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
     #     T = correctTi(T, Wind, SimTime)
 
     #     # Save free wind speed as measurement
-    #     M[(it-1)*nT+1 : it*nT, 5] = T.States_WF[T.StartI, 1]
+    #     M[(it-1)*nT+1 : it*nT, 5] = T[:States_WF][T.StartI, 1]
 
     #     # ========== Get Control settings ==========
     #     T.States_T[T.StartI, 2] = (
-    #         T.States_WF[T.StartI, 2] .-
+    #         T[:States_WF][T.StartI, 2] .-
     #         getYaw(Con.YawData, collect(1:nT), SimTime)'
     #     )
 

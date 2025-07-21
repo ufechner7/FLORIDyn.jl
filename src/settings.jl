@@ -2,11 +2,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 @with_kw struct WindPerturbation
-    vel::Float64
+    vel::Bool
     vel_sigma::Float64
-    dir::Float64
+    dir::Bool
     dir_sigma::Float64
-    ti::Float64
+    ti::Bool
     ti_sigma::Float64
 end
 
