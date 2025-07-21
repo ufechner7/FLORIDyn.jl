@@ -158,6 +158,129 @@ function interpolateOPs(T)
     return intOPs
 end
 
+function setUpTmpWFAndRun(T, paramFLORIS, Wind)
+    # Initialize outputs
+    M = zeros(T[:nT], 3)
+    T[:Weight] = Vector{Any}(undef, T[:nT])
+    T[:red_arr] = ones(T[:nT], T[:nT])
+
+    for iT in 1:T[:nT]
+        # Interpolate Wind field if needed
+        iTWFState = copy(T[:States_WF][T[:StartI][iT], :])
+
+        if hasfield(typeof(T), :C_Vel)
+            iTWFState[1] = dot(T[:C_Vel][iT, :], T[:States_WF][:, 1])
+        end
+
+        if hasfield(typeof(T), :C_Dir)
+            iTWFState[2] = dot(T.C_Dir[iT, :], T[:States_WF][:, 2])
+        end
+
+        if isempty(T.dep[iT])
+            # Single turbine case
+            T_red_arr, _, _ = runFLORIS(
+                T.posBase[iT,:] + T.posNac[iT,:],
+                iTWFState,
+                T[:States_T][T[:StartI][iT], :],
+                T[:D][iT],
+                paramFLORIS,
+                Wind.Shear
+            )
+            M[iT, :] = [T_red_arr, 0, T_red_arr * T[:States_WF][T[:StartI][iT], 1]]
+            T[:red_arr][iT, iT] = T_red_arr
+            continue
+        end
+
+        # Multi-turbine setup
+        tmp_nT = length(T.dep[iT]) + 1
+
+        tmp_Tpos = repeat([T.posBase[iT,:] + T.posNac[iT,:]], tmp_nT)
+        tmp_WF = repeat([iTWFState], tmp_nT)
+        tmp_Tst = repeat([T[:States_T][T[:StartI][iT], :]], tmp_nT)
+
+        tmp_D = if T[:D][end] > 0
+            vcat(T[:D][T.dep[iT]], T[:D][iT])
+        else
+            T[:D]
+        end
+
+        for iiT in 1:(tmp_nT - 1)
+            OP1_i, OP1_r, OP2_i, OP2_r = T.intOPs[iT][iiT, :]  # Assumes row-major
+
+            OPi_l = OP1_r * T.States_OP[OP1_i, :] + OP2_r * T.States_OP[OP2_i, :]
+            tmp_Tpos[iiT, :] = OPi_l[1:3]
+            tmp_Tst[iiT, :] = OP1_r * T[:States_T][OP1_i, :] + OP2_r * T[:States_T][OP2_i, :]
+            tmp_WF[iiT, :]  = OP1_r * T[:States_WF][OP1_i, :] + OP2_r * T[:States_WF][OP2_i, :]
+
+            si = T[:StartI][T.dep[iT][iiT]]
+
+            if hasfield(typeof(T), :C_Vel)
+                C_weights = T[:C_Vel][iT, si:(si + T[:nOP] - 1)]
+                C_weights ./= sum(C_weights)
+                tmp_WF[iiT, 1] = dot(C_weights, T[:States_WF][si:si + T[:nOP] - 1, 1])
+            end
+            if hasfield(typeof(T), :C_Dir)
+                C_weights = T.C_Dir[iT, si:(si + T[:nOP] - 1)]
+                C_weights ./= sum(C_weights)
+                tmp_WF[iiT, 2] = dot(C_weights, T[:States_WF][si:si + T[:nOP] - 1, 2])
+            end
+
+            tmp_phi = size(tmp_WF, 2) == 4 ? angSOWFA2world(tmp_WF[iiT, 4]) : angSOWFA2world(tmp_WF[iiT, 2])
+
+            tmp_Tpos[iiT, 1] -= cos(tmp_phi) * OPi_l[4] - sin(tmp_phi) * OPi_l[5]
+            tmp_Tpos[iiT, 2] -= sin(tmp_phi) * OPi_l[4] + cos(tmp_phi) * OPi_l[5]
+            tmp_Tpos[iiT, 3] -= OPi_l[6]
+        end
+
+        # Run FLORIS
+        T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(tmp_Tpos, tmp_WF, tmp_Tst, tmp_D, paramFLORIS, Wind.Shear)
+
+        T_red = prod(T_red_arr)
+        T[:red_arr][iT, vcat(T.dep[iT], iT)] = T_red_arr
+        T_addedTI = sqrt(sum(T_aTI_arr .^ 2))
+        T[:Weight][iT] = T_weight
+
+        if T[:D][end] <= 0
+            dists = zeros(tmp_nT - 1)
+            plot_WF = zeros(tmp_nT - 1, size(T[:States_WF], 2))
+            plot_OP = zeros(tmp_nT - 1, 2)
+            for iiT in 1:(tmp_nT - 1)
+                OP1_i, OP1_r, OP2_i, OP2_r = T.intOPs[iT][iiT, :]
+                OPi_l = OP1_r * T.States_OP[OP1_i, :] + OP2_r * T.States_OP[OP2_i, :]
+                plot_OP[iiT, :] = OPi_l[1:2]
+                plot_WF[iiT, :] = OP1_r * T[:States_WF][OP1_i, :] + OP2_r * T[:States_WF][OP2_i, :]
+                dists[iiT] = norm(OPi_l[1:2] .- T.posBase[iT,1:2])
+            end
+
+            I = sortperm(dists)
+            if length(I) == 1
+                Ufree = plot_WF[I[1], 1]
+                T_Ueff = T_red * Ufree
+            else
+                a = plot_OP[I[1], :]'
+                b = plot_OP[I[2], :]'
+                c = T.posBase[iT, 1:2]'
+                d = clamp((dot(b - a, c - a)) / dot(b - a, b - a), 0.0, 1.0)
+                r1, r2 = 1.0 - d, d
+                Ufree = r1 * plot_WF[I[1], 1] + r2 * plot_WF[I[2], 1]
+                T_Ueff = T_red * Ufree
+            end
+        end
+
+        M[iT, :] = [T_red, T_addedTI, T_Ueff]
+
+        wS = sum(T[:Weight][iT])
+        if wS > 0
+            T[:Weight][iT] = T[:Weight][iT] ./ wS
+        else
+            T[:Weight][iT] .= 0.0
+        end
+    end
+
+    return M, T
+end
+
+
 function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
     # OUTPUTS:
     # T := Simulation state (OP states, Turbine states, wind field states(OPs))
@@ -187,8 +310,8 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
     #     tmpM, T = setUpTmpWFAndRun(T, paramFLORIS, Wind)
     #     M[(it-1)*nT+1 : it*nT, 2:4] = tmpM
     #     M[(it-1)*nT+1 : it*nT, 1] = SimTime
-    #     T.States_T[T[:StartI], 3] = tmpM[:, 2]
-    #     M_int[it] = T.red_arr
+    #     T[:States_T][T[:StartI], 3] = tmpM[:, 2]
+    #     M_int[it] = T[:red_arr]
 
     #     # ========== Wind field corrections ==========
     #     T, Wind = correctVel(T, Wind, SimTime, paramFLORIS, tmpM)
@@ -199,7 +322,7 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
     #     M[(it-1)*nT+1 : it*nT, 5] = T[:States_WF][T[:StartI], 1]
 
     #     # ========== Get Control settings ==========
-    #     T.States_T[T[:StartI], 2] = (
+    #     T[:States_T][T[:StartI], 2] = (
     #         T[:States_WF][T[:StartI], 2] .-
     #         getYaw(Con.YawData, collect(1:nT), SimTime)'
     #     )
