@@ -325,8 +325,8 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
         correctDir!(set.cor_dir_mode, set, T, Wind, SimTime)
         T = correctTi(set.cor_turb_mode, set, T, Wind, SimTime)
 
-    #     # Save free wind speed as measurement
-    #     M[(it-1)*nT+1 : it*nT, 5] = T[:States_WF][T[:StartI], 1]
+        # Save free wind speed as measurement
+        M[(it-1)*nT+1 : it*nT, 5] = T[:States_WF][T[:StartI], 1]
 
     #     # ========== Get Control settings ==========
     #     T[:States_T][T[:StartI], 2] = (
