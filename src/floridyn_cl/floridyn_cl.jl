@@ -321,7 +321,7 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
         M_int[it] = T[:red_arr]
 
         # ========== Wind field corrections ==========
-    #    T, Wind = correctVel(T, Wind, SimTime, paramFLORIS, tmpM)
+        T, Wind = correctVel(set.cor_vel_mode, set, T, Wind, SimTime, paramFLORIS, tmpM)
     #     T = correctDir(T, Wind, SimTime)
     #     T = correctTi(T, Wind, SimTime)
 
