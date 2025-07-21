@@ -176,7 +176,7 @@ function setUpTmpWFAndRun(T, paramFLORIS, Wind)
             iTWFState[2] = dot(T.C_Dir[iT, :], T[:States_WF][:, 2])
         end
 
-        if isempty(T.dep[iT])
+        if isempty(T[:dep][iT])
             # Single turbine case
             T_red_arr, _, _ = runFLORIS(
                 T.posBase[iT,:] + T.posNac[iT,:],
@@ -192,14 +192,14 @@ function setUpTmpWFAndRun(T, paramFLORIS, Wind)
         end
 
         # Multi-turbine setup
-        tmp_nT = length(T.dep[iT]) + 1
+        tmp_nT = length(T[:dep][iT]) + 1
 
         tmp_Tpos = repeat([T.posBase[iT,:] + T.posNac[iT,:]], tmp_nT)
         tmp_WF = repeat([iTWFState], tmp_nT)
         tmp_Tst = repeat([T[:States_T][T[:StartI][iT], :]], tmp_nT)
 
         tmp_D = if T[:D][end] > 0
-            vcat(T[:D][T.dep[iT]], T[:D][iT])
+            vcat(T[:D][T[:dep][iT]], T[:D][iT])
         else
             T[:D]
         end
@@ -212,7 +212,7 @@ function setUpTmpWFAndRun(T, paramFLORIS, Wind)
             tmp_Tst[iiT, :] = OP1_r * T[:States_T][OP1_i, :] + OP2_r * T[:States_T][OP2_i, :]
             tmp_WF[iiT, :]  = OP1_r * T[:States_WF][OP1_i, :] + OP2_r * T[:States_WF][OP2_i, :]
 
-            si = T[:StartI][T.dep[iT][iiT]]
+            si = T[:StartI][T[:dep][iT][iiT]]
 
             if hasfield(typeof(T), :C_Vel)
                 C_weights = T[:C_Vel][iT, si:(si + T[:nOP] - 1)]
@@ -236,7 +236,7 @@ function setUpTmpWFAndRun(T, paramFLORIS, Wind)
         T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(tmp_Tpos, tmp_WF, tmp_Tst, tmp_D, paramFLORIS, Wind.Shear)
 
         T_red = prod(T_red_arr)
-        T[:red_arr][iT, vcat(T.dep[iT], iT)] = T_red_arr
+        T[:red_arr][iT, vcat(T[:dep][iT], iT)] = T_red_arr
         T_addedTI = sqrt(sum(T_aTI_arr .^ 2))
         T[:Weight][iT] = T_weight
 
@@ -307,7 +307,7 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
         # ========== Get FLORIS reductions ==========
         T[:dep] = findTurbineGroups(T, paramFLORIDyn)
         T[:intOPs] = interpolateOPs(T)
-    #     tmpM, T = setUpTmpWFAndRun(T, paramFLORIS, Wind)
+        tmpM, T = setUpTmpWFAndRun(T, paramFLORIS, Wind)
     #     M[(it-1)*nT+1 : it*nT, 2:4] = tmpM
     #     M[(it-1)*nT+1 : it*nT, 1] = SimTime
     #     T[:States_T][T[:StartI], 3] = tmpM[:, 2]
