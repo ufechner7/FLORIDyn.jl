@@ -71,17 +71,16 @@ function findTurbineGroups(T, paramFLORIDyn)
 
             # Closest OP from wake of iT to turbine iiT
             idx_range = (T[:StartI][iT]):(T[:StartI][iT] + T[:nOP] - 1)
-            A = T[:posBase][iiT, 1:2]
-            println("A: ", A)
-            B = T[:States_OP][idx_range, 1:2]
-            # println("B: ", B)
-            println("size(B):", size(B))
-            distOP_iiT = sum.((T[:posBase][iiT, 1:2] .- T[:States_OP][idx_range, 1:2]).^2, dims=2)
-            I_op = argmin(distOP_iiT)
+            distOP_iiT = sum((T[:posBase][iiT, 1:2]' .- T[:States_OP][idx_range, 1:2]).^2, dims=2)
+
+            I = LinearIndices(distOP_iiT)
+            I_op = I[argmin(distOP_iiT)]
+        
+            # println("I_op: ", I_op)
             I_op = T[:StartI][iT] + I_op - 1
 
             # Angle and relative vector
-            phi = angSOWFA2world(T[:States_WF][I_op, 2])
+            phi = angSOWFA2world.(T[:States_WF][I_op, 2])
             r0 = T[:States_OP][I_op, 1:2] .- T[:posBase][iiT, 1:2]
             r1 = R01(phi) * r0
 
