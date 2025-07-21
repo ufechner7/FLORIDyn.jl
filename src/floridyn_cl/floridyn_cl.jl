@@ -51,6 +51,51 @@ function pertubationOfTheWF!(T, Wind)
     return nothing
 end
 
+function findTurbineGroups(T, paramFLORIDyn)
+    # Extract parameters from settings struct
+    dw = paramFLORIDyn.deltaDW
+    cw = paramFLORIDyn.deltaCW
+    uw = paramFLORIDyn.deltaUW
+
+    # Initialize outputs
+    Tdep = Vector{Any}(undef, T[:nT])  # Equivalent of cell array in MATLAB[1][3]
+    dep = falses(T[:nT], T[:nT])
+    
+    R01(phi) = [cos(phi)  sin(phi); -sin(phi) cos(phi)]
+
+    for iT in 1:T[:nT]
+        for iiT in 1:T[:nT]
+            if iiT == iT
+                continue
+            end
+
+            # Closest OP from wake of iT to turbine iiT
+            idx_range = (T[:StartI][iT]):(T[:StartI][iT] + T[:nOP] - 1)
+            distOP_iiT = sum.((T[:posBase][iiT, 1:2] .- T[:States_OP][idx_range, 1:2]).^2, dims=2)
+            I_op = argmin(distOP_iiT)
+            I_op = T[:StartI][iT] + I_op - 1
+
+            # Angle and relative vector
+            phi = angSOWFA2world(T[:States_WF][I_op, 2])
+            r0 = T[:States_OP][I_op, 1:2] .- T[:posBase][iiT, 1:2]
+            r1 = R01(phi) * r0
+
+            # Apply dependency check
+            if (-r1[1] <= uw*T[:D][iT]) && (r1[1] <= dw*T[:D][iT]) && (abs(r1[2]) <= cw*T[:D][iT])
+                dep[iiT, iT] = true
+            end
+        end
+    end
+
+    for iT in 1:T[:nT]
+        # find indices where dep[iT, :] is true
+        Tdep[iT] = findall(x -> x, dep[iT, :])
+    end
+
+    return Tdep
+end
+
+
 function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
     # OUTPUTS:
     # T := Simulation state (OP states, Turbine states, wind field states(OPs))
@@ -74,13 +119,13 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
         # ========== Wind Field Perturbation ==========
         pertubationOfTheWF!(T, Wind)
 
-    #     # ========== Get FLORIS reductions ==========
-    #     T.dep = findTurbineGroups(T, paramFLORIDyn)
+        # ========== Get FLORIS reductions ==========
+        T[:dep] = findTurbineGroups(T, paramFLORIDyn)
     #     T.intOPs = interpolateOPs(T)
     #     tmpM, T = setUpTmpWFAndRun(T, paramFLORIS, Wind)
     #     M[(it-1)*nT+1 : it*nT, 2:4] = tmpM
     #     M[(it-1)*nT+1 : it*nT, 1] = SimTime
-    #     T.States_T[T.StartI, 3] = tmpM[:, 2]
+    #     T.States_T[T[:StartI], 3] = tmpM[:, 2]
     #     M_int[it] = T.red_arr
 
     #     # ========== Wind field corrections ==========
@@ -89,11 +134,11 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
     #     T = correctTi(T, Wind, SimTime)
 
     #     # Save free wind speed as measurement
-    #     M[(it-1)*nT+1 : it*nT, 5] = T[:States_WF][T.StartI, 1]
+    #     M[(it-1)*nT+1 : it*nT, 5] = T[:States_WF][T[:StartI], 1]
 
     #     # ========== Get Control settings ==========
-    #     T.States_T[T.StartI, 2] = (
-    #         T[:States_WF][T.StartI, 2] .-
+    #     T.States_T[T[:StartI], 2] = (
+    #         T[:States_WF][T[:StartI], 2] .-
     #         getYaw(Con.YawData, collect(1:nT), SimTime)'
     #     )
 
