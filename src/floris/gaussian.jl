@@ -184,30 +184,40 @@ function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
     return States_OP, States_T, States_WF
 end
 
+"""
+    getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
+
+Compute and return variables related to the Gaussian wake model for wind turbines.
+
+In particular, it calculates the field width, the potential core data and
+the deflection. These values are needed for the calculation of the wake shape and speed 
+reduction. The values are based of the state of every individual OP.
+
+# Arguments
+- `RPs`: Array or collection of reference points where the variables are evaluated.
+- `a`: Axial induction factor(s) for the turbine(s).
+- `C_T`: Thrust coefficient(s) for the turbine(s).
+- `yaw`: Yaw angle(s) of the turbine(s) in radians or degrees.
+- `TI`: Turbulence intensity at the reference points.
+- `TI0`: Ambient turbulence intensity.
+- `param`: Model parameters, possibly a struct or dictionary containing Gaussian wake model parameters.
+- `D`: Rotor diameter(s) of the turbine(s).
+
+# Returns
+Returns the tuple
+- sig_y::Vector: Gaussian variance in y direction (sqrt of)
+- sig_z::Vector: Gaussian variance in z direction (sqrt of)
+- C_T: Thrust coefficient, same as OP.Ct
+- x_0: Potential core length
+- delta: Deflection
+- pc_y: Potential core boundary in y dir
+- pc_z: Potential core boundary in z dir
+
+# SOURCES
+- [1] Experimental and theoretical study of wind turbine wakes in yawed conditions - M. Bastankhah and F. Porté-Agel
+- [2] Design and analysis of a spatially heterogeneous wake - A. Farrell, J. King et al.
+"""
 function getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
-    # GETVARS calculates the field width, the potential core data and
-    # the deflection. These values are needed for the wake shape and speed 
-    # reduction. The values are based of the state of every individual OP.
-    # ======================================================================= %
-    # INPUT
-
-    # ======================================================================= %
-    # OUTPUT
-    #   sig_y       := [nx1] vec; Gaussian variance in y direction (sqrt of)
-    #   sig_z       := [nx1] vec; Gaussian variance in z direction (sqrt of)
-    #   C_T         := [nx1] vec; Thrust coefficient, same as OP.Ct
-    #   x_0         := [nx1] vec; Potential core length
-    #   delta       := [nx1] vec; Deflection
-    #   pc_y        := [nx1] vec; Potential core boundary in y dir
-    #   pc_z        := [nx1] vec; Potential core boundary in z dir
-    # ======================================================================= %
-    # SOURCES
-    # [1] Experimental and theoretical study of wind turbine wakes in yawed
-    #     conditions - M. Bastankhah and F. Porté-Agel
-    # [2] Design and analysis of a spatially heterogeneous wake - A. Farrell,
-    #     J. King et al.
-
-
     # Unpack parameters
     k_a   = param.k_a
     k_b   = param.k_b

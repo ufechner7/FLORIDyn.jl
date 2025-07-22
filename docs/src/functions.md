@@ -26,6 +26,7 @@ getWindTiT_EnKF
 CalcCt
 Centerline
 discretizeRotor
+getVars
 ```
 
 # FLORIDyn
