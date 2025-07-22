@@ -270,7 +270,6 @@ function getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
 
     # For points exactly at the rotor plane
     rp = OPdw .== 0
-    Main.@infiltrate
     pc_y[rp] .= D .* cos.(yaw)
     pc_z[rp] .= D
 
