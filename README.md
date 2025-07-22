@@ -9,6 +9,12 @@ A dynamic wind farm simulation software, translated from https://github.com/TUDe
 
 His code uses one engineering model from the quasi static wind farm simulation software [FLORIS](https://github.com/NREL/floris), developed by NREL.
 
+## Model features
+- Simulate wind farms dynamically at a low computational cost
+- Estimate the power generated, added turbulence, and wake-induced losses.
+- Apply heterogeneous and time-varying wind speeds and directions
+- Test different modeling approaches
+
 ## Status:
 The basic example works.
 ```julia
