@@ -16,29 +16,56 @@ wind:
     ti_sigma: 0.005
 
 sim:
+  # the used FLORIS model; currently, only 'gaussian' is supported
   floris: gaussian
-  start_time: 20000
-  end_time: 21200
-  time_step: 4
+  # start & end time of the simulation and the time resolution. 
+  start_time: 20000       # [s]
+  end_time: 21200         # [s]
+  time_step: 4            # [s]
+
+  # The discretization method, 'sunflower' or 'isocell'. The latter provides a regular grid 
+  # with equal sized cells. This is the favoured method! Downside is that the number of cells
+  # can not be chosen freely, the algorithm might correct the requested number of cells to 
+  # the nearest possible number (3, 12, 27, 48, 75, 108, 147, ...).  
+  # Sunflower distributes based on an outgoing spiral, the number of cells can be freely chosen.
   rotor_discret: isocell
-  rotor_points: 50
+  rotor_points: 50 # number of points for the discretization of the rotor disk
+  
+  # Dynamic settings
   dyn:
+    # Advection speed
+    # Multiplier of the travel speed of the OPs with their own wind speed. 
+    # The published FLORIDyn models used 1, other literature suggests values as low as 0.6.
     advection: 1
     advection_mod: linear
+    # Operating point (OP) / wind field propagation
+    # 'Basic'    iterates the OPs based on their wind speed, OPs do not interact with each other. 
+    # 'Averaged' is a weighted average between the new wind speed value and the old value. 
+    #            This smoothes out turbulent inputs and reduces the occasions when one OP overtakes another OP. 
+    # 'Maximum'  overwrites the state of a slower OP once the faster one overtakes it.
     op_iteration: IterateOPs_basic
+    # In case the averaging is used, provide weights for the new value (first weight) 
+    # and the old value (second value). They have to sum up to 1.
     op_iter_weights: [0.7, 0.3]
     vel:
+      # Spacial-Time-Averaged weight settings for the wind speed
+      #   Lejeune: 512 63 126
+      #   Becker Energies: 256 126 256
+      #   Becker CLC: 256 256 50
       iter_sigma_dw: 256
       iter_sigma_cw: 256
       iter_sigma_time: 50
     dir:
+      # Spacial-Time-Averaged weight settings for the wind direction
       iter_sigma_dw: 512
       iter_sigma_cw: 512
       iter_sigma_time: 50
-  init: noinit
+  # Choose if simulation should be initialized, an initialized state should be loaded 
+  # or should be started without initialization.
+  init: noinit # 'noinit' or 'load' (load requires initT.jld2)
   path_to_data: "data/2021_9T_Data"
-  save_init_state: false
-  save_final_state: false
+  save_init_state: false  # if true, stores T_init.jld2
+  save_final_state: false # if true, stores T_final.jld2
 
 con:
   yaw: SOWFA
