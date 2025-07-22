@@ -161,7 +161,7 @@ end
 function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
     # Initialize outputs
     M = zeros(T[:nT], 3)
-    T[:Weight] = Vector{Any}(undef, T[:nT])
+    T[:Weight] = Vector{Vector{Float64}}(undef, T[:nT])
     T[:red_arr] = ones(T[:nT], T[:nT])
 
     for iT in 1:T[:nT]
