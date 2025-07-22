@@ -32,7 +32,7 @@ error covariance. This struct is a subtype of `VelModel` and is used
 to model wind velocity with an constant value and an error covariance 
 for uncertainty quantification.
 
-# See Also
+# See also:
 - [`VelModel`](@ref): Abstract supertype for velocity models.
 """
 struct Velocity_Constant_wErrorCov <: VelModel end
@@ -47,7 +47,7 @@ Ensemble Kalman Filter (EnKF) approach.
 This struct is used within the wind field modeling framework to represent the velocity at a turbine location, 
 where the velocity is estimated or interpolated using EnKF-based techniques.
 
-# See Also
+# See also:
 - [`VelModel`](@ref): Abstract supertype for velocity models.
 """
 struct Velocity_EnKF_InterpTurbine <: VelModel end
