@@ -110,10 +110,10 @@ using FLORIDyn, Test
         RPs = [881.928  -185.932  -61.0219; 
                886.024  -170.647  -43.9671; 
                888.637  -160.896  -23.0056] # Test with 3 downstream distances
-        a = [1.0, 1.0, 1.0]                 # Dummy placeholder, not used
+        a   = [1.0, 1.0, 1.0]                 # Dummy placeholder, not used
         C_T = [0.8844, 0.8844, 0.8844]      # Thrust coefficients
         yaw = [0.0, 0.0, 0.0]               # Yaw angles
-        TI = [0.06, 0.06, 0.06]             # Ambient intensity
+        TI  = [0.06, 0.06, 0.06]             # Ambient intensity
         TI0 = [0.0062, 0.0062, 0.0062]      # Local turbulence
         D = 178.4                           # Rotor diameter
 
