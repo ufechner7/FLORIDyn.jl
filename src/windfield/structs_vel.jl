@@ -9,7 +9,8 @@
 Abstract type representing a velocity model in the wind field module.
 Subtypes of `VelModel` implement specific velocity field representations or models.
 
-See: [Markers defining the wind velocity model](@ref) for more details.
+See also: 
+- [Markers defining the wind velocity model](@ref) for more details.
 """
 abstract type VelModel end
 
@@ -19,7 +20,7 @@ abstract type VelModel end
 A velocity model representing a constant wind velocity field. This struct is used as a type marker 
 to indicate that the wind velocity does not vary in space or time.
 
-# See Also
+# See also:
 - [`VelModel`](@ref): Abstract supertype for velocity models.
 """
 struct Velocity_Constant <: VelModel end
