@@ -1,3 +1,5 @@
+# FLORIDyn project configuration
+#
 # Flow conditions
 # Choose the input files for wind velocity, direction and ambient turbulence intensity as well as shear.
 wind:
