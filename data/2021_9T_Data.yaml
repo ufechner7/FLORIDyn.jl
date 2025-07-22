@@ -1,4 +1,11 @@
+# Flow conditions
+# Choose the input files for wind velocity, direction and ambient turbulence intensity as well as shear.
 wind:
+  # Velocity Input
+  # - I&I           uses the Immersion and Invariance effective wind speed estimator based on SOWFA data. 
+  # - Interpolation linearly interpolates between set-points, the value is equally used for all turbines. 
+  # - Interpolate   per turbine also linearly interpolates between set-points, but individually for every turbine. 
+  # - Constant      provides a constant velocity for all turbines.
   input_vel: Constant
   input_dir: Interpolation
   input_ti: Constant
