@@ -3,7 +3,7 @@
 
 # MainFLORIDyn Center-Line model
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
-using FLORIDyn
+using FLORIDyn, TerminalPager
 
 settings_file = "data/2021_9T_Data.yaml"
 
@@ -23,4 +23,7 @@ T = initSimulation(T, wind, sim, con, floridyn, floris)
 
 @time T, M, Mint = FLORIDynCL(set, T, wind, sim, con, floridyn, floris)
 # 0.23 s on Desktop, 0.40 s with MATLAB
+
+@info "Type 'M |> pager' to see the results of the simulation."
+@info "Type 'q' to exit the pager."
 nothing
