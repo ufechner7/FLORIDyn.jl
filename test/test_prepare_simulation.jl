@@ -9,7 +9,7 @@ settings_file = "data/2021_9T_Data.yaml"
 wind, sim, con, floris, floridyn = setup(settings_file)
 
 # create settings struct
-set = Settings(wind, sim)
+set = Settings(wind, sim, con)
 
 # % Load linked data
 turbProp        = turbineArrayProperties(settings_file)

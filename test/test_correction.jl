@@ -37,7 +37,7 @@ wind = FLORIDyn.Wind(
     @testset "correctDir!" begin
         # Setup
         set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_All(), 
-                    Velocity_None(), TI_None(), IterateOPs_basic())
+                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA())
         mock_t = MockT(zeros(3, 4), 2)
         T = Dict(:States_WF => mock_t.States_WF, :StartI => mock_t.StartI, :nT => 3)
         sim_time = 20000  # dummy input

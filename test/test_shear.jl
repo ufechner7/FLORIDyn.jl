@@ -20,7 +20,7 @@ using Random
     @testset "getWindShearT(Shear_PowerLaw(), ...)" begin
         shear_mode = Shear_PowerLaw()
         # Test with scalar z_norm
-        ws = WindShear(10.0, 0.14)
+        ws = WindShear(0.14, 10.0)
         z = 2.0
         expected = z^ws.alpha
         @test getWindShearT(shear_mode, ws, z) ≈ expected
@@ -31,7 +31,7 @@ using Random
         @test all(getWindShearT(shear_mode, ws, z_arr) .≈ expected_arr)
 
         # Test with alpha = 0 (should return ones)
-        ws_zero = WindShear(10.0, 0.0)
+        ws_zero = WindShear(0.0, 10.0)
         @test all(getWindShearT(shear_mode, ws_zero, z_arr) .≈ ones(length(z_arr)))
 
         # Test with z_norm = 0 (should return 0 unless alpha==0)
