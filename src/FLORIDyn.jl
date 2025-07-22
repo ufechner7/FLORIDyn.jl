@@ -33,9 +33,9 @@ export getWindTiT, getWindTiT_EnKF
 export getWindSpeedT, getWindSpeedT_EnKF
 export correctDir!
 
-export discretizeRotor, CalcCt, States
+export discretizeRotor, calcCt, States
 export turbineArrayProperties
-export prepareSimulation, importSOWFAFile, Centerline, angSOWFA2world, initSimulation, runFLORIS
+export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimulation, runFLORIS
 export FLORIDynCL, iterateOPs!, getVars, setUpTmpWFAndRun, interpolateOPs, pertubationOfTheWF
 
 # global variables

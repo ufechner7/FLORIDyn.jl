@@ -23,8 +23,8 @@ getWindTiT_EnKF
 
 # FLORIS
 ```@docs
-CalcCt
-Centerline
+calcCt
+centerline
 discretizeRotor
 getVars
 ```

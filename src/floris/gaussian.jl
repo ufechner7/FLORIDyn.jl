@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    CalcCt(a, _)
+    calcCt(a, _)
 
 Calculate the thrust coefficient (Ct) for a wind turbine based on the axial induction factor `a`.
 
@@ -13,7 +13,7 @@ Calculate the thrust coefficient (Ct) for a wind turbine based on the axial indu
 # Returns
 - `Ct::Number`: The calculated thrust coefficient.
 """
-function CalcCt(a, _)
+function calcCt(a, _)
     Ct = 4 .* a .* (1 .- a)
     return Ct
 end
@@ -44,7 +44,7 @@ function States()
 end
 
 """
-    Centerline(States_OP, States_T, States_WF, paramFLORIS, D)
+    centerline(States_OP, States_T, States_WF, paramFLORIS, D)
 
 Compute the centerline wake properties for a wind farm simulation.
 
@@ -61,7 +61,7 @@ Compute the centerline wake properties for a wind farm simulation.
 # Notes
 This function is part of the Gaussian wake model implementation for wind farm simulations using the FLORIDyn.jl package.
 """
-function Centerline(States_OP, States_T, States_WF, paramFLORIS, D)
+function centerline(States_OP, States_T, States_WF, paramFLORIS, D)
     # Parameters
     k_a   = paramFLORIS.k_a
     k_b   = paramFLORIS.k_b
@@ -69,7 +69,7 @@ function Centerline(States_OP, States_T, States_WF, paramFLORIS, D)
     beta  = paramFLORIS.beta
 
     # States
-    C_T   = CalcCt(States_T[:,1], States_T[:,2])
+    C_T   = calcCt(States_T[:,1], States_T[:,2])
     yaw   = .-deg2rad.(States_T[:,2])
     I     = sqrt.(States_T[:,3].^2 .+ States_WF[:,3].^2)
     OPdw  = States_OP[:,4]
@@ -164,7 +164,7 @@ function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
         States_T[rangeOPs, :] = ones(nOP, 1) * InitTurb[iT, :]'
 
         # Crosswind position
-        States_OP[rangeOPs, 5:6] = Centerline(States_OP[rangeOPs, :], States_T[rangeOPs, :],
+        States_OP[rangeOPs, 5:6] = centerline(States_OP[rangeOPs, :], States_T[rangeOPs, :],
                                               States_WF[rangeOPs, :], paramFLORIS, T[:D][iT])
 
         # Convert wind dir in fitting radians
@@ -337,7 +337,7 @@ function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS
         yaw_deg = States_T[iT, 2]
         yaw = -deg2rad(yaw_deg)
         TI = States_T[iT, 3]
-        Ct = CalcCt(a, yaw_deg)
+        Ct = calcCt(a, yaw_deg)
         TI0 = States_WF[iT, 3]
 
         sig_y, sig_z, C_T, x_0, delta, pc_y, pc_z = getVars(

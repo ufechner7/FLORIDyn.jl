@@ -35,20 +35,20 @@ using FLORIDyn, Test
         @test all(abs.(RPs2[:,3]) .<= 0.5)
         @test isapprox(sum(w2), 1.0; atol=1e-14)
     end
-    @testset "CalcCt" begin
+    @testset "calcCt" begin
         # Test typical values
-        @test isapprox(CalcCt(0.0, nothing), 0.0)
-        @test isapprox(CalcCt(0.25, nothing), 4 * 0.25 * 0.75)
-        @test isapprox(CalcCt(0.5, nothing), 4 * 0.5 * 0.5)
+        @test isapprox(calcCt(0.0, nothing), 0.0)
+        @test isapprox(calcCt(0.25, nothing), 4 * 0.25 * 0.75)
+        @test isapprox(calcCt(0.5, nothing), 4 * 0.5 * 0.5)
         
         # Test edge cases
-        @test isapprox(CalcCt(1.0, nothing), 0.0)
-        @test isapprox(CalcCt(-0.1, nothing), 4 * -0.1 * (1 + 0.1))  # input out of typical range
+        @test isapprox(calcCt(1.0, nothing), 0.0)
+        @test isapprox(calcCt(-0.1, nothing), 4 * -0.1 * (1 + 0.1))  # input out of typical range
         
         # Test vectorized input
         a_values = [0.0, 0.1, 0.2, 0.3]
         expected = 4 .* a_values .* (1 .- a_values)
-        @test all(isapprox.(CalcCt.(a_values, Ref(nothing)), expected))
+        @test all(isapprox.(calcCt.(a_values, Ref(nothing)), expected))
     end
     @testset "States() constructor" begin
         s = States()
@@ -68,7 +68,7 @@ using FLORIDyn, Test
         @test s.WF_names == ["wind_vel", "wind_dir", "TI0"]
         @test s.WF == 3
     end
-    @testset "Centerline function" begin
+    @testset "centerline" begin
         # Define dummy parameters
         States_OP = zeros(200, 6)
         States_OP[:, 4] = (0.0:0.0328:6.5272) * 1e3
@@ -98,7 +98,7 @@ using FLORIDyn, Test
         )
 
         D = 178.4000 
-        result = Centerline(States_OP, States_T, States_WF, paramFLORIS, D)
+        result = centerline(States_OP, States_T, States_WF, paramFLORIS, D)
 
         # # Check output size
         @test size(result) == (200, 2)

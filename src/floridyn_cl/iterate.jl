@@ -13,7 +13,7 @@ function iterateOPs!(::IterateOPs_basic, T, Sim, paramFLORIS, paramFLORIDyn)
     T[:States_OP][:, 4] .+= step_dw
 
     # Crosswind step
-    deflection = Centerline(T[:States_OP], T[:States_T], T[:States_WF], paramFLORIS, T[:D][1])
+    deflection = centerline(T[:States_OP], T[:States_T], T[:States_WF], paramFLORIS, T[:D][1])
     step_cw = deflection .- T[:States_OP][:, 5:6]
     T[:States_OP][:, 5:6] .= deflection
 
