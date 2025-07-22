@@ -9,6 +9,7 @@ all subtypes of [`VelModel`](@ref)
 ```@docs
 Velocity_Constant
 Velocity_Constant_wErrorCov
+Velocity_EnKF_InterpTurbine
 ```
 
 ## Markers defining the wind direction model
