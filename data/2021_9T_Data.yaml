@@ -13,6 +13,15 @@ wind:
   # - RW_with_Mean  random walk with mean
   # - ZOH_wErrorCov
   input_vel: Constant
+
+  # Wind Direction Input
+  # - Constant
+  # - Constant_wErrorCov
+  # - Interpolation
+  # - Interpolation_wErrorCov
+  # - InterpTurbine
+  # - InterpTurbine_wErrorCov
+  # - RW_with_mean             random walk with mean
   input_dir: Interpolation
   input_ti: Constant
   input_shear: PowerLaw
