@@ -9,9 +9,17 @@ A dynamic wind farm simulation software, translated from https://github.com/TUDe
 
 His code uses one engineering model from the quasi static wind farm simulation software [FLORIS](https://github.com/NREL/floris), developed by NREL.
 
-## Status: WORK-IN-PROGRESS
-You cannot use this package yet, if you need a version of FLORIDyn that works now, use the Matlab or Python version instead.
-The Python version is available at https://github.com/TUDelft-DataDrivenControl/OFF .
+## Status:
+The basic example works.
+```julia
+include("examples/main.jl")
+```
+### TODO:
+- implement the visualization
+- add more unit tests
+- implement the missing functions
+
+A Python version of FLORIDyn is available at https://github.com/TUDelft-DataDrivenControl/OFF .
 
 ## Installation
 Install [Julia 1.10](https://ufechner7.github.io/2024/08/09/installing-julia-with-juliaup.html) or later, if you haven't already.
