@@ -336,17 +336,15 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
 
         # ========== Calculate Power ==========
         P = getPower(T, tmpM, paramFLORIS, Con)
-    #     M[(it-1)*nT+1:it*nT, 6] = P
+        M[(it-1)*nT+1:it*nT, 6] = P
 
         SimTime += Sim.time_step
     end
-    # # Convert `M` to DataFrame and scale measurements
-    # Mt = DataFrame(
-    #     (M .* [1; 100; 100; 1; 1; 1e-6])',
-    #     [:Time, :ForeignReduction, :AddedTurbulence, :EffWindSpeed, :FreeWindSpeed, :PowerGen]
-    # )
-    # Mint = hcat(Mt.Time, hcat(M_int...)')
-    Mt = nothing
-    Mint = nothing
+    # Convert `M` to DataFrame and scale measurements
+    Mt = DataFrame(
+        (M * diagm([1; 100; 100; 1; 1; 1e-6])),
+        [:Time, :ForeignReduction, :AddedTurbulence, :EffWindSpeed, :FreeWindSpeed, :PowerGen]
+    )
+    Mint = hcat(Mt.Time, hcat(M_int...)')
     return T, Mt, Mint
 end
