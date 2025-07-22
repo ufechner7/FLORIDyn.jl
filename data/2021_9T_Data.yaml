@@ -10,7 +10,7 @@ wind:
   # - InterpTurbine also linearly interpolates between set-points, but individually for every turbine. 
   # - InterpTurbine_wErrorCov Same as above, but with error covariance.
   # - Constant      provides a constant velocity for all turbines.
-  # - Constant_wErrorCov
+  # - Constant_wErrorCov      Same as above, but with error covariance.
   # - EnKF_InterpTurbine
   # - RW_with_Mean  random walk with mean
   # - ZOH_wErrorCov
