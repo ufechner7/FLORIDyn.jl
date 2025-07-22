@@ -178,12 +178,12 @@ Return wind direction in SOWFA-degrees for the requested turbine(s).
 # Arguments
 - `WindDir::Matrix{Float64}`: Each row is `[time, phi_T0, phi_T1, ...]`.
 - `iT::Union{Int, AbstractVector{Int}}`: Index or indices of turbines (1-based).
-- `t::Float64`: Time of request.
+- `t`: Time of request.
 
 # Returns
 - `phi::Vector{Float64}`: Wind direction(s) for the selected turbine(s) at time `t`.
 """
-function getWindDirT(::Direction_InterpTurbine, WindDir::Matrix{Float64}, iT, t::Float64)
+function getWindDirT(::Direction_InterpTurbine, WindDir::Matrix{Float64}, iT, t)
     # Check time bounds
     tmin = WindDir[1, 1]
     tmax = WindDir[end, 1]

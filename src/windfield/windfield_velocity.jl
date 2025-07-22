@@ -204,7 +204,7 @@ function getWindSpeedT(::Velocity_I_and_I, WindVel, iT, SimTime, WindDir, p_p)
 end
 
 """
-    getWindSpeedT(::Velocity_Interpolation, WindVel::Matrix{Float64}, iT, t::Float64)
+    getWindSpeedT(::Velocity_Interpolation, WindVel::Matrix{Float64}, iT, t)
 
 Interpolates the wind speed at a given time `t` using the provided wind velocity matrix `WindVel`.
 Uniform interpolation - all turbines experience the same changes.
@@ -213,12 +213,12 @@ Uniform interpolation - all turbines experience the same changes.
 - `::Velocity_Interpolation`: Specifies the interpolation strategy to use.
 - `WindVel::Matrix{Float64}`: A 2-column matrix: [time, wind_speed].
 - `iT`: A single index or array of turbine indices.
-- `t::Float64`: The requested time at which to interpolate the wind speed.
+- `t`: The requested time at which to interpolate the wind speed.
 
 # Returns
 - Interpolated wind speed at the respective turbine(s).
 """
-function getWindSpeedT(::Velocity_Interpolation, WindVel::Matrix{Float64}, iT, t::Float64)
+function getWindSpeedT(::Velocity_Interpolation, WindVel::Matrix{Float64}, iT, t)
     times = WindVel[:, 1]
     speeds = WindVel[:, 2]
 
@@ -239,7 +239,7 @@ end
 
 """
     getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatrix, iT::Union{Int, AbstractVector{<:Int}}, 
-                  t::Float64)
+                  t)
 
 Compute the wind speed at a given time `t` for the specified indices `iT` using the provided wind velocity data 
 `WindVel` and a velocity interpolation method with error covariance. 
@@ -250,13 +250,13 @@ Adds random noise from a given Cholesky decomposition matrix.
 - `::Velocity_Interpolation_wErrorCov`: The interpolation method that includes error covariance handling.
 - `WindVel::WindVelMatrix`: See: [WindVelMatrix](@ref)
 - `iT::Union{Int, AbstractVector{<:Int}}`: Index or indices specifying which wind speed(s) to retrieve.
-- `t::Float64`: The time at which to interpolate the wind speed.
+- `t`: The time at which to interpolate the wind speed.
 
 # Returns
 - The interpolated wind speed(s) at time `t` for the specified indices.
 """
 function getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatrix, 
-                       iT::Union{Int, AbstractVector{<:Int}}, t::Float64)
+                       iT::Union{Int, AbstractVector{<:Int}}, t)
     times = WindVel.Data[:, 1]
     speeds = WindVel.Data[:, 2]
 
@@ -285,7 +285,7 @@ function getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatri
     return Vel
 end
 """
-    getWindSpeedT(::Velocity_InterpTurbine, WindVel::Matrix{Float64}, iT, t::Float64)
+    getWindSpeedT(::Velocity_InterpTurbine, WindVel::Matrix{Float64}, iT, t)
 
 Returns the wind speed at the specific turbine(s) and time.
 The values are interpolated linearly between the set points.
@@ -294,12 +294,12 @@ The values are interpolated linearly between the set points.
 - `::Velocity_InterpTurbine`: Marker for velocity interpolation at the turbine.
 - `WindVel::Matrix{Float64}`: Matrix where each row is time, U_T0, U_T1, ... U_Tn.
 - `iT`: Index of the turbine for which the wind speed is requested.
-- `t::Float64`: Time at which the wind speed is to be interpolated.
+- `t`: Time at which the wind speed is to be interpolated.
 
 # Returns
 - The interpolated wind speed at the specified turbine(s) and time as a `Float64`.
 """
-function getWindSpeedT(::Velocity_InterpTurbine, WindVel::Matrix{Float64}, iT, t::Float64)
+function getWindSpeedT(::Velocity_InterpTurbine, WindVel::Matrix{Float64}, iT, t)
     times = WindVel[:, 1]
     wind_data = WindVel[:, 2:end]
 
