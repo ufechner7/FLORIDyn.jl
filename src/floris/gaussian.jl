@@ -270,8 +270,10 @@ function getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
 
     # For points exactly at the rotor plane
     rp = OPdw .== 0
-    pc_y[rp] .= D .* cos.(yaw)
-    pc_z[rp] .= D
+    if sum(rp) > 0
+        pc_y[rp] .= D .* cos.(yaw)
+        pc_z[rp] .= D
+    end
 
     return sig_y, sig_z, C_T, x_0, delta, pc_y, pc_z
 end
