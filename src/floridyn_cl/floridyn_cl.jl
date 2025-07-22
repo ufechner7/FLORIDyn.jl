@@ -334,8 +334,8 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
             getYaw(set.control_mode, Con.yaw_data, collect(1:nT), SimTime)'
         )
 
-    #     # ========== Calculate Power ==========
-    #     P = getPower(T, tmpM, paramFLORIS, Con)
+        # ========== Calculate Power ==========
+        P = getPower(T, tmpM, paramFLORIS, Con)
     #     M[(it-1)*nT+1:it*nT, 6] = P
 
         SimTime += Sim.time_step

@@ -363,5 +363,24 @@ function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS
     return T_red_arr, T_aTI_arr, T_Ueff, T_weight
 end
 
+function getPower(T, M, paramFLORIS, Con)
+    a = T[:States_T][T[:StartI], 1]
+    yaw = deg2rad.(T[:States_T][T[:StartI], 2])
+    
+    Cp = 4a .* (1 .- a).^2
+    ueff = M[:, 3]
+
+    if Con.tanh_yaw
+        P = 0.5 * paramFLORIS.airDen * (T[:D] / 2).^2 * π .* Cp' .* ueff.^3 .* paramFLORIS.eta .* 
+            (cos.(yaw).^paramFLORIS.p_p)' .* 
+            (0.5 * tanh((-yaw + deg2rad.(Con.yawRangeMax)) * 50) + 0.5) * 
+            (-0.5 * tanh((-yaw + deg2rad.(Con.yawRangeMin)) * 50) + 0.5)
+    else
+        P = 0.5 * paramFLORIS.airDen * (T[:D] / 2).^2 * π .* Cp' .* ueff.^3 .* paramFLORIS.eta .* 
+            (cos.(yaw).^paramFLORIS.p_p)'
+    end
+
+    return P
+end
 
 
