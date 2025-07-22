@@ -24,4 +24,5 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(set, wind, con, paramFLORIDyn
 T = initSimulation(T, wind, sim, con, paramFLORIDyn, paramFLORIS)
 
 @time T, M, Mint = FLORIDynCL(set, T, wind, sim, con, paramFLORIDyn, paramFLORIS)
+# 0.23 s on Desktop, 0.40 s with MATLAB
 nothing
