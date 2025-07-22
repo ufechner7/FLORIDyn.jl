@@ -35,7 +35,7 @@ export correctDir!
 
 export discretizeRotor, CalcCt, States
 export turbineArrayProperties
-export prepareSimulation, importSOWFAFile, Centerline, angSOWFA2world, initSimulation
+export prepareSimulation, importSOWFAFile, Centerline, angSOWFA2world, initSimulation, runFLORIS
 export FLORIDynCL, iterateOPs!, getVars, setUpTmpWFAndRun, interpolateOPs, pertubationOfTheWF
 
 # global variables

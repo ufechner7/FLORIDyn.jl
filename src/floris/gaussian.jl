@@ -289,6 +289,7 @@ function getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
 end
 
 function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS, windshear)
+    # Main.@infiltrate
     if D[end] > 0
         RPl, RPw = discretizeRotor(paramFLORIS.rotor_points)
     else
