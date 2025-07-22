@@ -103,6 +103,55 @@ using FLORIDyn, Test
         # # Check output size
         @test size(result) == (200, 2)
         @test result == zeros(200, 2)
+    end 
+    @testset "getVars" begin
+        # Define dummy test parameters
+
+        RPs = [881.928  -185.932  -61.0219; 
+               886.024  -170.647  -43.9671; 
+               888.637  -160.896  -23.0056] # Test with 3 downstream distances
+        a = [1.0, 1.0, 1.0]                 # Dummy placeholder, not used
+        C_T = [0.8844, 0.8844, 0.8844]      # Thrust coefficients
+        yaw = [0.0, 0.0, 0.0]               # Yaw angles
+        TI = [0.06, 0.06, 0.06]             # Ambient intensity
+        TI0 = [0.0062, 0.0062, 0.0062]      # Local turbulence
+        D = 178.4                           # Rotor diameter
+
+        # Parameter object
+        struct Params
+            k_a::Float64
+            k_b::Float64
+            alpha::Float64
+            beta::Float64
+        end
+
+        param = Params(0.3837, 0.003678, 2.32, 0.154)
+
+        sig_y, sig_z, C_T_out, x_0, delta, pc_y, pc_z = getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
+
+        @test length(sig_y) == 3
+        @test length(sig_z) == 3
+        @test size(delta) == (3, 2)
+        @test all(x -> x ≥ 0, sig_y)
+        @test all(x -> x ≥ 0, sig_z)
+        @test all(x -> x ≥ 0, x_0)
+
+        # Check for known edge values
+        @test sig_y[1] ≈ D / sqrt(8) * cos(yaw[1]) atol=1e-2
+        @test sig_z[1] ≈ D / sqrt(8) atol=1e-2
+
+        # Check delta at RPs = 0 is only delta_nfw
+        @test delta[1, 1] ≈ 0.0 atol=1e-5
+
+        # Check pc_y and pc_z [should match D*cos(yaw), D] at RPs = 0
+        @test pc_y[1] ≈ D * cos(yaw[1]) atol=1e-4
+        @test pc_z[1] ≈ D atol=1e-4
+
+        # Check no NaN or Inf in outputs
+        for arr in (sig_y, sig_z, x_0, delta[:,1], pc_y, pc_z)
+            @test all(isfinite, arr)
+        end
     end
+
 end
 nothing

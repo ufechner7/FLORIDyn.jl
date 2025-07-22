@@ -185,6 +185,29 @@ function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
 end
 
 function getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
+    # GETVARS calculates the field width, the potential core data and
+    # the deflection. These values are needed for the wake shape and speed 
+    # reduction. The values are based of the state of every individual OP.
+    # ======================================================================= %
+    # INPUT
+
+    # ======================================================================= %
+    # OUTPUT
+    #   sig_y       := [nx1] vec; Gaussian variance in y direction (sqrt of)
+    #   sig_z       := [nx1] vec; Gaussian variance in z direction (sqrt of)
+    #   C_T         := [nx1] vec; Thrust coefficient, same as OP.Ct
+    #   x_0         := [nx1] vec; Potential core length
+    #   delta       := [nx1] vec; Deflection
+    #   pc_y        := [nx1] vec; Potential core boundary in y dir
+    #   pc_z        := [nx1] vec; Potential core boundary in z dir
+    # ======================================================================= %
+    # SOURCES
+    # [1] Experimental and theoretical study of wind turbine wakes in yawed
+    #     conditions - M. Bastankhah and F. Porté-Agel
+    # [2] Design and analysis of a spatially heterogeneous wake - A. Farrell,
+    #     J. King et al.
+
+
     # Unpack parameters
     k_a   = param.k_a
     k_b   = param.k_b
@@ -247,6 +270,7 @@ function getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
 
     # For points exactly at the rotor plane
     rp = OPdw .== 0
+    Main.@infiltrate
     pc_y[rp] .= D .* cos.(yaw)
     pc_z[rp] .= D
 
