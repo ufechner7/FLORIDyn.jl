@@ -58,8 +58,8 @@ function findTurbineGroups(T, paramFLORIDyn)
     uw = paramFLORIDyn.deltaUW
 
     # Initialize outputs
-    Tdep = Vector{Any}(undef, T[:nT])  # Equivalent of cell array in MATLAB[1][3]
-    dep = falses(T[:nT], T[:nT])
+    Tdep = Vector{Vector{Int64}}(undef, T[:nT])  # Equivalent of cell array in MATLAB[1][3]
+    dep  = falses(T[:nT], T[:nT])
     
     R01(phi) = [cos(phi)  sin(phi); -sin(phi) cos(phi)]
 
