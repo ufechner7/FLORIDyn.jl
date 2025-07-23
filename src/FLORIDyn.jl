@@ -174,8 +174,8 @@ mutable struct Turbines
     posNac::Matrix{Float64}
     D::Vector{Float64}
     StartI::Matrix{Int}
-    nT::Int
-    nOP::Int
+    nT::Int64
+    nOP::Int64
     posBase::Matrix{Float64}
     intOPs::Vector{Matrix{Float64}}
     Names_T::Vector{String}
