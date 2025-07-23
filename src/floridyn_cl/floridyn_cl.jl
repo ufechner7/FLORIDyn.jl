@@ -10,7 +10,7 @@ function angSOWFA2world(deg_SOWFA)
     return rad_World
 end
 
-function initSimulation(T, sim::Sim)
+function initSimulation(T::WindFarm, sim::Sim)
     # Initialize the simulation or load an initialized state
     sim_init = lowercase(sim.init)
 

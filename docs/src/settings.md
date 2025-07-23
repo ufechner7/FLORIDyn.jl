@@ -13,6 +13,12 @@ DirModel
 VelModel
 ```
 
+# Types create from the yaml file
+```@docs
+Sim
+Wind
+```
+
 # Settings
 ```@docs
 setup

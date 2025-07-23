@@ -16,6 +16,23 @@ end
     ti::String
 end
 
+"""
+    Wind
+
+A mutable struct representing wind settings.
+
+# Fields
+- `input_vel::String`: The type of wind velocity input, e.g., "Constant", "Interpolation".
+- `input_dir::String`: The type of wind direction input, e.g., "Constant", "Interpolation".
+- `input_ti::String`: The type of turbulence intensity input, e.g., "Constant", "Interpolation".
+- `input_shear::String`: The type of wind shear input, e.g., "PowerLaw", "Interpolation".
+- `correction::WindCorrection`: Settings for wind corrections.
+- `perturbation::WindPerturbation`: Settings for wind perturbations.
+- `vel::Union{Nothing, Float64}`: Optional wind velocity value.
+- `dir::Union{Nothing, Matrix{Float64}}`: Optional wind direction matrix.
+- `ti::Union{Nothing, Float64}`: Optional turbulence intensity value.
+- `shear::Union{Nothing, WindShear}`: Optional wind shear profile.
+"""
 @with_kw mutable struct Wind
     input_vel::String
     input_dir::String
