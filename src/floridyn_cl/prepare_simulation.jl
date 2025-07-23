@@ -22,8 +22,8 @@ Prepares the simulation environment for a wind farm analysis using the provided 
 - `floris`: May include additional parameters for the FLORIS model.
 
 # Returns
-- Returns the tuple `(T, wind, sim, con, floris)` where:
-  - `T`: Wind farm struct containing turbine states and positions. See: [`WindFarm`](@ref)
+- Returns the tuple `(wf, wind, sim, con, floris)` where:
+  - `wf`: Wind farm struct containing turbine states and positions. See: [`WindFarm`](@ref)
   - `wind`: Updated wind conditions.
   - `sim`: Updated simulation parameters.
   - `con`: Updated controller parameters.
@@ -181,13 +181,13 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     end
 
     # ========== Wind Farm Setup ==========
-    T = WindFarm()
-    T.posBase = turbProp.Pos
-    T.nT = size(turbProp.Pos, 1)
+    wf = WindFarm()
+    wf.posBase = turbProp.Pos
+    wf.nT = size(turbProp.Pos, 1)
         
         t_data = getTurbineData(turbProp.Type)
-    T.posNac = t_data.NacPos
-    T.D = t_data.D
+    wf.posNac = t_data.NacPos
+    wf.D = t_data.D
 
     states = States()
     if floridyn.twf_model == "heterogeneous"
@@ -199,15 +199,15 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     
     # OP State and turbine initialization
     n_op = floridyn.n_op
-    T.States_OP = zeros(n_op *T.nT, states.OP)
-    T.Names_OP = states.OP_names
-    T.States_T  = zeros(n_op *T.nT, states.Turbine)
-    T.Names_T   = states.T_names
-    T.States_WF = zeros(n_op *T.nT, states.WF)
-    T.Names_WF  = states.WF_names
-    T.StartI    = collect(1:n_op:(n_op *T.nT))'
-    T.nOP       = n_op
-    T.red_arr   = ones(T.nT, T.nT)
+    wf.States_OP = zeros(n_op * wf.nT, states.OP)
+    wf.Names_OP = states.OP_names
+    wf.States_T  = zeros(n_op * wf.nT, states.Turbine)
+    wf.Names_T   = states.T_names
+    wf.States_WF = zeros(n_op * wf.nT, states.WF)
+    wf.Names_WF  = states.WF_names
+    wf.StartI    = collect(1:n_op:(n_op * wf.nT))'
+    wf.nOP       = n_op
+    wf.red_arr   = ones(wf.nT, wf.nT)
 
     # # deltaUW fallback
     # if !haskey(floridyn, :deltaUW)
@@ -230,7 +230,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         end
     elseif yaw_method == "SOWFA"
         nacelleYaw = importSOWFAFile(joinpath(vel_file_dir, "SOWFA_nacelleYaw.csv"))
-        con.yaw_data = condenseSOWFAYaw([nacelleYaw[1:T.nT:end, 2] reshape(nacelleYaw[:,3],T.nT, :)'])
+        con.yaw_data = condenseSOWFAYaw([nacelleYaw[1:wf.nT:end, 2] reshape(nacelleYaw[:,3],wf.nT, :)'])
     else
         error("Unknown yaw method: $yaw_method")
     end
@@ -240,7 +240,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     # end
 
     # # ========== Init State ===========
-   T.States_OP, T.States_T, T.States_WF = InitStates(set, T, wind, turbProp.Init_States, floris, sim)
+   wf.States_OP, wf.States_T, wf.States_WF = InitStates(set, wf, wind, turbProp.Init_States, floris, sim)
 
     # # ========== Simulation Setup ==========
     sim.n_sim_steps = length(sim.start_time:sim.time_step:sim.end_time)
@@ -273,5 +273,5 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         error("Data not loaded properly. Please provide the required files.")
     end
 
-    return T, wind, sim, con, floris
+    return wf, wind, sim, con, floris
 end
