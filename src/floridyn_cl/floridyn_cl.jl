@@ -289,13 +289,13 @@ end
 
 
 """
-    runFLORIDyn(set::Settings, T::WindFarm, wind::Wind, sim::Sim, con::Con, floridyn::FloriDyn, floris::Floris)
+    runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, floridyn::FloriDyn, floris::Floris)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
 # Arguments
 - `set::Settings`: Simulation settings and configuration parameters.
-- `T::WindFarm`: See: [WindFarm](@ref) simulation state, including turbine and wind farm states.
+- `wf::WindFarm`: See: [WindFarm](@ref) simulation state, including turbine and wind farm states.
 - `wind::Wind`: See: [Wind](@ref) field settings.
 - `sim::Sim`: Simulation state or configuration object. See: [`Sim`](@ref)
 - `con::Con`: Controller object or control parameters. See: [`Con`](@ref)
@@ -303,29 +303,29 @@ Main entry point for the FLORIDyn closed-loop simulation.
 - `floris::Floris`: Parameters specific to the FLORIS model. See: [`Floris`](@ref)
 
 # Returns
-A tuple `(T, Mt, Mint)` containing:
-- `T::WindFarm`: Updated simulation state with final turbine positions, wind field states, and operational point data
-- `Mt::DataFrame`: Measurement data with columns:
+A tuple `(wf, md, mi)` containing:
+- `wf::WindFarm`: Updated simulation state with final turbine positions, wind field states, and operational point data
+- `md::DataFrame`: Measurement data with columns:
   - `:Time`: Simulation time steps
   - `:ForeignReduction`: Wind speed reduction factors (%) due to wake effects from other turbines
   - `:AddedTurbulence`: Additional turbulence intensity (%) induced by upstream turbines
   - `:EffWindSpeed`: Effective wind speed (m/s) at each turbine after wake effects
   - `:FreeWindSpeed`: Free-stream wind speed (m/s) without wake interference
   - `:PowerGen`: Generated electrical power (MW) for each turbine
-- `Mint::Matrix`: Interaction matrix combining time data with turbine-to-turbine wake interaction coefficients for each simulation step
+- `mi::Matrix`: Interaction matrix combining time data with turbine-to-turbine wake interaction coefficients for each simulation step
 
 # Description
 Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models, 
 applying control strategies and updating turbine states over time.
 
 """
-function runFLORIDyn(set::Settings, T::WindFarm, wind::Wind, sim::Sim, con::Con, floridyn::FloriDyn, floris::Floris)
+function runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, floridyn::FloriDyn, floris::Floris)
     # OUTPUTS:
-    # T := Simulation state (OP states, Turbine states, wind field states(OPs))
-    # Mt := Measurements from the simulation (Power, tbd)
-    # Mint := Interaction matrices for the turbines
+    # wf := Simulation state (OP states, Turbine states, wind field states(OPs))
+    # md := Measurements from the simulation (Power, tbd)
+    # mi := Interaction matrices for the turbines
 
-    nT      =T.nT
+    nT      = wf.nT
     nSim    = sim.n_sim_steps
     M       = zeros(nSim * nT, 6)
     M[:, 1] .= 1.0  # Set first column to 1
@@ -337,46 +337,46 @@ function runFLORIDyn(set::Settings, T::WindFarm, wind::Wind, sim::Sim, con::Con,
         sim.sim_step = it
 
         # ========== PREDICTION ==========
-        T = iterateOPs!(set.iterate_mode, T, sim, floris, floridyn)
+        wf = iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
 
         # ========== Wind Field Perturbation ==========
-        perturbationOfTheWF!(T, wind)
+        perturbationOfTheWF!(wf, wind)
 
         # ========== Get FLORIS reductions ==========
-        T.dep = findTurbineGroups(T, floridyn)
-        T.intOPs = interpolateOPs(T)
-        a, b = setUpTmpWFAndRun(set, T, floris, wind)
-        tmpM, T = a, b
+        wf.dep = findTurbineGroups(wf, floridyn)
+        wf.intOPs = interpolateOPs(wf)
+        a, b = setUpTmpWFAndRun(set, wf, floris, wind)
+        tmpM, wf = a, b
         M[(it-1)*nT+1 : it*nT, 2:4] .= tmpM
         M[(it-1)*nT+1 : it*nT, 1]   .= SimTime
-        T.States_T[T.StartI, 3] = tmpM[:, 2]
-        M_int[it] = T.red_arr
+        wf.States_T[wf.StartI, 3] = tmpM[:, 2]
+        M_int[it] = wf.red_arr
 
         # ========== wind field corrections ==========
-        T, wind = correctVel(set.cor_vel_mode, set, T, wind, SimTime, floris, tmpM)
-        correctDir!(set.cor_dir_mode, set, T, wind, SimTime)
-        T = correctTi(set.cor_turb_mode, set, T, wind, SimTime)
+        wf, wind = correctVel(set.cor_vel_mode, set, wf, wind, SimTime, floris, tmpM)
+        correctDir!(set.cor_dir_mode, set, wf, wind, SimTime)
+        wf = correctTi(set.cor_turb_mode, set, wf, wind, SimTime)
 
         # Save free wind speed as measurement
-        M[(it-1)*nT+1 : it*nT, 5] =T.States_WF[T.StartI, 1]
+        M[(it-1)*nT+1 : it*nT, 5] = wf.States_WF[wf.StartI, 1]
 
         # ========== Get Control settings ==========
-       T.States_T[T.StartI, 2] = (
-           T.States_WF[T.StartI, 2] .-
+       wf.States_T[wf.StartI, 2] = (
+           wf.States_WF[wf.StartI, 2] .-
             getYaw(set.control_mode, con.yaw_data, collect(1:nT), SimTime)'
         )
 
         # ========== Calculate Power ==========
-        P = getPower(T, tmpM, floris, con)
+        P = getPower(wf, tmpM, floris, con)
         M[(it-1)*nT+1:it*nT, 6] = P
 
         SimTime += sim.time_step
     end
     # Convert `M` to DataFrame and scale measurements
-    Mt = DataFrame(
+    md = DataFrame(
         (M * diagm([1; 100; 100; 1; 1; 1e-6])),
         [:Time, :ForeignReduction, :AddedTurbulence, :EffWindSpeed, :FreeWindSpeed, :PowerGen]
     )
-    Mint = hcat(Mt.Time, hcat(M_int...)')
-    return T, Mt, Mint
+    mi = hcat(md.Time, hcat(M_int...)')
+    return wf, md, mi
 end
