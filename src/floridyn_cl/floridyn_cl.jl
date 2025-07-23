@@ -289,7 +289,7 @@ end
 
 
 """
-    runFLORIDyn(set::Settings, T::WindFarm, wind::Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
+    runFLORIDyn(set::Settings, T::WindFarm, wind::Wind, sim::Sim, con::Con, floridyn::FloriDyn, floris::Floris)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
@@ -297,46 +297,55 @@ Main entry point for the FLORIDyn closed-loop simulation.
 - `set::Settings`: Simulation settings and configuration parameters.
 - `T::WindFarm`: See: [WindFarm](@ref) simulation state, including turbine and wind farm states.
 - `wind::Wind`: See: [Wind](@ref) field settings.
-- `Sim`: Simulation state or configuration object.
-- `Con`: Controller object or control parameters.
-- `paramFLORIDyn`: Parameters specific to the FLORIDyn model.
-- `paramFLORIS`: Parameters specific to the FLORIS model.
+- `sim::Sim`: Simulation state or configuration object. See: [`Sim`](@ref)
+- `con::Con`: Controller object or control parameters. See: [`Con`](@ref)
+- `floridyn::FloriDyn`: Parameters specific to the FLORIDyn model. See: [`FloriDyn`](@ref)
+- `floris::Floris`: Parameters specific to the FLORIS model. See: [`Floris`](@ref)
 
 # Returns
-- Simulation results, including turbine states, control actions, and performance metrics.
+A tuple `(T, Mt, Mint)` containing:
+- `T::WindFarm`: Updated simulation state with final turbine positions, wind field states, and operational point data
+- `Mt::DataFrame`: Measurement data with columns:
+  - `:Time`: Simulation time steps
+  - `:ForeignReduction`: Wind speed reduction factors (%) due to wake effects from other turbines
+  - `:AddedTurbulence`: Additional turbulence intensity (%) induced by upstream turbines
+  - `:EffWindSpeed`: Effective wind speed (m/s) at each turbine after wake effects
+  - `:FreeWindSpeed`: Free-stream wind speed (m/s) without wake interference
+  - `:PowerGen`: Generated electrical power (MW) for each turbine
+- `Mint::Matrix`: Interaction matrix combining time data with turbine-to-turbine wake interaction coefficients for each simulation step
 
 # Description
 Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models, 
 applying control strategies and updating turbine states over time.
 
 """
-function runFLORIDyn(set::Settings, T::WindFarm, wind::Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
+function runFLORIDyn(set::Settings, T::WindFarm, wind::Wind, sim::Sim, con::Con, floridyn::FloriDyn, floris::Floris)
     # OUTPUTS:
     # T := Simulation state (OP states, Turbine states, wind field states(OPs))
     # Mt := Measurements from the simulation (Power, tbd)
     # Mint := Interaction matrices for the turbines
 
     nT      =T.nT
-    nSim    = Sim.n_sim_steps
+    nSim    = sim.n_sim_steps
     M       = zeros(nSim * nT, 6)
     M[:, 1] .= 1.0  # Set first column to 1
     M_int   = Vector{Any}(undef, nSim)
 
-    SimTime = Sim.start_time
+    SimTime = sim.start_time
 
     for it in 1:nSim
-        Sim.sim_step = it
+        sim.sim_step = it
 
         # ========== PREDICTION ==========
-        T = iterateOPs!(set.iterate_mode, T, Sim, paramFLORIS, paramFLORIDyn)
+        T = iterateOPs!(set.iterate_mode, T, sim, floris, floridyn)
 
         # ========== Wind Field Perturbation ==========
         perturbationOfTheWF!(T, wind)
 
         # ========== Get FLORIS reductions ==========
-        T.dep = findTurbineGroups(T, paramFLORIDyn)
+        T.dep = findTurbineGroups(T, floridyn)
         T.intOPs = interpolateOPs(T)
-        a, b = setUpTmpWFAndRun(set, T, paramFLORIS, wind)
+        a, b = setUpTmpWFAndRun(set, T, floris, wind)
         tmpM, T = a, b
         M[(it-1)*nT+1 : it*nT, 2:4] .= tmpM
         M[(it-1)*nT+1 : it*nT, 1]   .= SimTime
@@ -344,7 +353,7 @@ function runFLORIDyn(set::Settings, T::WindFarm, wind::Wind, Sim, Con, paramFLOR
         M_int[it] = T.red_arr
 
         # ========== wind field corrections ==========
-        T, wind = correctVel(set.cor_vel_mode, set, T, wind, SimTime, paramFLORIS, tmpM)
+        T, wind = correctVel(set.cor_vel_mode, set, T, wind, SimTime, floris, tmpM)
         correctDir!(set.cor_dir_mode, set, T, wind, SimTime)
         T = correctTi(set.cor_turb_mode, set, T, wind, SimTime)
 
@@ -354,14 +363,14 @@ function runFLORIDyn(set::Settings, T::WindFarm, wind::Wind, Sim, Con, paramFLOR
         # ========== Get Control settings ==========
        T.States_T[T.StartI, 2] = (
            T.States_WF[T.StartI, 2] .-
-            getYaw(set.control_mode, Con.yaw_data, collect(1:nT), SimTime)'
+            getYaw(set.control_mode, con.yaw_data, collect(1:nT), SimTime)'
         )
 
         # ========== Calculate Power ==========
-        P = getPower(T, tmpM, paramFLORIS, Con)
+        P = getPower(T, tmpM, floris, con)
         M[(it-1)*nT+1:it*nT, 6] = P
 
-        SimTime += Sim.time_step
+        SimTime += sim.time_step
     end
     # Convert `M` to DataFrame and scale measurements
     Mt = DataFrame(
