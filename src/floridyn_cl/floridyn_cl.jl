@@ -10,21 +10,21 @@ function angSOWFA2world(deg_SOWFA)
     return rad_World
 end
 
-function initSimulation(T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
+function initSimulation(T, sim::Sim)
     # Initialize the simulation or load an initialized state
-    sim_init = lowercase(Sim.init)
+    sim_init = lowercase(sim.init)
 
     if sim_init == "init"
-        if getfield(Sim, :SaveInitState) # or Sim.SaveInitState if Sim is mutable struct
+        if getfield(sim, :SaveInitState) # or Sim.SaveInitState if Sim is mutable struct
             # Save the initialization state to a file
-            jldsave(joinpath(Sim.path_to_data, "T_init.jld2"); T)
+            jldsave(joinpath(sim.path_to_data, "T_init.jld2"); T)
         end
     elseif sim_init == "load"
         try
-            data = load(joinpath(Sim.path_to_data, "T_init.jld2"))
+            data = load(joinpath(sim.path_to_data, "T_init.jld2"))
             T = data["T"]
         catch e
-            @warn "Could not load T_init.jld2 from $(Sim.PathToSim)\nWill proceed with initialized data." exception=e
+            @warn "Could not load T_init.jld2 from $(sim.path_to_data)\nWill proceed with initialized data." exception=e
         end
     end
     return T
@@ -289,14 +289,14 @@ end
 
 
 """
-    runFLORIDyn(set::Settings, T::WindFarm, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
+    runFLORIDyn(set::Settings, T::WindFarm, wind::Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
 # Arguments
 - `set::Settings`: Simulation settings and configuration parameters.
 - `T::WindFarm`: See: [WindFarm](@ref) simulation state, including turbine and wind farm states.
-- `Wind`: Wind field or wind input data.
+- `wind::Wind`: See: [Wind](@ref) field settings.
 - `Sim`: Simulation state or configuration object.
 - `Con`: Controller object or control parameters.
 - `paramFLORIDyn`: Parameters specific to the FLORIDyn model.
@@ -310,7 +310,7 @@ Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models,
 applying control strategies and updating turbine states over time.
 
 """
-function runFLORIDyn(set::Settings, T::WindFarm, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
+function runFLORIDyn(set::Settings, T::WindFarm, wind::Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
     # OUTPUTS:
     # T := Simulation state (OP states, Turbine states, wind field states(OPs))
     # Mt := Measurements from the simulation (Power, tbd)
@@ -331,22 +331,22 @@ function runFLORIDyn(set::Settings, T::WindFarm, Wind, Sim, Con, paramFLORIDyn, 
         T = iterateOPs!(set.iterate_mode, T, Sim, paramFLORIS, paramFLORIDyn)
 
         # ========== Wind Field Perturbation ==========
-        perturbationOfTheWF!(T, Wind)
+        perturbationOfTheWF!(T, wind)
 
         # ========== Get FLORIS reductions ==========
         T.dep = findTurbineGroups(T, paramFLORIDyn)
         T.intOPs = interpolateOPs(T)
-        a, b = setUpTmpWFAndRun(set, T, paramFLORIS, Wind)
+        a, b = setUpTmpWFAndRun(set, T, paramFLORIS, wind)
         tmpM, T = a, b
         M[(it-1)*nT+1 : it*nT, 2:4] .= tmpM
         M[(it-1)*nT+1 : it*nT, 1]   .= SimTime
         T.States_T[T.StartI, 3] = tmpM[:, 2]
         M_int[it] = T.red_arr
 
-        # ========== Wind field corrections ==========
-        T, Wind = correctVel(set.cor_vel_mode, set, T, Wind, SimTime, paramFLORIS, tmpM)
-        correctDir!(set.cor_dir_mode, set, T, Wind, SimTime)
-        T = correctTi(set.cor_turb_mode, set, T, Wind, SimTime)
+        # ========== wind field corrections ==========
+        T, wind = correctVel(set.cor_vel_mode, set, T, wind, SimTime, paramFLORIS, tmpM)
+        correctDir!(set.cor_dir_mode, set, T, wind, SimTime)
+        T = correctTi(set.cor_turb_mode, set, T, wind, SimTime)
 
         # Save free wind speed as measurement
         M[(it-1)*nT+1 : it*nT, 5] =T.States_WF[T.StartI, 1]

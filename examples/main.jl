@@ -19,7 +19,7 @@ turbProp        = turbineArrayProperties(settings_file)
 T, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
 
 # Run initial conditions until no more change happens (wrong comment in original code)
-T = initSimulation(T, wind, sim, con, floridyn, floris)
+T = initSimulation(T, sim)
 
 @time T, M, Mint = runFLORIDyn(set, T, wind, sim, con, floridyn, floris)
 # 0.16 s on Desktop, 0.40 s with MATLAB
