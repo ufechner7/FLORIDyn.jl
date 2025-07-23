@@ -188,8 +188,8 @@ A mutable struct representing a wind farm. Fields can be specified using keyword
 - Weight::Vector{Vector{Float64}}: Weights for the operating points
 - dep::Vector{Vector{Int}}: Dependencies between turbines
 - red_arr::Matrix{Float64}: Reduced array for each turbine
-- Names_T::Vector{String}: Names
-- Names_WF::Vector{String}: Names
+- Names_T::Vector{String}: Names of the states of the turbines
+- Names_WF::Vector{String}: Names of the states of the wind farm
 - Names_OP::Vector{String}: Names of coordinates the operating points   
 """
 @kwdef mutable struct WindFarm
@@ -206,9 +206,9 @@ A mutable struct representing a wind farm. Fields can be specified using keyword
     Weight::Vector{Vector{Float64}} = Vector{Vector{Float64}}() # Weights
     dep::Vector{Vector{Int}} = Vector{Vector{Int}}()            # Dependencies between turbines
     red_arr::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)     # Reduced array for each turbine
-    Names_T::Vector{String} = Vector{String}(undef, 0)          # Names
-    Names_WF::Vector{String} = Vector{String}(undef, 0)         # Names of the wind farm
-    Names_OP::Vector{String} = Vector{String}(undef, 0)         # Names of the operating points
+    Names_T::Vector{String} = Vector{String}(undef, 0)          # Names of the states of the turbines
+    Names_WF::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the wind farm
+    Names_OP::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the operating points
 end
 
 include("settings.jl")
