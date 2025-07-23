@@ -169,6 +169,25 @@ struct WindDirTriple
     MeanPull::Float64          # Scalar mean reversion factor
 end
 
+mutable struct Turbines
+    States_WF::Matrix{Float64}
+    posNac::Matrix{Float64}
+    D::Vector{Float64}
+    StartI::Matrix{Int}
+    nT::Int
+    nOP::Int
+    posBase::Matrix{Float64}
+    intOPs::Vector{Matrix{Float64}}
+    Names_T::Vector{String}
+    Weight::Vector{Vector{Float64}}
+    dep::Vector{Vector{Int}}
+    red_arr::Matrix{Float64}
+    Names_WF::Vector{String}
+    Names_OP::Vector{String}
+    States_T::Matrix{Float64}
+    States_OP::Matrix{Float64}
+end
+
 include("settings.jl")
 include("init_turbines.jl")
 
