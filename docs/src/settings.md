@@ -9,8 +9,10 @@ a struct of marker types from these settings structs.
 
 ## Abstract types
 ```@docs
-DirModel
 VelModel
+DirModel
+TurbulenceModel
+ControllerModel
 ```
 
 # Types created from the yaml file
