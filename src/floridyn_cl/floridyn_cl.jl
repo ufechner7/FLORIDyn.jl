@@ -312,7 +312,8 @@ A tuple `(wf, md, mi)` containing:
   - `:EffWindSpeed`: Effective wind speed (m/s) at each turbine after wake effects
   - `:FreeWindSpeed`: Free-stream wind speed (m/s) without wake interference
   - `:PowerGen`: Generated electrical power (MW) for each turbine
-- `mi::Matrix`: Interaction matrix combining time data with turbine-to-turbine wake interaction coefficients for each simulation step
+- `mi::Matrix`: Interaction matrix combining time data with turbine-to-turbine wake interaction coefficients 
+                for each simulation step
 
 # Description
 Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models, 
