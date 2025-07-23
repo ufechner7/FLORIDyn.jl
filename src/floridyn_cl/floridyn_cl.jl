@@ -289,7 +289,7 @@ end
 
 
 """
-    FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
+    runFLORIDyn(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
@@ -310,7 +310,7 @@ Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models,
 applying control strategies and updating turbine states over time.
 
 """
-function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
+function runFLORIDyn(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
     # OUTPUTS:
     # T := Simulation state (OP states, Turbine states, wind field states(OPs))
     # Mt := Measurements from the simulation (Power, tbd)
