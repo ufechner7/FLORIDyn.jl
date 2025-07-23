@@ -2,18 +2,18 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    prepareSimulation(set::Settings, wind, con, floridyn, floris, turbProp, sim)
+    prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriDyn, floris::Floris, turbProp, sim::Sim)
 
 Prepares the simulation environment for a wind farm analysis using the provided settings and parameters.
 
 # Arguments
 - `set::Settings`: Simulation settings containing configuration options.
-- `wind`: Wind conditions or wind field data required for the simulation.
-- `con`: Controller or control parameters for the turbines.
-- `floridyn`: Parameters specific to the FLORIDyn model.
-- `floris`: Parameters specific to the FLORIS model.
+- `wind::Wind`: Wind conditions or wind field data. See: [`Wind`](@ref) 
+- `con::Con`: Controller parameters of the turbines.  See: [`Con`](@ref)
+- `floridyn::FloriDyn`: Parameters specific to the FLORIDyn model. See: [`FloriDyn`](@ref)
+- `floris::Floris`: Parameters specific to the FLORIS model. See: [`Floris`](@ref)
 - `turbProp`: Properties of the turbines involved in the simulation.
-- `sim`: Simulation-specific parameters or state.
+- `sim::Sim`: Simulation-specific parameters or state. See: [`Sim`](@ref)
 
 # Arguments that get modified
 - `wind`: Updated with wind velocity, direction, turbulence intensity, and shear profile.
@@ -29,7 +29,7 @@ Prepares the simulation environment for a wind farm analysis using the provided 
   - `con`: Updated controller parameters.
   - `floris`: Parameters for the FLORIS model.
 """
-function prepareSimulation(set::Settings, wind, con, floridyn, floris, turbProp, sim)
+function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriDyn, floris::Floris, turbProp, sim::Sim)
     loadDataWarnings = String[]
 
     # ========== WIND: Velocity ==========
