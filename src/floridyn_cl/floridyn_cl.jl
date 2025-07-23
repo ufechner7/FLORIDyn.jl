@@ -30,8 +30,8 @@ function initSimulation(T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
     return T
 end
 
-function pertubationOfTheWF!(T, Wind)
-    # pertubationOfTheWF! adds noise to the entire wind field state
+function perturbationOfTheWF!(T, Wind)
+    # perturbationOfTheWF! adds noise to the entire wind field state
     
     # Velocity
     if Wind.pertubation.vel
@@ -195,7 +195,7 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
         # Multi-turbine setup
         tmp_nT = length(T.dep[iT]) + 1
 
-        tmp_Tpos = repeat(T.posBase[iT,:]' +T.posNac[iT,:]', tmp_nT)
+        tmp_Tpos = repeat(T.posBase[iT,:]' + T.posNac[iT,:]', tmp_nT)
         tmp_WF   = repeat(iTWFState', tmp_nT)
         tmp_Tst  = repeat((T.States_T[T.StartI[iT], :])', tmp_nT)
 
@@ -207,9 +207,9 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
 
         for iiT in 1:(tmp_nT - 1)
             OP1_i = Int(T.intOPs[iT][iiT, 1])  # Index OP 1
-            OP1_r =T.intOPs[iT][iiT, 2]       # Ratio OP 1
+            OP1_r = T.intOPs[iT][iiT, 2]       # Ratio OP 1
             OP2_i = Int(T.intOPs[iT][iiT, 3])  # Index OP 2
-            OP2_r =T.intOPs[iT][iiT, 4]       # Ratio OP 2
+            OP2_r = T.intOPs[iT][iiT, 4]       # Ratio OP 2
             # println("OP1_i: ", OP1_i, " OP2_i: ", OP2_i, " iiT: ", iiT)
             # println("OP1_r: ", OP1_r, " OP2_r: ", OP2_r)
             # OP1_i, OP1_r, OP2_i, OP2_r =T.intOPs[iT][iiT, :]  # Assumes row-major
@@ -219,17 +219,17 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
             tmp_Tst[iiT, :] = OP1_r *T.States_T[OP1_i, :] + OP2_r *T.States_T[OP2_i, :]
             tmp_WF[iiT, :]  = OP1_r *T.States_WF[OP1_i, :] + OP2_r *T.States_WF[OP2_i, :]
 
-            si =T.StartI[T.dep[iT][iiT]]
+            si = T.StartI[T.dep[iT][iiT]]
 
             if hasfield(typeof(T), :C_Vel)
-                C_weights = T.C_Vel[iT, si:(si +T.nOP - 1)]
+                C_weights = T.C_Vel[iT, si:(si + T.nOP - 1)]
                 C_weights ./= sum(C_weights)
-                tmp_WF[iiT, 1] = dot(C_weights,T.States_WF[si:si + T.nOP - 1, 1])
+                tmp_WF[iiT, 1] = dot(C_weights, T.States_WF[si:si + T.nOP - 1, 1])
             end
             if hasfield(typeof(T), :C_Dir)
-                C_weights = T.C_Dir[iT, si:(si +T.nOP - 1)]
+                C_weights = T.C_Dir[iT, si:(si + T.nOP - 1)]
                 C_weights ./= sum(C_weights)
-                tmp_WF[iiT, 2] = dot(C_weights,T.States_WF[si:si + T.nOP - 1, 2])
+                tmp_WF[iiT, 2] = dot(C_weights, T.States_WF[si:si + T.nOP - 1, 2])
             end
 
             tmp_phi = size(tmp_WF, 2) == 4 ? angSOWFA2world(tmp_WF[iiT, 4]) : angSOWFA2world(tmp_WF[iiT, 2])
@@ -288,6 +288,28 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
 end
 
 
+"""
+    FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
+
+Main entry point for the FLORIDyn closed-loop simulation.
+
+# Arguments
+- `set::Settings`: Simulation settings and configuration parameters.
+- `T`: Time vector or simulation time parameters.
+- `Wind`: Wind field or wind input data.
+- `Sim`: Simulation state or configuration object.
+- `Con`: Controller object or control parameters.
+- `paramFLORIDyn`: Parameters specific to the FLORIDyn model.
+- `paramFLORIS`: Parameters specific to the FLORIS model.
+
+# Returns
+- Simulation results, including turbine states, control actions, and performance metrics.
+
+# Description
+Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models, 
+applying control strategies and updating turbine states over time.
+
+"""
 function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
     # OUTPUTS:
     # T := Simulation state (OP states, Turbine states, wind field states(OPs))
@@ -309,7 +331,7 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
         T = iterateOPs!(set.iterate_mode, T, Sim, paramFLORIS, paramFLORIDyn)
 
         # ========== Wind Field Perturbation ==========
-        pertubationOfTheWF!(T, Wind)
+        perturbationOfTheWF!(T, Wind)
 
         # ========== Get FLORIS reductions ==========
         T.dep = findTurbineGroups(T, paramFLORIDyn)
