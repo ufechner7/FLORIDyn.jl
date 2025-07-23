@@ -210,11 +210,8 @@ function setUpTmpWFAndRun(set::Settings, wf, paramFLORIS, Wind)
             OP1_r = wf.intOPs[iT][iiT, 2]       # Ratio OP 1
             OP2_i = Int(wf.intOPs[iT][iiT, 3])  # Index OP 2
             OP2_r = wf.intOPs[iT][iiT, 4]       # Ratio OP 2
-            # println("OP1_i: ", OP1_i, " OP2_i: ", OP2_i, " iiT: ", iiT)
-            # println("OP1_r: ", OP1_r, " OP2_r: ", OP2_r)
-            # OP1_i, OP1_r, OP2_i, OP2_r =wf.intOPs[iT][iiT, :]  # Assumes row-major
 
-            OPi_l = OP1_r *wf.States_OP[OP1_i, :] + OP2_r *wf.States_OP[OP2_i, :]
+            OPi_l = OP1_r * wf.States_OP[OP1_i, :] + OP2_r * wf.States_OP[OP2_i, :]
             tmp_Tpos[iiT, :] = OPi_l[1:3]
             tmp_Tst[iiT, :] = OP1_r *wf.States_T[OP1_i, :] + OP2_r *wf.States_T[OP2_i, :]
             tmp_WF[iiT, :]  = OP1_r *wf.States_WF[OP1_i, :] + OP2_r *wf.States_WF[OP2_i, :]
