@@ -16,7 +16,7 @@ The FLORIDyn.jl package is organized into several modules:
 - `examples/` - Example scripts
 - `docs/` - Documentation source
 - `data/` - Example data files and configuration settings
-- `bin` - Bash scripts to start Julia and for statistics
+- `bin/` - Bash scripts to start Julia and for statistics
 
 ## Development workflow
 
