@@ -23,7 +23,7 @@ Prepares the simulation environment for a wind farm analysis using the provided 
 
 # Returns
 - Returns the tuple `(T, wind, sim, con, floris)` where:
-  - `T`: Dictionary containing turbine states and positions.
+  - `T`: Wind farm struct containing turbine states and positions. See: [`WindFarm`](@ref)
   - `wind`: Updated wind conditions.
   - `sim`: Updated simulation parameters.
   - `con`: Updated controller parameters.
