@@ -2,15 +2,26 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # the different shear types (shear_mode)
+
 """
-    Shear_Interpolation
+    ShearModel
+
+An abstract type representing a wind shear model for vertical wind profiles.
+Subtypes of `ShearModel` should implement specific models for wind shear calculations.
+
+See: [Markers for defining the wind shear](@ref) for more details.
+"""
+abstract type ShearModel end
+
+"""
+    Shear_Interpolation <: ShearModel
 
 A marker struct used to represent the linear interpolation for wind shear profiles.
 
 # See also
 - [`Shear_PowerLaw`](@ref)
 """
-struct Shear_Interpolation end
+struct Shear_Interpolation <: ShearModel end
 
 # """
 #     Shear_LogLaw
@@ -24,11 +35,11 @@ struct Shear_Interpolation end
 # struct Shear_LogLaw end
 
 """
-    Shear_PowerLaw
+    Shear_PowerLaw <: ShearModel
 
 A marker struct representing the logarithmic law for modeling wind shear profiles.
 
 # See also
 - [`Shear_Interpolation`](@ref)
 """
-struct Shear_PowerLaw end
+struct Shear_PowerLaw <: ShearModel end

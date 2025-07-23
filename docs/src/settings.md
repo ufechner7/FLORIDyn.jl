@@ -11,6 +11,7 @@ For each of these yaml files there must be a folder with the same name (without 
 ```@docs
 VelModel
 DirModel
+ShearModel
 TurbulenceModel
 ControllerModel
 ```
