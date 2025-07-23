@@ -103,6 +103,16 @@ A mutable struct representing the simulation settings.
     save_final_state::Bool
 end
 
+"""
+    Con
+
+A mutable struct for configuration settings.
+
+# Fields
+- `yaw::String`: The yaw control strategy, e.g., "Constant", "Interpolation".
+- `yaw_data::Union{Nothing, Matrix{Float64}}`: Optional yaw data matrix.
+- `tanh_yaw::Bool`: Whether to use hyperbolic tangent yaw control.
+"""
 @with_kw mutable struct Con
     yaw::String
     yaw_data::Union{Nothing, Matrix{Float64}} = nothing
@@ -147,7 +157,7 @@ Initializes or configures the system using the provided `filename`. The `filenam
 - The tuple `(wind, sim, con)` where:
   - `wind`: An instance of the [`Wind`](@ref) struct containing wind-related parameters.
   - `sim`: An instance of the [`Sim`](@ref) struct containing simulation parameters.
-  - `con`: An instance of the `Con` struct containing controller parameters.
+  - `con`: An instance of the [`Con`](@ref) struct containing controller parameters.
   - `floris`: An instance of the `Floris` struct containing FLORIS model parameters.
   - `florydyn`: An instance of the `FloryDyn` struct containing FLORIDyn model parameters.
 """

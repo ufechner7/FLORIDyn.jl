@@ -17,6 +17,7 @@ VelModel
 ```@docs
 Sim
 Wind
+Con
 ```
 
 # Settings
