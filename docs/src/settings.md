@@ -13,7 +13,7 @@ DirModel
 VelModel
 ```
 
-# Types create from the yaml file
+# Types created from the yaml file
 ```@docs
 Sim
 Wind

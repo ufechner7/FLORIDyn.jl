@@ -67,6 +67,26 @@ end
     dir::Dir
 end
 
+"""
+    Sim
+
+A mutable struct representing the simulation settings.
+
+# Fields
+- `floris::String`: The name of the FLORIS model to be used.
+- `start_time::Int64`: The start time of the simulation in seconds.
+- `end_time::Int64`: The end time of the simulation in seconds.
+- `time_step::Int64`: The time step for the simulation in seconds.
+- `sim_step::Union{Nothing, Int64}`: Optional simulation step size.
+- `n_sim_steps::Union{Nothing, Int64}`: Optional number of simulation steps.
+- `rotor_discret::String`: The rotor discretization method, e.g., "Uniform", "Gaussian".
+- `rotor_points::Int64`: The number of rotor points for discretization.
+- `dyn::Dyn`: The dynamic settings for the simulation.
+- `init::String`: The initialization method, e.g., "init", "load".
+- `path_to_data::String`: The path to the directory where simulation data is stored.
+- `save_init_state::Bool`: Whether to save the initial state of the simulation.
+- `save_final_state::Bool`: Whether to save the final state of the simulation.
+"""
 @with_kw mutable struct Sim
     floris::String
     start_time::Int64
@@ -125,8 +145,8 @@ Initializes or configures the system using the provided `filename`. The `filenam
 
 # Returns
 - The tuple `(wind, sim, con)` where:
-  - `wind`: An instance of the `Wind` struct containing wind-related parameters.
-  - `sim`: An instance of the `Sim` struct containing simulation parameters.
+  - `wind`: An instance of the [`Wind`](@ref) struct containing wind-related parameters.
+  - `sim`: An instance of the [`Sim`](@ref) struct containing simulation parameters.
   - `con`: An instance of the `Con` struct containing controller parameters.
   - `floris`: An instance of the `Floris` struct containing FLORIS model parameters.
   - `florydyn`: An instance of the `FloryDyn` struct containing FLORIDyn model parameters.
