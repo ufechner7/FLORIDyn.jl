@@ -15,6 +15,7 @@ The FLORIDyn.jl package is organized into several modules:
 - `test/` - Test suite
 - `examples/` - Example scripts
 - `docs/` - Documentation source
+- `data/` - Example data files and configuration settings
 
 ## Development workflow
 
