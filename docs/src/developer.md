@@ -143,3 +143,4 @@ Configuration is handled through YAML files that are parsed into Julia structs. 
 - The simulation uses in-place operations where possible to minimize allocations
 - Key loops are optimized for performance
 - Consider using `@profile` and `BenchmarkTools.jl` when optimizing code
+- Read the [performane tips] (https://docs.julialang.org/en/v1/manual/performance-tips/)
