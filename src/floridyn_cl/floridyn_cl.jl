@@ -59,19 +59,19 @@ function findTurbineGroups(T, paramFLORIDyn)
 
     # Initialize outputs
     Tdep = Vector{Vector{Int64}}(undef,T.nT)  # Equivalent of cell array in MATLAB[1][3]
-    dep  = falses(T[:nT],T.nT)
+    dep  = falses(T.nT, T.nT)
     
     R01(phi) = [cos(phi)  sin(phi); -sin(phi) cos(phi)]
 
-    for iT in 1:T[:nT]
-        for iiT in 1:T[:nT]
+    for iT in 1:T.nT
+        for iiT in 1:T.nT
             if iiT == iT
                 continue
             end
 
             # Closest OP from wake of iT to turbine iiT
-            idx_range = (T[:StartI][iT]):(T[:StartI][iT] +T.nOP - 1)
-            distOP_iiT = sum((T[:posBase][iiT, 1:2]' .-T.States_OP[idx_range, 1:2]).^2, dims=2)
+            idx_range = (T.StartI[iT]):(T.StartI[iT] +T.nOP - 1)
+            distOP_iiT = sum((T.posBase[iiT, 1:2]' .-T.States_OP[idx_range, 1:2]).^2, dims=2)
 
             I = LinearIndices(distOP_iiT)
             I_op = I[argmin(distOP_iiT)]
@@ -80,18 +80,18 @@ function findTurbineGroups(T, paramFLORIDyn)
             I_op =T.StartI[iT] + I_op - 1
 
             # Angle and relative vector
-            phi = angSOWFA2world.(T[:States_WF][I_op, 2])
-            r0 =T.States_OP[I_op, 1:2] .-T.posBase[iiT, 1:2]
+            phi = angSOWFA2world.(T.States_WF[I_op, 2])
+            r0 = T.States_OP[I_op, 1:2] .- T.posBase[iiT, 1:2]
             r1 = R01(phi) * r0
 
             # Apply dependency check
-            if (-r1[1] <= uw*T[:D][iT]) && (r1[1] <= dw*T[:D][iT]) && (abs(r1[2]) <= cw*T[:D][iT])
+            if (-r1[1] <= uw*T.D[iT]) && (r1[1] <= dw*T.D[iT]) && (abs(r1[2]) <= cw*T.D[iT])
                 dep[iiT, iT] = true
             end
         end
     end
 
-    for iT in 1:T[:nT]
+    for iT in 1:T.nT
         # find indices where dep[iT, :] is true
         Tdep[iT] = findall(x -> x, dep[iT, :])
     end
@@ -109,15 +109,15 @@ function interpolateOPs(T)
 
     intOPs = Vector{Matrix{Float64}}(undef,T.nT)  # Cell equivalent in Julia
 
-    for iT in 1:T[:nT]  # For every turbine
-        intOPs[iT] = zeros(length(T[:dep][iT]), 4)
+    for iT in 1:T.nT  # For every turbine
+        intOPs[iT] = zeros(length(T.dep[iT]), 4)
 
-        for iiT in 1:length(T[:dep][iT])  # for every influencing turbine
+        for iiT in 1:length(T.dep[iT])  # for every influencing turbine
             iiaT =T.dep[iT][iiT]  # actual turbine index
 
             # Compute distances from OPs of turbine iiaT to current turbine
             start_idx =T.StartI[iiaT]
-            OP_positions =T.States_OP[start_idx:start_idx +T.nOP - 1, 1:2]
+            OP_positions =T.States_OP[start_idx:(start_idx +T.nOP - 1), 1:2]
             turb_pos =T.posBase[iT, 1:2]
 
             # Euclidean distances to the turbine position
@@ -129,10 +129,10 @@ function interpolateOPs(T)
 
             if sorted_indices[1] == 1
                 # Closest is first OP (unlikely)
-                intOPs[iT][iiT, :] = [T[:StartI][iiaT], 1.0,T.StartI[iiaT] + 1, 0.0]
+                intOPs[iT][iiT, :] = [T.StartI[iiaT], 1.0,T.StartI[iiaT] + 1, 0.0]
             elseif sorted_indices[1] ==T.nOP
                 # Closest is last OP (possible)
-                intOPs[iT][iiT, :] = [T[:StartI][iiaT] +T.nOP - 2, 0.0,T.StartI[iiaT] +T.nOP - 1, 1.0]
+                intOPs[iT][iiT, :] = [T.StartI[iiaT] + T.nOP - 2, 0.0, T.StartI[iiaT] + T.nOP - 1, 1.0]
             else
                 # Use two closest OPs for interpolation
                 indOP1 =T.StartI[iiaT] - 1 + sorted_indices[1]
@@ -160,13 +160,13 @@ end
 
 function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
     # Initialize outputs
-    M = zeros(T[:nT], 3)
-   T.Weight = Vector{Vector{Float64}}(undef,T.nT)
-   T.red_arr = ones(T[:nT],T.nT)
+    M = zeros(T.nT, 3)
+    T.Weight = Vector{Vector{Float64}}(undef,T.nT)
+    T.red_arr = ones(T.nT,T.nT)
 
-    for iT in 1:T[:nT]
+    for iT in 1:T.nT
         # Interpolate Wind field if needed
-        iTWFState = copy(T[:States_WF][T[:StartI][iT], :])
+        iTWFState = copy(T.States_WF[T.StartI[iT], :])
 
         if hasfield(typeof(T), :C_Vel)
             iTWFState[1] = dot(T[:C_Vel][iT, :],T.States_WF[:, 1])
@@ -176,31 +176,31 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
             iTWFState[2] = dot(T.C_Dir[iT, :],T.States_WF[:, 2])
         end
 
-        if isempty(T[:dep][iT])
+        if isempty(T.dep[iT])
             # Single turbine case
             T_red_arr, _, _ = runFLORIS(
                 set,
                 (T[:posBase][iT,:] +T.posNac[iT,:])',
                 iTWFState',
-               T.States_T[T[:StartI][iT], :]',
+               T.States_T[T.StartI[iT], :]',
                T.D[iT],
                 paramFLORIS,
                 Wind.shear
             )
-            M[iT, :] = [T_red_arr, 0, T_red_arr *T.States_WF[T[:StartI][iT], 1]]
+            M[iT, :] = [T_red_arr, 0, T_red_arr *T.States_WF[T.StartI[iT], 1]]
            T.red_arr[iT, iT] = T_red_arr
             continue
         end
 
         # Multi-turbine setup
-        tmp_nT = length(T[:dep][iT]) + 1
+        tmp_nT = length(T.dep[iT]) + 1
 
         tmp_Tpos = repeat(T[:posBase][iT,:]' +T.posNac[iT,:]', tmp_nT)
         tmp_WF   = repeat(iTWFState', tmp_nT)
-        tmp_Tst  = repeat((T[:States_T][T[:StartI][iT], :])', tmp_nT)
+        tmp_Tst  = repeat((T[:States_T][T.StartI[iT], :])', tmp_nT)
 
-        tmp_D = ifT.D[end] > 0
-            vcat(T[:D][T[:dep][iT]],T.D[iT])
+        tmp_D = if T.D[end] > 0
+            vcat(T[:D][T.dep[iT]],T.D[iT])
         else
            T.D
         end
@@ -219,17 +219,17 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
             tmp_Tst[iiT, :] = OP1_r *T.States_T[OP1_i, :] + OP2_r *T.States_T[OP2_i, :]
             tmp_WF[iiT, :]  = OP1_r *T.States_WF[OP1_i, :] + OP2_r *T.States_WF[OP2_i, :]
 
-            si =T.StartI[T[:dep][iT][iiT]]
+            si =T.StartI[T.dep[iT][iiT]]
 
             if hasfield(typeof(T), :C_Vel)
                 C_weights = T[:C_Vel][iT, si:(si +T.nOP - 1)]
                 C_weights ./= sum(C_weights)
-                tmp_WF[iiT, 1] = dot(C_weights,T.States_WF[si:si +T.nOP - 1, 1])
+                tmp_WF[iiT, 1] = dot(C_weights,T.States_WF[si:si + T.nOP - 1, 1])
             end
             if hasfield(typeof(T), :C_Dir)
                 C_weights = T.C_Dir[iT, si:(si +T.nOP - 1)]
                 C_weights ./= sum(C_weights)
-                tmp_WF[iiT, 2] = dot(C_weights,T.States_WF[si:si +T.nOP - 1, 2])
+                tmp_WF[iiT, 2] = dot(C_weights,T.States_WF[si:si + T.nOP - 1, 2])
             end
 
             tmp_phi = size(tmp_WF, 2) == 4 ? angSOWFA2world(tmp_WF[iiT, 4]) : angSOWFA2world(tmp_WF[iiT, 2])
@@ -243,13 +243,13 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
         T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, tmp_Tpos, tmp_WF, tmp_Tst, tmp_D, paramFLORIS, Wind.shear)
 
         T_red = prod(T_red_arr)
-       T.red_arr[iT, vcat(T[:dep][iT], iT)] = T_red_arr
+        T.red_arr[iT, vcat(T.dep[iT], iT)] = T_red_arr
         T_addedTI = sqrt(sum(T_aTI_arr .^ 2))
-       T.Weight[iT] = T_weight
+        T.Weight[iT] = T_weight
 
-        ifT.D[end] <= 0
+        if T.D[end] <= 0
             dists = zeros(tmp_nT - 1)
-            plot_WF = zeros(tmp_nT - 1, size(T[:States_WF], 2))
+            plot_WF = zeros(tmp_nT - 1, size(T.States_WF, 2))
             plot_OP = zeros(tmp_nT - 1, 2)
             for iiT in 1:(tmp_nT - 1)
                 OP1_i, OP1_r, OP2_i, OP2_r =T.intOPs[iT][iiT, :]
@@ -312,13 +312,13 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
         pertubationOfTheWF!(T, Wind)
 
         # ========== Get FLORIS reductions ==========
-       T.dep = findTurbineGroups(T, paramFLORIDyn)
-       T.intOPs = interpolateOPs(T)
+        T.dep = findTurbineGroups(T, paramFLORIDyn)
+        T.intOPs = interpolateOPs(T)
         tmpM, T = setUpTmpWFAndRun(set, T, paramFLORIS, Wind)
         M[(it-1)*nT+1 : it*nT, 2:4] .= tmpM
         M[(it-1)*nT+1 : it*nT, 1]   .= SimTime
-       T.States_T[T[:StartI], 3] = tmpM[:, 2]
-        M_int[it] =T.red_arr
+        T.States_T[T.StartI, 3] = tmpM[:, 2]
+        M_int[it] = T.red_arr
 
         # ========== Wind field corrections ==========
         T, Wind = correctVel(set.cor_vel_mode, set, T, Wind, SimTime, paramFLORIS, tmpM)
@@ -326,11 +326,11 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
         T = correctTi(set.cor_turb_mode, set, T, Wind, SimTime)
 
         # Save free wind speed as measurement
-        M[(it-1)*nT+1 : it*nT, 5] =T.States_WF[T[:StartI], 1]
+        M[(it-1)*nT+1 : it*nT, 5] =T.States_WF[T.StartI, 1]
 
         # ========== Get Control settings ==========
-       T.States_T[T[:StartI], 2] = (
-           T.States_WF[T[:StartI], 2] .-
+       T.States_T[T.StartI, 2] = (
+           T.States_WF[T.StartI, 2] .-
             getYaw(set.control_mode, Con.yaw_data, collect(1:nT), SimTime)'
         )
 

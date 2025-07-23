@@ -207,7 +207,7 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
    T.Names_WF  = states.WF_names
    T.StartI    = collect(1:n_op:(n_op *T.nT))'
    T.nOP       = n_op
-   T.red_arr   = ones(T[:nT],T.nT)
+   T.red_arr   = ones(T.nT, T.nT)
 
     # # deltaUW fallback
     # if !haskey(paramFLORIDyn, :deltaUW)
@@ -230,7 +230,7 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
         end
     elseif yaw_method == "SOWFA"
         nacelleYaw = importSOWFAFile(joinpath(vel_file_dir, "SOWFA_nacelleYaw.csv"))
-        con.yaw_data = condenseSOWFAYaw([nacelleYaw[1:T[:nT]:end, 2] reshape(nacelleYaw[:,3],T.nT, :)'])
+        con.yaw_data = condenseSOWFAYaw([nacelleYaw[1:T.nT:end, 2] reshape(nacelleYaw[:,3],T.nT, :)'])
     else
         error("Unknown yaw method: $yaw_method")
     end

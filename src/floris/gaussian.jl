@@ -119,11 +119,11 @@ end
 
 function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
     # Unpack state arrays and parameters
-    States_OP   = copy(T[:States_OP])
-    States_T    = copy(T[:States_T])
-    States_WF   = copy(T[:States_WF])
-    nT          =T.nT
-    nOP         =T.nOP
+    States_OP   = copy(T.States_OP)
+    States_T    = copy(T.States_T)
+    States_WF   = copy(T.States_WF)
+    nT          = T.nT
+    nOP         = T.nOP
     deltaT      = Sim.time_step
     startTime   = Sim.start_time
 
@@ -153,7 +153,7 @@ function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
         States_WF[rangeOPs, 3] .= TI
 
         # Add orientation if used
-        if length(T[:Names_WF]) == 4
+        if length(T.Names_WF) == 4
             States_WF[rangeOPs, 4] .= phiS
         end
 
@@ -400,8 +400,8 @@ function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS
 end
 
 function getPower(T, M, paramFLORIS, Con)
-    a =T.States_T[T[:StartI], 1]
-    yaw = deg2rad.(T[:States_T][T[:StartI], 2])
+    a =T.States_T[T.StartI, 1]
+    yaw = deg2rad.(T[:States_T][T.StartI, 2])
     
     Cp = 4a .* (1 .- a).^2
     ueff = M[:, 3]

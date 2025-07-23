@@ -5,11 +5,11 @@ function getDataDir(set::Settings, Wind, T, SimTime)
     # Reads wind data and returns the current phi for all turbines
 
     if Wind.input_dir == "RW_with_Mean"
-        phi = getWindDirT(set.dir_mode,T.States_WF[T[:StartI], 2], Wind.dir)
+        phi = getWindDirT(set.dir_mode,T.States_WF[T.StartI, 2], Wind.dir)
     elseif Wind.input_dir == "EnKF_ZOH"
-        phi =T.States_WF[T[:StartI], 2]
+        phi =T.States_WF[T.StartI, 2]
     elseif Wind.input_dir == "EnKF_RW"
-        phi =T.States_WF[T[:StartI], 2]
+        phi =T.States_WF[T.StartI, 2]
         # (randn(1, length(phi))*Wind.dir.CholSig)' in MATLAB
         # randn generates standard normals. In Julia, randn(length) gives a vector.
         # Matrix multiplication and transpose need to be handled explicitly.
@@ -21,7 +21,7 @@ function getDataDir(set::Settings, Wind, T, SimTime)
         # T.C_Dir *T.States_WF(:,2) in MATLAB is T.C_Dir *T.States_WF[:,2] in Julia
         phi = T.C_Dir *T.States_WF[:, 2]
     else
-        phi = getWindDirT(set.dir_mode, Wind.dir, collect(1:T[:nT]), SimTime)
+        phi = getWindDirT(set.dir_mode, Wind.dir, collect(1:T.nT), SimTime)
     end
 
     return phi
@@ -48,8 +48,8 @@ function correctDir!(::Direction_Interpolation, set::Settings, T, Wind, SimTime)
     # Correct
    T.States_WF[:, 2] .= phi[1]
     # OP Orientation = turbine wind direction
-    if size(T[:States_WF], 2) == 4
-       T.States_WF[T[:StartI], 4] = phi[1]
+    if size(T.States_WF, 2) == 4
+       T.States_WF[T.StartI, 4] = phi[1]
     end
     return nothing
 end
@@ -64,8 +64,8 @@ function correctDir!(::Direction_All, set::Settings, T, Wind, SimTime)
    T.States_WF[:, 2] .= phi[1]
 
     # OP Orientation = turbine wind direction
-    if size(T[:States_WF], 2) == 4
-       T.States_WF[T[:StartI], 4] .= phi[1]
+    if size(T.States_WF, 2) == 4
+       T.States_WF[T.StartI, 4] .= phi[1]
     end
 
     return T
