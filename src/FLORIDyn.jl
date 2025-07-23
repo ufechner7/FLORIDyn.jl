@@ -169,23 +169,23 @@ struct WindDirTriple
     MeanPull::Float64          # Scalar mean reversion factor
 end
 
-mutable struct Turbines
-    States_WF::Matrix{Float64}
-    posNac::Matrix{Float64}
-    D::Vector{Float64}
-    StartI::Matrix{Int}
-    nT::Int64
-    nOP::Int64
-    posBase::Matrix{Float64}
-    intOPs::Vector{Matrix{Float64}}
-    Names_T::Vector{String}
-    Weight::Vector{Vector{Float64}}
-    dep::Vector{Vector{Int}}
-    red_arr::Matrix{Float64}
-    Names_WF::Vector{String}
-    Names_OP::Vector{String}
-    States_T::Matrix{Float64}
-    States_OP::Matrix{Float64}
+@kwdef mutable struct WindFarm
+    nT::Int64 = 0                                               # Number of turbines
+    nOP::Int64 = 0                                              # Number of operating points
+    States_WF::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)   # States of the wind farm
+    States_OP::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)   # States of the operating points
+    States_T::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)    # States of the turbines
+    posBase::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)     # Base positions of the turbines
+    posNac::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)      # Positions of the nacelles
+    D::Vector{Float64} = Vector{Float64}(undef, 0)              # Diameters of the turbines
+    StartI::Matrix{Int} = Matrix{Int}(undef, 0, 0)              # Start indices for each turbine
+    intOPs::Vector{Matrix{Float64}} = Vector{Matrix{Float64}}() # Interpolated operating points
+    Weight::Vector{Vector{Float64}} = Vector{Vector{Float64}}() # Weights
+    dep::Vector{Vector{Int}} = Vector{Vector{Int}}()            # Dependencies between turbines
+    red_arr::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)     # Reduced array for each turbine
+    Names_T::Vector{String} = Vector{String}(undef, 0)          # Names
+    Names_WF::Vector{String} = Vector{String}(undef, 0)         # Names of the wind farm
+    Names_OP::Vector{String} = Vector{String}(undef, 0)         # Names of the operating points
 end
 
 include("settings.jl")

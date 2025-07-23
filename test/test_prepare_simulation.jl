@@ -42,8 +42,8 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(set, wind, con, paramFLORIDyn
        2400.0   600.0    0.0
     ]
 
-    @test T[:posBase] == expected_posBase
-    @test T[:nT] == 9
+    @testT.posBase == expected_posBase
+    @testT.nT == 9
     expected = [
         0.0 0.0 119.0
         0.0 0.0 119.0
@@ -56,15 +56,15 @@ T, wind, sim, con, paramFLORIS = prepareSimulation(set, wind, con, paramFLORIDyn
         0.0 0.0 119.0
     ]
 
-    @test T[:posNac]    == expected
+    @testT.posNac    == expected
 
-    @test T[:D]         == fill(178.4, 9)
-    @test T[:Names_OP]  == ["x0", "y0", "z0", "x1", "y1", "z1"]
-    @test T[:Names_T]   == ["a", "yaw", "TI"]
-    @test T[:Names_WF]  == ["wind_vel", "wind_dir", "TI0", "OP_ori"]
-    @test T[:StartI]    == [1 201 401 601 801 1001 1201 1401 1601]
-    @test T[:nOP]       == 200
-    @test T[:red_arr]   == ones(9,9)
+    @testT.D         == fill(178.4, 9)
+    @testT.Names_OP  == ["x0", "y0", "z0", "x1", "y1", "z1"]
+    @testT.Names_T   == ["a", "yaw", "TI"]
+    @testT.Names_WF  == ["wind_vel", "wind_dir", "TI0", "OP_ori"]
+    @testT.StartI    == [1 201 401 601 801 1001 1201 1401 1601]
+    @testT.nOP       == 200
+    @testT.red_arr   == ones(9,9)
 
     @test paramFLORIDyn.deltaUW == 10.0
     @test size(con.yaw_data) == (603, 10)
