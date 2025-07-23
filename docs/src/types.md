@@ -32,16 +32,6 @@ Direction_InterpTurbine_wErrorCov
 Direction_RW_with_Mean
 ```
 
-## Markers defining the controller
-An instance of these structs needs to be passed to the functions that control turbine behavior. They are
-all subtypes of [`ControllerModel`](@ref)
-
-```@docs
-Yaw_Constant
-Yaw_InterpTurbine
-Yaw_SOWFA
-```
-
 ## Markers for defining the wind shear
 An instance of these structs needs to be passed to the functions that calculate the wind shear.
 ```@docs
@@ -56,6 +46,15 @@ An instance of these structs needs to be passed to the functions that calculate 
  TI_EnKF_InterpTurbine
  TI_Interpolation
  TI_InterpTurbine
+```
+
+## Markers defining the controller
+An instance of these structs needs to be passed to the functions that control turbine behavior. They are all subtypes of [`ControllerModel`](@ref)
+
+```@docs
+Yaw_Constant
+Yaw_InterpTurbine
+Yaw_SOWFA
 ```
 
 ## Types for storing wind field params
