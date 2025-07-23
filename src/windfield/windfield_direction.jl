@@ -177,7 +177,7 @@ Return wind direction in SOWFA-degrees for the requested turbine(s).
 
 # Arguments
 - `WindDir::Matrix{Float64}`: Each row is `[time, phi_T0, phi_T1, ...]`.
-- `iT::Union{Int, AbstractVector{Int}}`: Index or indices of turbines (1-based).
+- `iT: Index or indices of turbines.
 - `t`: Time of request.
 
 # Returns

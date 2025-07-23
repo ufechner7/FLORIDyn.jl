@@ -238,7 +238,7 @@ function getWindSpeedT(::Velocity_Interpolation, WindVel::Matrix{Float64}, iT, t
 end
 
 """
-    getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatrix, iT::Union{Int, AbstractVector{<:Int}}, 
+    getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatrix, iT, 
                   t)
 
 Compute the wind speed at a given time `t` for the specified indices `iT` using the provided wind velocity data 
@@ -249,14 +249,13 @@ Adds random noise from a given Cholesky decomposition matrix.
 # Arguments
 - `::Velocity_Interpolation_wErrorCov`: The interpolation method that includes error covariance handling.
 - `WindVel::WindVelMatrix`: See: [WindVelMatrix](@ref)
-- `iT::Union{Int, AbstractVector{<:Int}}`: Index or indices specifying which wind speed(s) to retrieve.
+- `iT: Index or indices specifying which wind speed(s) to retrieve.
 - `t`: The time at which to interpolate the wind speed.
 
 # Returns
 - The interpolated wind speed(s) at time `t` for the specified indices.
 """
-function getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatrix, 
-                       iT::Union{Int, AbstractVector{<:Int}}, t)
+function getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatrix, iT, t)
     times = WindVel.Data[:, 1]
     speeds = WindVel.Data[:, 2]
 

@@ -223,7 +223,7 @@ function getTurbineData(names::Vector{String})
 end
 
 """
-    importSOWFAFile(filename::String, dataLines::Union{UnitRange{Int}, Vector{Tuple{Int,Int}}} = 2:typemax(Int))
+    importSOWFAFile(filename::String, dataLines = 2:typemax(Int))
 
 Reads from a custom-formatted text file and extracts columns: Turbine, Times, and nacelle.
 
@@ -233,7 +233,7 @@ Reads from a custom-formatted text file and extracts columns: Turbine, Times, an
 Returns:
 - A Matrix{Float64} with the selected column data.
 """
-function importSOWFAFile(filename::String, dataLines::Union{UnitRange{Int}, Vector{Tuple{Int,Int}}} = 2:typemax(Int))
+function importSOWFAFile(filename::String, dataLines = 2:typemax(Int))
 
     # Read full table first
     df = CSV.read(filename, DataFrame;
