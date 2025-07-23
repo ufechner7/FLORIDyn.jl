@@ -68,15 +68,15 @@ include("controller/structs_controller.jl")
 A struct that holds configuration parameters for the FLORIDyn simulation environment.
 
 # Fields
-- vel_mode::VelModel
-- dir_mode::DirModel
-- turb_mode
-- shear_mode
-- cor_dir_mode
-- cor_vel_mode
-- cor_turb_mode
-- iterate_mode
-- control_mode
+- `vel_mode::VelModel`: See: [VelModel](@ref)
+- `dir_mode::DirModel`: See: [DirModel](@ref)
+- `turb_mode`
+- `shear_mode`
+- `cor_dir_mode`
+- `cor_vel_mode`
+- `cor_turb_mode`
+- `iterate_mode`
+- `control_mode`
 """
 struct Settings
     vel_mode::VelModel

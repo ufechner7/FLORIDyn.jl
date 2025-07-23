@@ -209,13 +209,14 @@ function setup(filename)
 end
 
 """
-    Settings(wind::Wind, sim::Sim)
+    Settings(wind::Wind, sim::Sim, con::Con)
 
 Create and return a [`Settings`](@ref) object using the provided `wind` and `sim` parameters.
 
 # Arguments
 - `wind::Wind`: An instance of the [`Wind`](@ref) struct containing wind-related parameters.
-- `sim`: An instance of the [`Sim`](@ref) struct containing the simulation parameters.
+- `sim::Sim`: An instance of the [`Sim`](@ref) struct containing the simulation parameters.
+- `con::Con`: An instance of the [`Con`](@ref) struct containing the controller parameters.
 
 # Returns
 - A `Settings` struct configured with the given wind and simulation parameters.
@@ -223,7 +224,7 @@ Create and return a [`Settings`](@ref) object using the provided `wind` and `sim
 # Notes
 - The function uses the `str2type` helper to convert string representations of model types 
   into their corresponding Julia types.
-- The `Settings` struct encapsulates various model configurations for velocity, direction, 
+- The `Settings` struct encapsulates the model settings for velocity, direction, 
   turbulence intensity, shear, and correction modes.
 """
 function Settings(wind::Wind, sim::Sim, con::Con)
