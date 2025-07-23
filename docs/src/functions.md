@@ -32,5 +32,6 @@ getVars
 # FLORIDyn
 ```@docs
 prepareSimulation
+runFLORIDyn
 ```
 

@@ -289,13 +289,13 @@ end
 
 
 """
-    runFLORIDyn(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
+    runFLORIDyn(set::Settings, T::WindFarm, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
 # Arguments
 - `set::Settings`: Simulation settings and configuration parameters.
-- `T`: Time vector or simulation time parameters.
+- `T::WindFarm`: See: [WindFarm](@ref) simulation state, including turbine and wind farm states.
 - `Wind`: Wind field or wind input data.
 - `Sim`: Simulation state or configuration object.
 - `Con`: Controller object or control parameters.
@@ -310,7 +310,7 @@ Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models,
 applying control strategies and updating turbine states over time.
 
 """
-function runFLORIDyn(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
+function runFLORIDyn(set::Settings, T::WindFarm, Wind, Sim, Con, paramFLORIDyn, paramFLORIS)
     # OUTPUTS:
     # T := Simulation state (OP states, Turbine states, wind field states(OPs))
     # Mt := Measurements from the simulation (Power, tbd)
