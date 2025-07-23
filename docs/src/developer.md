@@ -46,11 +46,44 @@ To run specific tests:
 include("test/test_floris.jl")
 ```
 
+### Debugging
+Suggestion: Use [Infiltrator.jl](https://github.com/JuliaDebug/Infiltrator.jl) for debugging.
+
+Add two lines to your `.bashrc` script (create one if it does not exist yet):
+```bash
+alias jl='./bin/run_julia'
+alias jl2='./bin/run_julia2'
+```
+Install the packages `Infiltrator.jl` and `Revise.jl` in your global environment:
+```bash
+julia -e 'using Pkg; Pkg.add("Revise"); Pkg.add("Infiltrator")'
+```
+Now you can launch Julia by typing `jl`, and for debugging type `jl2`.
+
+Debugging session:
+1. bash> `jl2`
+2. julia> `using FLORIDyn`
+3. Add the line `Main.@infiltrate` at the location where you want to set a break point.
+4. julia> `include("examples/main.jl")`
+Now the program should run into your breakpoint. You should see the prompt:
+```
+infil> 
+```
+and by typing the name of any local or global variable you can inspect the content.
+You can also execute any statement that fails and modify it until it works.
+
+**Important:** When executing STEP 2, the line `Main.@infiltrate` must not exist
+or must be commented.
+
 ### Building documentation
 
 To build the documentation locally:
 ```julia
 include("scripts/build_docu.jl")
+```
+You can get an overview over the exported methods by running the script:
+```julia
+include("scripts/stats.jl")
 ```
 
 ## Code style and conventions
