@@ -32,7 +32,7 @@ function Base.rand(rng::FileRNG, ::Type{Float64})
     return rand(rng)
 end
 
-function Base.rand(rng::FileRNG, ::Type{T}) where {T}
+function Base.rand(rng::FileRNG, ::Type{wf}) where {wf}
     error("FileRNG only supports Float64")
 end
 

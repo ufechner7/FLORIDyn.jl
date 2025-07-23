@@ -346,7 +346,7 @@ function importSOWFAFile(filename::String, dataLines = 2:typemax(Int))
     return nacelleYaw
 end
 
-function condenseSOWFAYaw(YawData::Array{T,2}) where T
+function condenseSOWFAYaw(YawData::Array{wf,2}) where wf
     # Compute difference between adjacent rows (excluding the first and last rows)
     diff = sum(
         abs.(YawData[2:end-1, 2:end] .- YawData[1:end-2, 2:end]) .+

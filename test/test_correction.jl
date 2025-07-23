@@ -32,7 +32,7 @@ wind = FLORIDyn.Wind(
         # Setup
         set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_All(), 
                     Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA())
-        T = WindFarm(
+        wf = WindFarm(
             States_WF = zeros(3, 4),
             StartI = [2 2; 3 3],
             nT = 3,
@@ -43,11 +43,11 @@ wind = FLORIDyn.Wind(
          sim_time = 20000  # dummy input
 
         # Call the function
-        correctDir!(set.dir_mode, set, T, wind, sim_time)
+        correctDir!(set.dir_mode, set, wf, wind, sim_time)
 
         # Validate
-        @test all(T.States_WF[:, 2] .== 255.0)
-        @test T.States_WF[2, 4] == 255.0
+        @test all(wf.States_WF[:, 2] .== 255.0)
+        @test wf.States_WF[2, 4] == 255.0
     end
 
     # @testset "correctDir! without 4th state column" begin

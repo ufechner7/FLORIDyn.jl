@@ -117,13 +117,13 @@ function centerline(States_OP, States_T, States_WF, paramFLORIS, D)
 end
 
 
-function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
+function InitStates(set::Settings, wf, Wind, InitTurb, paramFLORIS, Sim)
     # Unpack state arrays and parameters
-    States_OP   = copy(T.States_OP)
-    States_T    = copy(T.States_T)
-    States_WF   = copy(T.States_WF)
-    nT          = T.nT
-    nOP         = T.nOP
+    States_OP   = copy(wf.States_OP)
+    States_T    = copy(wf.States_T)
+    States_WF   = copy(wf.States_WF)
+    nT          = wf.nT
+    nOP         = wf.nOP
     deltaT      = Sim.time_step
     startTime   = Sim.start_time
 
@@ -153,7 +153,7 @@ function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
         States_WF[rangeOPs, 3] .= TI
 
         # Add orientation if used
-        if length(T.Names_WF) == 4
+        if length(wf.Names_WF) == 4
             States_WF[rangeOPs, 4] .= phiS
         end
 
@@ -165,17 +165,17 @@ function InitStates(set::Settings, T, Wind, InitTurb, paramFLORIS, Sim)
 
         # Crosswind position
         States_OP[rangeOPs, 5:6] = centerline(States_OP[rangeOPs, :], States_T[rangeOPs, :],
-                                              States_WF[rangeOPs, :], paramFLORIS, T.D[iT])
+                                              States_WF[rangeOPs, :], paramFLORIS, wf.D[iT])
 
         # Convert wind dir in fitting radians
         phiW = angSOWFA2world.(States_WF[rangeOPs, 2])
 
         # World coordinate position x0 and y0 including tower base and nacelle pos
         States_OP[rangeOPs, 1] .= cos.(phiW) .* States_OP[rangeOPs, 4] .-
-                                  sin.(phiW) .* States_OP[rangeOPs, 5] .+   T.posBase[iT, 1] .+ T.posNac[iT, 1]
+                                  sin.(phiW) .* States_OP[rangeOPs, 5] .+   wf.posBase[iT, 1] .+ wf.posNac[iT, 1]
         States_OP[rangeOPs, 2] .= sin.(phiW) .* States_OP[rangeOPs, 4] .+
-                                  cos.(phiW) .* States_OP[rangeOPs, 5] .+ T.posBase[iT, 2] .+ T.posNac[iT, 2]
-        States_OP[rangeOPs, 3] .= States_OP[rangeOPs, 6] .+ T.posBase[iT, 3] .+ T.posNac[iT, 3]
+                                  cos.(phiW) .* States_OP[rangeOPs, 5] .+ wf.posBase[iT, 2] .+ wf.posNac[iT, 2]
+        States_OP[rangeOPs, 3] .= States_OP[rangeOPs, 6] .+ wf.posBase[iT, 3] .+ wf.posNac[iT, 3]
     end
 
     return States_OP, States_T, States_WF
@@ -396,20 +396,20 @@ function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS
     return T_red_arr, T_aTI_arr, T_Ueff, T_weight
 end
 
-function getPower(T, M, paramFLORIS, Con)
-    a   = T.States_T[T.StartI, 1]
-    yaw = deg2rad.(T.States_T[T.StartI, 2])
+function getPower(wf, M, paramFLORIS, Con)
+    a   = wf.States_T[wf.StartI, 1]
+    yaw = deg2rad.(wf.States_T[wf.StartI, 2])
     
     Cp = 4a .* (1 .- a).^2
     ueff = M[:, 3]
 
     if Con.tanh_yaw
-        P = 0.5 * paramFLORIS.airDen * (T.D / 2).^2 * π .* Cp' .* ueff.^3 .* paramFLORIS.eta .* 
+        P = 0.5 * paramFLORIS.airDen * (wf.D / 2).^2 * π .* Cp' .* ueff.^3 .* paramFLORIS.eta .* 
             (cos.(yaw).^paramFLORIS.p_p)' .* 
             (0.5 * tanh((-yaw + deg2rad.(Con.yawRangeMax)) * 50) + 0.5) * 
             (-0.5 * tanh((-yaw + deg2rad.(Con.yawRangeMin)) * 50) + 0.5)
     else
-        P = 0.5 * paramFLORIS.airDen * (T.D / 2).^2 * π .* Cp' .* ueff.^3 .* paramFLORIS.eta .* 
+        P = 0.5 * paramFLORIS.airDen * (wf.D / 2).^2 * π .* Cp' .* ueff.^3 .* paramFLORIS.eta .* 
             (cos.(yaw).^paramFLORIS.p_p)'
     end
 
