@@ -96,3 +96,8 @@ WindDirTriple
 WindVelType
 WindVelMatrix
 ```
+
+## Other types
+```@docs
+States
+```

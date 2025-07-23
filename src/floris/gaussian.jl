@@ -18,6 +18,26 @@ function calcCt(a, _)
     return Ct
 end
 
+"""
+    States
+
+A mutable struct representing the state variables used in the Gaussian wake model. 
+This struct is intended to store and update the dynamic properties of the wake during simulation.
+
+# Fields
+- `T_names::Vector{String}`: Names of turbine state variables (e.g., "a", "yaw", "TI" for axial induction factor, yaw angle, and turbulence intensity)
+- `Turbine::Int`: Number of turbine state variables (length of T_names)
+- `OP_names::Vector{String}`: Names of observation point state variables (e.g., "x0", "y0", "z0", "x1", "y1", "z1" for 3D coordinates)
+- `OP::Int`: Number of observation point state variables (length of OP_names)
+- `WF_names::Vector{String}`: Names of wind field state variables (e.g., "wind_vel", "wind_dir", "TI0" for velocity, direction, and ambient turbulence)
+- `WF::Int`: Number of wind field state variables (length of WF_names)
+
+# Description
+This struct organizes the naming and counting of different types of state variables used in wind farm simulations:
+- Turbine states represent individual turbine properties and control settings
+- Observation point states track spatial coordinates for wake calculations
+- Wind field states capture environmental conditions affecting the entire wind farm
+"""
 mutable struct States
     T_names::Vector{String}
     Turbine::Int
