@@ -169,6 +169,29 @@ struct WindDirTriple
     MeanPull::Float64          # Scalar mean reversion factor
 end
 
+"""
+    WindFarm
+
+A mutable struct representing a wind farm. Fields can be specified using keyword arguments.
+
+# Fields
+- nT::Int64: Number of turbines
+- nOP::Int64: Number of operating points
+- States_WF::Matrix{Float64}: States of the wind farm
+- States_OP::Matrix{Float64}: States of the operating points
+- States_T::Matrix{Float64}: States of the turbines
+- posBase::Matrix{Float64}: Base positions of the turbines
+- posNac::Matrix{Float64}: Positions of the nacelles
+- D::Vector{Float64}: Diameters of the turbines
+- StartI::Matrix{Int}: Start indices for each turbine
+- intOPs::Vector{Matrix{Float64}}: Interpolated operating points
+- Weight::Vector{Vector{Float64}}: Weights for the operating points
+- dep::Vector{Vector{Int}}: Dependencies between turbines
+- red_arr::Matrix{Float64}: Reduced array for each turbine
+- Names_T::Vector{String}: Names
+- Names_WF::Vector{String}: Names
+- Names_OP::Vector{String}: Names of coordinates the operating points   
+"""
 @kwdef mutable struct WindFarm
     nT::Int64 = 0                                               # Number of turbines
     nOP::Int64 = 0                                              # Number of operating points
