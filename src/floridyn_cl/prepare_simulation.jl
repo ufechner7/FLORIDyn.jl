@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
+    prepareSimulation(set::Settings, wind, con, floridyn, floris, turbProp, sim)
 
 Prepares the simulation environment for a wind farm analysis using the provided settings and parameters.
 
@@ -10,8 +10,8 @@ Prepares the simulation environment for a wind farm analysis using the provided 
 - `set::Settings`: Simulation settings containing configuration options.
 - `wind`: Wind conditions or wind field data required for the simulation.
 - `con`: Controller or control parameters for the turbines.
-- `paramFLORIDyn`: Parameters specific to the FLORIDyn model.
-- `paramFLORIS`: Parameters specific to the FLORIS model.
+- `floridyn`: Parameters specific to the FLORIDyn model.
+- `floris`: Parameters specific to the FLORIS model.
 - `turbProp`: Properties of the turbines involved in the simulation.
 - `sim`: Simulation-specific parameters or state.
 
@@ -19,17 +19,17 @@ Prepares the simulation environment for a wind farm analysis using the provided 
 - `wind`: Updated with wind velocity, direction, turbulence intensity, and shear profile.
 - `con`: Updated with yaw data.
 - `sim`: Updated with the number of simulation steps.
-- `paramFLORIS`: May include additional parameters for the FLORIS model.
+- `floris`: May include additional parameters for the FLORIS model.
 
 # Returns
-- Returns the tuple `(T, wind, sim, con, paramFLORIS)` where:
+- Returns the tuple `(T, wind, sim, con, floris)` where:
   - `T`: Dictionary containing turbine states and positions.
   - `wind`: Updated wind conditions.
   - `sim`: Updated simulation parameters.
   - `con`: Updated controller parameters.
-  - `paramFLORIS`: Parameters for the FLORIS model.
+  - `floris`: Parameters for the FLORIS model.
 """
-function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
+function prepareSimulation(set::Settings, wind, con, floridyn, floris, turbProp, sim)
     loadDataWarnings = String[]
 
     # ========== WIND: Velocity ==========
@@ -190,15 +190,15 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
     T.D = t_data.D
 
     states = States()
-    if paramFLORIDyn.twf_model == "heterogeneous"
+    if floridyn.twf_model == "heterogeneous"
         push!(states.WF_names, "OP_ori")
         states.WF = length(states.WF_names)
-    elseif paramFLORIDyn.twf_model != "homogeneous"
-        error("Unknown TWF model $(paramFLORIDyn.twf_model). Use 'homogeneous' or 'heterogeneous'")
+    elseif floridyn.twf_model != "homogeneous"
+        error("Unknown TWF model $(floridyn.twf_model). Use 'homogeneous' or 'heterogeneous'")
     end
     
     # OP State and turbine initialization
-    n_op = paramFLORIDyn.n_op
+    n_op = floridyn.n_op
     T.States_OP = zeros(n_op *T.nT, states.OP)
     T.Names_OP = states.OP_names
     T.States_T  = zeros(n_op *T.nT, states.Turbine)
@@ -210,8 +210,8 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
     T.red_arr   = ones(T.nT, T.nT)
 
     # # deltaUW fallback
-    # if !haskey(paramFLORIDyn, :deltaUW)
-    #     paramFLORIDyn.deltaUW = paramFLORIDyn.deltaDW
+    # if !haskey(floridyn, :deltaUW)
+    #     floridyn.deltaUW = floridyn.deltaDW
     # end
 
     # ========== Control Setup ==========
@@ -240,11 +240,11 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
     # end
 
     # # ========== Init State ===========
-   T.States_OP, T.States_T, T.States_WF = InitStates(set, T, wind, turbProp.Init_States, paramFLORIS, sim)
+   T.States_OP, T.States_T, T.States_WF = InitStates(set, T, wind, turbProp.Init_States, floris, sim)
 
     # # ========== Simulation Setup ==========
     sim.n_sim_steps = length(sim.start_time:sim.time_step:sim.end_time)
-    paramFLORIS.rotor_points = sim.rotor_points
+    floris.rotor_points = sim.rotor_points
 
     # # ========== Visualization ==========
     # if Vis.FlowField.Plot.Online
@@ -273,5 +273,5 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
         error("Data not loaded properly. Please provide the required files.")
     end
 
-    return T, wind, sim, con, paramFLORIS
+    return T, wind, sim, con, floris
 end
