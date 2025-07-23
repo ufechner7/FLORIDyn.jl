@@ -182,12 +182,12 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
 
     # ========== Wind Farm Setup ==========
     T = WindFarm()
-   T.posBase = turbProp.Pos
-   T.nT = size(turbProp.Pos, 1)
-    
-    t_data = getTurbineData(turbProp.Type)
-   T.posNac = t_data.NacPos
-   T.D = t_data.D
+    T.posBase = turbProp.Pos
+    T.nT = size(turbProp.Pos, 1)
+        
+        t_data = getTurbineData(turbProp.Type)
+    T.posNac = t_data.NacPos
+    T.D = t_data.D
 
     states = States()
     if paramFLORIDyn.twf_model == "heterogeneous"
@@ -199,15 +199,15 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
     
     # OP State and turbine initialization
     n_op = paramFLORIDyn.n_op
-   T.States_OP = zeros(n_op *T.nT, states.OP)
-   T.Names_OP = states.OP_names
-   T.States_T  = zeros(n_op *T.nT, states.Turbine)
-   T.Names_T   = states.T_names
-   T.States_WF = zeros(n_op *T.nT, states.WF)
-   T.Names_WF  = states.WF_names
-   T.StartI    = collect(1:n_op:(n_op *T.nT))'
-   T.nOP       = n_op
-   T.red_arr   = ones(T.nT, T.nT)
+    T.States_OP = zeros(n_op *T.nT, states.OP)
+    T.Names_OP = states.OP_names
+    T.States_T  = zeros(n_op *T.nT, states.Turbine)
+    T.Names_T   = states.T_names
+    T.States_WF = zeros(n_op *T.nT, states.WF)
+    T.Names_WF  = states.WF_names
+    T.StartI    = collect(1:n_op:(n_op *T.nT))'
+    T.nOP       = n_op
+    T.red_arr   = ones(T.nT, T.nT)
 
     # # deltaUW fallback
     # if !haskey(paramFLORIDyn, :deltaUW)
@@ -240,7 +240,7 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
     # end
 
     # # ========== Init State ===========
-   T.States_OP,T.States_T,T.States_WF = InitStates(set, T, wind, turbProp.Init_States, paramFLORIS, sim)
+   T.States_OP, T.States_T, T.States_WF = InitStates(set, T, wind, turbProp.Init_States, paramFLORIS, sim)
 
     # # ========== Simulation Setup ==========
     sim.n_sim_steps = length(sim.start_time:sim.time_step:sim.end_time)
