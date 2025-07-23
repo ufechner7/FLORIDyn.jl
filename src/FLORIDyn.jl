@@ -19,7 +19,7 @@ export Velocity_InterpTurbine, Velocity_InterpTurbine_wErrorCov, Velocity_RW_wit
 export Velocity_ZOH_wErrorCov
 
 export WindDirType, WindDirMatrix, WindDirTriple
-export WindVelType, WindVelMatrix
+export WindVelType, WindVelMatrix, WindFarm
 
 export Direction_All, Direction_Influence, Direction_None, Direction_wGaspariAndCohn
 export Velocity_Influence, Velocity_None, Velocity_wGaspariAndCohn

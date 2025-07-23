@@ -35,17 +35,17 @@ function pertubationOfTheWF!(T, Wind)
     
     # Velocity
     if Wind.pertubation.vel
-       T.States_WF[:, 1] .+= Wind.pertubation.vel_sigma * randn(T[:nOP] *T.nT)
+       T.States_WF[:, 1] .+= Wind.pertubation.vel_sigma * randn(T.nOP *T.nT)
     end
 
     # Direction
     if Wind.pertubation.dir
-       T.States_WF[:, 2] .+= Wind.pertubation.dir_sigma * randn(T[:nOP] *T.nT)
+       T.States_WF[:, 2] .+= Wind.pertubation.dir_sigma * randn(T.nOP *T.nT)
     end
 
     # Turbulence Intensity
     if Wind.pertubation.ti
-       T.States_WF[:, 3] .+= Wind.pertubation.ti_sigma * randn(T[:nOP] *T.nT)
+       T.States_WF[:, 3] .+= Wind.pertubation.ti_sigma * randn(T.nOP *T.nT)
     end
 
     return nothing
@@ -169,7 +169,7 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
         iTWFState = copy(T.States_WF[T.StartI[iT], :])
 
         if hasfield(typeof(T), :C_Vel)
-            iTWFState[1] = dot(T[:C_Vel][iT, :],T.States_WF[:, 1])
+            iTWFState[1] = dot(T.C_Vel[iT, :],T.States_WF[:, 1])
         end
 
         if hasfield(typeof(T), :C_Dir)
@@ -180,7 +180,7 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
             # Single turbine case
             T_red_arr, _, _ = runFLORIS(
                 set,
-                (T[:posBase][iT,:] +T.posNac[iT,:])',
+                (T.posBase[iT,:] +T.posNac[iT,:])',
                 iTWFState',
                T.States_T[T.StartI[iT], :]',
                T.D[iT],
@@ -195,20 +195,20 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
         # Multi-turbine setup
         tmp_nT = length(T.dep[iT]) + 1
 
-        tmp_Tpos = repeat(T[:posBase][iT,:]' +T.posNac[iT,:]', tmp_nT)
+        tmp_Tpos = repeat(T.posBase[iT,:]' +T.posNac[iT,:]', tmp_nT)
         tmp_WF   = repeat(iTWFState', tmp_nT)
-        tmp_Tst  = repeat((T[:States_T][T.StartI[iT], :])', tmp_nT)
+        tmp_Tst  = repeat((T.States_T[T.StartI[iT], :])', tmp_nT)
 
         tmp_D = if T.D[end] > 0
-            vcat(T[:D][T.dep[iT]],T.D[iT])
+            vcat(T.D[T.dep[iT]],T.D[iT])
         else
            T.D
         end
 
         for iiT in 1:(tmp_nT - 1)
-            OP1_i = Int(T[:intOPs][iT][iiT, 1])  # Index OP 1
+            OP1_i = Int(T.intOPs[iT][iiT, 1])  # Index OP 1
             OP1_r =T.intOPs[iT][iiT, 2]       # Ratio OP 1
-            OP2_i = Int(T[:intOPs][iT][iiT, 3])  # Index OP 2
+            OP2_i = Int(T.intOPs[iT][iiT, 3])  # Index OP 2
             OP2_r =T.intOPs[iT][iiT, 4]       # Ratio OP 2
             # println("OP1_i: ", OP1_i, " OP2_i: ", OP2_i, " iiT: ", iiT)
             # println("OP1_r: ", OP1_r, " OP2_r: ", OP2_r)
@@ -222,7 +222,7 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
             si =T.StartI[T.dep[iT][iiT]]
 
             if hasfield(typeof(T), :C_Vel)
-                C_weights = T[:C_Vel][iT, si:(si +T.nOP - 1)]
+                C_weights = T.C_Vel[iT, si:(si +T.nOP - 1)]
                 C_weights ./= sum(C_weights)
                 tmp_WF[iiT, 1] = dot(C_weights,T.States_WF[si:si + T.nOP - 1, 1])
             end
@@ -276,7 +276,7 @@ function setUpTmpWFAndRun(set::Settings, T, paramFLORIS, Wind)
 
         M[iT, :] = [T_red, T_addedTI, T_Ueff]
 
-        wS = sum(T[:Weight][iT])
+        wS = sum(T.Weight[iT])
         if wS > 0
            T.Weight[iT] =T.Weight[iT] ./ wS
         else
@@ -314,7 +314,8 @@ function FLORIDynCL(set::Settings, T, Wind, Sim, Con, paramFLORIDyn, paramFLORIS
         # ========== Get FLORIS reductions ==========
         T.dep = findTurbineGroups(T, paramFLORIDyn)
         T.intOPs = interpolateOPs(T)
-        tmpM, T = setUpTmpWFAndRun(set, T, paramFLORIS, Wind)
+        a, b = setUpTmpWFAndRun(set, T, paramFLORIS, Wind)
+        tmpM, T = a, b
         M[(it-1)*nT+1 : it*nT, 2:4] .= tmpM
         M[(it-1)*nT+1 : it*nT, 1]   .= SimTime
         T.States_T[T.StartI, 3] = tmpM[:, 2]

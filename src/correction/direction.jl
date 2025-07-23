@@ -49,7 +49,7 @@ function correctDir!(::Direction_Interpolation, set::Settings, T, Wind, SimTime)
    T.States_WF[:, 2] .= phi[1]
     # OP Orientation = turbine wind direction
     if size(T.States_WF, 2) == 4
-       T.States_WF[T.StartI, 4] = phi[1]
+       T.States_WF[T.StartI, 4] .= phi[1]
     end
     return nothing
 end
