@@ -22,7 +22,7 @@ T, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, 
 T = initSimulation(T, wind, sim, con, floridyn, floris)
 
 @time T, M, Mint = FLORIDynCL(set, T, wind, sim, con, floridyn, floris)
-# 0.22 s on Desktop, 0.40 s with MATLAB
+# 0.16 s on Desktop, 0.40 s with MATLAB
 
 @info "Type 'M |> pager' to see the results of the simulation."
 @info "Type 'q' to exit the pager."

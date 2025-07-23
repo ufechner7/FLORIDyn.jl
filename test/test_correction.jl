@@ -4,12 +4,6 @@
 using FLORIDyn
 using Test
 
-# Define a mock T object
-mutable struct MockT
-    States_WF::Matrix{Float64}
-    StartI::Int
-end
-
 correction = FLORIDyn.WindCorrection("None", "All", "None")
 pertubation = FLORIDyn.WindPerturbation(0.0, 0.2, 0.0, 0.5, 0.0, 0.005)
 shear = FLORIDyn.WindShear(0.08, 1.0)
@@ -38,16 +32,22 @@ wind = FLORIDyn.Wind(
         # Setup
         set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_All(), 
                     Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA())
-        mock_t = MockT(zeros(3, 4), 2)
-        T = Dict(:States_WF => mock_t.States_WF, :StartI => mock_t.StartI, :nT => 3)
-        sim_time = 20000  # dummy input
+        T = WindFarm(
+            States_WF = zeros(3, 4),
+            StartI = [2 2; 3 3],
+            nT = 3,
+            D = [126.0, 126.0, 126.0],
+            nOP = 4,
+            intOPs = [[1 0.5 2 0.5; 2 0.5 3 0.5]]
+        )
+         sim_time = 20000  # dummy input
 
         # Call the function
         correctDir!(set.dir_mode, set, T, wind, sim_time)
 
         # Validate
-        @test all(mock_t.States_WF[:, 2] .== 255.0)
-        @test mock_t.States_WF[2, 4] == 255.0
+        @test all(T.States_WF[:, 2] .== 255.0)
+        @test T.States_WF[2, 4] == 255.0
     end
 
     # @testset "correctDir! without 4th state column" begin

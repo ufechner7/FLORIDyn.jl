@@ -3,6 +3,11 @@
 ```@meta
 CurrentModule = FLORIDyn
 ```
+## The Wind Farm Simulation struct
+```@docs
+WindFarm
+```
+
 ## Markers defining the wind velocity model
 An instance of these structs needs to be passed to the functions that calculate the wind velocity. They are
 all subtypes of [`VelModel`](@ref)
