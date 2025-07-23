@@ -18,6 +18,8 @@ VelModel
 Sim
 Wind
 Con
+Floris
+FloriDyn
 ```
 
 # Settings

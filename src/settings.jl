@@ -119,6 +119,26 @@ A mutable struct for configuration settings.
     tanh_yaw::Bool = false
 end
 
+"""
+    Floris
+
+A mutable struct representing the settings for the FLORIDyn simulation. 
+
+# Fields
+- `alpha::Float64`: The alpha parameter for the FLORIS model.
+- `beta::Float64`: The beta parameter for the FLORIS model.
+- `k_a::Float64`: The k_a parameter for the FLORIS model.
+- `k_b::Float64`: The k_b parameter for the FLORIS model.
+- `k_fa::Float64`: The k_fa parameter for the FLORIS model.
+- `k_fb::Float64`: The k_fb parameter for the FLORIS model.
+- `k_fc::Float64`: The k_fc parameter for the FLORIS model.
+- `k_fd::Float64`: The k_fd parameter for the FLORIS model.
+- `eta::Int`: The eta parameter for the FLORIS model.
+- `p_p::Float64`: The p_p parameter for the FLORIS model.
+- `airDen::Float64`: The air density for the FLORIS model.
+- `TIexp::Int`: The turbulence intensity exponent for the FLORIS model.
+- `rotor_points::Union{Nothing, Int64}`: Optional number of rotor points.
+"""
 @with_kw mutable struct Floris
     alpha::Float64
     beta::Float64
@@ -135,6 +155,19 @@ end
     rotor_points::Union{Nothing, Int64} = nothing
 end
 
+"""
+    FloriDyn
+
+A structure representing the settings for the FLORIDyn simulation environment.
+
+# Fields
+- `n_op::Int`: The number of operating points.
+- `deltaUW::Float64`: The delta U wind speed perturbation.
+- `deltaDW::Float64`: The delta D wind direction perturbation.
+- `deltaCW::Float64`: The delta C wind turbulence intensity perturbation.
+- `dynStateChange::String`: The type of dynamic state change, e.g., "Constant", "Interpolation".
+- `twf_model::String`: The type of TWF (Turbine Wake Flow) model used, e.g., "Gaussian", "FLORIDyn".
+"""
 @with_kw struct FloriDyn
     n_op::Int
     deltaUW::Float64
@@ -143,7 +176,6 @@ end
     dynStateChange::String
     twf_model::String
 end
-
 
 """
     setup(filename)
@@ -158,8 +190,8 @@ Initializes or configures the system using the provided `filename`. The `filenam
   - `wind`: An instance of the [`Wind`](@ref) struct containing wind-related parameters.
   - `sim`: An instance of the [`Sim`](@ref) struct containing simulation parameters.
   - `con`: An instance of the [`Con`](@ref) struct containing controller parameters.
-  - `floris`: An instance of the `Floris` struct containing FLORIS model parameters.
-  - `florydyn`: An instance of the `FloryDyn` struct containing FLORIDyn model parameters.
+  - `floris`: An instance of the [`Floris`](@ref) struct containing FLORIS model parameters.
+  - `floridyn`: An instance of the [`FloriDyn`](@ref) struct containing FLORIDyn model parameters.
 """
 function setup(filename)
     data = YAML.load_file(filename)
@@ -182,8 +214,8 @@ end
 Create and return a [`Settings`](@ref) object using the provided `wind` and `sim` parameters.
 
 # Arguments
-- `wind::Wind`: An instance of the `Wind` struct containing wind-related parameters.
-- `sim`: An instance of the `Sim` struct containing the simulation parameters.
+- `wind::Wind`: An instance of the [`Wind`](@ref) struct containing wind-related parameters.
+- `sim`: An instance of the [`Sim`](@ref) struct containing the simulation parameters.
 
 # Returns
 - A `Settings` struct configured with the given wind and simulation parameters.
