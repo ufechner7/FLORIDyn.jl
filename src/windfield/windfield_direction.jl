@@ -13,7 +13,7 @@ Return wind direction in SOWFA-degrees for the requested turbine(s).
 
 # Arguments
 - `WindDir`: The wind direction (scalar).
-- `iT`: Index or indices of the turbines (can be an integer or array).
+- `iT`: Index or indices of the turbines (can be an integer or vector).
 - `_`: Placeholder for unused argument.
 
 # Returns
@@ -39,28 +39,27 @@ function getWindDirT(::Direction_Constant_wErrorCov, WindDir::WindDirType, iT)
     n = length(iT)
     phi = fill(WindDir.Data, n)
     # randn(RNG,n) gives a vector of n normal random numbers
-    # WindDir.CholSig should
     @assert issquare(WindDir.CholSig)
-    phi .= phi .+ WindDir.CholSig * randn(RNG,n)
+    phi .+= WindDir.CholSig * randn(RNG,n)
     return phi
 end
 
 """
-    getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, WindDir, iT, t)
+    getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, WindDir::Matrix, iT, t)
 
 # Direction_EnKF_InterpTurbine 
 
 Return wind direction in SOWFA-deg for the requested turbine(s).
 
 # Arguments
-- `WindDir::AbstractMatrix`: Matrix where each row is [time, phi_T0, phi_T1, ... phi_Tn]
+- `WindDir::Matrix`: Matrix where each row is [time, phi_T0, phi_T1, ... phi_Tn]
 - `iT`: Index or indices of the turbines (can be integer or vector)
 - `t`: Time of request (scalar)
 
 # Returns
 - `phi`: Wind direction(s) at time `t` for turbine(s) `iT`
 """
-function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, WindDir::AbstractMatrix, iT, t)
+function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, WindDir::Matrix, iT, t)
     times = WindDir[:, 1]
     n_turbines = size(WindDir, 2) - 1
 
@@ -84,7 +83,7 @@ function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, WindDir::AbstractMatri
 end
 
 """
-    getWindDirT(::Direction_Interpolation, WindDir, iT, t)
+    getWindDirT(::Direction_Interpolation, WindDir::Matrix, iT, t)
 
 # Direction_Interpolation 
 
@@ -92,14 +91,14 @@ Returns the wind direction at the respective turbine(s).
 Uniform interpolation version - all turbines experience the same changes.
 
 Arguments:
-- WindDir: Nx2 Array, columns are time and phi (wind direction)
-- iT: single value or array with turbine index/indices
+- WindDir::Matrix: columns are time and phi (wind direction)
+- iT: single value or vector with turbine index/indices
 - t: time of request
 
 Returns:
-- phi: Array of wind directions for each turbine in iT
+- phi: Vector of wind directions for each turbine in iT
 """
-function getWindDirT(::Direction_Interpolation, WindDir::AbstractMatrix, iT, t)
+function getWindDirT(::Direction_Interpolation, WindDir::Matrix, iT, t)
     times = WindDir[:, 1]
     phis = WindDir[:, 2]
 
@@ -128,11 +127,11 @@ Uniform interpolation version - all turbines experience the same changes.
 
 Arguments:
 - WindDir::WindDirMatrix: [WindDirMatrix](@ref)
-- iT: single value or array with turbine index/indices
+- iT: single value or vector with turbine index/indices
 - t: time of request
 
 Returns:
-- phi: Array of wind directions for each turbine in iT
+- phi: Vector of wind directions for each turbine in iT
 """
 function getWindDirT(::Direction_Interpolation_wErrorCov, WindDir::WindDirMatrix, iT, t)
     # Ensure t is within bounds
@@ -171,19 +170,19 @@ function interp(x, y, t)
 end
 
 """
-    getWindDirT(::Direction_InterpTurbine, WindDir, iT, t)
+    getWindDirT(::Direction_InterpTurbine, WindDir::Matrix, iT, t)
 
 Return wind direction in SOWFA-degrees for the requested turbine(s).
 
 # Arguments
-- `WindDir::Matrix{Float64}`: Each row is `[time, phi_T0, phi_T1, ...]`.
+- `WindDir::Matrix`: Each row is `[time, phi_T0, phi_T1, ...]`.
 - `iT: Index or indices of turbines.
 - `t`: Time of request.
 
 # Returns
 - `phi::Vector{Float64}`: Wind direction(s) for the selected turbine(s) at time `t`.
 """
-function getWindDirT(::Direction_InterpTurbine, WindDir::Matrix{Float64}, iT, t)
+function getWindDirT(::Direction_InterpTurbine, WindDir::Matrix, iT, t)
     # Check time bounds
     tmin = WindDir[1, 1]
     tmax = WindDir[end, 1]
@@ -205,15 +204,13 @@ function getWindDirT(::Direction_InterpTurbine, WindDir::Matrix{Float64}, iT, t)
 end
 
 """
-    getWindDirT(::Direction_InterpTurbine_wErrorCov, WindDir, iT, t)
+    getWindDirT(::Direction_InterpTurbine_wErrorCov, WindDir::WindDirMatrix, iT, t)
 
 Return wind direction in SOWFA-deg for the requested turbine(s).
 
 # Arguments
-- `WindDir`: A struct with fields:
-    - `Data` (Matrix): Each row is [time, phi_T0, phi_T1, ... phi_Tn]
-    - `CholSig` (Matrix): Cholesky factor of the covariance matrix
-- `iT`: Index or indices of the turbines (can be integer or array)
+- `WindDir::WindDirMatrix`: See: [`WindDirMatrix`](@ref)
+- `iT`: Index or indices of the turbines (can be integer or vector)
 - `t`: Time of request (Float64)
 
 # Returns
