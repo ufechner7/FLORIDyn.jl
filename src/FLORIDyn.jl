@@ -133,8 +133,8 @@ end
     struct WindDirMatrix
 
 # Fields
-- Data::Matrix{Float64}:    Columns [time, phi] or [time, phi_T0, phi_T1, ... phi_Tn]
-- CholSig::Matrix{Float64}: Cholesky factor of covariance matrix (nT x nT)
+- `Data`::Matrix{Float64}:    Columns [time, phi] or [time, `phi_T0`, `phi_T1`, ... `phi_Tn`]
+- `CholSig`::Matrix{Float64}: Cholesky factor of covariance matrix (nT x nT)
 """
 struct WindDirMatrix
     Data::Matrix{Float64}      # Nx2 matrix: column 1 = time, column 2 = phi

@@ -48,16 +48,6 @@ An instance of these structs needs to be passed to the functions that calculate 
  TI_InterpTurbine
 ```
 
-## Markers defining the turbulence correction
-An instance of these structs needs to be passed to the functions that correct turbulence intensity. They are
-all subtypes of [`TurbulenceCorrection`](@ref)
-
-```@docs
-TI_Influence
-TI_None
-TI_wGaspariAndCohn
-```
-
 ## Markers defining the velocity correction
 An instance of these structs needs to be passed to the functions that correct wind velocity. They are
 all subtypes of [`VelCorrection`](@ref)
@@ -77,6 +67,16 @@ Direction_All
 Direction_Influence
 Direction_None
 Direction_wGaspariAndCohn
+```
+
+## Markers defining the turbulence correction
+An instance of these structs needs to be passed to the functions that correct turbulence intensity. They are
+all subtypes of [`TurbulenceCorrection`](@ref)
+
+```@docs
+TI_Influence
+TI_None
+TI_wGaspariAndCohn
 ```
 
 ## Markers defining the controller

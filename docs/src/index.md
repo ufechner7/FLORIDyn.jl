@@ -15,7 +15,7 @@ His code uses one engineering model from the quasi static wind farm simulation s
 - Apply heterogeneous and time-varying wind speeds and directions
 - Test different modeling approaches
 
-## Status:
+## Status
 The basic example works.
 ```julia
 include("examples/main.jl")
@@ -25,7 +25,7 @@ include("examples/main.jl")
 - add more unit tests
 - implement the missing functions
 
-A Python version of FLORIDyn is available at https://github.com/TUDelft-DataDrivenControl/OFF .
+A Python version of FLORIDyn is available at [https://github.com/TUDelft-DataDrivenControl/OFF](https://github.com/TUDelft-DataDrivenControl/OFF) .
 
 ## Installation
 Install [Julia 1.10](https://ufechner7.github.io/2024/08/09/installing-julia-with-juliaup.html) or later, if you haven't already.
@@ -46,7 +46,7 @@ at the Julia prompt. You can run the unit tests with the command:
 pkg"test FLORIDyn"
 ```
 
-# References
+## References
 Citation of the FLORIDyn model:
 FLORIDyn - A dynamic and flexible framework for real-time wind farm control, M. Becker, D. Allaerts, J.W. van Wingerden, 2022, http://doi.org/10.1088/1742-6596/2265/3/032103
 

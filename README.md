@@ -46,7 +46,10 @@ at the Julia prompt. You can run the unit tests with the command:
 pkg"test FLORIDyn"
 ```
 
-# References
+## Documentation
+The documentation is available [here](https://ufechner7.github.io/FLORIDyn.jl/dev/).
+
+## References
 Citation of the FLORIDyn model:
 FLORIDyn - A dynamic and flexible framework for real-time wind farm control, M. Becker, D. Allaerts, J.W. van Wingerden, 2022, http://doi.org/10.1088/1742-6596/2265/3/032103
 
