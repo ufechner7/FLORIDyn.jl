@@ -181,7 +181,7 @@ function prepareSimulation(set::Settings, wind, con, paramFLORIDyn, paramFLORIS,
     end
 
     # ========== Turbine Setup ==========
-    T = Dict()
+    T = Dict{Symbol, Any}()
     T[:posBase] = turbProp.Pos
     T[:nT] = size(turbProp.Pos, 1)
     
