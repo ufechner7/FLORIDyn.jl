@@ -321,16 +321,11 @@ applying control strategies and updating turbine states over time.
 
 """
 function runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, floridyn::FloriDyn, floris::Floris)
-    # OUTPUTS:
-    # wf := Simulation state (OP states, Turbine states, wind field states(OPs))
-    # md := Measurements from the simulation (Power, tbd)
-    # mi := Interaction matrices for the turbines
-
     nT      = wf.nT
     nSim    = sim.n_sim_steps
     M       = zeros(nSim * nT, 6)
     M[:, 1] .= 1.0  # Set first column to 1
-    M_int   = Vector{Any}(undef, nSim)
+    M_int   = Vector{Matrix{Float64}}(undef, nSim)
 
     SimTime = sim.start_time
 
@@ -362,9 +357,9 @@ function runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con
         M[(it-1)*nT+1 : it*nT, 5] = wf.States_WF[wf.StartI, 1]
 
         # ========== Get Control settings ==========
-       wf.States_T[wf.StartI, 2] = (
-           wf.States_WF[wf.StartI, 2] .-
-            getYaw(set.control_mode, con.yaw_data, collect(1:nT), SimTime)'
+        wf.States_T[wf.StartI, 2] = (
+            wf.States_WF[wf.StartI, 2] .-
+                getYaw(set.control_mode, con.yaw_data, collect(1:nT), SimTime)'
         )
 
         # ========== Calculate Power ==========
