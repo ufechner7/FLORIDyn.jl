@@ -1,0 +1,111 @@
+# Developer notes
+
+This page contains information for developers who want to contribute to or extend FLORIDyn.jl.
+
+## Project structure
+
+The FLORIDyn.jl package is organized into several modules:
+
+- `src/` - Main source code
+  - `controller/` - Controller implementations
+  - `correction/` - Wake correction models
+  - `floridyn_cl/` - Main simulation loop
+  - `floris/` - FLORIS model implementations
+  - `windfield/` - Wind field modeling
+- `test/` - Test suite
+- `examples/` - Example scripts
+- `docs/` - Documentation source
+
+## Development workflow
+
+### Setting up the development environment
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ufechner7/FLORIDyn.jl.git
+   cd FLORIDyn.jl
+   ```
+
+2. Activate the project environment:
+   ```julia
+   using Pkg
+   Pkg.activate(".")
+   Pkg.instantiate()
+   ```
+
+### Running tests
+
+To run the full test suite:
+```julia
+using Pkg
+Pkg.test()
+```
+
+To run specific tests:
+```julia
+include("test/test_floris.jl")
+```
+
+### Building documentation
+
+To build the documentation locally:
+```julia
+include("scripts/build_docu.jl")
+```
+
+## Code style and conventions
+
+### Naming conventions
+- Use descriptive variable names
+- Follow Julia naming conventions (lowercase with underscores for functions and variables)
+- Type names should use CamelCase
+- Constants should be ALL_CAPS
+
+### Code organization
+- Keep functions focused and small
+- Use meaningful docstrings for all exported functions
+- Include type annotations where helpful for clarity
+- Follow the existing module structure
+
+### Testing
+- Write tests for new functionality
+- Ensure all tests pass before submitting pull requests
+- Include edge cases in test coverage
+- Use descriptive test names
+
+## Contributing
+
+### Pull requests
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Ensure all tests pass
+6. Update documentation if needed
+7. Submit a pull request
+
+### Issues
+When reporting issues, please include:
+- Julia version
+- FLORIDyn.jl version
+- Minimal working example
+- Error messages and stack traces
+
+## Architecture overview
+
+### Core simulation loop
+The main simulation is handled by the `floridyn_cl` module, which implements the time-stepping algorithm for wake evolution.
+
+### Wake models
+The package supports multiple wake models through abstract types:
+- `VelModel` - Velocity deficit models
+- `DirModel` - Wake deflection models
+- `TurbulenceModel` - Turbulence intensity models
+
+### Settings system
+Configuration is handled through YAML files that are parsed into Julia structs. See the Settings documentation for details.
+
+## Performance considerations
+- The simulation uses in-place operations where possible to minimize allocations
+- Key loops are optimized for performance
+- Consider using `@profile` and `BenchmarkTools.jl` when optimizing code

@@ -29,6 +29,7 @@ makedocs(;
         "Exported Types" => "types.md",
         "Exported Functions" => "functions.md",
         "Settings" => "settings.md",
+        "Developer notes" => "developer.md",
     ],
 )
 
