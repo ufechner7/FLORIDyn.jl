@@ -16,6 +16,7 @@ The FLORIDyn.jl package is organized into several modules:
 - `examples/` - Example scripts
 - `docs/` - Documentation source
 - `data/` - Example data files and configuration settings
+- `bin` - Bash scripts to start Julia and for statistics
 
 ## Development workflow
 
@@ -143,4 +144,4 @@ Configuration is handled through YAML files that are parsed into Julia structs. 
 - The simulation uses in-place operations where possible to minimize allocations
 - Key loops are optimized for performance
 - Consider using `@profile` and `BenchmarkTools.jl` when optimizing code
-- Read the [performane tips] (https://docs.julialang.org/en/v1/manual/performance-tips/)
+- Read the [performance tips] (https://docs.julialang.org/en/v1/manual/performance-tips/)
