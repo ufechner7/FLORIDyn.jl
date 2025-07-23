@@ -8,6 +8,8 @@
 
 An abstract type representing a direction correction model for wind field adjustments.
 Subtypes of `DirCorrection` should implement specific correction methods for wind direction.
+
+See: [Markers defining the direction correction](@ref) for more details.
 """
 abstract type DirCorrection end
 

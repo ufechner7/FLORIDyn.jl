@@ -8,6 +8,8 @@
 
 An abstract type representing a velocity correction model for wind field adjustments.
 Subtypes of `VelCorrection` should implement specific correction methods for wind velocity.
+
+See: [Markers defining the velocity correction](@ref) for more details.
 """
 abstract type VelCorrection end
 
