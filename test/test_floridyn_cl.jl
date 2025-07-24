@@ -73,6 +73,14 @@ using FLORIDyn, Test
         wind.pertubation.vel = true
         perturbationOfTheWF!(wf, wind)
         @test ! structs_equal(wf_old, wf; prn=false)
+        wind.pertubation.vel = false
+        wind.pertubation.dir = true
+        perturbationOfTheWF!(wf, wind)
+        @test ! structs_equal(wf_old, wf; prn=false)
+        wind.pertubation.dir = false
+        wind.pertubation.ti = true
+        perturbationOfTheWF!(wf, wind)
+        @test ! structs_equal(wf_old, wf; prn=false)
     end
 end
 nothing
