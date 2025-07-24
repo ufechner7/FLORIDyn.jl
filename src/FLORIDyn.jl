@@ -37,7 +37,7 @@ export discretizeRotor, calcCt, States
 export turbineArrayProperties
 export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimulation
 export runFLORIS, init_states
-export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, interpolateOPs, perturbationOfTheWF!
+export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, interpolateOPs, perturbationOfTheWF!, findTurbineGroups
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
