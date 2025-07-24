@@ -20,14 +20,14 @@ using FLORIDyn, Test
         # Test 5: deg_SOWFA = 360 should give rad_World = deg2rad(-90)
         @test isapprox(angSOWFA2world(360), deg2rad(-90))
     end
-    function structs_equal(a::T, b::T) where T
+    function structs_equal(a::T, b::T; prn=true) where T
         result = true
         fields = fieldnames(T)
         for f in fields
             val_a = getfield(a, f)
             val_b = getfield(b, f)
             if val_a != val_b
-                println("Field $(f): a = $(val_a), b = $(val_b)")
+                prn && println("Field $(f): a = $(val_a), b = $(val_b)")
                 result = false
             end
         end
@@ -59,7 +59,6 @@ using FLORIDyn, Test
         rm(path; force=true)
     end
     @testset "perturbationOfTheWF!" begin
-        global wf, wf_old, wind
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
         wind, sim, con, floris, floridyn = setup(settings_file)
@@ -73,7 +72,7 @@ using FLORIDyn, Test
         @test structs_equal(wf_old, wf)
         wind.pertubation.vel = true
         perturbationOfTheWF!(wf, wind)
-        @test ! structs_equal(wf_old, wf)
+        @test ! structs_equal(wf_old, wf; prn=false)
     end
 end
 nothing

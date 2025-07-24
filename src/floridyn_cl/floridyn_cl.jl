@@ -18,7 +18,7 @@ function initSimulation(wf::Union{Nothing, WindFarm}, sim::Sim)
         if sim.save_init_state
             # Save the initialization state to a file
             path = joinpath(sim.path_to_data, "T_init.jld2")
-            @info "Saving windfield as $path ..."
+            @info "Saving windfield as $(path) ..."
             jldsave(path; wf)
         end
     elseif sim_init == "load"
