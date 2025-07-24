@@ -333,11 +333,11 @@ For each turbine and its influencing upstream turbines:
 # Mathematical Description
 The interpolation uses linear projection for weight computation:
 ```
-d = (b⃗ - a⃗) · (c⃗ - a⃗) / |b⃗ - a⃗|²
+d = (b - a) · (c - a) / |b - a|²
 ```
 where:
-- `a⃗`, `b⃗` are positions of the two closest operational points
-- `c⃗` is the target turbine position
+- `a`, `b` are positions of the two closest operational points
+- `c` is the target turbine position
 - `d` is the projection parameter (clamped to [0,1])
 
 # Notes
