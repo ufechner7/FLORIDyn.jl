@@ -22,7 +22,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 wf = initSimulation(wf, sim)
 
 @time wf, md, mi = runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
-# 0.16 s on Desktop, 0.40 s with MATLAB
+# 0.15 s on Desktop, 0.39 s with MATLAB
 
 @info "Type 'md |> pager' to see the results of the simulation."
 @info "Type 'q' to exit the pager."
