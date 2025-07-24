@@ -110,7 +110,6 @@ using FLORIDyn, Test
         RPs = [881.928  -185.932  -61.0219; 
                886.024  -170.647  -43.9671; 
                888.637  -160.896  -23.0056] # Test with 3 downstream distances
-        a   = [1.0, 1.0, 1.0]                 # Dummy placeholder, not used
         C_T = [0.8844, 0.8844, 0.8844]      # Thrust coefficients
         yaw = [0.0, 0.0, 0.0]               # Yaw angles
         TI  = [0.06, 0.06, 0.06]             # Ambient intensity
@@ -125,9 +124,23 @@ using FLORIDyn, Test
             beta::Float64
         end
 
-        param = Params(0.3837, 0.003678, 2.32, 0.154)
+        floris = FLORIDyn.Floris(
+            alpha = 2.32,
+            beta = 0.154,
+            k_a = 0.3837,
+            k_b = 0.003678,
+            k_fa = 0.73,
+            k_fb = 0.8325,
+            k_fc = 0.0325,
+            k_fd = -0.32,
+            eta = 1,
+            p_p = 2.2,
+            airDen = 1.225,
+            TIexp = 3,
+            rotor_points = 50
+        )
 
-        sig_y, sig_z, C_T_out, x_0, delta, pc_y, pc_z = getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
+        sig_y, sig_z, C_T_out, x_0, delta, pc_y, pc_z = getVars(RPs, C_T, yaw, TI, TI0, floris, D)
 
         @test length(sig_y) == 3
         @test length(sig_z) == 3
@@ -182,6 +195,22 @@ using FLORIDyn, Test
         @test isnothing(T_aTI_arr)
         @test isnothing(T_Ueff)
         @test isnothing(T_weight)
+
+        # Additional test: Check that runFLORIS handles multiple turbines (dummy example)
+        LocationT_multi = [600.0 2400.0 119.0;
+                           1200.0 2600.0 119.0] 
+        States_WF = [8.2  255.0  0.062  255.0;
+                     8.2  255.0  0.062  255.0]
+        States_T_multi = [0.33 0.0 0.06;
+                          0.33 0.0 0.06]
+        D = [178.4, 178.4]
+        T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = runFLORIS(set, LocationT_multi, States_WF, States_T_multi, D, 
+                                                               paramFLORIS, windshear)
+        @test length(T_red_arr2) == 2
+        @test length(T_red_arr2) == 2
+        @test length(T_aTI_arr2) == 1
+        @test length(T_Ueff2) == 1
+        @test length(T_weight2) == 1 
     end
 
 end
