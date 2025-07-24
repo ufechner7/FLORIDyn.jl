@@ -146,5 +146,18 @@ using FLORIDyn, Test
         M, wf = setUpTmpWFAndRun(set, wf, floris, wind)
         @test ! structs_equal(wf_old, wf; prn=false)
     end
-end
+    @testset "runFLORIDyn" begin
+        global md
+        settings_file = "data/2021_9T_Data.yaml"
+        # get the settings for the wind field, simulator and controller
+        wind, sim, con, floris, floridyn = setup(settings_file)
+        # create settings struct
+        set = Settings(wind, sim, con)
+        # % Load linked data
+        turbine_prop        = turbineArrayProperties(settings_file)
+        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_prop, sim)
+        wf, md, mi = runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
+        @test size(md) == (2709, 6)
+    end
+end # testset floridyncl
 nothing
