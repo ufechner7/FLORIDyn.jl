@@ -53,14 +53,56 @@ function perturbationOfTheWF!(wf, Wind)
     return nothing
 end
 
-function findTurbineGroups(wf, paramFLORIDyn)
+"""
+    findTurbineGroups(wf, floridyn::FloriDyn)
+
+Determine wake interaction dependencies between turbines in a wind farm.
+
+This function analyzes the spatial relationships between turbines to identify which turbines 
+are affected by the wakes of upstream turbines. It uses coordinate transformations to the 
+wind-aligned reference frame and geometric criteria to determine wake interactions.
+
+# Arguments
+- `wf`: Wind farm object containing turbine positions, operational points, and wind field states
+- `floridyn::FloriDyn`: FLORIDyn model parameters containing wake interaction thresholds. See [`FloriDyn`](@ref)
+
+# Returns
+- `vv_dep::Vector{Vector{Int64}}`: A vector of vectors where `vv_dep[i]` contains the indices of all turbines 
+  that affect turbine `i` through wake interactions. Each inner vector lists the upstream turbine indices 
+  that influence the wake conditions at the corresponding turbine.
+
+# Algorithm
+1. **Coordinate Transformation**: For each turbine pair, transforms coordinates to a wind-aligned frame using the closest operational point
+2. **Wake Zone Detection**: Applies geometric criteria to determine if a downstream turbine lies within the wake zone:
+   - Upstream extent: `r₁[1] ≥ -uw × D[iT]` (allowing for slight upstream influence)
+   - Downstream extent: `r₁[1] ≤ dw × D[iT]` (wake extends downstream)  
+   - Lateral extent: `|r₁[2]| ≤ cw × D[iT]` (wake width constraint)
+3. **Dependency Matrix**: Constructs a boolean dependency matrix and extracts indices for each turbine
+
+# Mathematical Description
+The wake interaction criteria are evaluated in the wind-aligned coordinate system:
+```
+r₁ = R(φ) × (rₒₚ - rₜᵤᵣᵦ)
+```
+where:
+- `R(φ)` is the rotation matrix for wind direction angle `φ`
+- `rₒₚ` is the position of the closest operational point from the upstream turbine
+- `rₜᵤᵣᵦ` is the position of the downstream turbine being evaluated
+
+# Notes
+- The function uses the closest operational point from each upstream turbine to determine wind direction
+- Wake zones are defined as multiples of rotor diameter using the FLORIDyn parameters
+- Self-interaction (turbine affecting itself) is explicitly excluded
+- The coordinate transformation accounts for the SOWFA wind direction convention
+"""
+function findTurbineGroups(wf, floridyn::FloriDyn)
     # Extract parameters from settings struct
-    dw = paramFLORIDyn.deltaDW
-    cw = paramFLORIDyn.deltaCW
-    uw = paramFLORIDyn.deltaUW
+    dw = floridyn.deltaDW
+    cw = floridyn.deltaCW
+    uw = floridyn.deltaUW
 
     # Initialize outputs
-    Tdep = Vector{Vector{Int64}}(undef,wf.nT)  # Equivalent of cell array in MATLAB[1][3]
+    vv_dep = Vector{Vector{Int64}}(undef,wf.nT)  # Equivalent of cell array in MATLAB[1][3]
     dep  = falses(wf.nT, wf.nT)
     
     R01(phi) = [cos(phi)  sin(phi); -sin(phi) cos(phi)]
@@ -95,10 +137,10 @@ function findTurbineGroups(wf, paramFLORIDyn)
 
     for iT in 1:wf.nT
         # find indices where dep[iT, :] is true
-        Tdep[iT] = findall(x -> x, dep[iT, :])
+        vv_dep[iT] = findall(x -> x, dep[iT, :])
     end
 
-    return Tdep
+    return vv_dep
 end
 
 function interpolateOPs(wf)
