@@ -357,7 +357,7 @@ It accounts for wake interactions, rotor discretization, wind shear effects, and
 - `states_t`: Turbine state matrix with axial induction factors, yaw angles, and turbulence intensities
 - `d_rotor`: Vector of rotor diameters for each turbine [m]
 - `floris::Floris`: FLORIS model parameters containing wake model coefficients and rotor discretization settings (see [`Floris`](@ref))
-- `windshear`: Wind shear profile data for vertical wind speed variation modeling
+- `windshear::Matrix`: Wind shear profile data for vertical wind speed variation modeling
 
 # Returns
 A tuple `(T_red_arr, T_aTI_arr, T_Ueff, T_weight)` containing:
