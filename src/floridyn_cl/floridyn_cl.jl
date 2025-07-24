@@ -348,6 +348,7 @@ where:
 - This preprocessing enables efficient interpolation during simulation time steps
 """
 function interpolateOPs(wf)
+    @assert length(wf.dep) > 0 "No dependencies found! Ensure `findTurbineGroups` was called first."
     intOPs = Vector{Matrix{Float64}}(undef,wf.nT)  # Cell equivalent in Julia
 
     for iT in 1:wf.nT  # For every turbine
