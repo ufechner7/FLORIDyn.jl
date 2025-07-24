@@ -137,7 +137,7 @@ function centerline(states_op, states_t, states_wf, floris, d_rotor)
 end
 
 """
-    init_states(set::Settings, wf, wind, init_turb, floris, sim)
+    init_states(set::Settings, wf, wind::Wind, init_turb, floris::Floris, sim::Sim)
 
 Initialize the state arrays for wind farm simulation using the Gaussian wake model.
 
@@ -148,10 +148,10 @@ conditions, and wake properties for each turbine in the wind farm.
 # Arguments
 - `set::Settings`: Simulation settings containing configuration options for velocity, direction, and turbulence models
 - `wf`: Wind farm object containing turbine positions, dimensions, and state arrays
-- `wind`: Wind conditions including velocity, direction, and turbulence intensity data
+- `wind::Wind`: Wind conditions including velocity, direction, and turbulence intensity data (see [Wind](@ref))
 - `init_turb`: Initial turbine state parameters (axial induction factor, yaw angle, turbulence intensity)
-- `floris`: FLORIS model parameters for wake calculations
-- `sim`: Simulation parameters including time step and start time
+- `floris::Floris`: FLORIS model parameters for wake calculations (see [Floris](@ref))
+- `sim::Sim`: Simulation parameters including time step and start time (see [Sim](@ref))
 
 # Returns
 A tuple `(states_op, states_t, states_wf)` containing:
@@ -174,7 +174,7 @@ The function performs the following initialization steps for each turbine:
 - Handles both 3D and 4D wind field configurations (with optional orientation data)
 - Uses SOWFA coordinate system conventions for angle transformations
 """
-function init_states(set::Settings, wf, wind, init_turb, floris, sim)
+function init_states(set::Settings, wf, wind::Wind, init_turb, floris::Floris, sim::Sim)
     # Unpack state arrays and parameters
     states_op   = copy(wf.States_OP)
     states_t    = copy(wf.States_T)
@@ -239,7 +239,7 @@ function init_states(set::Settings, wf, wind, init_turb, floris, sim)
 end
 
 """
-    getVars(rps, a, c_t, yaw, ti, ti0, param, d)
+    getVars(rps, a, c_t, yaw, ti, ti0, param, d_rotor)
 
 Compute and return variables related to the Gaussian wake model for wind turbines.
 
@@ -255,7 +255,7 @@ reduction. The values are based of the state of every individual OP.
 - `ti`: Turbulence intensity at the reference points.
 - `ti0`: Ambient turbulence intensity.
 - `param`: Model parameters, possibly a struct or dictionary containing Gaussian wake model parameters.
-- `d`: Rotor diameter(s) of the turbine(s).
+- `d_rotor`: Rotor diameter(s) of the turbine(s).
 
 # Returns
 Returns the tuple
@@ -271,7 +271,7 @@ Returns the tuple
 - [1] Experimental and theoretical study of wind turbine wakes in yawed conditions - M. Bastankhah and F. Porté-Agel
 - [2] Design and analysis of a spatially heterogeneous wake - A. Farrell, J. King et al.
 """
-function getVars(rps, a, c_t, yaw, ti, ti0, param, d)
+function getVars(rps, a, c_t, yaw, ti, ti0, param, d_rotor)
     # Unpack parameters
     k_a   = param.k_a
     k_b   = param.k_b
@@ -284,7 +284,7 @@ function getVars(rps, a, c_t, yaw, ti, ti0, param, d)
 
     # Core length x_0
     x_0 = (cos.(yaw) .* (1 .+ sqrt.(1 .- c_t)) ./ 
-          (sqrt(2) .* (alpha .* I .+ beta .* (1 .- sqrt.(1 .- c_t))))) .* d
+          (sqrt(2) .* (alpha .* I .+ beta .* (1 .- sqrt.(1 .- c_t))))) .* d_rotor
 
     # Compute k_y and k_z
     k_y = k_a .* I .+ k_b
@@ -295,11 +295,11 @@ function getVars(rps, a, c_t, yaw, ti, ti0, param, d)
 
     # sig_y calculation (field width in y)
     sig_y = max.(OPdw .- x_0, zs) .* k_y .+
-            min.(OPdw ./ x_0, zs .+ 1) .* cos.(yaw) .* d / sqrt(8)
+            min.(OPdw ./ x_0, zs .+ 1) .* cos.(yaw) .* d_rotor / sqrt(8)
 
     # sig_z calculation (field width in z)
     sig_z = max.(OPdw .- x_0, zs) .* k_z .+
-            min.(OPdw ./ x_0, zs .+ 1) .* d / sqrt(8)
+            min.(OPdw ./ x_0, zs .+ 1) .* d_rotor / sqrt(8)
 
     # Theta
     Theta = 0.3 .* yaw ./ cos.(yaw) .* (1 .- sqrt.(1 .- c_t .* cos.(yaw)))
@@ -312,7 +312,7 @@ function getVars(rps, a, c_t, yaw, ti, ti0, param, d)
                  (2.9 .+ 1.3 .* sqrt.(1 .- c_t) .- c_t)
 
     # Intermediate term
-    term = 1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (d.^2 .* cos.(yaw)))
+    term = 1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (d_rotor.^2 .* cos.(yaw)))
 
     delta_fw_2 = log.(((1.6 .+ sqrt.(c_t)) .* (term .- sqrt.(c_t))) ./ 
                       ((1.6 .- sqrt.(c_t)) .* (term .+ sqrt.(c_t))))
@@ -322,21 +322,21 @@ function getVars(rps, a, c_t, yaw, ti, ti0, param, d)
     blend = 0.5 .* sign.(OPdw .- x_0) .+ 0.5
 
     # Total delta in y
-    deltaY = delta_nfw .+ blend .* delta_fw_1 .* delta_fw_2 .* d
+    deltaY = delta_nfw .+ blend .* delta_fw_1 .* delta_fw_2 .* d_rotor
     delta = hcat(deltaY, zeros(size(deltaY)))  # [delta_y, delta_z]
 
     # Potential core
     u_r_0 = (c_t .* cos.(yaw)) ./ 
             (2 .* (1 .- sqrt.(1 .- c_t .* cos.(yaw))) .* sqrt.(1 .- c_t))
 
-    pc_y = d .* cos.(yaw) .* sqrt.(u_r_0) .* max.(1 .- OPdw ./ x_0, zs)
-    pc_z = d .* sqrt.(u_r_0) .* max.(1 .- OPdw ./ x_0, zs)
+    pc_y = d_rotor .* cos.(yaw) .* sqrt.(u_r_0) .* max.(1 .- OPdw ./ x_0, zs)
+    pc_z = d_rotor .* sqrt.(u_r_0) .* max.(1 .- OPdw ./ x_0, zs)
 
     # For points exactly at the rotor plane
     rp = OPdw .== 0
     if sum(rp) > 0
-        pc_y[rp] .= d .* cos.(yaw)
-        pc_z[rp] .= d
+        pc_y[rp] .= d_rotor .* cos.(yaw)
+        pc_z[rp] .= d_rotor
     end
 
     return sig_y, sig_z, c_t, x_0, delta, pc_y, pc_z
