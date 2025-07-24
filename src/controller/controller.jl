@@ -19,7 +19,7 @@ function getYaw(::Yaw_SOWFA, ConYawData::Matrix{Float64}, iT, t)
     yaw_data = ConYawData[:, 2:end]
 
     # Create interpolation object for each turbine column
-    interp_funcs = [LinearInterpolation(time, yaw_data[:, j], extrapolation_bc=Flat()) for j in 1:size(yaw_data, 2)]
+    interp_funcs = [linear_interpolation(time, yaw_data[:, j], extrapolation_bc=Flat()) for j in 1:size(yaw_data, 2)]
 
     # Get interpolated yaw(s)
     if isa(iT, Integer)

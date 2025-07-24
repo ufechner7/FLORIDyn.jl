@@ -69,7 +69,7 @@ function getWindSpeedT_EnKF(::Velocity_EnKF_InterpTurbine, WindVel::Matrix, iT, 
     end
 
     # Interpolate each turbine column independently
-    wind_at_t = [LinearInterpolation(times, speeds[:, j], extrapolation_bc=Flat())(t) for j in 1:size(speeds, 2)]
+    wind_at_t = [linear_interpolation(times, speeds[:, j], extrapolation_bc=Flat())(t) for j in 1:size(speeds, 2)]
 
     # Select desired turbine(s)
     return wind_at_t[iT]
@@ -230,7 +230,7 @@ function getWindSpeedT(::Velocity_Interpolation, WindVel::Matrix{Float64}, iT, t
         t = times[end]
     end
 
-    itp = LinearInterpolation(times, speeds, extrapolation_bc=Flat())
+    itp = linear_interpolation(times, speeds, extrapolation_bc=Flat())
     u = itp(t)
 
     # Return a vector of wind speeds, one for each turbine index
@@ -271,7 +271,7 @@ function getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatri
     end
 
     # Perform interpolation
-    u = LinearInterpolation(times, speeds, extrapolation_bc=Flat())(t_clamped)
+    u = linear_interpolation(times, speeds, extrapolation_bc=Flat())(t_clamped)
 
     # Initialize velocities
     n = length(iT)
