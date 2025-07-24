@@ -83,7 +83,6 @@ using FLORIDyn, Test
         @test ! structs_equal(wf_old, wf; prn=false)
     end
     @testset "findTurbineGroups" begin
-        global vv_dep
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
         wind, sim, con, floris, floridyn = setup(settings_file)
@@ -105,6 +104,17 @@ using FLORIDyn, Test
                                 [7, 8]
                             ]
         @test vv_dep == vv_dep_expected
+    end
+    @testset "interpolateOPs" begin
+        settings_file = "data/2021_9T_Data.yaml"
+        # get the settings for the wind field, simulator and controller
+        wind, sim, con, floris, floridyn = setup(settings_file)
+        # create settings struct
+        set = Settings(wind, sim, con)
+        # % Load linked data
+        turbProp        = turbineArrayProperties(settings_file)
+        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
+        # interpolateOPs(wf)
     end
 end
 nothing

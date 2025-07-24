@@ -286,6 +286,67 @@ function findTurbineGroups(wf::WindFarm, floridyn::FloriDyn)
     return vv_dep
 end
 
+"""
+    interpolateOPs(wf)
+
+Compute interpolation weights and indices for operational points affecting each turbine.
+
+This function determines the optimal interpolation strategy for each turbine by identifying 
+the closest operational points from influencing upstream turbines. It computes weights and 
+indices that enable smooth interpolation of wind field states and turbine conditions at 
+arbitrary turbine positions.
+
+# Arguments
+- `wf`: Wind farm object containing turbine dependencies, operational point states, and positional data
+  - `wf.nT`: Number of turbines
+  - `wf.StartI`: Starting indices for each turbine's operational points  
+  - `wf.dep`: Dependency relationships between turbines (from [`findTurbineGroups`](@ref))
+  - `wf.States_OP`: Matrix of operational point states
+  - `wf.posBase`: Base positions of turbines [m]
+  - `wf.nOP`: Number of operational points per turbine
+
+# Returns
+- `intOPs::Vector{Matrix{Float64}}`: Interpolation data for each turbine where `intOPs[i]` is an 
+  `N×4` matrix for turbine `i` with `N` influencing turbines. Each row contains:
+  - Column 1: First operational point index
+  - Column 2: Weight for first operational point
+  - Column 3: Second operational point index  
+  - Column 4: Weight for second operational point
+
+# Algorithm
+For each turbine and its influencing upstream turbines:
+
+1. **Distance Calculation**: Computes Euclidean distances from all operational points of 
+   the influencing turbine to the target turbine position
+
+2. **Interpolation Strategy Selection**: Based on the closest operational point location:
+   - **First OP closest**: Uses first and second operational points
+   - **Last OP closest**: Uses second-to-last and last operational points
+   - **Interior OP closest**: Uses the two closest operational points for optimal interpolation
+
+3. **Weight Computation**: For interior cases, applies linear projection to determine interpolation weights:
+   ```julia
+   d = dot(ab, ac) / dot(ab, ab)
+   weights = [1-d, d] # Clamped to [0,1]
+   ```
+
+# Mathematical Description
+The interpolation uses linear projection for weight computation:
+```
+d = (b⃗ - a⃗) · (c⃗ - a⃗) / |b⃗ - a⃗|²
+```
+where:
+- `a⃗`, `b⃗` are positions of the two closest operational points
+- `c⃗` is the target turbine position
+- `d` is the projection parameter (clamped to [0,1])
+
+# Notes
+- Edge cases (first/last operational points) use predefined weight combinations
+- Weights always sum to 1.0 for proper interpolation
+- The function handles variable numbers of influencing turbines per target turbine
+- Interpolation indices are global across the entire operational point matrix
+- This preprocessing enables efficient interpolation during simulation time steps
+"""
 function interpolateOPs(wf)
     #wf.nT :: Int
     #wf.StartI :: Vector{Int}
