@@ -341,41 +341,123 @@ function getVars(rps::Union{Matrix, Adjoint}, c_t, yaw, ti, ti0, floris::Floris,
     return sig_y, sig_z, c_t, x_0, delta, pc_y, pc_z
 end
 
-function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS, windshear)
+"""
+    runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, windshear)
+
+Execute the FLORIS (FLOw Redirection and Induction in Steady State) wake model simulation for wind farm analysis.
+
+This function performs a comprehensive wake analysis using the Gaussian wake model to calculate
+velocity reductions, turbulence intensity additions, and effective wind speeds at turbine locations.
+It accounts for wake interactions, rotor discretization, wind shear effects, and turbulence propagation.
+
+# Arguments
+- `set::Settings`: Simulation settings containing configuration options for wind shear modeling
+- `location_t`: Matrix of turbine positions [x, y, z] coordinates for each turbine [m]
+- `states_wf`: Wind field state matrix containing velocity, direction, and turbulence data
+- `states_t`: Turbine state matrix with axial induction factors, yaw angles, and turbulence intensities
+- `d_rotor`: Vector of rotor diameters for each turbine [m]
+- `floris::Floris`: FLORIS model parameters containing wake model coefficients and rotor discretization settings (see [`Floris`](@ref))
+- `windshear`: Wind shear profile data for vertical wind speed variation modeling
+
+# Returns
+A tuple `(T_red_arr, T_aTI_arr, T_Ueff, T_weight)` containing:
+- `T_red_arr::Vector{Float64}`: Velocity reduction factors for each turbine [-]
+- `T_aTI_arr::Union{Vector{Float64}, Nothing}`: Added turbulence intensity from upstream wakes [%]
+- `T_Ueff::Union{Float64, Nothing}`: Effective wind speed at the last turbine location [m/s]
+- `T_weight::Union{Vector{Float64}, Nothing}`: Gaussian weight factors for wake overlap calculations [-]
+
+# Description
+The function performs the following computational steps:
+
+## 1. Rotor Discretization
+- Discretizes rotor planes into radial points using the isocell algorithm
+- Applies yaw rotation transformations to rotor point coordinates
+- Handles both active turbines (d_rotor > 0) and placeholder turbines
+
+## 2. Single Turbine Case
+For single turbine simulations, only wind shear effects are calculated without wake interactions.
+
+## 3. Multi-Turbine Wake Analysis
+For each upstream turbine affecting downstream turbines:
+
+### Coordinate Transformations
+- Transforms rotor points to wake coordinate system aligned with wind direction
+- Applies rotational matrices for wind direction and turbine yaw angles
+- Filters turbines based on minimum downstream distance (10 rotor diameters)
+
+### Wake Variable Calculations
+- Computes wake expansion coefficients, potential core dimensions, and deflection using `getVars`
+- Calculates crosswind wake positions and radial distances from wake centerline
+- Determines core region boundaries and near/far wake transitions
+
+### Velocity Reduction Modeling
+- Applies different deficit models for core region vs. Gaussian wake regions
+- Uses velocity deficit superposition for multiple wake interactions
+- Accounts for yaw-induced wake deflection and asymmetry
+
+### Turbulence Intensity Enhancement
+- Calculates added turbulence intensity using empirical correlations
+- Applies Gaussian weighting for spatial distribution of turbulence enhancement
+- Uses parameters k_fa, k_fb, k_fc, k_fd for turbulence intensity modeling
+
+## 4. Wind Shear Integration
+- Applies vertical wind shear corrections to the downstream turbine
+- Uses wind shear profile data for realistic boundary layer effects
+
+# Mathematical Models
+The function implements several key wake modeling equations:
+
+**Velocity Deficit**: Based on Gaussian wake theory with yaw corrections
+**Deflection**: Uses analytical wake deflection models for yawed turbines  
+**Turbulence**: Empirical correlations for wake-added turbulence intensity
+**Superposition**: Linear superposition of velocity deficits from multiple wakes
+
+# Notes
+- Uses SOWFA (Simulator for Offshore Wind Farm Applications) coordinate conventions
+- Implements state-of-the-art Gaussian wake model with yaw considerations
+- Supports both research and engineering applications for wind farm optimization
+- Computational complexity scales as O(N²) for N turbines due to wake interactions
+- Requires proper initialization of turbine states and wind field conditions
+
+# References
+- Bastankhah, M. and Porté-Agel, F. (2016). Experimental and theoretical study of wind turbine wakes in yawed conditions
+- Niayifar, A. and Porté-Agel, F. (2016). Analytical modeling of wind farms: A new approach for power prediction
+"""
+function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, windshear)
     # Main.@infiltrate
-    if D[end] > 0
-        RPl, RPw = discretizeRotor(paramFLORIS.rotor_points)
+    if d_rotor[end] > 0
+        RPl, RPw = discretizeRotor(floris.rotor_points)
     else
         RPl = [0.0 0.0 0.0]
         RPw = [1.0]
     end
     # Yaw rotation for last turbine
-    tmp_yaw = deg2rad(States_T[end, 2])
+    tmp_yaw = deg2rad(states_t[end, 2])
     R = [cos(tmp_yaw)  sin(tmp_yaw)  0.0;
         -sin(tmp_yaw)  cos(tmp_yaw)  0.0;
          0.0           0.0           1.0]
 
-    RPl = (R * (RPl .* D[end])')' .+ LocationT[end, :]'
+    RPl = (R * (RPl .* d_rotor[end])')' .+ location_t[end, :]'
 
-    if length(D) == 1
-        redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ LocationT[3])
+    if length(d_rotor) == 1
+        redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ location_t[3])
         T_red_arr = RPw' * redShear
         T_aTI_arr, T_Ueff, T_weight = nothing, nothing, nothing
         return T_red_arr, T_aTI_arr, T_Ueff, T_weight
     end
 
     # Initialize outputs
-    nT = length(D)
+    nT = length(d_rotor)
     T_red_arr = ones(nT)
     T_aTI_arr = zeros(nT - 1)
     T_weight = zeros(nT - 1)
 
     for iT in 1:(nT - 1)
 
-        tmp_phi = size(States_WF,2) == 4 ? angSOWFA2world(States_WF[iT, 4]) :
-                                           angSOWFA2world(States_WF[iT, 2])
+        tmp_phi = size(states_wf,2) == 4 ? angSOWFA2world(states_wf[iT, 4]) :
+                                           angSOWFA2world(states_wf[iT, 2])
 
-        tmp_RPs = RPl .- LocationT[iT, :]'
+        tmp_RPs = RPl .- location_t[iT, :]'
         R_phi = [cos(tmp_phi)  sin(tmp_phi)  0.0;
                 -sin(tmp_phi)  cos(tmp_phi)  0.0;
                  0.0           0.0           1.0]
@@ -386,15 +468,15 @@ function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS
             continue
         end
 
-        a = States_T[iT, 1]
-        yaw_deg = States_T[iT, 2]
+        a = states_t[iT, 1]
+        yaw_deg = states_t[iT, 2]
         yaw = -deg2rad(yaw_deg)
-        TI = States_T[iT, 3]
+        TI = states_t[iT, 3]
         Ct = calcCt(a, yaw_deg)
-        TI0 = States_WF[iT, 3]
+        TI0 = states_wf[iT, 3]
 
         sig_y, sig_z, C_T, x_0, delta, pc_y, pc_z = getVars(
-            tmp_RPs, Ct, yaw, TI, TI0, paramFLORIS, D[iT]
+            tmp_RPs, Ct, yaw, TI, TI0, floris, d_rotor[iT]
         )
 
         cw_y = tmp_RPs[:, 2] .- delta[:, 1]
@@ -414,7 +496,7 @@ function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS
         fw = .!nw
         gaussAbs = zeros(size(RPw))
         gaussAbs[nw] .= 1 .- sqrt(1 .- C_T)
-        gaussAbs[fw] .= 1 .- sqrt.(1 .- C_T .* cos(yaw) ./ (8 .* sig_y[fw] .* sig_z[fw] ./ D[iT]^2))
+        gaussAbs[fw] .= 1 .- sqrt.(1 .- C_T .* cos(yaw) ./ (8 .* sig_y[fw] .* sig_z[fw] ./ d_rotor[iT]^2))
 
         gaussWght = ones(size(RPw))
         not_core = .!core
@@ -430,13 +512,13 @@ function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS
         T_red_arr[iT] = 1 .- dot(RPw, tmp_RPs_r)
 
         # Added TI
-        T_addedTI_tmp = paramFLORIS.k_fa * (
-            a^paramFLORIS.k_fb *
-            TI0^paramFLORIS.k_fc *
-            (mean(tmp_RPs[:, 1]) / D[iT])^paramFLORIS.k_fd
+        T_addedTI_tmp = floris.k_fa * (
+            a^floris.k_fb *
+            TI0^floris.k_fc *
+            (mean(tmp_RPs[:, 1]) / d_rotor[iT])^floris.k_fd
         )
 
-        TIexp = paramFLORIS.TIexp
+        TIexp = floris.TIexp
         exp_y = @. exp(-0.5 * ((cw_y - cos(phi_cw) .* pc_y * 0.5) ./ (TIexp .* sig_y))^2)
         exp_z = @. exp(-0.5 * ((cw_z - sin(phi_cw) .* pc_z * 0.5) ./ (TIexp .* sig_z))^2)
 
@@ -447,7 +529,7 @@ function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS
     T_red_arr[end] = dot(RPw, redShear)
 
     T_red = prod(T_red_arr)
-    T_Ueff = States_WF[end, 1] * T_red
+    T_Ueff = states_wf[end, 1] * T_red
 
     return T_red_arr, T_aTI_arr, T_Ueff, T_weight
 end

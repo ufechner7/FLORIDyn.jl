@@ -29,6 +29,7 @@ discretizeRotor
 init_states
 getVars
 getPower
+runFLORIS
 ```
 
 # FLORIDyn
