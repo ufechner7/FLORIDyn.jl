@@ -139,9 +139,9 @@ end
 
 function InitStates(set::Settings, wf, wind, init_turb, floris, sim)
     # Unpack state arrays and parameters
-    States_OP   = copy(wf.States_OP)
-    States_T    = copy(wf.States_T)
-    States_WF   = copy(wf.States_WF)
+    states_op   = copy(wf.States_OP)
+    states_t    = copy(wf.States_T)
+    states_wf   = copy(wf.States_WF)
     nT          = wf.nT
     nOP         = wf.nOP
     deltaT      = sim.time_step
@@ -150,55 +150,55 @@ function InitStates(set::Settings, wf, wind, init_turb, floris, sim)
     for iT = 1:nT
         # Retrieve wind field data
         if wind.input_vel == "I_and_I"
-            U = getWindSpeedT(set.vel_mode, wind.vel, iT, startTime)
+            u = getWindSpeedT(set.vel_mode, wind.vel, iT, startTime)
         elseif wind.input_vel in ["ZOH_wErrorCov", "RW_with_Mean"]
-            U = wind.vel.Init
+            u = wind.vel.Init
         else
-            U = getWindSpeedT(set.vel_mode, wind.vel, iT, startTime)
+            u = getWindSpeedT(set.vel_mode, wind.vel, iT, startTime)
         end
 
         if wind.input_dir == "RW_with_Mean"
-            phiS = wind.dir.Init
+            phi_s = wind.dir.Init
         else
-            phiS = getWindDirT(set.dir_mode, wind.dir, iT, startTime)
+            phi_s = getWindDirT(set.dir_mode, wind.dir, iT, startTime)
         end
 
-        TI = getWindTiT(set.turb_mode, wind.ti, iT, startTime)
+        ti = getWindTiT(set.turb_mode, wind.ti, iT, startTime)
 
         rangeOPs = ((iT-1)*nOP+1):(iT*nOP)
 
         # Initialize the States of the OPs and turbines
-        States_WF[rangeOPs, 1] .= U
-        States_WF[rangeOPs, 2] .= phiS
-        States_WF[rangeOPs, 3] .= TI
+        states_wf[rangeOPs, 1] .= u
+        states_wf[rangeOPs, 2] .= phi_s
+        states_wf[rangeOPs, 3] .= ti
 
         # Add orientation if used
         if length(wf.Names_WF) == 4
-            States_WF[rangeOPs, 4] .= phiS
+            states_wf[rangeOPs, 4] .= phi_s
         end
 
         # Downwind distance (wake coord)
-        States_OP[rangeOPs, 4] .= (collect(0:(nOP-1)) .* deltaT .* U)
+        states_op[rangeOPs, 4] .= (collect(0:(nOP-1)) .* deltaT .* u)
 
         # Init turbine states
-        States_T[rangeOPs, :] = ones(nOP, 1) * init_turb[iT, :]'
+        states_t[rangeOPs, :] = ones(nOP, 1) * init_turb[iT, :]'
 
         # Crosswind position
-        States_OP[rangeOPs, 5:6] = centerline(States_OP[rangeOPs, :], States_T[rangeOPs, :],
-                                              States_WF[rangeOPs, :], floris, wf.D[iT])
+        states_op[rangeOPs, 5:6] = centerline(states_op[rangeOPs, :], states_t[rangeOPs, :],
+                                              states_wf[rangeOPs, :], floris, wf.D[iT])
 
         # Convert wind dir in fitting radians
-        phiW = angSOWFA2world.(States_WF[rangeOPs, 2])
+        phi_w = angSOWFA2world.(states_wf[rangeOPs, 2])
 
         # World coordinate position x0 and y0 including tower base and nacelle pos
-        States_OP[rangeOPs, 1] .= cos.(phiW) .* States_OP[rangeOPs, 4] .-
-                                  sin.(phiW) .* States_OP[rangeOPs, 5] .+   wf.posBase[iT, 1] .+ wf.posNac[iT, 1]
-        States_OP[rangeOPs, 2] .= sin.(phiW) .* States_OP[rangeOPs, 4] .+
-                                  cos.(phiW) .* States_OP[rangeOPs, 5] .+ wf.posBase[iT, 2] .+ wf.posNac[iT, 2]
-        States_OP[rangeOPs, 3] .= States_OP[rangeOPs, 6] .+ wf.posBase[iT, 3] .+ wf.posNac[iT, 3]
+        states_op[rangeOPs, 1] .= cos.(phi_w) .* states_op[rangeOPs, 4] .-
+                                  sin.(phi_w) .* states_op[rangeOPs, 5] .+   wf.posBase[iT, 1] .+ wf.posNac[iT, 1]
+        states_op[rangeOPs, 2] .= sin.(phi_w) .* states_op[rangeOPs, 4] .+
+                                  cos.(phi_w) .* states_op[rangeOPs, 5] .+ wf.posBase[iT, 2] .+ wf.posNac[iT, 2]
+        states_op[rangeOPs, 3] .= states_op[rangeOPs, 6] .+ wf.posBase[iT, 3] .+ wf.posNac[iT, 3]
     end
 
-    return States_OP, States_T, States_WF
+    return states_op, states_t, states_wf
 end
 
 """
