@@ -37,6 +37,8 @@ runFLORIS
 initSimulation
 findTurbineGroups
 prepareSimulation
+perturbationOfTheWF!
+angSOWFA2world
 runFLORIDyn
 ```
 

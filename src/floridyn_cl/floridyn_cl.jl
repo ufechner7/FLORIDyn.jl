@@ -1,6 +1,57 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+"""
+    angSOWFA2world(deg_SOWFA)
+
+Convert wind direction angle from SOWFA convention to world coordinate system.
+
+This function performs coordinate transformation between different wind direction conventions
+used in wind farm simulations. SOWFA (Simulator fOr Wind Farm Applications) uses a different
+angular reference system than the standard world coordinate system used in calculations.
+
+# Arguments
+- `deg_SOWFA::Real`: Wind direction angle in SOWFA convention [degrees]
+
+# Returns
+- `rad_World::Float64`: Wind direction angle in world coordinate system [radians]
+
+# Coordinate System Conversion
+The transformation follows the relationship:
+```
+θ_world = 270° - θ_SOWFA
+```
+
+## SOWFA Convention
+- Wind direction angles are defined clockwise from a reference direction
+
+## World Convention  
+- Wind direction angles are defined counterclockwise for mathematical calculations
+- Standard convention used in wake models and analytical computations
+
+# Mathematical Description
+The conversion process:
+1. **Angular transformation**: `deg_World = 270 - deg_SOWFA`
+2. **Unit conversion**: `rad_World = deg2rad(deg_World)`
+
+The 270° offset accounts for the difference between clockwise (SOWFA) and 
+counterclockwise (world) angular conventions.
+
+# Examples
+```julia
+# Convert 90° SOWFA direction to world coordinates
+world_angle = angSOWFA2world(90.0)  # Returns 3.141592... (180° in radians)
+
+# Convert 0° SOWFA direction  
+world_angle = angSOWFA2world(0.0)   # Returns 4.712388... (270° in radians)
+```
+
+# Notes
+- The function handles the sign convention difference between coordinate systems
+- Output is always in radians for use in trigonometric calculations
+- This transformation is essential for proper wake modeling in wind farm simulations
+- The 270° offset ensures proper alignment between SOWFA and mathematical conventions
+"""
 function angSOWFA2world(deg_SOWFA)
     # Angle conversion SOWFA to world coordinates
     # deg_F = -deg_S + 270 deg
@@ -72,6 +123,58 @@ function initSimulation(wf::Union{Nothing, WindFarm}, sim::Sim)
     return wf
 end
 
+"""
+    perturbationOfTheWF!(wf, wind)
+
+Apply stochastic perturbations to the wind field states in-place.
+
+This function adds Gaussian noise to the wind field parameters to model measurement 
+uncertainty or natural variability in wind conditions. The perturbations are applied 
+conditionally based on the wind perturbation configuration and are added directly 
+to the wind farm state matrix.
+
+# Arguments
+- `wf`: Wind farm object containing the state matrix `States_WF` to be perturbed
+- `wind`: Wind configuration object containing perturbation settings. See [`Wind`](@ref)
+
+# Returns
+- `nothing`: The function modifies the wind farm state in-place
+
+# Behavior
+The function applies independent Gaussian perturbations to three wind field parameters:
+
+## Velocity Perturbation
+- **Condition**: `wind.pertubation.vel == true`
+- **Target**: Column 1 of `wf.States_WF` (wind velocity [m/s])
+- **Noise**: `wind.pertubation.vel_sigma * randn(nOP × nT)`
+
+## Direction Perturbation  
+- **Condition**: `wind.pertubation.dir == true`
+- **Target**: Column 2 of `wf.States_WF` (wind direction [degrees])
+- **Noise**: `wind.pertubation.dir_sigma * randn(nOP × nT)`
+
+## Turbulence Intensity Perturbation
+- **Condition**: `wind.pertubation.ti == true`  
+- **Target**: Column 3 of `wf.States_WF` (turbulence intensity [-])
+- **Noise**: `wind.pertubation.ti_sigma * randn(nOP × nT)`
+
+# Mathematical Description
+For each enabled perturbation type, the function applies:
+```
+States_WF[:, col] += σ × N(0,1)
+```
+where:
+- `σ` is the standard deviation for the specific parameter
+- `N(0,1)` is standard normal random noise with dimensions `(nOP × nT)`
+- `nOP` is the number of operational points per turbine
+- `nT` is the total number of turbines
+
+# Notes
+- The function uses in-place modification (indicated by the `!` suffix)
+- Perturbations are applied independently to each operational point and turbine
+- The random noise follows a standard normal distribution scaled by the respective sigma values
+- Only enabled perturbation types (based on boolean flags) are applied
+"""
 function perturbationOfTheWF!(wf, Wind)
     # perturbationOfTheWF! adds noise to the entire wind field state
     
