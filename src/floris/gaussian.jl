@@ -174,7 +174,6 @@ The function performs the following initialization steps for each turbine:
 - Handles both 3D and 4D wind field configurations (with optional orientation data)
 - Uses SOWFA coordinate system conventions for angle transformations
 """
-
 function init_states(set::Settings, wf, wind, init_turb, floris, sim)
     # Unpack state arrays and parameters
     states_op   = copy(wf.States_OP)
