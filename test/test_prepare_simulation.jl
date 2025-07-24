@@ -3,22 +3,17 @@
 
 using FLORIDyn, Test
 
-settings_file = "data/2021_9T_Data.yaml"
 
-# get the settings for the wind field, simulator and controller
-wind, sim, con, floris, floridyn = setup(settings_file)
-
-# create settings struct
-set = Settings(wind, sim, con)
-
-# % Load linked data
-turbProp        = turbineArrayProperties(settings_file)
-paramFLORIS     = floris
-paramFLORIDyn   = floridyn
-
-wf, wind, sim, con, paramFLORIS = prepareSimulation(set, wind, con, paramFLORIDyn, paramFLORIS, turbProp, sim)
 
 @testset "prepare_simulation                                      " begin
+    settings_file = "data/2021_9T_Data.yaml"
+    # get the settings for the wind field, simulator and controller
+    wind, sim, con, floris, floridyn = setup(settings_file)
+    # create settings struct
+    set = Settings(wind, sim, con)
+    # % Load linked data
+    turbine_properties         = turbineArrayProperties(settings_file)
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
     @test wind.vel == 8.2
     @test wind.dir ≈ [
                         0.0    255.0
@@ -66,7 +61,7 @@ wf, wind, sim, con, paramFLORIS = prepareSimulation(set, wind, con, paramFLORIDy
     @test wf.nOP       == 200
     @test wf.red_arr   == ones(9,9)
 
-    @test paramFLORIDyn.deltaUW == 10.0
+    @test floridyn.deltaUW == 10.0
     @test size(con.yaw_data) == (603, 10)
     @test sum(con.yaw_data) ≈ 1.37333255e7
     @test con.tanh_yaw == false
@@ -81,6 +76,9 @@ wf, wind, sim, con, paramFLORIS = prepareSimulation(set, wind, con, paramFLORIDy
     @test sum(wf.States_WF) ≈ 9.3287e+05 rtol=1e-4
 
     @test sim.n_sim_steps == 301
-    @test paramFLORIS.rotor_points == 50
+    @test floris.rotor_points == 50
+    wind.input_dir = "Constant"
+    set.dir_mode = Direction_Constant()
+    # wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
 end
 nothing

@@ -66,7 +66,7 @@ include("controller/structs_controller.jl")
 """
     Settings
 
-A struct that holds configuration parameters for the FLORIDyn simulation environment.
+A mutable struct that holds configuration parameters for the FLORIDyn simulation environment.
 
 # Fields
 - `vel_mode::VelModel`: See: [VelModel](@ref)
@@ -79,7 +79,7 @@ A struct that holds configuration parameters for the FLORIDyn simulation environ
 - `iterate_mode`
 - `control_mode`
 """
-struct Settings
+mutable struct Settings
     vel_mode::VelModel
     dir_mode::DirModel
     turb_mode
