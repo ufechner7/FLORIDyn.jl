@@ -136,8 +136,46 @@ function centerline(States_OP, States_T, States_WF, paramFLORIS, D)
     return delta
 end
 
+"""
+    init_states(set::Settings, wf, wind, init_turb, floris, sim)
 
-function InitStates(set::Settings, wf, wind, init_turb, floris, sim)
+Initialize the state arrays for wind farm simulation using the Gaussian wake model.
+
+This function sets up the initial conditions for turbines, observation points, and wind field 
+states based on the provided configuration parameters. It computes initial positions, wind 
+conditions, and wake properties for each turbine in the wind farm.
+
+# Arguments
+- `set::Settings`: Simulation settings containing configuration options for velocity, direction, and turbulence models
+- `wf`: Wind farm object containing turbine positions, dimensions, and state arrays
+- `wind`: Wind conditions including velocity, direction, and turbulence intensity data
+- `init_turb`: Initial turbine state parameters (axial induction factor, yaw angle, turbulence intensity)
+- `floris`: FLORIS model parameters for wake calculations
+- `sim`: Simulation parameters including time step and start time
+
+# Returns
+A tuple `(states_op, states_t, states_wf)` containing:
+- `states_op::Matrix`: Observation point states with 3D coordinates and wake positions
+- `states_t::Matrix`: Turbine states including control parameters and operational conditions  
+- `states_wf::Matrix`: Wind field states with velocity, direction, and turbulence data
+
+# Description
+The function performs the following initialization steps for each turbine:
+1. Retrieves wind field data (velocity, direction, turbulence intensity) based on the specified input methods
+2. Initializes wind field states at all observation points for the turbine
+3. Calculates downwind distances for wake coordinate system
+4. Sets initial turbine states from provided parameters
+5. Computes crosswind wake deflections using the centerline function
+6. Transforms coordinates from wake-relative to world coordinate system
+7. Updates observation point positions including turbine base and nacelle offsets
+
+# Notes
+- Supports multiple wind input methods including interpolation, constant values, and random walk models
+- Handles both 3D and 4D wind field configurations (with optional orientation data)
+- Uses SOWFA coordinate system conventions for angle transformations
+"""
+
+function init_states(set::Settings, wf, wind, init_turb, floris, sim)
     # Unpack state arrays and parameters
     states_op   = copy(wf.States_OP)
     states_t    = copy(wf.States_T)
