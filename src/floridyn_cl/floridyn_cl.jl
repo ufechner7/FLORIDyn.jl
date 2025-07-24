@@ -399,7 +399,86 @@ function interpolateOPs(wf)
     return intOPs
 end
 
-function setUpTmpWFAndRun(set::Settings, wf, paramFLORIS, Wind)
+"""
+    setUpTmpWFAndRun(set::Settings, wf, floris::Floris, wind::Wind)
+
+Execute FLORIS wake calculations for all turbines in a wind farm with wake interactions.
+
+This function orchestrates the computation of wake effects for each turbine by setting up 
+temporary wind farm configurations that include influencing upstream turbines. It handles 
+both single turbine (no wake interactions) and multi-turbine scenarios with complex wake 
+interaction patterns.
+
+# Arguments
+- `set::Settings`: Simulation settings and configuration parameters
+- `wf`: Wind farm object containing turbine positions, operational points, dependencies, and interpolation data
+  - `wf.nT`: Number of turbines
+  - `wf.States_WF`: Wind field states matrix
+  - `wf.States_T`: Turbine states matrix
+  - `wf.States_OP`: Operational point states matrix
+  - `wf.dep`: Turbine dependency relationships (from [`findTurbineGroups`](@ref))
+  - `wf.intOPs`: Interpolation weights and indices (from [`interpolateOPs`](@ref))
+  - `wf.posBase`: Base turbine positions [m]
+  - `wf.posNac`: Nacelle position offsets [m]
+  - `wf.D`: Rotor diameters [m]
+  - `wf.StartI`: Starting indices for each turbine's operational points
+- `floris::Floris`: FLORIS model parameters for wake calculations. See [`Floris`](@ref)
+- `wind::Wind`: Wind field configuration including shear properties. See [`Wind`](@ref)
+
+# Returns
+- `M::Matrix{Float64}`: Results matrix of size `(nT × 3)` where each row contains:
+  - Column 1: Total velocity reduction factor (product of all wake effects)
+  - Column 2: Combined added turbulence intensity from all upstream turbines
+  - Column 3: Effective wind speed at turbine [m/s]
+- `wf`: Updated wind farm object with modified fields:
+  - `wf.Weight`: Normalized interpolation weights for each turbine
+  - `wf.red_arr`: Wake reduction matrix showing turbine-to-turbine wake effects
+
+# Algorithm
+The function processes each turbine individually:
+
+## Single Turbine Case (No Dependencies)
+- Directly calls FLORIS with the turbine's wind field state
+- No wake interactions considered
+- Results stored directly in output matrix
+
+## Multi-Turbine Case (With Dependencies)  
+1. **Temporary Configuration Setup**: Creates temporary arrays sized for the target turbine plus all influencing turbines
+2. **Interpolation Application**: Uses precomputed interpolation weights to determine states at influencing turbine positions
+3. **Coordinate Transformation**: Applies wind direction-based coordinate transformations to account for spatial offsets
+4. **FLORIS Execution**: Runs wake model with the complete multi-turbine configuration
+5. **Result Processing**: Combines wake effects and normalizes weights
+
+# Mathematical Description
+For multi-turbine scenarios, the effective position of influencing turbines is computed as:
+```
+tmp_Tpos[i] = base_position - R(φ) × [offset_x, offset_y, offset_z]
+```
+where `R(φ)` is the rotation matrix for wind direction `φ`.
+
+The total wake reduction is the product of individual wake effects:
+```
+T_red = ∏ᵢ T_red_arr[i]
+```
+
+Combined turbulence intensity follows root-sum-square combination:
+```
+T_addedTI = √(∑ᵢ T_aTI_arr[i]²)
+```
+
+# Wind Field Interpolation
+The function supports optional wind field interpolation via coefficient matrices:
+- **Velocity interpolation**: Uses `wf.C_Vel` if available
+- **Direction interpolation**: Uses `wf.C_Dir` if available
+
+# Notes
+- The function modifies the wind farm object in-place, updating weight and reduction arrays
+- Interpolation weights are normalized to ensure proper weighting
+- Special handling for variable rotor diameter configurations
+- Coordinate transformations use the SOWFA to world conversion via [`angSOWFA2world`](@ref)
+- The algorithm efficiently handles both simple single-turbine and complex multi-turbine wake scenarios
+"""
+function setUpTmpWFAndRun(set::Settings, wf, floris::Floris, wind::Wind)
     # Initialize outputs
     M = zeros(wf.nT, 3)
     wf.Weight = Vector{Vector{Float64}}(undef,wf.nT)
@@ -425,8 +504,8 @@ function setUpTmpWFAndRun(set::Settings, wf, paramFLORIS, Wind)
                 iTWFState',
                wf.States_T[wf.StartI[iT], :]',
                wf.D[iT],
-                paramFLORIS,
-                Wind.shear
+                floris,
+                wind.shear
             )
             M[iT, :] = [T_red_arr, 0, T_red_arr *wf.States_WF[wf.StartI[iT], 1]]
            wf.red_arr[iT, iT] = T_red_arr
@@ -478,7 +557,7 @@ function setUpTmpWFAndRun(set::Settings, wf, paramFLORIS, Wind)
         end
 
         # Run FLORIS                
-        T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, tmp_Tpos, tmp_WF, tmp_Tst, tmp_D, paramFLORIS, Wind.shear)
+        T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, tmp_Tpos, tmp_WF, tmp_Tst, tmp_D, floris, wind.shear)
 
         T_red = prod(T_red_arr)
         wf.red_arr[iT, vcat(wf.dep[iT], iT)] = T_red_arr

@@ -38,6 +38,7 @@ initSimulation
 findTurbineGroups
 prepareSimulation
 perturbationOfTheWF!
+setUpTmpWFAndRun
 interpolateOPs
 angSOWFA2world
 runFLORIDyn
