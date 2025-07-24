@@ -64,16 +64,16 @@ function States()
 end
 
 """
-    centerline(States_OP, States_T, States_WF, paramFLORIS, D)
+    centerline(states_op, states_t, states_wf, floris, d_rotor)
 
 Compute the centerline wake properties for a wind farm simulation.
 
 # Arguments
-- `States_OP`: Operational states of the turbines (e.g., yaw, pitch, etc.).
-- `States_T`: Turbine-specific states (e.g., rotor speed, torque, etc.).
-- `States_WF`: Wind farm-level states (e.g., wind direction, wind speed, etc.).
-- `paramFLORIS`: Parameters for the FLORIS wake model.
-- `D`: Rotor diameter or characteristic length scale.
+- `states_op`: Operational states of the turbines (e.g., yaw, pitch, etc.).
+- `states_t`: Turbine-specific states (e.g., rotor speed, torque, etc.).
+- `states_wf`: Wind farm-level states (e.g., wind direction, wind speed, etc.).
+- `floris`: Parameters for the FLORIS wake model.
+- `d_rotor`: Rotor diameter or characteristic length scale.
 
 # Returns
 - The computed centerline wake properties `delta`, which includes the deflection in the y and z directions.
@@ -81,22 +81,22 @@ Compute the centerline wake properties for a wind farm simulation.
 # Notes
 This function is part of the Gaussian wake model implementation for wind farm simulations using the FLORIDyn.jl package.
 """
-function centerline(States_OP, States_T, States_WF, paramFLORIS, D)
+function centerline(states_op, states_t, states_wf, floris, d_rotor)
     # Parameters
-    k_a   = paramFLORIS.k_a
-    k_b   = paramFLORIS.k_b
-    alpha = paramFLORIS.alpha
-    beta  = paramFLORIS.beta
+    k_a   = floris.k_a
+    k_b   = floris.k_b
+    alpha = floris.alpha
+    beta  = floris.beta
 
     # States
-    C_T   = calcCt(States_T[:,1], States_T[:,2])
-    yaw   = .-deg2rad.(States_T[:,2])
-    I     = sqrt.(States_T[:,3].^2 .+ States_WF[:,3].^2)
-    OPdw  = States_OP[:,4]
+    C_T   = calcCt(states_t[:,1], states_t[:,2])
+    yaw   = .-deg2rad.(states_t[:,2])
+    I     = sqrt.(states_t[:,3].^2 .+ states_wf[:,3].^2)
+    OPdw  = states_op[:,4]
 
     # Calc x_0 (Core length)
     x_0 = (cos.(yaw) .* (1 .+ sqrt.(1 .- C_T)) ./ 
-         (sqrt(2) .* (alpha .* I .+ beta .* (1 .- sqrt.(1 .- C_T))))) .* D
+         (sqrt(2) .* (alpha .* I .+ beta .* (1 .- sqrt.(1 .- C_T))))) .* d_rotor
 
     # Calc k_z and k_y based on I
     k_y = k_a .* I .+ k_b
@@ -105,11 +105,11 @@ function centerline(States_OP, States_T, States_WF, paramFLORIS, D)
     # Get field width y
     zs = zeros(size(OPdw))
     sig_y = max.(OPdw .- x_0, zs) .* k_y .+
-        min.(OPdw ./ x_0, zs .+ 1) .* cos.(yaw) .* D ./ sqrt(8)
+        min.(OPdw ./ x_0, zs .+ 1) .* cos.(yaw) .* d_rotor ./ sqrt(8)
 
     # Get field width z
     sig_z = max.(OPdw .- x_0, zs) .* k_z .+
-        min.(OPdw ./ x_0, zs .+ 1) .* D ./ sqrt(8)
+        min.(OPdw ./ x_0, zs .+ 1) .* d_rotor ./ sqrt(8)
 
     # Calc Theta
     Theta = 0.3 .* yaw ./ cos.(yaw) .* (1 .- sqrt.(1 .- C_T .* cos.(yaw)))
@@ -120,15 +120,15 @@ function centerline(States_OP, States_T, States_WF, paramFLORIS, D)
     delta_fw_1 = Theta ./ 14.7 .* sqrt.(cos.(yaw) ./ (k_y .* k_z .* C_T)) .* (2.9 .+ 1.3 .* sqrt.(1 .- C_T) .- C_T)
     delta_fw_2 = log.(Complex.(
         (1.6 .+ sqrt.(C_T)) .* 
-        (1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (D^2 .* cos.(yaw))) .- sqrt.(C_T)) ./
+        (1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (d_rotor^2 .* cos.(yaw))) .- sqrt.(C_T)) ./
         ((1.6 .- sqrt.(C_T)) .*
-        (1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (D^2 .* cos.(yaw))) .+ sqrt.(C_T)))
+        (1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (d_rotor^2 .* cos.(yaw))) .+ sqrt.(C_T)))
     ))
     # println("delta_fw_2: ", delta_fw_2)
     # Use signbit and broadcasting for the sign/(2) + 0.5 logic
     factor = (sign.(OPdw .- x_0) ./ 2 .+ 0.5)
 
-    deltaY = delta_nfw .+ factor .* delta_fw_1 .* delta_fw_2 .* D
+    deltaY = delta_nfw .+ factor .* delta_fw_1 .* delta_fw_2 .* d_rotor
     
     # Deflection in y and z direction
     delta = hcat(deltaY, zeros(size(deltaY)))
