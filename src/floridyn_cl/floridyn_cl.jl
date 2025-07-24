@@ -348,25 +348,18 @@ where:
 - This preprocessing enables efficient interpolation during simulation time steps
 """
 function interpolateOPs(wf)
-    #wf.nT :: Int
-    #wf.StartI :: Vector{Int}
-    #wf.dep :: Vector{Vector{Int}}
-    #wf.States_OP :: Matrix{Float64}
-    #wf.posBase :: Matrix{Float64}
-    #wf.nOP :: Int
-
     intOPs = Vector{Matrix{Float64}}(undef,wf.nT)  # Cell equivalent in Julia
 
     for iT in 1:wf.nT  # For every turbine
         intOPs[iT] = zeros(length(wf.dep[iT]), 4)
 
         for iiT in 1:length(wf.dep[iT])  # for every influencing turbine
-            iiaT =wf.dep[iT][iiT]  # actual turbine index
+            iiaT = wf.dep[iT][iiT]       # actual turbine index
 
             # Compute distances from OPs of turbine iiaT to current turbine
-            start_idx =wf.StartI[iiaT]
-            OP_positions =wf.States_OP[start_idx:(start_idx +wf.nOP - 1), 1:2]
-            turb_pos =wf.posBase[iT, 1:2]
+            start_idx    = wf.StartI[iiaT]
+            OP_positions = wf.States_OP[start_idx:(start_idx +wf.nOP - 1), 1:2]
+            turb_pos     = wf.posBase[iT, 1:2]
 
             # Euclidean distances to the turbine position
             dist = sqrt.(sum((OP_positions' .- turb_pos).^2, dims=2))
@@ -378,22 +371,22 @@ function interpolateOPs(wf)
             if sorted_indices[1] == 1
                 # Closest is first OP (unlikely)
                 intOPs[iT][iiT, :] = [wf.StartI[iiaT], 1.0,wf.StartI[iiaT] + 1, 0.0]
-            elseif sorted_indices[1] ==wf.nOP
+            elseif sorted_indices[1] == wf.nOP
                 # Closest is last OP (possible)
                 intOPs[iT][iiT, :] = [wf.StartI[iiaT] + wf.nOP - 2, 0.0, wf.StartI[iiaT] + wf.nOP - 1, 1.0]
             else
                 # Use two closest OPs for interpolation
-                indOP1 =wf.StartI[iiaT] - 1 + sorted_indices[1]
-                indOP2 =wf.StartI[iiaT] - 1 + sorted_indices[2]
+                indOP1 = wf.StartI[iiaT] - 1 + sorted_indices[1]
+                indOP2 = wf.StartI[iiaT] - 1 + sorted_indices[2]
 
-                a =wf.States_OP[indOP1, 1:2]
-                b =wf.States_OP[indOP2, 1:2]
-                c =wf.posBase[iT, 1:2]
+                a = wf.States_OP[indOP1, 1:2]
+                b = wf.States_OP[indOP2, 1:2]
+                c = wf.posBase[iT, 1:2]
 
                 ab = b .- a
                 ac = c .- a
-                d = dot(ab, ac) / dot(ab, ab)
-                d = clamp(d, 0.0, 1.0)
+                d  = dot(ab, ac) / dot(ab, ab)
+                d  = clamp(d, 0.0, 1.0)
 
                 r1 = 1.0 - d
                 r2 = d
