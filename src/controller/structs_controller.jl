@@ -9,7 +9,7 @@
 An abstract type representing a controller model for wind turbines.
 Subtypes of `ControllerModel` should implement specific control strategies for turbine operation.
 
-See: [Markers defining the controller](@ref) for more details.
+See: [Defining the controller](@ref) for more details.
 """
 abstract type ControllerModel end
 

@@ -8,7 +8,7 @@ CurrentModule = FLORIDyn
 WindFarm
 ```
 
-## Markers defining the wind velocity model
+## Defining the wind velocity model
 An instance of these structs needs to be passed to the functions that calculate the wind velocity. They are
 all subtypes of [`VelModel`](@ref)
 ```@docs
@@ -17,7 +17,7 @@ Velocity_Constant_wErrorCov
 Velocity_EnKF_InterpTurbine
 ```
 
-## Markers defining the wind direction model
+## Defining the wind direction model
 An instance of these structs needs to be passed to the functions that calculate the wind direction. They are
 all subtypes of [`DirModel`](@ref)
 
@@ -32,14 +32,14 @@ Direction_InterpTurbine_wErrorCov
 Direction_RW_with_Mean
 ```
 
-## Markers for defining the wind shear
+## Defining the wind shear model
 An instance of these structs needs to be passed to the functions that calculate the wind shear.
 ```@docs
 Shear_Interpolation
 Shear_PowerLaw
 ```
 
-## Markers for defining the wind turbulence
+## Defining the wind turbulence model
 An instance of these structs needs to be passed to the functions that calculate the wind turbulence.
 ```@docs
  TI_Constant
@@ -48,7 +48,7 @@ An instance of these structs needs to be passed to the functions that calculate 
  TI_InterpTurbine
 ```
 
-## Markers defining the velocity correction
+## Defining the velocity correction
 An instance of these structs needs to be passed to the functions that correct wind velocity. They are
 all subtypes of [`VelCorrection`](@ref)
 
@@ -58,7 +58,7 @@ Velocity_None
 Velocity_wGaspariAndCohn
 ```
 
-## Markers defining the direction correction
+## Defining the direction correction
 An instance of these structs needs to be passed to the functions that correct wind direction. They are
 all subtypes of [`DirCorrection`](@ref)
 
@@ -69,7 +69,7 @@ Direction_None
 Direction_wGaspariAndCohn
 ```
 
-## Markers defining the turbulence correction
+## Defining the turbulence correction
 An instance of these structs needs to be passed to the functions that correct turbulence intensity. They are
 all subtypes of [`TurbulenceCorrection`](@ref)
 
@@ -79,7 +79,7 @@ TI_None
 TI_wGaspariAndCohn
 ```
 
-## Markers defining the controller
+## Defining the controller
 An instance of these structs needs to be passed to the functions that control turbine behavior. They are all subtypes of [`ControllerModel`](@ref)
 
 ```@docs

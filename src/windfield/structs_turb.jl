@@ -9,7 +9,7 @@
 An abstract type representing a turbulence model for wind field calculations.
 Subtypes of `TurbulenceModel` should implement specific models for wind turbulence intensity.
 
-See: [Markers for defining the wind turbulence](@ref) for more details.
+See: [Defining the wind turbulence model](@ref) for more details.
 """
 abstract type TurbulenceModel end
 

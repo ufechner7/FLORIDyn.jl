@@ -10,7 +10,7 @@ Abstract type representing a velocity model in the wind field module.
 Subtypes of `VelModel` implement specific velocity field representations or models.
 
 See also: 
-- [Markers defining the wind velocity model](@ref) for more details.
+- [Defining the wind velocity model](@ref) for more details.
 """
 abstract type VelModel end
 

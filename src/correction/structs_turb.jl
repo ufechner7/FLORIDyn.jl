@@ -9,7 +9,7 @@
 An abstract type representing a turbulence correction model for wind field adjustments.
 Subtypes of `TurbulenceCorrection` should implement specific correction methods for turbulence intensity.
 
-See: [Markers defining the turbulence correction](@ref) for more details.
+See: [Defining the turbulence correction](@ref) for more details.
 """
 abstract type TurbulenceCorrection end
 

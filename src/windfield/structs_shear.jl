@@ -9,7 +9,7 @@
 An abstract type representing a wind shear model for vertical wind profiles.
 Subtypes of `ShearModel` should implement specific models for wind shear calculations.
 
-See: [Markers for defining the wind shear](@ref) for more details.
+See: [Defining the wind shear model](@ref) for more details.
 """
 abstract type ShearModel end
 
