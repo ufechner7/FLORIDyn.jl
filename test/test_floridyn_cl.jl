@@ -20,5 +20,31 @@ using FLORIDyn, Test
         # Test 5: deg_SOWFA = 360 should give rad_World = deg2rad(-90)
         @test isapprox(angSOWFA2world(360), deg2rad(-90))
     end
+    function structs_equal(a::T, b::T) where T
+        result = true
+        fields = fieldnames(T)
+        for f in fields
+            val_a = getfield(a, f)
+            val_b = getfield(b, f)
+            if val_a != val_b
+                println("Field $(f): a = $(val_a), b = $(val_b)")
+                result = false
+            end
+        end
+        return result
+    end
+    @testset "initSimulation" begin
+        settings_file = "data/2021_9T_Data.yaml"
+        # get the settings for the wind field, simulator and controller
+        wind, sim, con, floris, floridyn = setup(settings_file)
+        # create settings struct
+        set = Settings(wind, sim, con)
+        # % Load linked data
+        turbProp        = turbineArrayProperties(settings_file)
+        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
+        wf_old = deepcopy(wf)
+        wf = initSimulation(wf, sim)
+        @test structs_equal(wf_old, wf)
+    end
 end
 nothing
