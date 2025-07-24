@@ -525,7 +525,7 @@ function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, flor
         T_aTI_arr[iT] = T_addedTI_tmp * dot(RPw, exp_y .* exp_z)
     end
 
-    redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ LocationT[end, 3])
+    redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ location_t[end, 3])
     T_red_arr[end] = dot(RPw, redShear)
 
     T_red = prod(T_red_arr)
