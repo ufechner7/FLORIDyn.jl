@@ -95,6 +95,7 @@ WindDirMatrix
 WindDirTriple
 WindVelType
 WindVelMatrix
+WindShear
 ```
 
 ## Other types

@@ -342,7 +342,8 @@ function getVars(rps::Union{Matrix, Adjoint}, c_t, yaw, ti, ti0, floris::Floris,
 end
 
 """
-    runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, windshear)
+    runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, 
+              floris::Floris, windshear::Union{Matrix, WindShear})
 
 Execute the FLORIS (FLOw Redirection and Induction in Steady State) wake model simulation for wind farm analysis.
 
@@ -357,7 +358,7 @@ It accounts for wake interactions, rotor discretization, wind shear effects, and
 - `states_t`: Turbine state matrix with axial induction factors, yaw angles, and turbulence intensities
 - `d_rotor`: Vector of rotor diameters for each turbine [m]
 - `floris::Floris`: FLORIS model parameters containing wake model coefficients and rotor discretization settings (see [`Floris`](@ref))
-- `windshear::Matrix`: Wind shear profile data for vertical wind speed variation modeling
+- `windshear`: Wind shear profile data for vertical wind speed variation modeling, either a matrix or of type [`WindShear`](@ref)
 
 # Returns
 A tuple `(T_red_arr, T_aTI_arr, T_Ueff, T_weight)` containing:
@@ -423,8 +424,7 @@ The function implements several key wake modeling equations:
 - Bastankhah, M. and Porté-Agel, F. (2016). Experimental and theoretical study of wind turbine wakes in yawed conditions
 - Niayifar, A. and Porté-Agel, F. (2016). Analytical modeling of wind farms: A new approach for power prediction
 """
-function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, windshear)
-    # Main.@infiltrate
+function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, windshear::Union{Matrix, WindShear})
     if d_rotor[end] > 0
         RPl, RPw = discretizeRotor(floris.rotor_points)
     else
@@ -555,7 +555,7 @@ yaw range constraints using hyperbolic tangent functions for smooth operational 
 # Description
 The function calculates power using the standard wind turbine power equation with yaw corrections:
 
-```
+```julia
 P = 0.5 × ρ × A × Cp × U³ × η × cos(γ)^p_p × f_yaw_constraints
 ```
 
@@ -570,8 +570,9 @@ Where:
 - `f_yaw_constraints` is optional yaw range constraint factor [-]
 
 The yaw constraint factor is applied when `con.tanh_yaw` is true:
-```
-f_yaw_constraints = [0.5 × tanh((γ_max - γ) × 50) + 0.5] × [-0.5 × tanh((γ_min - γ) × 50) + 0.5]
+```julia
+f_yaw_constraints = [0.5 × tanh((γ_max - γ) × 50) + 0.5] × 
+                           [-0.5 × tanh((γ_min - γ) × 50) + 0.5]
 ```
 
 # Notes

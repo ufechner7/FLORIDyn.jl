@@ -29,7 +29,8 @@ Prepares the simulation environment for a wind farm analysis using the provided 
   - `con`: Updated controller parameters.
   - `floris`: Parameters for the FLORIS model.
 """
-function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriDyn, floris::Floris, turbProp, sim::Sim)
+function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriDyn, 
+                           floris::Floris, turbProp, sim::Sim)
     loadDataWarnings = String[]
 
     # ========== WIND: Velocity ==========

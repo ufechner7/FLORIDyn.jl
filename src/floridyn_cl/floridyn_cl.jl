@@ -286,7 +286,8 @@ end
 
 
 """
-    runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, floridyn::FloriDyn, floris::Floris)
+    runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
+                floridyn::FloriDyn, floris::Floris)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
