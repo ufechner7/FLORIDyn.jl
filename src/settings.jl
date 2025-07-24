@@ -1,6 +1,29 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+"""
+    WindPerturbation
+
+A mutable struct for configuring stochastic wind perturbations in wind farm simulations.
+
+This struct controls whether perturbations are applied to different wind parameters and defines
+the magnitude of these perturbations using standard deviations. Wind perturbations are used to 
+model uncertainty in wind measurements or to perform sensitivity analysis.
+
+# Fields
+- `vel::Bool`: Enable/disable velocity perturbations. When `true`, random perturbations are applied to wind velocity.
+- `vel_sigma::Float64`: Standard deviation for velocity perturbations [m/s]. Determines the magnitude of random variations added to the wind velocity.
+- `dir::Bool`: Enable/disable direction perturbations. When `true`, random perturbations are applied to wind direction.
+- `dir_sigma::Float64`: Standard deviation for direction perturbations [degrees]. Determines the magnitude of random variations added to the wind direction.
+- `ti::Bool`: Enable/disable turbulence intensity perturbations. When `true`, random perturbations are applied to turbulence intensity.
+- `ti_sigma::Float64`: Standard deviation for turbulence intensity perturbations [-]. Determines the magnitude of random variations added to the turbulence intensity.
+
+# Notes
+- Perturbations are typically applied as additive Gaussian noise with zero mean and the specified standard deviation
+- The perturbation flags (`vel`, `dir`, `ti`) act as switches to enable or disable specific types of perturbations
+- Setting a flag to `false` will disable perturbations for that parameter regardless of the sigma value
+- Standard deviations should be positive values.
+"""
 @with_kw mutable struct WindPerturbation
     vel::Bool
     vel_sigma::Float64
