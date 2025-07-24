@@ -239,7 +239,7 @@ function init_states(set::Settings, wf, wind, init_turb, floris, sim)
 end
 
 """
-    getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
+    getVars(rps, a, c_t, yaw, ti, ti0, param, d)
 
 Compute and return variables related to the Gaussian wake model for wind turbines.
 
@@ -248,20 +248,20 @@ the deflection. These values are needed for the calculation of the wake shape an
 reduction. The values are based of the state of every individual OP.
 
 # Arguments
-- `RPs`: Array or collection of reference points where the variables are evaluated.
+- `rps`: Array or collection of reference points where the variables are evaluated.
 - `a`: Axial induction factor(s) for the turbine(s).
-- `C_T`: Thrust coefficient(s) for the turbine(s).
+- `c_t`: Thrust coefficient(s) for the turbine(s).
 - `yaw`: Yaw angle(s) of the turbine(s) in radians or degrees.
-- `TI`: Turbulence intensity at the reference points.
-- `TI0`: Ambient turbulence intensity.
+- `ti`: Turbulence intensity at the reference points.
+- `ti0`: Ambient turbulence intensity.
 - `param`: Model parameters, possibly a struct or dictionary containing Gaussian wake model parameters.
-- `D`: Rotor diameter(s) of the turbine(s).
+- `d`: Rotor diameter(s) of the turbine(s).
 
 # Returns
 Returns the tuple
 - sig_y::Vector: Gaussian variance in y direction (sqrt of)
 - sig_z::Vector: Gaussian variance in z direction (sqrt of)
-- C_T: Thrust coefficient, same as OP.Ct
+- c_t: Thrust coefficient, same as OP.Ct
 - x_0: Potential core length
 - delta: Deflection
 - pc_y: Potential core boundary in y dir
@@ -271,7 +271,7 @@ Returns the tuple
 - [1] Experimental and theoretical study of wind turbine wakes in yawed conditions - M. Bastankhah and F. Porté-Agel
 - [2] Design and analysis of a spatially heterogeneous wake - A. Farrell, J. King et al.
 """
-function getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
+function getVars(rps, a, c_t, yaw, ti, ti0, param, d)
     # Unpack parameters
     k_a   = param.k_a
     k_b   = param.k_b
@@ -279,12 +279,12 @@ function getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
     beta  = param.beta
 
     # States
-    I = sqrt.(TI.^2 .+ TI0.^2)
-    OPdw = RPs[:, 1]
+    I = sqrt.(ti.^2 .+ ti0.^2)
+    OPdw = rps[:, 1]
 
     # Core length x_0
-    x_0 = (cos.(yaw) .* (1 .+ sqrt.(1 .- C_T)) ./ 
-          (sqrt(2) .* (alpha .* I .+ beta .* (1 .- sqrt.(1 .- C_T))))) .* D
+    x_0 = (cos.(yaw) .* (1 .+ sqrt.(1 .- c_t)) ./ 
+          (sqrt(2) .* (alpha .* I .+ beta .* (1 .- sqrt.(1 .- c_t))))) .* d
 
     # Compute k_y and k_z
     k_y = k_a .* I .+ k_b
@@ -295,51 +295,51 @@ function getVars(RPs, a, C_T, yaw, TI, TI0, param, D)
 
     # sig_y calculation (field width in y)
     sig_y = max.(OPdw .- x_0, zs) .* k_y .+
-            min.(OPdw ./ x_0, zs .+ 1) .* cos.(yaw) .* D / sqrt(8)
+            min.(OPdw ./ x_0, zs .+ 1) .* cos.(yaw) .* d / sqrt(8)
 
     # sig_z calculation (field width in z)
     sig_z = max.(OPdw .- x_0, zs) .* k_z .+
-            min.(OPdw ./ x_0, zs .+ 1) .* D / sqrt(8)
+            min.(OPdw ./ x_0, zs .+ 1) .* d / sqrt(8)
 
     # Theta
-    Theta = 0.3 .* yaw ./ cos.(yaw) .* (1 .- sqrt.(1 .- C_T .* cos.(yaw)))
+    Theta = 0.3 .* yaw ./ cos.(yaw) .* (1 .- sqrt.(1 .- c_t .* cos.(yaw)))
 
     # Deflection delta - near wake
     delta_nfw = Theta .* map((opdw, x0) -> min(opdw, x0), OPdw, x_0)
 
     # delta_fw parts
-    delta_fw_1 = Theta ./ 14.7 .* sqrt.(cos.(yaw) ./ (k_y .* k_z .* C_T)) .* 
-                 (2.9 .+ 1.3 .* sqrt.(1 .- C_T) .- C_T)
+    delta_fw_1 = Theta ./ 14.7 .* sqrt.(cos.(yaw) ./ (k_y .* k_z .* c_t)) .* 
+                 (2.9 .+ 1.3 .* sqrt.(1 .- c_t) .- c_t)
 
     # Intermediate term
-    term = 1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (D.^2 .* cos.(yaw)))
+    term = 1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (d.^2 .* cos.(yaw)))
 
-    delta_fw_2 = log.(((1.6 .+ sqrt.(C_T)) .* (term .- sqrt.(C_T))) ./ 
-                      ((1.6 .- sqrt.(C_T)) .* (term .+ sqrt.(C_T))))
+    delta_fw_2 = log.(((1.6 .+ sqrt.(c_t)) .* (term .- sqrt.(c_t))) ./ 
+                      ((1.6 .- sqrt.(c_t)) .* (term .+ sqrt.(c_t))))
 
     # Condition mask: OPdw > x_0 => 1.0, else 0.0
     mask = (OPdw .> x_0)
     blend = 0.5 .* sign.(OPdw .- x_0) .+ 0.5
 
     # Total delta in y
-    deltaY = delta_nfw .+ blend .* delta_fw_1 .* delta_fw_2 .* D
+    deltaY = delta_nfw .+ blend .* delta_fw_1 .* delta_fw_2 .* d
     delta = hcat(deltaY, zeros(size(deltaY)))  # [delta_y, delta_z]
 
     # Potential core
-    u_r_0 = (C_T .* cos.(yaw)) ./ 
-            (2 .* (1 .- sqrt.(1 .- C_T .* cos.(yaw))) .* sqrt.(1 .- C_T))
+    u_r_0 = (c_t .* cos.(yaw)) ./ 
+            (2 .* (1 .- sqrt.(1 .- c_t .* cos.(yaw))) .* sqrt.(1 .- c_t))
 
-    pc_y = D .* cos.(yaw) .* sqrt.(u_r_0) .* max.(1 .- OPdw ./ x_0, zs)
-    pc_z = D .* sqrt.(u_r_0) .* max.(1 .- OPdw ./ x_0, zs)
+    pc_y = d .* cos.(yaw) .* sqrt.(u_r_0) .* max.(1 .- OPdw ./ x_0, zs)
+    pc_z = d .* sqrt.(u_r_0) .* max.(1 .- OPdw ./ x_0, zs)
 
     # For points exactly at the rotor plane
     rp = OPdw .== 0
     if sum(rp) > 0
-        pc_y[rp] .= D .* cos.(yaw)
-        pc_z[rp] .= D
+        pc_y[rp] .= d .* cos.(yaw)
+        pc_z[rp] .= d
     end
 
-    return sig_y, sig_z, C_T, x_0, delta, pc_y, pc_z
+    return sig_y, sig_z, c_t, x_0, delta, pc_y, pc_z
 end
 
 function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS, windshear)
