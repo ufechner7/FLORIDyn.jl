@@ -54,7 +54,7 @@ function perturbationOfTheWF!(wf, Wind)
 end
 
 """
-    findTurbineGroups(wf, floridyn::FloriDyn)
+    findTurbineGroups(wf::WindFarm, floridyn::FloriDyn)
 
 Determine wake interaction dependencies between turbines in a wind farm.
 
@@ -63,7 +63,7 @@ are affected by the wakes of upstream turbines. It uses coordinate transformatio
 wind-aligned reference frame and geometric criteria to determine wake interactions.
 
 # Arguments
-- `wf`: Wind farm object containing turbine positions, operational points, and wind field states
+- `wf::WindFarm`: Wind farm object containing turbine positions, operational points, and wind field states. See [`WindFarm`](@ref)
 - `floridyn::FloriDyn`: FLORIDyn model parameters containing wake interaction thresholds. See [`FloriDyn`](@ref)
 
 # Returns
@@ -95,7 +95,7 @@ where:
 - Self-interaction (turbine affecting itself) is explicitly excluded
 - The coordinate transformation accounts for the SOWFA wind direction convention
 """
-function findTurbineGroups(wf, floridyn::FloriDyn)
+function findTurbineGroups(wf::WindFarm, floridyn::FloriDyn)
     # Extract parameters from settings struct
     dw = floridyn.deltaDW
     cw = floridyn.deltaCW
