@@ -105,7 +105,7 @@ using FLORIDyn, Test
                             ]
         @test vv_dep == vv_dep_expected
     end
-    @testset "interpolateOPs" begin
+    @testset "iterateOPs!" begin
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
         wind, sim, con, floris, floridyn = setup(settings_file)
@@ -114,7 +114,9 @@ using FLORIDyn, Test
         # % Load linked data
         turbProp        = turbineArrayProperties(settings_file)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
-        # interpolateOPs(wf)
+        wf_old = deepcopy(wf)
+        wf = iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
+        @test ! structs_equal(wf_old, wf; prn=false)
     end
 end
 nothing
