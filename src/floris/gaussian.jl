@@ -137,33 +137,33 @@ function centerline(States_OP, States_T, States_WF, paramFLORIS, D)
 end
 
 
-function InitStates(set::Settings, wf, Wind, InitTurb, paramFLORIS, Sim)
+function InitStates(set::Settings, wf, wind, init_turb, floris, sim)
     # Unpack state arrays and parameters
     States_OP   = copy(wf.States_OP)
     States_T    = copy(wf.States_T)
     States_WF   = copy(wf.States_WF)
     nT          = wf.nT
     nOP         = wf.nOP
-    deltaT      = Sim.time_step
-    startTime   = Sim.start_time
+    deltaT      = sim.time_step
+    startTime   = sim.start_time
 
     for iT = 1:nT
         # Retrieve wind field data
-        if Wind.input_vel == "I_and_I"
-            U = getWindSpeedT(set.vel_mode, Wind.vel, iT, startTime)
-        elseif Wind.input_vel in ["ZOH_wErrorCov", "RW_with_Mean"]
-            U = Wind.vel.Init
+        if wind.input_vel == "I_and_I"
+            U = getWindSpeedT(set.vel_mode, wind.vel, iT, startTime)
+        elseif wind.input_vel in ["ZOH_wErrorCov", "RW_with_Mean"]
+            U = wind.vel.Init
         else
-            U = getWindSpeedT(set.vel_mode, Wind.vel, iT, startTime)
+            U = getWindSpeedT(set.vel_mode, wind.vel, iT, startTime)
         end
 
-        if Wind.input_dir == "RW_with_Mean"
-            phiS = Wind.dir.Init
+        if wind.input_dir == "RW_with_Mean"
+            phiS = wind.dir.Init
         else
-            phiS = getWindDirT(set.dir_mode, Wind.dir, iT, startTime)
+            phiS = getWindDirT(set.dir_mode, wind.dir, iT, startTime)
         end
 
-        TI = getWindTiT(set.turb_mode, Wind.ti, iT, startTime)
+        TI = getWindTiT(set.turb_mode, wind.ti, iT, startTime)
 
         rangeOPs = ((iT-1)*nOP+1):(iT*nOP)
 
@@ -181,11 +181,11 @@ function InitStates(set::Settings, wf, Wind, InitTurb, paramFLORIS, Sim)
         States_OP[rangeOPs, 4] .= (collect(0:(nOP-1)) .* deltaT .* U)
 
         # Init turbine states
-        States_T[rangeOPs, :] = ones(nOP, 1) * InitTurb[iT, :]'
+        States_T[rangeOPs, :] = ones(nOP, 1) * init_turb[iT, :]'
 
         # Crosswind position
         States_OP[rangeOPs, 5:6] = centerline(States_OP[rangeOPs, :], States_T[rangeOPs, :],
-                                              States_WF[rangeOPs, :], paramFLORIS, wf.D[iT])
+                                              States_WF[rangeOPs, :], floris, wf.D[iT])
 
         # Convert wind dir in fitting radians
         phiW = angSOWFA2world.(States_WF[rangeOPs, 2])
