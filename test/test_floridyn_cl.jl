@@ -45,6 +45,18 @@ using FLORIDyn, Test
         wf_old = deepcopy(wf)
         wf = initSimulation(wf, sim)
         @test structs_equal(wf_old, wf)
+        path = joinpath(sim.path_to_data, "T_init.jld2")
+        rm(path; force=true)
+        sim.init="init"
+        sim.save_init_state = true
+        wf = initSimulation(wf, sim)
+        @test isfile(path)
+        sim.init="load"
+        sim.save_init_state = false
+        wf = nothing
+        wf = initSimulation(wf, sim)
+        @test structs_equal(wf_old, wf)
+        rm(path; force=true)
     end
 end
 nothing

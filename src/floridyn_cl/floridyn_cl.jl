@@ -10,14 +10,16 @@ function angSOWFA2world(deg_SOWFA)
     return rad_World
 end
 
-function initSimulation(wf::WindFarm, sim::Sim)
+function initSimulation(wf::Union{Nothing, WindFarm}, sim::Sim)
     # Initialize the simulation or load an initialized state
     sim_init = lowercase(sim.init)
 
     if sim_init == "init"
-        if getfield(sim, :SaveInitState) # or Sim.SaveInitState if Sim is mutable struct
+        if sim.save_init_state
             # Save the initialization state to a file
-            jldsave(joinpath(sim.path_to_data, "T_init.jld2"); wf)
+            path = joinpath(sim.path_to_data, "T_init.jld2")
+            @info "Saving windfield as $path ..."
+            jldsave(path; wf)
         end
     elseif sim_init == "load"
         try
