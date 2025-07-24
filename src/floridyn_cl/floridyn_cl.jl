@@ -10,6 +10,46 @@ function angSOWFA2world(deg_SOWFA)
     return rad_World
 end
 
+"""
+    initSimulation(wf::Union{Nothing, WindFarm}, sim::Sim)
+
+Initialize or load a wind farm simulation state based on simulation settings.
+
+This function handles the initialization phase of a wind farm simulation by either saving 
+the current initialized state to disk or loading a previously saved state, depending on 
+the simulation configuration.
+
+# Arguments
+- `wf::Union{Nothing, WindFarm}`: Wind farm object containing the initialized simulation state, or `Nothing` if no state is available. See [`WindFarm`](@ref)
+- `sim::Sim`: Simulation configuration object containing initialization settings and file paths. See [`Sim`](@ref)
+
+# Returns
+- `wf::Union{Nothing, WindFarm}`: The wind farm state, either the original input state (for "init" mode) or a loaded state from disk (for "load" mode)
+
+# Behavior
+The function operates in two modes based on `sim.init`:
+
+## "init" Mode
+- Uses the provided wind farm state as-is
+- If `sim.save_init_state` is `true`, saves the current state to `"T_init.jld2"` in the specified data directory
+- Logs the save operation for user feedback
+
+## "load" Mode  
+- Attempts to load a previously saved wind farm state from `"T_init.jld2"`
+- Falls back to the provided state if loading fails (with warning)
+- Handles file I/O errors gracefully
+
+# File Operations
+- **Save path**: `\$(sim.path_to_data)/T_init.jld2`
+- **Format**: JLD2 binary format for efficient Julia object serialization
+- **Error handling**: Loading failures produce warnings but do not halt execution
+
+# Notes
+- The function is case-insensitive for the initialization mode string
+- File operations use the path specified in `sim.path_to_data`
+- Loading errors are caught and logged as warnings, allowing simulation to proceed with the original state
+- This mechanism enables reproducible simulations by preserving and reusing initial conditions
+"""
 function initSimulation(wf::Union{Nothing, WindFarm}, sim::Sim)
     # Initialize the simulation or load an initialized state
     sim_init = lowercase(sim.init)

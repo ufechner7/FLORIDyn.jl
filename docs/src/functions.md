@@ -34,6 +34,7 @@ runFLORIS
 
 # FLORIDyn
 ```@docs
+initSimulation
 findTurbineGroups
 prepareSimulation
 runFLORIDyn
