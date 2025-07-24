@@ -239,7 +239,7 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
 end
 
 """
-    getVars(rps, a, c_t, yaw, ti, ti0, param, d_rotor)
+    getVars(rps::Union{Matrix, Adjoint}, c_t, yaw, ti, ti0, floris::Floris, d_rotor)
 
 Compute and return variables related to the Gaussian wake model for wind turbines.
 
@@ -248,13 +248,12 @@ the deflection. These values are needed for the calculation of the wake shape an
 reduction. The values are based of the state of every individual OP.
 
 # Arguments
-- `rps`: Array or collection of reference points where the variables are evaluated.
-- `a`: Axial induction factor(s) for the turbine(s).
+- `rps`: Matrix of reference points where the variables are evaluated.
 - `c_t`: Thrust coefficient(s) for the turbine(s).
 - `yaw`: Yaw angle(s) of the turbine(s) in radians or degrees.
 - `ti`: Turbulence intensity at the reference points.
 - `ti0`: Ambient turbulence intensity.
-- `param`: Model parameters, possibly a struct or dictionary containing Gaussian wake model parameters.
+- `floris::Floris`: FLORIS model parameters containing Gaussian wake model parameters (see [`Floris`](@ref)).
 - `d_rotor`: Rotor diameter(s) of the turbine(s).
 
 # Returns
@@ -271,12 +270,12 @@ Returns the tuple
 - [1] Experimental and theoretical study of wind turbine wakes in yawed conditions - M. Bastankhah and F. Porté-Agel
 - [2] Design and analysis of a spatially heterogeneous wake - A. Farrell, J. King et al.
 """
-function getVars(rps, a, c_t, yaw, ti, ti0, param, d_rotor)
+function getVars(rps::Union{Matrix, Adjoint}, c_t, yaw, ti, ti0, floris::Floris, d_rotor)
     # Unpack parameters
-    k_a   = param.k_a
-    k_b   = param.k_b
-    alpha = param.alpha
-    beta  = param.beta
+    k_a   = floris.k_a
+    k_b   = floris.k_b
+    alpha = floris.alpha
+    beta  = floris.beta
 
     # States
     I = sqrt.(ti.^2 .+ ti0.^2)
@@ -395,7 +394,7 @@ function runFLORIS(set::Settings, LocationT, States_WF, States_T, D, paramFLORIS
         TI0 = States_WF[iT, 3]
 
         sig_y, sig_z, C_T, x_0, delta, pc_y, pc_z = getVars(
-            tmp_RPs, a, Ct, yaw, TI, TI0, paramFLORIS, D[iT]
+            tmp_RPs, Ct, yaw, TI, TI0, paramFLORIS, D[iT]
         )
 
         cw_y = tmp_RPs[:, 2] .- delta[:, 1]
