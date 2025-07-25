@@ -98,6 +98,13 @@ using FLORIDyn, Test
     set = Settings(wind, sim, con)
     turbine_properties         = turbineArrayProperties(settings_file)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
+    
+    # Test with Constant_wErrorCov
+    wind, sim, con, floris, floridyn = setup(settings_file)
+    wind.input_dir = "Constant_wErrorCov"
+    set = Settings(wind, sim, con)
+    turbine_properties         = turbineArrayProperties(settings_file)
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
 
 
 end

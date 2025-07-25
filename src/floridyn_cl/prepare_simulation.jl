@@ -154,15 +154,15 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
         wind.dir = WindDirMatrix(data, cholsig)
     elseif wind.input_dir == "Constant_wErrorCov"
-        wind.dir = Dict()
-        wind.dir[:Data] = readdlm("WindDirConstant.csv", ',', Float64)
-        DirCov = readdlm("WindDirCovariance.csv", ',', Float64)
-        _, wind.dir[:CholSig] = readCovMatrix(DirCov, nT, "WindDir")
+        data = readdlm(joinpath(data_path, "WindDirConstant.csv"), ',', Float64)
+        DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
+        _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
+        wind.dir = WindDirType(data[1], cholsig)
     elseif wind.input_dir == "RW_with_Mean"
-        wind.dir = Dict()
-        wind.dir[:Init] = readdlm("WindDirConstant.csv", ',', Float64)
-        DirCov = readdlm("WindDirCovariance.csv", ',', Float64)
-        _, wind.dir[:CholSig] = readCovMatrix(DirCov, nT, "WindDir")
+        data = readdlm(joinpath(data_path, "WindDirConstant.csv"), ',', Float64)
+        DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
+        _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
+        wind.dir = WindDirType(data[1], cholsig)
         wind.dir[:MeanPull] = 1
     else
         error("Method for wind direction $(wind.input_dir) unknown.")

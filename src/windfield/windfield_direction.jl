@@ -28,25 +28,58 @@ function getWindDirT(::Direction_Constant, WindDir, iT, _)
 end
 
 """
-    getWindDirT(::Direction_Constant_wErrorCov, WindDir::WindDirType, iT)
+    getWindDirT(::Direction_Constant_wErrorCov, WindDir::WindDirType, iT, t)
 
 Return wind direction in SOWFA-deg for the requested turbine(s).
 
 # Arguments
 - `WindDir::WindDirType`: [WindDirType](@ref)
 - `iT`: Vector of turbine indices (can be any indexable collection)
+- `t`: Time step
 
 # Returns
 - `phi`: Vector of wind directions for the selected turbines, including random perturbation
 """
-function getWindDirT(::Direction_Constant_wErrorCov, WindDir::WindDirType, iT)
-    n = length(iT)
+function getWindDirT(::Direction_Constant_wErrorCov, WindDir::WindDirType, iT, t)
+    if isa(iT, AbstractArray)
+        n = length(iT)
+        indices = iT
+    else
+        n = 1
+        indices = [iT]
+    end
     phi = fill(WindDir.Data, n)
     # randn(RNG,n) gives a vector of n normal random numbers
     @assert issquare(WindDir.CholSig)
-    phi .+= WindDir.CholSig * randn(RNG,n)
-    return phi
+    # Extract the relevant submatrix of the Cholesky factor for the selected turbines
+    chol_sub = WindDir.CholSig[indices, indices]
+    phi .+= chol_sub * randn(RNG, n)
+    return isa(iT, AbstractArray) ? phi : phi[1]
 end
+
+# function phi = getWindDirT(WindDir,iT,~)
+# %GETWINDDIRT Return wind direction in SOWFA-deg for the requested
+# %turbine(s)
+# %
+# % ======= Input ======
+# % WindDir.Data   = float, wind direction
+# % WindDir.ColSig = nT x nT, col(Covariance Matrix)
+# % iT        = Index/Indeces of the turbines
+
+# phi = ones(size(iT))*WindDir.Data;
+# phi = phi + (randn(1,length(phi))*WindDir.CholSig)';
+# end
+
+
+# # Backward compatibility method with 3 arguments
+# function getWindDirT(::Direction_Constant_wErrorCov, WindDir::WindDirType, iT)
+#     n = length(iT)
+#     phi = fill(WindDir.Data, n)
+#     # randn(RNG,n) gives a vector of n normal random numbers
+#     @assert issquare(WindDir.CholSig)
+#     phi .+= WindDir.CholSig * randn(RNG, n)
+#     return phi
+# end
 
 """
     getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, WindDir::Matrix, iT, t)

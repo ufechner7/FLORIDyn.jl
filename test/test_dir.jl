@@ -6,7 +6,7 @@ using Test
 using LinearAlgebra
 using Random
 
-Random.seed!(1234)
+FLORIDyn.set_rng(MersenneTwister(1234))
 
 @testset verbose = true "wind dir                                                " begin
     @testset "getWindDirT(Direction_Constant(), ...)" begin
@@ -23,8 +23,8 @@ Random.seed!(1234)
         dir_mode = Direction_Constant_wErrorCov()
         WindDir = WindDirType(270.0, cholesky(Matrix{Float64}(I, 3, 3)).L)
         iT = [1, 2, 3]
-        phi = getWindDirT(dir_mode, WindDir, iT)
-        result = [269.0527533560426, 270.54014974707036, 269.78339785902375]
+        phi = getWindDirT(dir_mode, WindDir, iT, 0.0)
+        result = [269.1880495568859,  272.5622391399353 , 270.1032916340334]
         for (i, ph) in pairs(phi)
             @test ph ≈ result[i]
         end
@@ -98,8 +98,8 @@ Random.seed!(1234)
         # Call the function
         phi = getWindDirT(dir_mode, WindDir, iT, t)
         @test size(phi) == (2,1)
-        @test phi[1] ≈ 25.84752589085377
-        @test phi[2] ≈ 25.140544918823198128
+        @test phi[1] ≈ 25.066067906448957
+        @test phi[2] ≈ 26.21376743894564
     end
 
     @testset "getWindDirT(Direction_InterpTurbine(), ...)" begin
@@ -157,7 +157,7 @@ Random.seed!(1234)
         phi = getWindDirT(dir_mode, WindDir, 1, 12.5)
 
         @test length(phi) == 1
-        @test phi[1] ≈ 355.84437113031197
+        @test phi[1] ≈ 356.260488545849 
     end
 
     @testset "getWindDirT(Direction_RW_with_Mean(), ...)" begin
@@ -177,9 +177,9 @@ Random.seed!(1234)
         # Call the function
         phi = getWindDirT(dir_mode, WindDirNow, WindDir)
         @test size(phi) == (3,1)
-        @test phi[1] ≈ 9.80509368889485
-        @test phi[2] ≈ 21.48940455337165
-        @test phi[3] ≈ 31.437827702779927
+        @test phi[1] ≈ 9.550282410298815
+        @test phi[2] ≈ 19.2772337238657
+        @test phi[3] ≈ 28.472219543329473
     end
 end
 
