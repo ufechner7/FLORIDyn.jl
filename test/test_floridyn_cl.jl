@@ -157,7 +157,9 @@ using FLORIDyn, Test
         turbine_prop        = turbineArrayProperties(settings_file)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_prop, sim)
         wf, md, mi = runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
-        @test size(md) == (2709, 6)
+        @test size(md) == (2709, 6) # from Matlab
+        @test minimum(md.ForeignReduction) ≈ 72.57019949691814 # Matlab: 73.8438
+        @test mean(md.ForeignReduction)    ≈ 98.54434468415639 # Matlab: 98.2902
     end
 end # testset floridyncl
 nothing
