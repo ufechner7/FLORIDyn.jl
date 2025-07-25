@@ -217,7 +217,7 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
         states_op[rangeOPs, 4] .= (collect(0:(nOP-1)) .* deltaT .* u)
 
         # Init turbine states
-        states_t[rangeOPs, :] = ones(nOP, 1) * init_turb[iT, :]'
+        states_t[rangeOPs, :] .= init_turb[iT, :]'
 
         # Crosswind position
         states_op[rangeOPs, 5:6] = centerline(states_op[rangeOPs, :], states_t[rangeOPs, :],

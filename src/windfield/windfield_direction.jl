@@ -20,7 +20,11 @@ Return wind direction in SOWFA-degrees for the requested turbine(s).
 - `phi`: Array of wind direction values, same size as `iT`.
 """
 function getWindDirT(::Direction_Constant, WindDir, iT, _)
-    return fill(WindDir, size(iT))
+    if isa(iT, AbstractArray)
+        return fill(WindDir, size(iT))
+    else
+        return WindDir
+    end
 end
 
 """

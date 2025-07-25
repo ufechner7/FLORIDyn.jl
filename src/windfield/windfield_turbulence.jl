@@ -16,7 +16,11 @@ Return turbulence intensity for the requested turbine(s).
 - `Ti`: Array of turbulence intensity values for each turbine index
 """
 function getWindTiT(::TI_Constant, WindTi, iT, _)
-    return fill(WindTi, size(iT))
+    if isa(iT, AbstractArray)
+        return fill(WindTi, size(iT))
+    else
+        return WindTi
+    end
 end
 
 # function Ti = getWindTiT_EnKF(WindTi,iT,t)

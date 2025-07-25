@@ -16,7 +16,11 @@ Returns the wind speed at a given time index `iT` for a constant velocity wind f
 - The wind speed for the respective turbine(s), scalar or vector.
 """
 function getWindSpeedT(::Velocity_Constant, WindVel, iT, _)
-    WindVel .* ones(eltype(WindVel), size(iT))
+    if isa(iT, AbstractArray)
+        return WindVel .* ones(eltype(WindVel), size(iT))
+    else
+        return WindVel
+    end
 end
 
 """
