@@ -683,11 +683,13 @@ function getUadv(states_op, states_t, states_wf, floris::Floris, d_rotor)
     # =>  U_adv(x)/U_inf = 0.5*(1 + U_cen/U_inf)
     
     # Centerspeed outside of the potential core
-    U_cen_div_U_inf = real.(sqrt.(1 .- (C_T .* cos.(yaw)) ./ (8 .* sig_y_div_D .* sig_z_div_D)))
+    # Clamp the argument to prevent negative values under sqrt
+    sqrt_arg = max.(1 .- (C_T .* cos.(yaw)) ./ (8 .* sig_y_div_D .* sig_z_div_D), 0.0)
+    U_cen_div_U_inf = sqrt.(sqrt_arg)
     
     # Centerspeed inside of the potential core
     inside_core = x_0 .> OPdw
-    U_cen_div_U_inf[inside_core] = sqrt.(1 .- C_T[inside_core])
+    U_cen_div_U_inf[inside_core] = sqrt.(max.(1 .- C_T[inside_core], 0.0))
     
     Uadv_div_U_inf = 0.5 .* (1 .+ U_cen_div_U_inf)
 
