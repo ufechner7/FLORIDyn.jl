@@ -66,7 +66,7 @@ A mutable struct representing wind settings.
     vel::Union{Nothing, Float64} = nothing
     dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType, WindDirTriple} = nothing
     ti::Union{Nothing, Float64, Matrix{Float64}} = nothing
-    shear::Union{Nothing, WindShear} = nothing
+    shear::Union{Nothing, WindShear, Matrix{Float64}} = nothing
 end
 
 @with_kw struct Vel
