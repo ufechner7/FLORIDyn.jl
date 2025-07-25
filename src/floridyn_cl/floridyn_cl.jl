@@ -52,11 +52,8 @@ world_angle = angSOWFA2world(0.0)   # Returns 4.712388... (270° in radians)
 - This transformation is essential for proper wake modeling in wind farm simulations
 - The 270° offset ensures proper alignment between SOWFA and mathematical conventions
 """
-function angSOWFA2world(deg_SOWFA)
-    # Angle conversion SOWFA to world coordinates
-    # deg_F = -deg_S + 270 deg
-    # yaw angle defined clockwise, but for calculations counterclockwise
-    deg_World = 270 - deg_SOWFA
+@inline function angSOWFA2world(deg_SOWFA)
+    deg_World = 270.0 - deg_SOWFA
     rad_World = deg2rad(deg_World)
     return rad_World
 end

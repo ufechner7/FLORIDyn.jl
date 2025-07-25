@@ -13,7 +13,7 @@ Calculate the thrust coefficient (Ct) for a wind turbine based on the axial indu
 # Returns
 - `Ct::Number`: The calculated thrust coefficient.
 """
-function calcCt(a, _)
+@inline function calcCt(a, _)
     Ct = 4 .* a .* (1 .- a)
     return Ct
 end
