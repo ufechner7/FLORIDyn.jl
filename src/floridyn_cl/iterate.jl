@@ -127,9 +127,9 @@ function iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris,
 
         indOP = sortperm(@view wf.States_OP[inds, 4])
         if ! issorted(indOP)  # check if already sorted
-           wf.States_OP[inds, :] = wf.States_OP[inds[indOP], :]
-           wf.States_T[inds, :]  = wf.States_T[inds[indOP], :]
-           wf.States_WF[inds, :] = wf.States_WF[inds[indOP], :]
+           wf.States_OP[inds, :] = @view wf.States_OP[inds[indOP], :]
+           wf.States_T[inds, :]  = @view wf.States_T[inds[indOP], :]
+           wf.States_WF[inds, :] = @view wf.States_WF[inds[indOP], :]
         end
 
     end

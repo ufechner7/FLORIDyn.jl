@@ -175,7 +175,7 @@ where:
 - The random noise follows a standard normal distribution scaled by the respective sigma values
 - Only enabled perturbation types (based on boolean flags) are applied
 """
-function perturbationOfTheWF!(wf, Wind)
+@views function perturbationOfTheWF!(wf, Wind)
     # perturbationOfTheWF! adds noise to the entire wind field state
     
     # Velocity
@@ -248,7 +248,7 @@ where:
     vv_dep = Vector{Vector{Int64}}(undef,wf.nT)  # Equivalent of cell array in MATLAB[1][3]
     dep  = falses(wf.nT, wf.nT)
     
-    R01(phi) = [cos(phi)  sin(phi); -sin(phi) cos(phi)]
+    R01(phi) = @SMatrix [cos(phi)  sin(phi); -sin(phi) cos(phi)]
 
     for iT in 1:wf.nT
         for iiT in 1:wf.nT
@@ -262,8 +262,6 @@ where:
 
             I = LinearIndices(distOP_iiT)
             I_op = I[argmin(distOP_iiT)]
-        
-            # println("I_op: ", I_op)
             I_op = wf.StartI[iT] + I_op - 1
 
             # Angle and relative vector
@@ -678,7 +676,7 @@ function runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con
         # ========== Get Control settings ==========
         wf.States_T[wf.StartI, 2] = (
             wf.States_WF[wf.StartI, 2] .-
-                getYaw(set.control_mode, con.yaw_data, collect(1:nT), SimTime)'
+                getYaw(set.control_mode, con.yaw_data, (1:nT), SimTime)'
         )
 
         # ========== Calculate Power ==========
