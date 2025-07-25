@@ -479,7 +479,7 @@ The function supports optional wind field interpolation via coefficient matrices
 - Coordinate transformations use the SOWFA to world conversion via [`angSOWFA2world`](@ref)
 - The algorithm efficiently handles both simple single-turbine and complex multi-turbine wake scenarios
 """
-function setUpTmpWFAndRun(set::Settings, wf, floris::Floris, wind::Wind)
+@views function setUpTmpWFAndRun(set::Settings, wf, floris::Floris, wind::Wind)
     # Initialize outputs
     M = zeros(wf.nT, 3)
     wf.Weight = Vector{Vector{Float64}}(undef,wf.nT)
