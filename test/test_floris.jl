@@ -314,13 +314,13 @@ using FLORIDyn, Test
         
         # Since 5000m >> x_0_test, we're in far field
         k_y_test = floris.k_a * I_test + floris.k_b
-        sig_y_div_D_test = (5000.0 - x_0_test) * k_y_test / d_rotor
-        sig_z_div_D_test = (5000.0 - x_0_test) * k_y_test / d_rotor
+        sig_y_div_D_test = max(5000.0 - x_0_test, 0.0) * k_y_test / d_rotor + min(5000.0 / x_0_test, 1.0) * cos(yaw_test) / sqrt(8)
+        sig_z_div_D_test = max(5000.0 - x_0_test, 0.0) * k_y_test / d_rotor + min(5000.0 / x_0_test, 1.0) / sqrt(8)
         
-        U_cen_div_U_inf_test = sqrt(1 - (C_T_test * cos(yaw_test)) / (8 * sig_y_div_D_test * sig_z_div_D_test))
+        U_cen_div_U_inf_test = sqrt(max(1 - (C_T_test * cos(yaw_test)) / (8 * sig_y_div_D_test * sig_z_div_D_test), 0.0))
         expected_result = 0.5 * (1 + U_cen_div_U_inf_test)
         
-        # @test isapprox(result_far[1], expected_result, rtol=1e-10)
+        @test isapprox(result_far[1], expected_result, rtol=1e-10)
         
         # # Test 8: Vector operations consistency
         # # Test that broadcasting works correctly
