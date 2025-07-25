@@ -213,18 +213,6 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
             df = CSV.read(path, DataFrame)
             wind.shear = Matrix{Float64}(df)
         end
-
-    elseif wind.input_shear == "LogLaw"
-        path = joinpath(data_path, "WindShearLogLaw.csv")
-        try
-            df = CSV.read(path, DataFrame)
-            wind.shear = Matrix{Float64}(df)
-        catch e
-            push!(loadDataWarnings, "WindShearLogLaw.csv not found.")
-            generateDemoCSV(data_path, "WindShearLogLaw.csv", 2, nT, [0.0, 0.1], [100.0, 0.1])
-            df = CSV.read(path, DataFrame)
-            wind.shear = Matrix{Float64}(df)
-        end
     else
         error("Method for wind shear $(wind.input_shear) unknown.")
     end
