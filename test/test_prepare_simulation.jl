@@ -144,5 +144,19 @@ using FLORIDyn, Test
     set = Settings(wind, sim, con)
     turbine_properties         = turbineArrayProperties(settings_file)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
+
+    # yaw_method == "Constant"
+    wind, sim, con, floris, floridyn = setup(settings_file)
+    con.yaw = "Constant"
+    set = Settings(wind, sim, con)
+    turbine_properties         = turbineArrayProperties(settings_file)
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
+
+    # yaw_method == "InterpTurbine"
+    wind, sim, con, floris, floridyn = setup(settings_file)
+    con.yaw = "InterpTurbine"
+    set = Settings(wind, sim, con)
+    turbine_properties         = turbineArrayProperties(settings_file)
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
 end
 nothing
