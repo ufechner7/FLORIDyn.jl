@@ -170,15 +170,21 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
 
     # ============= TI =============        
     if wind.input_ti == "Interpolation"
+        path = joinpath(data_path, "WindTI.csv")
         try
-            wind.ti = CSV.read("WindTI.csv", DataFrame)
+            df = CSV.read(path, DataFrame)
+            wind.ti = Matrix{Float64}(df)
         catch e
             push!(loadDataWarnings, "WindTI.csv not found.")
+            generateDemoCSV(data_path, "WindTI.csv", 2, nT, [0.0, 0.0], [100.0, 100.0])
+            df = CSV.read(path, DataFrame)
+            wind.ti = Matrix{Float64}(df)
         end
     elseif wind.input_ti == "InterpTurbine"
         try
             path = joinpath(data_path, "WindTITurbine.csv")
-            wind.ti = CSV.read(path, DataFrame)
+            df = CSV.read(path, DataFrame)
+            wind.ti = Matrix{Float64}(df)
         catch e
             push!(loadDataWarnings, "WindTITurbine.csv not found.")
         end
@@ -202,11 +208,13 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         wind.shear = WindShear(alpha, z0)
     elseif wind.input_shear == "Interpolation"
         path = joinpath(data_path, "WindShearProfile.csv")
-        wind.shear = CSV.read(path, DataFrame)
+        df = CSV.read(path, DataFrame)
+        wind.shear = Matrix{Float64}(df)
 
     elseif wind.input_shear == "LogLaw"
         path = joinpath(data_path, "WindShearLogLaw.csv")
-        wind.shear = CSV.read(path, DataFrame)
+        df = CSV.read(path, DataFrame)
+        wind.shear = Matrix{Float64}(df)
     else
         error("Method for wind shear $(wind.input_shear) unknown.")
     end
@@ -249,13 +257,15 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     yaw_method = con.yaw
     if yaw_method == "Constant"
         try
-            con.YawData = CSV.read("Control_YawConstant.csv", DataFrame)
+            df = CSV.read("Control_YawConstant.csv", DataFrame)
+            con.yaw_data = Matrix{Float64}(df)
         catch
             push!(loadDataWarnings, "Control_YawConstant.csv not found.")
         end
     elseif yaw_method == "InterpTurbine"
         try
-            con.YawData = CSV.read("Control_YawInterpolation.csv", DataFrame)
+            df = CSV.read("Control_YawInterpolation.csv", DataFrame)
+            con.yaw_data = Matrix{Float64}(df)
         catch
             push!(loadDataWarnings, "Control_YawInterpolation.csv not found.")
         end
@@ -305,4 +315,66 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     end
 
     return wf, wind, sim, con, floris
+end
+
+"""
+    generateDemoCSV(path, name, type, nT, startV, endV)
+
+Generate demo CSV files for wind field data based on the specified type.
+
+# Arguments
+- `path::String`: Directory path where the CSV file will be saved
+- `name::String`: Name of the CSV file
+- `type::Int`: Type of data generation (1=Constant, 2=Interpolation, 3=Turbine individual interpolation)
+- `nT::Int`: Number of turbines
+- `startV`: Starting value(s) - format depends on type
+- `endV`: Ending value(s) - format depends on type
+
+# Types
+- Type 1 (Constant): `startV` should be a single value
+- Type 2 (Interpolation): `startV` and `endV` should be [time, value] pairs
+- Type 3 (Turbine individual interpolation): `startV` and `endV` should be [time, value] pairs
+
+# Examples
+```julia
+# Constant value
+generateDemoCSV("./data/", "WindDirConstant.csv", 1, 9, 270.0, nothing)
+
+# Interpolation
+generateDemoCSV("./data/", "WindDir.csv", 2, 9, [0.0, 250.0], [100.0, 280.0])
+
+# Turbine individual interpolation  
+generateDemoCSV("./data/", "WindDirTurbine.csv", 3, 9, [0.0, 250.0], [100.0, 280.0])
+```
+"""
+function generateDemoCSV(path::String, name::String, type::Int, nT::Int, startV, endV)
+    filepath = joinpath(path, name)
+    
+    if type == 1
+        # Constant value
+        # start: single value
+        writedlm(filepath, startV, ',')
+        
+    elseif type == 2
+        # Interpolation
+        # start: [time, value]
+        # end:   [time, value]
+        data = vcat(startV', endV')
+        @info "filepath: $filepath"
+        @info "pwd(): $(pwd())"
+        writedlm(filepath, data, ',')
+        
+    elseif type == 3
+        # Turbine individual interpolation
+        # start: [time, value]
+        # end:   [time, value]
+        A = [startV[2], endV[2]]
+        T = [startV[1], endV[1]]
+        data = hcat(T, repeat(A, 1, nT))
+        writedlm(filepath, data, ',')
+        
+    else
+        error("prepareSimulation -> generateDemoCSV: Type $type not defined.")
+    end
+    @info "Demo CSV file generated at: $filepath"
 end

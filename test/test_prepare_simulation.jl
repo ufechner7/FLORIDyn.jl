@@ -106,6 +106,14 @@ using FLORIDyn, Test
     turbine_properties         = turbineArrayProperties(settings_file)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
 
+    # Test with input_ti Interpolation
+    # This will generate a demo CSV file if it does not exist
+    wind, sim, con, floris, floridyn = setup(settings_file)
+    wind.input_ti = "Interpolation"
+    set = Settings(wind, sim, con)
+    turbine_properties         = turbineArrayProperties(settings_file)
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
+
 
 end
 nothing

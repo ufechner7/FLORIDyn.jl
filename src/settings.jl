@@ -65,7 +65,7 @@ A mutable struct representing wind settings.
     pertubation::WindPerturbation
     vel::Union{Nothing, Float64} = nothing
     dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType} = nothing
-    ti::Union{Nothing, Float64} = nothing
+    ti::Union{Nothing, Float64, Matrix{Float64}} = nothing
     shear::Union{Nothing, WindShear} = nothing
 end
 
