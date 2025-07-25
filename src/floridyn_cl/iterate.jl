@@ -94,17 +94,18 @@ function iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris,
     # Shift states
     # Downwind step
     step_dw = sim.time_step .* sim.dyn.advection .* @view wf.States_WF[:, 1] 
-    wf.States_OP[:, 4] .+= step_dw
+    @views wf.States_OP[:, 4] .+= step_dw
 
     # Crosswind step
     deflection = centerline(wf.States_OP, wf.States_T, wf.States_WF, floris, wf.D[1])
     step_cw = deflection .- @view wf.States_OP[:, 5:6]
-    wf.States_OP[:, 5:6] .= deflection
+    @views wf.States_OP[:, 5:6] .= deflection
 
     # World coordinate system adjustment
     phiW = angSOWFA2world.(@view wf.States_WF[:, 2])
-    wf.States_OP[:, 1] .+= cos.(phiW) .* step_dw .- sin.(phiW) .* @view step_cw[:, 1]
-    wf.States_OP[:, 2] .+= sin.(phiW) .* step_dw .+ cos.(phiW) .* @view step_cw[:, 1]
+    a = @view step_cw[:, 1]
+    wf.States_OP[:, 1] .+= cos.(phiW) .* step_dw .- sin.(phiW) .* a
+    wf.States_OP[:, 2] .+= sin.(phiW) .* step_dw .+ cos.(phiW) .* a
     wf.States_OP[:, 3] .+= @view step_cw[:, 2]
 
     # Circshift & init first OPs
