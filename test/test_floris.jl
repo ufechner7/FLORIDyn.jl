@@ -333,26 +333,26 @@ using FLORIDyn, Test
         @test length(result_vector) == 5
         @test all(result_vector .≈ result[1])  # Should be identical since inputs are identical
         
-        # # Test 9: Input validation - check behavior with extreme values
-        # states_t_extreme = [0.0 0.0 0.0]  # Zero axial induction
-        # result_extreme = getUadv(states_op, states_t_extreme, states_wf, floris, d_rotor)
+        # Test 9: Input validation - check behavior with extreme values
+        states_t_extreme = [0.0 0.0 0.0]  # Zero axial induction
+        result_extreme = getUadv(states_op, states_t_extreme, states_wf, floris, d_rotor)
         
-        # @test isfinite(result_extreme[1])
-        # @test result_extreme[1] ≈ 1.0  # Should approach 1.0 when CT = 0
+        @test isfinite(result_extreme[1])
+        @test result_extreme[1] ≈ 1.0  # Should approach 1.0 when CT = 0
         
-        # # Test 10: Yaw angle effects more thoroughly
-        # yaw_angles = [0.0, 15.0, 30.0, 45.0]
-        # results_yaw = zeros(4)
+        # Test 10: Yaw angle effects more thoroughly
+        yaw_angles = [0.0, 15.0, 30.0, 45.0]
+        results_yaw = zeros(4)
         
-        # for (i, yaw) in enumerate(yaw_angles)
-        #     states_t_yaw = [0.33 yaw 0.06]
-        #     results_yaw[i] = getUadv(states_op, states_t_yaw, states_wf, floris, d_rotor)[1]
-        # end
+        for (i, yaw) in enumerate(yaw_angles)
+            states_t_yaw = [0.33 yaw 0.06]
+            results_yaw[i] = getUadv(states_op, states_t_yaw, states_wf, floris, d_rotor)[1]
+        end
         
-        # @test all(isfinite.(results_yaw))
-        # @test all(0.5 .<= results_yaw .<= 1.0)
-        # # Higher yaw angles should generally reduce the wake effect (increase advection speed)
-        # @test results_yaw[1] <= results_yaw[end]  # 0° yaw should have lower advection than 45°
+        @test all(isfinite.(results_yaw))
+        @test all(0.5 .<= results_yaw .<= 1.0)
+        # Higher yaw angles should generally reduce the wake effect (increase advection speed)
+        @test results_yaw[1] <= results_yaw[end]  # 0° yaw should have lower advection than 45°
     end
 
 end
