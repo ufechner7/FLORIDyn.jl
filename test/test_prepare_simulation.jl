@@ -108,6 +108,7 @@ using FLORIDyn, Test
 
     # Test with input_ti Interpolation
     # This will generate a demo CSV file if it does not exist
+    rm("data/2021_9T_Data/WindTI.csv", force=true)
     wind, sim, con, floris, floridyn = setup(settings_file)
     wind.input_ti = "Interpolation"
     set = Settings(wind, sim, con)

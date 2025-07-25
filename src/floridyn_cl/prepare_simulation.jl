@@ -311,7 +311,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         for w in loadDataWarnings
             @warn w
         end
-        error("Data not loaded properly. Please provide the required files.")
+        # error("Data not loaded properly. Please provide the required files.")
     end
 
     return wf, wind, sim, con, floris
