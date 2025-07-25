@@ -89,10 +89,14 @@ function centerline(states_op, states_t, states_wf, floris, d_rotor)
     beta  = floris.beta
 
     # States
-    C_T   = calcCt(states_t[:,1], states_t[:,2])
-    yaw   = .-deg2rad.(states_t[:,2])
-    I     = sqrt.(states_t[:,3].^2 .+ states_wf[:,3].^2)
-    OPdw  = states_op[:,4]
+    a = @view states_t[:,1]
+    b = @view states_t[:,2]
+    C_T   = calcCt(a, b)
+    yaw   = .-deg2rad.(b)
+    c = @view states_t[:,3]
+    d = @view states_wf[:,3]
+    I     = sqrt.(c.^2 .+ d.^2)
+    OPdw  = @view states_op[:,4]
 
     # Calc x_0 (Core length)
     x_0 = (cos.(yaw) .* (1 .+ sqrt.(1 .- C_T)) ./ 
