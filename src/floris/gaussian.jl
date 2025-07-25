@@ -603,4 +603,94 @@ function getPower(wf::WindFarm, m::Matrix, floris::Floris, con::Con)
     return P
 end
 
+"""
+    getUadv(states_op, states_t, states_wf, floris::Floris, d_rotor)
+
+Calculate the advection speed factor based on Zong & Porté-Agel 2020.
+
+The advection speed is defined as:
+```
+Uadv(x) = 0.5 * (U_inf + U_centre(x))
+```
+
+Solved for the ratio Uadv(x)/U_inf:
+```
+Uadv(x)/U_inf = sqrt(1 - Ct*cos(gamma)/(8*(sig_y*sig_z)/D^2))
+```
+
+# Arguments
+- `states_op`: Observation point states matrix containing downstream distances in column 4
+- `states_t`: Turbine states matrix with axial induction factors (col 1), yaw angles (col 2), and turbulence intensity (col 3)
+- `states_wf`: Wind field states matrix with ambient turbulence intensity in column 3
+- `floris::Floris`: FLORIS model parameters containing wake expansion coefficients (see [`Floris`](@ref))
+- `d_rotor`: Rotor diameter [m]
+
+# Returns
+- `Uadv_div_U_inf::Vector{Float64}`: Advection speed factor (ratio of advection speed to freestream wind speed) [-]
+
+# Description
+The function calculates the advection speed factor using the following steps:
+1. Computes thrust coefficient from axial induction factor
+2. Calculates potential core length (x_0) based on turbulence intensity and wake expansion
+3. Determines wake field widths (sig_y, sig_z) for Gaussian wake model
+4. Applies different formulations inside vs. outside the potential core region
+5. Returns the advection speed ratio for wake transport calculations
+
+The advection speed represents the speed at which wake features propagate downstream,
+which is typically slower than the freestream wind speed due to velocity deficits.
+
+# References
+- Zong, H. and Porté-Agel, F. (2020). A momentum-conserving wake superposition method for wind farm power prediction
+"""
+function getUadv(states_op, states_t, states_wf, floris::Floris, d_rotor)
+    # Parameters
+    k_a   = floris.k_a
+    k_b   = floris.k_b
+    alpha = floris.alpha
+    beta  = floris.beta
+
+    # States
+    C_T = calcCt(states_t[:, 1], states_t[:, 2])
+    yaw = -deg2rad.(states_t[:, 2])
+    I = sqrt.(states_t[:, 3].^2 .+ states_wf[:, 3].^2)  # I_f & I_0
+    OPdw = states_op[:, 4]
+
+    # Calc x_0 (Core length)
+    # [1] Eq. 7.3
+    x_0 = (cos.(yaw) .* (1 .+ sqrt.(1 .- C_T)) ./ 
+          (sqrt(2) .* (alpha .* I .+ beta .* (1 .- sqrt.(1 .- C_T))))) .* d_rotor
+
+    # Calc k_z and k_y based on I
+    # [2] Eq.8
+    k_y = k_a .* I .+ k_b
+    k_z = k_y
+
+    # Get field width y
+    # [1] Eq. 7.2
+    # To fit the field width, the value linearly increases from 0 to max for dw
+    # positions before x_0
+    zs = zeros(size(OPdw))
+    sig_y_div_D = max.(OPdw .- x_0, zs) .* k_y ./ d_rotor .+ 
+                  min.(OPdw ./ x_0, zs .+ 1) .* cos.(yaw) ./ sqrt(8)
+
+    # Get field width z
+    # [1] Eq. 7.2
+    sig_z_div_D = max.(OPdw .- x_0, zs) .* k_z ./ d_rotor .+ 
+                  min.(OPdw ./ x_0, zs .+ 1) ./ sqrt(8)
+
+    # Calc advection speed ratio
+    # U_adv(x) = 0.5*(U_inf + U_cen(x))
+    # =>  U_adv(x)/U_inf = 0.5*(1 + U_cen/U_inf)
+    
+    # Centerspeed outside of the potential core
+    U_cen_div_U_inf = real.(sqrt.(1 .- (C_T .* cos.(yaw)) ./ (8 .* sig_y_div_D .* sig_z_div_D)))
+    
+    # Centerspeed inside of the potential core
+    inside_core = x_0 .> OPdw
+    U_cen_div_U_inf[inside_core] = sqrt.(1 .- C_T[inside_core])
+    
+    Uadv_div_U_inf = 0.5 .* (1 .+ U_cen_div_U_inf)
+
+    return Uadv_div_U_inf
+end
 

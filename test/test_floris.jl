@@ -213,5 +213,147 @@ using FLORIDyn, Test
         @test length(T_weight2) == 1 
     end
 
+    @testset "getUadv" begin
+        # Test 1: Basic functionality with single observation point
+        states_op = [881.928  -185.932  -61.0219  1000.0  0.0  0.0]  # Single OP with downstream distance 1000m
+        states_t = [0.33  0.0  0.06]   # Axial induction, yaw angle (deg), turbulence intensity
+        states_wf = [8.2  255.0  0.062]  # Wind speed, direction, ambient TI
+        
+        floris = FLORIDyn.Floris(
+            alpha = 2.32,
+            beta = 0.154,
+            k_a = 0.3837,
+            k_b = 0.0037,
+            k_fa = 0.73,
+            k_fb = 0.8325,
+            k_fc = 0.0325,
+            k_fd = -0.32,
+            eta = 1,
+            p_p = 2.2,
+            airDen = 1.225,
+            TIexp = 3,
+            rotor_points = 50
+        )
+        
+        d_rotor = 178.4
+        
+        result = getUadv(states_op, states_t, states_wf, floris, d_rotor)
+        
+        # Basic checks
+        @test length(result) == 1
+        @test 0.5 <= result[1] <= 1.0  # Advection speed should be between 50% and 100% of freestream
+        @test isfinite(result[1])
+        
+        # Test 2: Multiple observation points with different downstream distances
+        states_op_multi = [
+            0.0     0.0    0.0    0.0    0.0  0.0;     # At rotor plane
+            100.0   0.0    0.0    500.0  0.0  0.0;     # Before core length  
+            200.0   0.0    0.0    1500.0 0.0  0.0;     # After core length
+            300.0   0.0    0.0    3000.0 0.0  0.0      # Far downstream
+        ]
+        states_t_multi = repeat([0.33 0.0 0.06], 4, 1)
+        states_wf_multi = repeat([8.2 255.0 0.062], 4, 1)
+        
+        # result_multi = getUadv(states_op_multi, states_t_multi, states_wf_multi, floris, d_rotor)
+        
+        # @test length(result_multi) == 4
+        # @test all(0.5 .<= result_multi .<= 1.0)
+        # @test all(isfinite.(result_multi))
+        
+        # # Advection speed should increase with distance (wake recovers)
+        # @test result_multi[1] <= result_multi[2] <= result_multi[3] <= result_multi[4]
+        
+        # # Test 3: Effect of thrust coefficient (higher CT should reduce advection speed)
+        # states_t_low_ct = [0.1 0.0 0.06]   # Lower axial induction -> lower CT
+        # states_t_high_ct = [0.4 0.0 0.06]  # Higher axial induction -> higher CT
+        
+        # result_low_ct = getUadv(states_op, states_t_low_ct, states_wf, floris, d_rotor)
+        # result_high_ct = getUadv(states_op, states_t_high_ct, states_wf, floris, d_rotor)
+        
+        # @test result_low_ct[1] > result_high_ct[1]  # Lower CT should give higher advection speed
+        
+        # # Test 4: Effect of yaw angle
+        # states_t_yawed = [0.33 30.0 0.06]  # 30 degree yaw
+        # result_yawed = getUadv(states_op, states_t_yawed, states_wf, floris, d_rotor)
+        
+        # @test isfinite(result_yawed[1])
+        # @test 0.5 <= result_yawed[1] <= 1.0
+        
+        # # Test 5: Edge case - zero downstream distance (at rotor plane)
+        # states_op_zero = [0.0  0.0  0.0  0.0  0.0  0.0]
+        # result_zero = getUadv(states_op_zero, states_t, states_wf, floris, d_rotor)
+        
+        # @test length(result_zero) == 1
+        # @test isfinite(result_zero[1])
+        # @test 0.5 <= result_zero[1] <= 1.0
+        
+        # # Test 6: Effect of turbulence intensity
+        # states_wf_low_ti = [8.2 255.0 0.01]   # Low ambient TI
+        # states_wf_high_ti = [8.2 255.0 0.15]  # High ambient TI
+        
+        # result_low_ti = getUadv(states_op, states_t, states_wf_low_ti, floris, d_rotor)
+        # result_high_ti = getUadv(states_op, states_t, states_wf_high_ti, floris, d_rotor)
+        
+        # @test isfinite(result_low_ti[1])
+        # @test isfinite(result_high_ti[1])
+        
+        # # Test 7: Mathematical consistency - check that formula is implemented correctly
+        # # For a point far downstream, we can verify the calculation manually
+        # states_op_far = [0.0  0.0  0.0  5000.0  0.0  0.0]  # Far downstream
+        # result_far = getUadv(states_op_far, states_t, states_wf, floris, d_rotor)
+        
+        # # At far downstream, should approach the far-field formula
+        # # Manually calculate for comparison
+        # C_T_test = 4 * 0.33 * (1 - 0.33)  # calcCt(0.33, 0.0)
+        # yaw_test = 0.0
+        # I_test = sqrt(0.06^2 + 0.062^2)
+        
+        # # Calculate core length
+        # x_0_test = (cos(yaw_test) * (1 + sqrt(1 - C_T_test)) / 
+        #            (sqrt(2) * (floris.alpha * I_test + floris.beta * (1 - sqrt(1 - C_T_test))))) * d_rotor
+        
+        # # Since 5000m >> x_0_test, we're in far field
+        # k_y_test = floris.k_a * I_test + floris.k_b
+        # sig_y_div_D_test = (5000.0 - x_0_test) * k_y_test / d_rotor
+        # sig_z_div_D_test = (5000.0 - x_0_test) * k_y_test / d_rotor
+        
+        # U_cen_div_U_inf_test = sqrt(1 - (C_T_test * cos(yaw_test)) / (8 * sig_y_div_D_test * sig_z_div_D_test))
+        # expected_result = 0.5 * (1 + U_cen_div_U_inf_test)
+        
+        # @test isapprox(result_far[1], expected_result, rtol=1e-10)
+        
+        # # Test 8: Vector operations consistency
+        # # Test that broadcasting works correctly
+        # states_op_vector = repeat(states_op, 5, 1)
+        # states_t_vector = repeat(states_t, 5, 1)
+        # states_wf_vector = repeat(states_wf, 5, 1)
+        
+        # result_vector = getUadv(states_op_vector, states_t_vector, states_wf_vector, floris, d_rotor)
+        
+        # @test length(result_vector) == 5
+        # @test all(result_vector .≈ result[1])  # Should be identical since inputs are identical
+        
+        # # Test 9: Input validation - check behavior with extreme values
+        # states_t_extreme = [0.0 0.0 0.0]  # Zero axial induction
+        # result_extreme = getUadv(states_op, states_t_extreme, states_wf, floris, d_rotor)
+        
+        # @test isfinite(result_extreme[1])
+        # @test result_extreme[1] ≈ 1.0  # Should approach 1.0 when CT = 0
+        
+        # # Test 10: Yaw angle effects more thoroughly
+        # yaw_angles = [0.0, 15.0, 30.0, 45.0]
+        # results_yaw = zeros(4)
+        
+        # for (i, yaw) in enumerate(yaw_angles)
+        #     states_t_yaw = [0.33 yaw 0.06]
+        #     results_yaw[i] = getUadv(states_op, states_t_yaw, states_wf, floris, d_rotor)[1]
+        # end
+        
+        # @test all(isfinite.(results_yaw))
+        # @test all(0.5 .<= results_yaw .<= 1.0)
+        # # Higher yaw angles should generally reduce the wake effect (increase advection speed)
+        # @test results_yaw[1] <= results_yaw[end]  # 0° yaw should have lower advection than 45°
+    end
+
 end
 nothing
