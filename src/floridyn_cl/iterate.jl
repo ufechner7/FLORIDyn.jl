@@ -13,9 +13,9 @@ and wake deflection effects, maintaining proper ordering and updating turbine st
 # Arguments
 - `::IterateOPs_basic`: Dispatch type indicating the basic iteration algorithm
 - `wf::WindFarm`: Wind farm object containing all turbine and operational point states. See [`WindFarm`](@ref)
-  - `wf.States_OP`: Matrix of operational point states [x, y, z, dw_pos, cw_x, cw_z, ...]
+  - `wf.States_OP`: Matrix of operational point states [x, y, z, `dw_pos`, `cw_x`, `cw_z`, ...]
   - `wf.States_T`: Matrix of turbine states 
-  - `wf.States_WF`: Matrix of wind field states [velocity, direction, turbulence_intensity, ...]
+  - `wf.States_WF`: Matrix of wind field states [velocity, direction, `turbulence_intensity`, ...]
   - `wf.StartI`: Starting indices for each turbine's operational points
   - `wf.nT`: Number of turbines
   - `wf.nOP`: Number of operational points per turbine

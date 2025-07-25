@@ -55,7 +55,7 @@ Recommended for:
 - Research applications focusing on ensemble statistics
 
 # Mathematical Approach
-The averaging process typically involves temporal or spatial averaging of 
+The averaging process involves temporal or spatial averaging of 
 relevant quantities (velocities, deflections, turbulence) before applying 
 the advancement step, resulting in more stable operational point trajectories.
 
