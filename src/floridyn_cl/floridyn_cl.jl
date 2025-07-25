@@ -238,7 +238,7 @@ where:
 - Self-interaction (turbine affecting itself) is explicitly excluded
 - The coordinate transformation accounts for the SOWFA wind direction convention
 """
-function findTurbineGroups(wf::WindFarm, floridyn::FloriDyn)
+@views function findTurbineGroups(wf::WindFarm, floridyn::FloriDyn)
     # Extract parameters from settings struct
     dw = floridyn.deltaDW
     cw = floridyn.deltaCW
@@ -264,7 +264,7 @@ function findTurbineGroups(wf::WindFarm, floridyn::FloriDyn)
             I_op = I[argmin(distOP_iiT)]
         
             # println("I_op: ", I_op)
-            I_op =wf.StartI[iT] + I_op - 1
+            I_op = wf.StartI[iT] + I_op - 1
 
             # Angle and relative vector
             phi = angSOWFA2world.(wf.States_WF[I_op, 2])
