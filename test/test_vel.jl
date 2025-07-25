@@ -238,11 +238,11 @@ using Interpolations
         means = [mean(v) for v in vels]
         @test std(means) > 0.0  # Some variability due to random noise
 
-        # # Test 5: Single turbine (scalar iT input)
-        # iT_scalar = 1
-        # vel_scalar = getWindSpeedT(vel_mode, wind, iT_scalar, 5.0)
-        # @test length(vel_scalar) == 1
-        # @test isapprox(vel_scalar[1], 10.0; atol=3.0)
+        # Test 5: Single turbine (scalar iT input)
+        iT_scalar = 1
+        vel_scalar = getWindSpeedT(vel_mode, wind, iT_scalar, 5.0)
+        @test length(vel_scalar) == 1
+        @test isapprox(vel_scalar[1], 10.0; atol=3.0)
     end
     @testset "getWindSpeedT(Velocity_InterpTurbine_wErrorCov(), ...)" begin
         vel_mode = Velocity_InterpTurbine_wErrorCov()

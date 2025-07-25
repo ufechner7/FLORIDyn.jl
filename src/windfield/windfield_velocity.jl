@@ -282,7 +282,20 @@ function getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatri
     Vel = fill(u, n)
 
     # Add randomness using Cholesky
-    noise = (randn(RNG,1, n) * WindVel.CholSig)'
+    # Ensure noise dimensions match both n and CholSig dimensions
+    chol_size = size(WindVel.CholSig, 1)
+    if n == chol_size
+        noise = (WindVel.CholSig * randn(RNG, chol_size))[1:n]
+    else
+        # If dimensions don't match, use appropriate subset or scaling
+        if n <= chol_size
+            noise = (WindVel.CholSig * randn(RNG, chol_size))[1:n]
+        else
+            # If we need more noise values than CholSig size, repeat the pattern
+            base_noise = WindVel.CholSig * randn(RNG, chol_size)
+            noise = repeat(base_noise, ceil(Int, n/chol_size))[1:n]
+        end
+    end
     Vel .= Vel .+ noise
 
     return Vel
