@@ -82,61 +82,68 @@ Compute the centerline wake properties for a wind farm simulation.
 This function is part of the Gaussian wake model implementation for wind farm simulations using the FLORIDyn.jl package.
 """
 function centerline(states_op, states_t, states_wf, floris, d_rotor)
-    # Parameters
-    k_a   = floris.k_a
-    k_b   = floris.k_b
-    alpha = floris.alpha
-    beta  = floris.beta
+    N          = size(states_op, 1)                     # number of rows
+    Δ          = Matrix{ComplexF64}(undef, N, 2)        # output
+    is8      = 1 / sqrt(8)
+    s2         = sqrt(2)
+    α, β       = floris.alpha, floris.beta
+    k_a, k_b   = floris.k_a, floris.k_b
 
-    # States
-    a = @view states_t[:,1]
-    b = @view states_t[:,2]
-    C_T   = calcCt(a, b)
-    yaw   = .-deg2rad.(b)
-    c = @view states_t[:,3]
-    d = @view states_wf[:,3]
-    I     = sqrt.(c.^2 .+ d.^2)
-    OPdw  = @view states_op[:,4]
+    for i ∈ 1:N          # ← one tight SIMD loop
+        ############# 1. unpack state rows ####################################
+        a  = states_t[i, 1]
+        b  = states_t[i, 2]
+        c  = states_t[i, 3]
+        d  = states_wf[i, 3]
+        OP = states_op[i, 4]
 
-    # Calc x_0 (Core length)
-    x_0 = (cos.(yaw) .* (1 .+ sqrt.(1 .- C_T)) ./ 
-         (sqrt(2) .* (alpha .* I .+ beta .* (1 .- sqrt.(1 .- C_T))))) .* d_rotor
+        ############# 2. basic derived quantities #############################
+        C_T     = calcCt(a, b)
+        yaw     = -deg2rad(b)
+        cosyaw  = cos(yaw)
+        I       = sqrt(c*c + d*d)
 
-    # Calc k_z and k_y based on I
-    k_y = k_a .* I .+ k_b
-    k_z = k_y
+        ############# 3. core length x₀ #######################################
+        x₀ = (cosyaw * (1 + sqrt(1 - C_T)) /
+             (s2 * (α * I + β * (1 - sqrt(1 - C_T))))) * d_rotor
 
-    # Get field width y
-    zs = zeros(size(OPdw))
-    sig_y = max.(OPdw .- x_0, zs) .* k_y .+
-        min.(OPdw ./ x_0, zs .+ 1) .* cos.(yaw) .* d_rotor ./ sqrt(8)
+        ############# 4. wake expansion (σ_y / σ_z) ###########################
+        k_y     = k_a * I + k_b
+        k_z     = k_y                    # identical expression
 
-    # Get field width z
-    sig_z = max.(OPdw .- x_0, zs) .* k_z .+
-        min.(OPdw ./ x_0, zs .+ 1) .* d_rotor ./ sqrt(8)
+        diff    = OP - x₀
+        f1      = max(diff, 0.0)
+        f2      = min(OP / x₀, 1.0)
 
-    # Calc Theta
-    Theta = 0.3 .* yaw ./ cos.(yaw) .* (1 .- sqrt.(1 .- C_T .* cos.(yaw)))
+        σ_y = f1 * k_y + f2 * cosyaw * d_rotor * is8
+        σ_z = f1 * k_z + f2 * d_rotor    * is8
 
-    # Calc Delta/Deflection
-    delta_nfw = Theta .* min.(OPdw, x_0)
+        ############# 5. deflection angles ####################################
+        Θ = 0.3 * yaw / cosyaw * (1 - sqrt(1 - C_T * cosyaw))
 
-    delta_fw_1 = Theta ./ 14.7 .* sqrt.(cos.(yaw) ./ (k_y .* k_z .* C_T)) .* (2.9 .+ 1.3 .* sqrt.(1 .- C_T) .- C_T)
-    delta_fw_2 = log.(Complex.(
-        (1.6 .+ sqrt.(C_T)) .* 
-        (1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (d_rotor^2 .* cos.(yaw))) .- sqrt.(C_T)) ./
-        ((1.6 .- sqrt.(C_T)) .*
-        (1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (d_rotor^2 .* cos.(yaw))) .+ sqrt.(C_T)))
-    ))
-    # Use signbit and broadcasting for the sign/(2) + 0.5 logic
-    factor = (sign.(OPdw .- x_0) ./ 2 .+ 0.5)
+        ############# 6. near‑field / far‑field pieces #########################
+        Δ_nfw = Θ * min(OP, x₀)
 
-    deltaY = delta_nfw .+ factor .* delta_fw_1 .* delta_fw_2 .* d_rotor
-    
-    # Deflection in y and z direction
-    delta = hcat(deltaY, zeros(size(deltaY)))
-    
-    return delta
+        Δ_fw₁ = Θ / 14.7 * sqrt(cosyaw / (k_y * k_z * C_T)) *
+                (2.9 + 1.3 * sqrt(1 - C_T) - C_T)
+
+        num  = (1.6 + sqrt(C_T)) *
+               (1.6 * sqrt((8 * σ_y * σ_z) / (d_rotor^2 * cosyaw)) - sqrt(C_T))
+        den  = (1.6 - sqrt(C_T)) *
+               (1.6 * sqrt((8 * σ_y * σ_z) / (d_rotor^2 * cosyaw)) + sqrt(C_T))
+
+        Δ_fw₂ = log(complex(num / den, 0.0))   # keep domain identical
+
+        factor = sign(OP - x₀) / 2 + 0.5        # 0, 0.5, or 1
+
+        Δy = Δ_nfw + factor * Δ_fw₁ * Δ_fw₂ * d_rotor
+
+        ############# 7. store result ##########################################
+        Δ[i, 1] = Δy
+        Δ[i, 2] = 0        # Δz was always zero in the original
+    end
+
+    return Δ
 end
 
 """
