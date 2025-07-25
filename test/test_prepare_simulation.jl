@@ -159,4 +159,135 @@ using FLORIDyn, Test
     turbine_properties         = turbineArrayProperties(settings_file)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
 end
+
+@testset "readCovMatrix                                         " begin
+    using LinearAlgebra
+    
+    # Test scalar input (single value)
+    @testset "Scalar input" begin
+        nT = 3
+        scalar_val = 0.5
+        cov_mat, chol_factor = FLORIDyn.readCovMatrix([scalar_val], nT, "Test")
+        
+        @test size(cov_mat) == (nT, nT)
+        @test cov_mat == scalar_val * I(nT)
+        @test chol_factor == sqrt(scalar_val) * I(nT)
+        @test all(diag(cov_mat) .== scalar_val)
+        @test sum(cov_mat - Diagonal(cov_mat)) == 0  # Off-diagonal should be zero
+    end
+    
+    # Test 1D vector input
+    @testset "1D Vector input" begin
+        nT = 3
+        vec_vals = [0.1, 0.2, 0.3]
+        cov_mat, chol_factor = FLORIDyn.readCovMatrix(vec_vals, nT, "Test")
+        
+        @test size(cov_mat) == (nT, nT)
+        @test cov_mat == diagm(vec_vals)
+        @test chol_factor == diagm(sqrt.(vec_vals))
+        @test diag(cov_mat) == vec_vals
+        @test sum(cov_mat - Diagonal(cov_mat)) == 0  # Off-diagonal should be zero
+    end
+    
+    # Test row vector input (1×n matrix)
+    @testset "Row vector input" begin
+        nT = 3
+        row_vec = [0.1 0.2 0.3]  # 1×3 matrix
+        cov_mat, chol_factor = FLORIDyn.readCovMatrix(row_vec, nT, "Test")
+        
+        @test size(cov_mat) == (nT, nT)
+        @test cov_mat == diagm(vec(row_vec))
+        @test chol_factor == diagm(sqrt.(vec(row_vec)))
+        @test diag(cov_mat) == vec(row_vec)
+        @test sum(cov_mat - Diagonal(cov_mat)) == 0  # Off-diagonal should be zero
+    end
+    
+    # Test column vector input (n×1 matrix)
+    @testset "Column vector input" begin
+        nT = 3
+        col_vec = [0.1; 0.2; 0.3]  # 3×1 matrix
+        cov_mat, chol_factor = FLORIDyn.readCovMatrix(col_vec, nT, "Test")
+        
+        @test size(cov_mat) == (nT, nT)
+        @test cov_mat == diagm(vec(col_vec))
+        @test chol_factor == diagm(sqrt.(vec(col_vec)))
+        @test diag(cov_mat) == vec(col_vec)
+        @test sum(cov_mat - Diagonal(cov_mat)) == 0  # Off-diagonal should be zero
+    end
+    
+    # Test full matrix input (n×n matrix)
+    @testset "Full matrix input" begin
+        nT = 2
+        full_mat = [0.1 0.05; 0.05 0.2]  # Symmetric positive definite matrix
+        cov_mat, chol_factor = FLORIDyn.readCovMatrix(full_mat, nT, "Test")
+        
+        @test size(cov_mat) == (nT, nT)
+        @test cov_mat == full_mat
+        @test size(chol_factor) == (nT, nT)
+        # Verify Cholesky decomposition: L * L' ≈ original matrix
+        @test chol_factor * chol_factor' ≈ full_mat rtol=1e-10
+        @test istril(chol_factor)  # Lower triangular
+    end
+    
+    # Test error conditions
+    @testset "Error conditions" begin
+        nT = 3
+        
+        # Wrong vector size
+        wrong_size_vec = [0.1, 0.2]  # Should be length 3
+        @test_throws ErrorException FLORIDyn.readCovMatrix(wrong_size_vec, nT, "Test")
+        
+        # Wrong matrix dimensions
+        wrong_mat = [0.1 0.2; 0.3 0.4; 0.5 0.6]  # 3×2 instead of 3×3
+        @test_throws ErrorException FLORIDyn.readCovMatrix(wrong_mat, nT, "Test")
+        
+        # Non-square matrix with wrong first dimension
+        wrong_mat2 = [0.1 0.2 0.3; 0.4 0.5 0.6]  # 2×3 instead of 3×3
+        @test_throws ErrorException FLORIDyn.readCovMatrix(wrong_mat2, nT, "Test")
+    end
+    
+    # Test edge cases
+    @testset "Edge cases" begin
+        # Single turbine
+        nT = 1
+        single_val = 0.25
+        cov_mat, chol_factor = FLORIDyn.readCovMatrix([single_val], nT, "Test")
+        @test size(cov_mat) == (1, 1)
+        @test cov_mat[1,1] == single_val
+        @test chol_factor[1,1] == sqrt(single_val)
+        
+        # Small positive variance (edge case that works)
+        nT = 2
+        small_val = 1e-6
+        small_mat = [small_val 0.0; 0.0 small_val]
+        cov_mat, chol_factor = FLORIDyn.readCovMatrix(small_mat, nT, "Test")
+        @test cov_mat == small_mat
+        @test chol_factor ≈ [sqrt(small_val) 0.0; 0.0 sqrt(small_val)] rtol=1e-10
+    end
+    
+    # Test real-world scenarios
+    @testset "Real-world scenarios" begin
+        # Typical wind velocity covariance
+        nT = 4
+        wind_vel_cov = [0.5]  # Same variance for all turbines
+        cov_mat, chol_factor = FLORIDyn.readCovMatrix(wind_vel_cov, nT, "WindVel")
+        @test all(diag(cov_mat) .== 0.5)
+        @test all(chol_factor[diagind(chol_factor)] .== sqrt(0.5))
+        
+        # Individual turbine variances
+        individual_vars = [0.4, 0.6, 0.5, 0.7]
+        cov_mat, chol_factor = FLORIDyn.readCovMatrix(individual_vars, nT, "WindVel")
+        @test diag(cov_mat) == individual_vars
+        @test diag(chol_factor) == sqrt.(individual_vars)
+        
+        # Correlated turbines (realistic covariance matrix)
+        corr_mat = [0.5 0.1 0.05 0.02;
+                    0.1 0.6 0.08 0.03;
+                    0.05 0.08 0.4 0.04;
+                    0.02 0.03 0.04 0.7]
+        cov_mat, chol_factor = FLORIDyn.readCovMatrix(corr_mat, nT, "WindVel")
+        @test cov_mat == corr_mat
+        @test chol_factor * chol_factor' ≈ corr_mat rtol=1e-10
+    end
+end
 nothing

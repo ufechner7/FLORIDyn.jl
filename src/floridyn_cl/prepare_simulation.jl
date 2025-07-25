@@ -6,26 +6,94 @@
 
 Read and process covariance matrix data for wind field error modeling.
 
+This function interprets covariance data from CSV files and creates appropriate 
+covariance matrices based on the input format. It handles multiple input formats:
+- Single scalar value: Creates diagonal matrix with same variance for all turbines
+- Vector of length nT: Creates diagonal matrix with individual variances per turbine
+- Matrix of size nT×nT: Uses directly as covariance matrix
+
 # Arguments
-- `cov_data`: Matrix containing covariance data (typically scalar or matrix)
+- `cov_data`: Scalar, vector, or matrix containing covariance data
 - `nT::Int`: Number of turbines
-- `name::String`: Name of the variable (for error messages)
+- `name::String`: Name of the variable (for error messages and debugging)
 
 # Returns
 - Returns a tuple `(cov_matrix, chol_factor)` where:
-  - `cov_matrix`: The full covariance matrix
+  - `cov_matrix`: The full covariance matrix (nT×nT)
   - `chol_factor`: Cholesky decomposition of the covariance matrix
+
+# Input Format Handling
+## Single Scalar Value
+Creates an identity matrix scaled by the scalar value (independent turbines with equal variance):
+```
+CovMat = scalar_value × I(nT)
+```
+
+## Vector of Length nT
+Creates a diagonal matrix using the vector elements as individual variances:
+```
+CovMat = diag(vector_values)
+```
+
+## Matrix of Size nT×nT  
+Uses the input matrix directly as the covariance matrix:
+```
+CovMat = reshape(input_matrix, nT, nT)
+```
+
+# Error Handling
+Throws an error if the input dimensions don't match any of the expected formats.
+
+# Examples
+```julia
+# Scalar input - same variance for all turbines
+cov_mat, chol = readCovMatrix([0.5], 3, "WindVel")
+
+# Vector input - individual variances
+cov_mat, chol = readCovMatrix([0.1, 0.2, 0.3], 3, "WindVel") 
+
+# Matrix input - full covariance matrix
+cov_mat, chol = readCovMatrix([0.1 0.05; 0.05 0.2], 2, "WindVel")
+```
 """
 function readCovMatrix(cov_data, nT, name)
+    data_size = size(cov_data)
+    
+    # Check if it's a scalar (either single element or 1x1 matrix)
     if length(cov_data) == 1
-        # Scalar variance - create diagonal covariance matrix
+        # Single scalar value - create diagonal covariance matrix with same variance
         var_val = cov_data[1]
         cov_matrix = var_val * I(nT)
         chol_factor = sqrt(var_val) * I(nT)
-    else
-        # Assume it's already a full covariance matrix
+        
+    # Check if it's a 1D vector with nT elements
+    elseif ndims(cov_data) == 1 && length(cov_data) == nT
+        # Vector of individual variances - create diagonal matrix
+        cov_matrix = diagm(cov_data)
+        chol_factor = diagm(sqrt.(cov_data))
+        
+    # Check if it's a row vector with nT elements (1×nT)
+    elseif length(data_size) >= 2 && data_size[1] == 1 && data_size[2] == nT
+        # Vector of individual variances - create diagonal matrix
+        cov_matrix = diagm(vec(cov_data))
+        chol_factor = diagm(sqrt.(vec(cov_data)))
+        
+    # Check if it's a column vector with nT elements (nT×1)
+    elseif length(data_size) >= 2 && data_size[1] == nT && data_size[2] == 1
+        # Vector of individual variances - create diagonal matrix
+        cov_matrix = diagm(vec(cov_data))
+        chol_factor = diagm(sqrt.(vec(cov_data)))
+        
+    # Check if it's an nT×nT matrix
+    elseif length(data_size) >= 2 && data_size[1] == nT && data_size[2] == nT
+        # Full covariance matrix - use directly
         cov_matrix = cov_data
         chol_factor = cholesky(cov_matrix).L
+        
+    else
+        # Wrong dimension - doesn't match any expected format
+        error("$(name)Covariance.csv has the wrong size, should contain either " *
+              "a 1×$(nT) matrix, a $(nT)×$(nT) matrix or a single value.")
     end
     
     return cov_matrix, chol_factor
