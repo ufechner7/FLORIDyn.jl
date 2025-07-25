@@ -85,12 +85,12 @@ using FLORIDyn, Test
     turbine_properties         = turbineArrayProperties(settings_file)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
 
-    # # Test with InterpTurbine
-    # wind, sim, con, floris, floridyn = setup(settings_file)
-    # wind.input_dir = "InterpTurbine"
-    # set = Settings(wind, sim, con)
-    # turbine_properties         = turbineArrayProperties(settings_file)
-    # wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
+    # Test with InterpTurbine
+    wind, sim, con, floris, floridyn = setup(settings_file)
+    wind.input_dir = "InterpTurbine"
+    set = Settings(wind, sim, con)
+    turbine_properties         = turbineArrayProperties(settings_file)
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
 
     # Test with constant Interpolation_wErrorCov
     wind, sim, con, floris, floridyn = setup(settings_file)

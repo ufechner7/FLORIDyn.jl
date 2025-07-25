@@ -224,7 +224,12 @@ Return wind direction in SOWFA-degrees for the requested turbine(s).
 # Returns
 - `phi::Vector{Float64}`: Wind direction(s) for the selected turbine(s) at time `t`.
 """
-function getWindDirT(::Direction_InterpTurbine, WindDir::Matrix, iT, t)
+function getWindDirT(::Direction_InterpTurbine, WindDir, iT, t)
+    # Handle case where WindDir is Nothing
+    if WindDir === nothing
+        error("WindDir data is missing for Direction_InterpTurbine mode. Please provide wind direction data or use a different mode.")
+    end
+    
     # Check time bounds
     tmin = WindDir[1, 1]
     tmax = WindDir[end, 1]

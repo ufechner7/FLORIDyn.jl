@@ -135,6 +135,9 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
             wind.dir = readdlm(path, ',', Float64)
         catch
             push!(loadDataWarnings, "WindDirTurbine.csv not found")
+            # Generate demo CSV file for InterpTurbine mode
+            generateDemoCSV(data_path, "WindDirTurbine.csv", 3, nT, [0.0, 270.0], [100.0, 270.0])
+            wind.dir = readdlm(path, ',', Float64)
         end
     elseif wind.input_dir == "Constant"
         try
