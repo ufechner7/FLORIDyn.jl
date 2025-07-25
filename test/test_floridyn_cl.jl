@@ -115,7 +115,7 @@ using FLORIDyn, Test
         turbine_prop        = turbineArrayProperties(settings_file)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_prop, sim)
         wf_old = deepcopy(wf)
-        wf = iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
+        iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
         @test ! structs_equal(wf_old, wf; prn=false)
     end
     @testset "interpolateOPs" begin

@@ -27,7 +27,7 @@ and wake deflection effects, maintaining proper ordering and updating turbine st
 - `floridyn::FloriDyn`: FLORIDyn model parameters. See [`FloriDyn`](@ref)
 
 # Returns
-- `wf::WindFarm`: Updated wind farm object with advanced operational point positions and states
+- nothing
 
 # Algorithm
 The function performs the following steps for each time iteration:
@@ -132,5 +132,5 @@ function iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris,
         end
 
     end
-    return wf
+    return nothing
 end

@@ -652,7 +652,7 @@ function runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con
         sim.sim_step = it
 
         # ========== PREDICTION ==========
-        wf = iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
+        iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
 
         # ========== Wind Field Perturbation ==========
         perturbationOfTheWF!(wf, wind)
