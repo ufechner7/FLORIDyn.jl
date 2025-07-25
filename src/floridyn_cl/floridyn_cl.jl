@@ -670,7 +670,7 @@ function runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con
         # ========== wind field corrections ==========
         wf, wind = correctVel(set.cor_vel_mode, set, wf, wind, SimTime, floris, tmpM)
         correctDir!(set.cor_dir_mode, set, wf, wind, SimTime)
-        wf = correctTi(set.cor_turb_mode, set, wf, wind, SimTime)
+        correctTI!(set.cor_turb_mode, set, wf, wind, SimTime)
 
         # Save free wind speed as measurement
         M[(it-1)*nT+1 : it*nT, 5] = wf.States_WF[wf.StartI, 1]
