@@ -16,3 +16,4 @@ wf_old = deepcopy(wf)
 
 # On AMD 7890X:
 # 149 µs (180 allocations: 892.77 KiB)
+# 136 μs  (90 allocations: 579.94 KiB) (using views)
