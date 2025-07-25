@@ -124,7 +124,6 @@ function centerline(states_op, states_t, states_wf, floris, d_rotor)
         ((1.6 .- sqrt.(C_T)) .*
         (1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (d_rotor^2 .* cos.(yaw))) .+ sqrt.(C_T)))
     ))
-    # println("delta_fw_2: ", delta_fw_2)
     # Use signbit and broadcasting for the sign/(2) + 0.5 logic
     factor = (sign.(OPdw .- x_0) ./ 2 .+ 0.5)
 
