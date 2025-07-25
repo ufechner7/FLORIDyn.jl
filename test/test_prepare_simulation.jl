@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, Test
+using FLORIDyn, Test, LinearAlgebra
 
 
 
@@ -161,8 +161,6 @@ using FLORIDyn, Test
 end
 
 @testset "readCovMatrix                                         " begin
-    using LinearAlgebra
-    
     # Test scalar input (single value)
     @testset "Scalar input" begin
         nT = 3
