@@ -104,28 +104,28 @@ function iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris,
     # World coordinate system adjustment
     phiW = angSOWFA2world.(@view wf.States_WF[:, 2])
     a = @view step_cw[:, 1]
-    wf.States_OP[:, 1] .+= cos.(phiW) .* step_dw .- sin.(phiW) .* a
-    wf.States_OP[:, 2] .+= sin.(phiW) .* step_dw .+ cos.(phiW) .* a
-    wf.States_OP[:, 3] .+= @view step_cw[:, 2]
+    @views wf.States_OP[:, 1] .+= cos.(phiW) .* step_dw .- sin.(phiW) .* a
+    @views wf.States_OP[:, 2] .+= sin.(phiW) .* step_dw .+ cos.(phiW) .* a
+    @views wf.States_OP[:, 3] .+= step_cw[:, 2]
 
     # Circshift & init first OPs
     # OPs
     wf.States_OP = circshift(wf.States_OP, (1, 0))
-    wf.States_OP[wf.StartI, :] = tmpOPStates
+    @views wf.States_OP[wf.StartI, :] = tmpOPStates
 
     # Turbines
     wf.States_T = circshift(wf.States_T, (1, 0))
-    wf.States_T[wf.StartI, :] = tmpTStates
+    @views wf.States_T[wf.StartI, :] = tmpTStates
 
     # Wind Farm
     wf.States_WF = circshift(wf.States_WF, (1, 0))
-    wf.States_WF[wf.StartI, :] = tmpWFSTates
+    @views wf.States_WF[wf.StartI, :] = tmpWFSTates
 
     # Check if OPs are in order
     for iT in 1:wf.nT
         inds = wf.StartI[iT]:(wf.StartI[iT] + wf.nOP - 1)
 
-        indOP = sortperm(wf.States_OP[inds, 4])
+        indOP = sortperm(@view wf.States_OP[inds, 4])
         if ! issorted(indOP)  # check if already sorted
            wf.States_OP[inds, :] = wf.States_OP[inds[indOP], :]
            wf.States_T[inds, :]  = wf.States_T[inds[indOP], :]
