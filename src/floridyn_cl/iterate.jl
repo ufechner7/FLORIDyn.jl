@@ -85,51 +85,57 @@ where `φ` is the wind direction angle in world coordinates.
 - The algorithm handles both advection and deflection physics simultaneously
 - Coordinate transformations account for SOWFA wind direction conventions via [`angSOWFA2world`](@ref)
 """
-function iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris, floridyn::FloriDyn)
+@views function iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris, floridyn::FloriDyn)
     # Save turbine OPs
-    tmpOPStates = wf.States_OP[wf.StartI, :]
-    tmpTStates  = wf.States_T[wf.StartI, :]
-    tmpWFSTates = wf.States_WF[wf.StartI, :]
+    tmpOPStates = copy(wf.States_OP[wf.StartI, :])
+    tmpTStates  = copy(wf.States_T[wf.StartI, :])
+    tmpWFSTates = copy(wf.States_WF[wf.StartI, :])
 
     # Shift states
     # Downwind step
-    step_dw = sim.time_step .* sim.dyn.advection .* @view wf.States_WF[:, 1] 
-    @views wf.States_OP[:, 4] .+= step_dw
+    step_dw = sim.time_step .* sim.dyn.advection .* wf.States_WF[:, 1] 
+     wf.States_OP[:, 4] .+= step_dw
 
     # Crosswind step
     deflection = centerline(wf.States_OP, wf.States_T, wf.States_WF, floris, wf.D[1])
-    step_cw = deflection .- @view wf.States_OP[:, 5:6]
-    @views wf.States_OP[:, 5:6] .= deflection
+    step_cw = deflection .- wf.States_OP[:, 5:6]
+     wf.States_OP[:, 5:6] .= deflection
 
     # World coordinate system adjustment
-    phiW = angSOWFA2world.(@view wf.States_WF[:, 2])
-    a = @view step_cw[:, 1]
-    @views wf.States_OP[:, 1] .+= cos.(phiW) .* step_dw .- sin.(phiW) .* a
-    @views wf.States_OP[:, 2] .+= sin.(phiW) .* step_dw .+ cos.(phiW) .* a
-    @views wf.States_OP[:, 3] .+= step_cw[:, 2]
+    @inbounds @simd for i in axes(wf.States_OP,1)
+      phiwi = angSOWFA2world(wf.States_WF[i, 2])  # Convert wind direction to world coordinates
+      cphiwi = cos(phiwi)
+      sphiwi = sin(phiwi)
+      ai = step_cw[i, 1]
+      sdwi = step_dw[i]
+      wf.States_OP[i, 1] += cphiwi * sdwi - sphiwi * ai
+      wf.States_OP[i, 2] += sphiwi * sdwi + cphiwi * ai
+      wf.States_OP[i, 3] += step_cw[i, 2]
+    end
 
     # Circshift & init first OPs
     # OPs
     wf.States_OP = circshift(wf.States_OP, (1, 0))
-    @views wf.States_OP[wf.StartI, :] = tmpOPStates
+     wf.States_OP[wf.StartI, :] .= tmpOPStates
 
     # Turbines
     wf.States_T = circshift(wf.States_T, (1, 0))
-    @views wf.States_T[wf.StartI, :] = tmpTStates
+     wf.States_T[wf.StartI, :] .= tmpTStates
 
     # Wind Farm
     wf.States_WF = circshift(wf.States_WF, (1, 0))
-    @views wf.States_WF[wf.StartI, :] = tmpWFSTates
+     wf.States_WF[wf.StartI, :] .= tmpWFSTates
 
     # Check if OPs are in order
+    buf = zeros(Int,size(wf.States_OP, 1))
     for iT in 1:wf.nT
         inds = wf.StartI[iT]:(wf.StartI[iT] + wf.nOP - 1)
-
-        indOP = sortperm(@view wf.States_OP[inds, 4])
+        indOP = buf[inds]
+        sortperm!(indOP,wf.States_OP[inds, 4])
         if ! issorted(indOP)  # check if already sorted
-           @views wf.States_OP[inds, :] = wf.States_OP[inds[indOP], :]
-           @views wf.States_T[inds, :]  = wf.States_T[inds[indOP], :]
-           @views wf.States_WF[inds, :] = wf.States_WF[inds[indOP], :]
+           wf.States_OP[inds, :] .= wf.States_OP[inds[indOP], :]
+           wf.States_T[inds, :]  .= wf.States_T[inds[indOP], :]
+           wf.States_WF[inds, :] .= wf.States_WF[inds[indOP], :]
         end
 
     end
