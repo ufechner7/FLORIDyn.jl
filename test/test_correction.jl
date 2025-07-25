@@ -43,7 +43,7 @@ wind = FLORIDyn.Wind(
          sim_time = 20000  # dummy input
 
         # Call the function
-        correctDir!(set.dir_mode, set, wf, wind, sim_time)
+        correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
 
         # Validate
         @test all(wf.States_WF[:, 2] .== 255.0)
