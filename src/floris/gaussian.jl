@@ -194,7 +194,7 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
         end
 
         if wind.input_dir == "RW_with_Mean"
-            phi_s = wind.dir.Init
+            phi_s = wind.dir.Init[iT]
         else
             phi_s = getWindDirT(set.dir_mode, wind.dir, iT, startTime)
         end

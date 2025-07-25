@@ -52,7 +52,7 @@ A mutable struct representing wind settings.
 - `correction::WindCorrection`: Settings for wind corrections.
 - `perturbation::WindPerturbation`: Settings for wind perturbations.
 - `vel::Union{Nothing, Float64}`: Optional wind velocity value.
-- `dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType}`: Optional wind direction matrix or covariance data.
+- `dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType, WindDirTriple}`: Optional wind direction matrix or covariance data.
 - `ti::Union{Nothing, Float64}`: Optional turbulence intensity value.
 - `shear::Union{Nothing, WindShear}`: Optional wind shear profile.
 """
@@ -64,7 +64,7 @@ A mutable struct representing wind settings.
     correction::WindCorrection
     pertubation::WindPerturbation
     vel::Union{Nothing, Float64} = nothing
-    dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType} = nothing
+    dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType, WindDirTriple} = nothing
     ti::Union{Nothing, Float64, Matrix{Float64}} = nothing
     shear::Union{Nothing, WindShear} = nothing
 end

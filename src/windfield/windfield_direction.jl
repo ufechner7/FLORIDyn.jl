@@ -312,3 +312,42 @@ function getWindDirT(::Direction_RW_with_Mean, WindDirNow, WindDir::WindDirTripl
           WindDir.MeanPull .* (WindDir.Init .- WindDirNow)
     return phi
 end
+
+"""
+    getWindDirT(::Direction_RW_with_Mean, WindDir::WindDirTriple, iT, t)
+
+Random walk with mean reversion model for wind direction.
+
+# Arguments
+- `::Direction_RW_with_Mean`: Direction mode indicator
+- `WindDir::WindDirTriple`: Wind direction data containing Init, CholSig, and MeanPull
+- `iT`: Turbine index or indices
+- `t`: Time value (unused in this implementation)
+
+# Returns
+- `phi`: Wind direction(s) for the requested turbine(s)
+"""
+function getWindDirT(::Direction_RW_with_Mean, WindDir::WindDirTriple, iT, t)
+    if isa(iT, AbstractArray)
+        n = length(iT)
+        indices = iT
+    else
+        n = 1
+        indices = [iT]
+    end
+    
+    # Get initial values for selected turbines
+    WindDirNow = WindDir.Init[indices]
+    
+    # Generate random normal vector
+    weightedRandN = randn(RNG, 1, n)
+    
+    # Extract relevant submatrix for selected turbines
+    chol_sub = WindDir.CholSig[indices, indices]
+    
+    # Compute new wind direction with mean reversion
+    phi = WindDirNow .+ (weightedRandN * chol_sub)' .+
+          WindDir.MeanPull .* (WindDir.Init[indices] .- WindDirNow)
+    
+    return isa(iT, AbstractArray) ? phi : phi[1]
+end

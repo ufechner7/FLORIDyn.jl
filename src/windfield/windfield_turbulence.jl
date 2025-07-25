@@ -161,7 +161,11 @@ function getWindTiT(::TI_Interpolation, WindTi::Matrix, iT, t)
 
     # Output: ones(size(iT)) * Ti_val
     # If iT is a single Int, return scalar; if array, return array
-    fill(Ti_val, length(iT))
+    if isa(iT, AbstractArray)
+        return fill(Ti_val, size(iT))
+    else
+        return Ti_val
+    end
 end
 
 # function Ti = getWindTiT(WindTi,iT,t)
