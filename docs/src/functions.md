@@ -15,8 +15,9 @@ getWindDirT_EnKF
 getWindShearT
 ```
 
-# Calculating and applying the wind turbulence
+# Calculating the wind turbulence
 ```@docs
+getDataTI
 getWindTiT
 getWindTiT_EnKF
 correctTI!

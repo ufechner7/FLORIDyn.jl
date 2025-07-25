@@ -48,6 +48,37 @@ function correctTI!(::TI_None, set, wf, wind, sim_time)
     return nothing
 end
 
+"""
+    getDataTI(set, wind, wf, sim_time)
+
+Retrieve turbulence intensity data based on the specified input method.
+
+This function serves as the dispatcher for obtaining turbulence intensity 
+values from various sources and models. It supports multiple input methods including 
+Ensemble Kalman Filter approaches, zero-order hold strategies, random walk models, 
+and closed-loop control with weighted interpolation.
+
+# Arguments
+- `set`: Settings object containing simulation configuration
+  - `set.turb_mode`: Turbulence model configuration for standard retrieval methods
+- `wind`: Wind configuration object specifying the turbulence intensity source
+  - `wind.input_ti`: String specifying the input method for turbulence intensity
+  - `wind.ti`: Turbulence intensity data, model parameters, or covariance matrices
+- `wf`: Wind farm object containing current simulation state
+  - `wf.States_WF`: Wind field states matrix with turbulence intensity in column 3
+  - `wf.StartI`: Starting indices for each turbine's operational points  
+  - `wf.nT`: Number of turbines
+  - `wf.C_TI`: Interpolation coefficient matrix (for weighted methods)
+- `sim_time`: Current simulation time for time-dependent turbulence intensity models
+
+# Returns
+- `TI`: Turbulence intensity values for all turbines as a vector or array
+
+# Notes
+- Random walk perturbations use Cholesky decomposition for proper covariance
+- Interpolation methods require precomputed coefficient matrices
+- Time-dependent methods support dynamic turbulence intensity evolution
+"""
 function getDataTI(set, wind, wf, sim_time)
     # GETDATATI retrieves the data for the ambient turbulence intensity
 
