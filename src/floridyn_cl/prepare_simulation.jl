@@ -109,16 +109,6 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     #     error("Unknown wind velocity method: $input_vel")
     # end
 
-    # Assuming the following global-like variables/structures:
-    # wind.input_dir : String
-    # wind.dir : Custom structure or Dict
-    # sim.path_to_data : String
-    # sim.start_time : Float64 (or other numeric)
-    # sim.end_time : Float64
-    # turbProp.Pos : Matrix or Vector
-    # loadDataWarnings : Vector{String}
-    # Define your own readCovMatrix function before using them
-
     nT = size(turbProp.Pos, 1)
     data_path = sim.path_to_data
 
