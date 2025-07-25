@@ -14,4 +14,5 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 wf_old = deepcopy(wf)
 @btime iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
 
-# 149 µs (on AMD 7890X)
+# On AMD 7890X:
+# 149 µs (180 allocations: 892.77 KiB)
