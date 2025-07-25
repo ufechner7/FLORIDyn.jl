@@ -2,6 +2,36 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
+    readCovMatrix(cov_data, nT, name)
+
+Read and process covariance matrix data for wind field error modeling.
+
+# Arguments
+- `cov_data`: Matrix containing covariance data (typically scalar or matrix)
+- `nT::Int`: Number of turbines
+- `name::String`: Name of the variable (for error messages)
+
+# Returns
+- Returns a tuple `(cov_matrix, chol_factor)` where:
+  - `cov_matrix`: The full covariance matrix
+  - `chol_factor`: Cholesky decomposition of the covariance matrix
+"""
+function readCovMatrix(cov_data, nT, name)
+    if length(cov_data) == 1
+        # Scalar variance - create diagonal covariance matrix
+        var_val = cov_data[1]
+        cov_matrix = var_val * I(nT)
+        chol_factor = sqrt(var_val) * I(nT)
+    else
+        # Assume it's already a full covariance matrix
+        cov_matrix = cov_data
+        chol_factor = cholesky(cov_matrix).L
+    end
+    
+    return cov_matrix, chol_factor
+end
+
+"""
     prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriDyn, floris::Floris, turbProp, sim::Sim)
 
 Prepares the simulation environment for a wind farm analysis using the provided settings and parameters.
@@ -114,15 +144,15 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
             push!(loadDataWarnings, "WindDirConstant.csv not found.")
         end
     elseif wind.input_dir == "Interpolation_wErrorCov"
-        wind.dir = Dict()
-        wind.dir[:Data] = readdlm("WindDir.csv", ',', Float64)
-        DirCov = readdlm("WindDirCovariance.csv", ',', Float64)
-        _, wind.dir[:CholSig] = readCovMatrix(DirCov, nT, "WindDir")
+        data = readdlm(joinpath(data_path, "WindDir.csv"), ',', Float64)
+        DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
+        _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
+        wind.dir = WindDirMatrix(data, cholsig)
     elseif wind.input_dir == "InterpTurbine_wErrorCov"
-        wind.dir = Dict()
-        wind.dir[:Data] = readdlm("WindDirTurbine.csv", ',', Float64)
-        DirCov = readdlm("WindDirCovariance.csv", ',', Float64)
-        _, wind.dir[:CholSig] = readCovMatrix(DirCov, nT, "WindDir")
+        data = readdlm(joinpath(data_path, "WindDirTurbine.csv"), ',', Float64)
+        DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
+        _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
+        wind.dir = WindDirMatrix(data, cholsig)
     elseif wind.input_dir == "Constant_wErrorCov"
         wind.dir = Dict()
         wind.dir[:Data] = readdlm("WindDirConstant.csv", ',', Float64)

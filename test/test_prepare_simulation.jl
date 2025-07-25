@@ -77,18 +77,28 @@ using FLORIDyn, Test
 
     @test sim.n_sim_steps == 301
     @test floris.rotor_points == 50
-    # set.dir_mode = Direction_Constant()
-    # wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
 
-    # get the settings for the wind field, simulator and controller
+    # Test with constant wind direction
     wind, sim, con, floris, floridyn = setup(settings_file)
     wind.input_dir = "Constant"
-     
-    # create settings struct
     set = Settings(wind, sim, con)
-    println(set.dir_mode)
-    # Load linked data
     turbine_properties         = turbineArrayProperties(settings_file)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
+
+    # # Test with InterpTurbine
+    # wind, sim, con, floris, floridyn = setup(settings_file)
+    # wind.input_dir = "InterpTurbine"
+    # set = Settings(wind, sim, con)
+    # turbine_properties         = turbineArrayProperties(settings_file)
+    # wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
+
+    # Test with constant Interpolation_wErrorCov
+    wind, sim, con, floris, floridyn = setup(settings_file)
+    wind.input_dir = "Interpolation_wErrorCov"
+    set = Settings(wind, sim, con)
+    turbine_properties         = turbineArrayProperties(settings_file)
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
+
+
 end
 nothing

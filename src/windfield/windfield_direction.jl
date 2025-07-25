@@ -150,13 +150,18 @@ function getWindDirT(::Direction_Interpolation_wErrorCov, WindDir::WindDirMatrix
     # Linear interpolation (equivalent to interp1 in MATLAB)
     phi_val = interp(WindDir.Data[:, 1], WindDir.Data[:, 2], t)
 
-    # Replicate for all turbines in iT
-    phi = fill(phi_val, length(iT))
-
-    # Add correlated noise (assuming CholSig is a Cholesky factor)
-    phi += (randn(RNG,1, length(phi)) * WindDir.CholSig)'
-
-    return phi
+    if isa(iT, AbstractArray)
+        # Array case: use full covariance matrix
+        phi = fill(phi_val, length(iT))
+        phi += (randn(RNG, 1, length(phi)) * WindDir.CholSig)'
+        return phi
+    else
+        # Scalar case: use only diagonal element
+        phi = phi_val
+        sigma = WindDir.CholSig[iT, iT]  # Get diagonal element for this turbine
+        phi += randn(RNG) * sigma
+        return phi
+    end
 end
 
 # Helper function for 1D linear interpolation
