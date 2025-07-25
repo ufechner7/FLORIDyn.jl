@@ -87,9 +87,9 @@ where `φ` is the wind direction angle in world coordinates.
 """
 function iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris, floridyn::FloriDyn)
     # Save turbine OPs
-    tmpOPStates = copy(wf.States_OP[wf.StartI, :])
-    tmpTStates  = copy(wf.States_T[wf.StartI, :])
-    tmpWFSTates = copy(wf.States_WF[wf.StartI, :])
+    tmpOPStates = wf.States_OP[wf.StartI, :]
+    tmpTStates  = wf.States_T[wf.StartI, :]
+    tmpWFSTates = wf.States_WF[wf.StartI, :]
 
     # Shift states
     # Downwind step
