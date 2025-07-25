@@ -7,6 +7,17 @@ CurrentModule = FLORIDyn
 ```@docs
 WindFarm
 ```
+## Abstract types
+```@docs
+VelModel
+DirModel
+ShearModel
+TurbulenceModel
+VelCorrection
+DirCorrection
+TurbulenceCorrection
+ControllerModel
+```
 
 ## Defining the wind velocity model
 An instance of these structs needs to be passed to the functions that calculate the wind velocity. They are
