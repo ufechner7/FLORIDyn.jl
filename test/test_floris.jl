@@ -322,16 +322,16 @@ using FLORIDyn, Test
         
         @test isapprox(result_far[1], expected_result, rtol=1e-10)
         
-        # # Test 8: Vector operations consistency
-        # # Test that broadcasting works correctly
-        # states_op_vector = repeat(states_op, 5, 1)
-        # states_t_vector = repeat(states_t, 5, 1)
-        # states_wf_vector = repeat(states_wf, 5, 1)
+        # Test 8: Vector operations consistency
+        # Test that broadcasting works correctly
+        states_op_vector = repeat(states_op, 5, 1)
+        states_t_vector = repeat(states_t, 5, 1)
+        states_wf_vector = repeat(states_wf, 5, 1)
         
-        # result_vector = getUadv(states_op_vector, states_t_vector, states_wf_vector, floris, d_rotor)
+        result_vector = getUadv(states_op_vector, states_t_vector, states_wf_vector, floris, d_rotor)
         
-        # @test length(result_vector) == 5
-        # @test all(result_vector .≈ result[1])  # Should be identical since inputs are identical
+        @test length(result_vector) == 5
+        @test all(result_vector .≈ result[1])  # Should be identical since inputs are identical
         
         # # Test 9: Input validation - check behavior with extreme values
         # states_t_extreme = [0.0 0.0 0.0]  # Zero axial induction
