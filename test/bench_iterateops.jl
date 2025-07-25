@@ -13,3 +13,5 @@ turbine_prop        = turbineArrayProperties(settings_file)
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_prop, sim)
 wf_old = deepcopy(wf)
 @btime iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
+
+# 149 µs (on AMD 7890X)

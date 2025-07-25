@@ -45,3 +45,5 @@ D = [178.4, 178.4]
                                                         paramFLORIS, windshear)
 
 nothing
+
+# 7.7 µs (on AMD 7890X)
