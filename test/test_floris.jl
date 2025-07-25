@@ -254,71 +254,71 @@ using FLORIDyn, Test
         states_t_multi = repeat([0.33 0.0 0.06], 4, 1)
         states_wf_multi = repeat([8.2 255.0 0.062], 4, 1)
         
-        # result_multi = getUadv(states_op_multi, states_t_multi, states_wf_multi, floris, d_rotor)
+        result_multi = getUadv(states_op_multi, states_t_multi, states_wf_multi, floris, d_rotor)
         
-        # @test length(result_multi) == 4
-        # @test all(0.5 .<= result_multi .<= 1.0)
-        # @test all(isfinite.(result_multi))
+        @test length(result_multi) == 4
+        @test all(0.5 .<= result_multi .<= 1.0)
+        @test all(isfinite.(result_multi))
         
-        # # Advection speed should increase with distance (wake recovers)
-        # @test result_multi[1] <= result_multi[2] <= result_multi[3] <= result_multi[4]
+        # Advection speed should increase with distance (wake recovers)
+        @test result_multi[1] <= result_multi[2] <= result_multi[3] <= result_multi[4]
         
-        # # Test 3: Effect of thrust coefficient (higher CT should reduce advection speed)
-        # states_t_low_ct = [0.1 0.0 0.06]   # Lower axial induction -> lower CT
-        # states_t_high_ct = [0.4 0.0 0.06]  # Higher axial induction -> higher CT
+        # Test 3: Effect of thrust coefficient (higher CT should reduce advection speed)
+        states_t_low_ct = [0.1 0.0 0.06]   # Lower axial induction -> lower CT
+        states_t_high_ct = [0.4 0.0 0.06]  # Higher axial induction -> higher CT
         
-        # result_low_ct = getUadv(states_op, states_t_low_ct, states_wf, floris, d_rotor)
-        # result_high_ct = getUadv(states_op, states_t_high_ct, states_wf, floris, d_rotor)
+        result_low_ct = getUadv(states_op, states_t_low_ct, states_wf, floris, d_rotor)
+        result_high_ct = getUadv(states_op, states_t_high_ct, states_wf, floris, d_rotor)
         
-        # @test result_low_ct[1] > result_high_ct[1]  # Lower CT should give higher advection speed
+        @test result_low_ct[1] > result_high_ct[1]  # Lower CT should give higher advection speed
         
-        # # Test 4: Effect of yaw angle
-        # states_t_yawed = [0.33 30.0 0.06]  # 30 degree yaw
-        # result_yawed = getUadv(states_op, states_t_yawed, states_wf, floris, d_rotor)
+        # Test 4: Effect of yaw angle
+        states_t_yawed = [0.33 30.0 0.06]  # 30 degree yaw
+        result_yawed = getUadv(states_op, states_t_yawed, states_wf, floris, d_rotor)
         
-        # @test isfinite(result_yawed[1])
-        # @test 0.5 <= result_yawed[1] <= 1.0
+        @test isfinite(result_yawed[1])
+        @test 0.5 <= result_yawed[1] <= 1.0
         
-        # # Test 5: Edge case - zero downstream distance (at rotor plane)
-        # states_op_zero = [0.0  0.0  0.0  0.0  0.0  0.0]
-        # result_zero = getUadv(states_op_zero, states_t, states_wf, floris, d_rotor)
+        # Test 5: Edge case - zero downstream distance (at rotor plane)
+        states_op_zero = [0.0  0.0  0.0  0.0  0.0  0.0]
+        result_zero = getUadv(states_op_zero, states_t, states_wf, floris, d_rotor)
         
-        # @test length(result_zero) == 1
-        # @test isfinite(result_zero[1])
-        # @test 0.5 <= result_zero[1] <= 1.0
+        @test length(result_zero) == 1
+        @test isfinite(result_zero[1])
+        @test 0.5 <= result_zero[1] <= 1.0
         
-        # # Test 6: Effect of turbulence intensity
-        # states_wf_low_ti = [8.2 255.0 0.01]   # Low ambient TI
-        # states_wf_high_ti = [8.2 255.0 0.15]  # High ambient TI
+        # Test 6: Effect of turbulence intensity
+        states_wf_low_ti = [8.2 255.0 0.01]   # Low ambient TI
+        states_wf_high_ti = [8.2 255.0 0.15]  # High ambient TI
         
-        # result_low_ti = getUadv(states_op, states_t, states_wf_low_ti, floris, d_rotor)
-        # result_high_ti = getUadv(states_op, states_t, states_wf_high_ti, floris, d_rotor)
+        result_low_ti = getUadv(states_op, states_t, states_wf_low_ti, floris, d_rotor)
+        result_high_ti = getUadv(states_op, states_t, states_wf_high_ti, floris, d_rotor)
         
-        # @test isfinite(result_low_ti[1])
-        # @test isfinite(result_high_ti[1])
+        @test isfinite(result_low_ti[1])
+        @test isfinite(result_high_ti[1])
         
-        # # Test 7: Mathematical consistency - check that formula is implemented correctly
-        # # For a point far downstream, we can verify the calculation manually
-        # states_op_far = [0.0  0.0  0.0  5000.0  0.0  0.0]  # Far downstream
-        # result_far = getUadv(states_op_far, states_t, states_wf, floris, d_rotor)
+        # Test 7: Mathematical consistency - check that formula is implemented correctly
+        # For a point far downstream, we can verify the calculation manually
+        states_op_far = [0.0  0.0  0.0  5000.0  0.0  0.0]  # Far downstream
+        result_far = getUadv(states_op_far, states_t, states_wf, floris, d_rotor)
         
-        # # At far downstream, should approach the far-field formula
-        # # Manually calculate for comparison
-        # C_T_test = 4 * 0.33 * (1 - 0.33)  # calcCt(0.33, 0.0)
-        # yaw_test = 0.0
-        # I_test = sqrt(0.06^2 + 0.062^2)
+        # At far downstream, should approach the far-field formula
+        # Manually calculate for comparison
+        C_T_test = 4 * 0.33 * (1 - 0.33)  # calcCt(0.33, 0.0)
+        yaw_test = 0.0
+        I_test = sqrt(0.06^2 + 0.062^2)
         
-        # # Calculate core length
-        # x_0_test = (cos(yaw_test) * (1 + sqrt(1 - C_T_test)) / 
-        #            (sqrt(2) * (floris.alpha * I_test + floris.beta * (1 - sqrt(1 - C_T_test))))) * d_rotor
+        # Calculate core length
+        x_0_test = (cos(yaw_test) * (1 + sqrt(1 - C_T_test)) / 
+                   (sqrt(2) * (floris.alpha * I_test + floris.beta * (1 - sqrt(1 - C_T_test))))) * d_rotor
         
-        # # Since 5000m >> x_0_test, we're in far field
-        # k_y_test = floris.k_a * I_test + floris.k_b
-        # sig_y_div_D_test = (5000.0 - x_0_test) * k_y_test / d_rotor
-        # sig_z_div_D_test = (5000.0 - x_0_test) * k_y_test / d_rotor
+        # Since 5000m >> x_0_test, we're in far field
+        k_y_test = floris.k_a * I_test + floris.k_b
+        sig_y_div_D_test = (5000.0 - x_0_test) * k_y_test / d_rotor
+        sig_z_div_D_test = (5000.0 - x_0_test) * k_y_test / d_rotor
         
-        # U_cen_div_U_inf_test = sqrt(1 - (C_T_test * cos(yaw_test)) / (8 * sig_y_div_D_test * sig_z_div_D_test))
-        # expected_result = 0.5 * (1 + U_cen_div_U_inf_test)
+        U_cen_div_U_inf_test = sqrt(1 - (C_T_test * cos(yaw_test)) / (8 * sig_y_div_D_test * sig_z_div_D_test))
+        expected_result = 0.5 * (1 + U_cen_div_U_inf_test)
         
         # @test isapprox(result_far[1], expected_result, rtol=1e-10)
         
