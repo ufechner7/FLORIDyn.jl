@@ -236,6 +236,16 @@ end
 
 # Helper function for linear interpolation at a single point
 function interp1d(x, y, xi)
+    # Handle the case where all y values are the same (constant)
+    if all(y .== y[1])
+        return y[1]
+    end
+    
+    # Handle case with only one data point
+    if length(x) == 1
+        return y[1]
+    end
+    
     itp = linear_interpolation(x, y, extrapolation_bc=Flat())
     return itp(xi)
 end

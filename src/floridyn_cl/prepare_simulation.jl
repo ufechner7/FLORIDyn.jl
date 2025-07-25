@@ -174,12 +174,15 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
             wind.ti = Matrix{Float64}(df)
         end
     elseif wind.input_ti == "InterpTurbine"
+        path = joinpath(data_path, "WindTITurbine.csv")
         try
-            path = joinpath(data_path, "WindTITurbine.csv")
             df = CSV.read(path, DataFrame)
             wind.ti = Matrix{Float64}(df)
         catch e
             push!(loadDataWarnings, "WindTITurbine.csv not found.")
+            generateDemoCSV(data_path, "WindTITurbine.csv", 3, nT, [0.0, 0.06], [100.0, 0.06])
+            df = CSV.read(path, DataFrame)
+            wind.ti = Matrix{Float64}(df)
         end
     elseif wind.input_ti == "Constant"
         try
