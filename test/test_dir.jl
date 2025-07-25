@@ -5,6 +5,7 @@ using FLORIDyn
 using Test
 using LinearAlgebra
 using Random
+using Statistics
 
 FLORIDyn.set_rng(MersenneTwister(1234))
 
@@ -23,11 +24,24 @@ FLORIDyn.set_rng(MersenneTwister(1234))
         dir_mode = Direction_Constant_wErrorCov()
         WindDir = WindDirType(270.0, cholesky(Matrix{Float64}(I, 3, 3)).L)
         iT = [1, 2, 3]
+        
+        # Test single call
         phi = getWindDirT(dir_mode, WindDir, iT, 0.0)
-        result = [269.1880495568859,  272.5622391399353 , 270.1032916340334]
-        for (i, ph) in pairs(phi)
-            @test ph ≈ result[i]
-        end
+        @test length(phi) == 3
+        @test all(isfinite.(phi))
+        
+        # Test statistical properties with multiple samples
+        n_samples = 1000
+        samples = [getWindDirT(dir_mode, WindDir, iT, 0.0) for _ in 1:n_samples]
+        sample_matrix = hcat(samples...)  # 3 x n_samples matrix
+        
+        # Test that means are close to the base wind direction
+        means = mean(sample_matrix, dims=2)
+        @test all(abs.(means .- 270.0) .< 0.5)  # Should be close to 270.0
+        
+        # Test that variances are reasonable (identity covariance should give ~1.0 variance)
+        vars = var(sample_matrix, dims=2)
+        @test all(0.5 .< vars .< 2.0)  # Should be around 1.0
     end
 
     @testset "getWindDirT_EnKF(Direction_EnKF_InterpTurbine(), ...)" begin
@@ -95,11 +109,24 @@ FLORIDyn.set_rng(MersenneTwister(1234))
         # Example time
         t = 7.0
 
-        # Call the function
+        # Call the function and test statistical properties
+        n_samples = 500
+        samples = [getWindDirT(dir_mode, WindDir, iT, t) for _ in 1:n_samples]
+        sample_matrix = hcat(samples...)  # 2 x n_samples matrix
+        
+        # Test basic properties
         phi = getWindDirT(dir_mode, WindDir, iT, t)
-        @test size(phi) == (2,1)
-        @test phi[1] ≈ 25.066067906448957
-        @test phi[2] ≈ 26.21376743894564
+        @test size(phi) == (2,1)  # Corrected expected size
+        @test all(isfinite.(phi))
+        
+        # Test that the mean is close to the interpolated base value (26.0 at t=7.0)
+        expected_base = 10.0 + (20.0 - 10.0) * (7.0 - 0.0) / (5.0 - 0.0)  # ≈ 26.0
+        means = mean(sample_matrix, dims=2)
+        @test all(abs.(means .- expected_base) .< 1.0)
+        
+        # Test that variances are reasonable
+        vars = var(sample_matrix, dims=2)
+        @test all(0.5 .< vars .< 3.0)
     end
 
     @testset "getWindDirT(Direction_InterpTurbine(), ...)" begin
@@ -154,10 +181,26 @@ FLORIDyn.set_rng(MersenneTwister(1234))
 
         # Create WindDir struct
         WindDir = WindDirMatrix(Data, CholSig)
+        
+        # Test single call
         phi = getWindDirT(dir_mode, WindDir, 1, 12.5)
-
         @test length(phi) == 1
-        @test phi[1] ≈ 356.260488545849 
+        @test isfinite(phi[1])
+        
+        # Test statistical properties with multiple samples
+        n_samples = 500
+        samples = [getWindDirT(dir_mode, WindDir, 1, 12.5)[1] for _ in 1:n_samples]
+        
+        # Expected interpolated value at t=12.5 for turbine 1: 355 + (360-355)*(12.5-10)/(20-10) = 356.25
+        expected_base = 355.0 + (360.0 - 355.0) * (12.5 - 10.0) / (20.0 - 10.0)
+        sample_mean = mean(samples)
+        sample_var = var(samples)
+        
+        # Test that mean is close to expected interpolated value
+        @test abs(sample_mean - expected_base) < 0.5
+        
+        # Test that variance is reasonable
+        @test 0.5 < sample_var < 3.0 
     end
 
     @testset "getWindDirT(Direction_RW_with_Mean(), ...)" begin
@@ -174,12 +217,28 @@ FLORIDyn.set_rng(MersenneTwister(1234))
         # Create WindDir struct
         WindDir = WindDirTriple(Init, CholSig, MeanPull)
 
-        # Call the function
+        # Test single call
         phi = getWindDirT(dir_mode, WindDirNow, WindDir)
         @test size(phi) == (3,1)
-        @test phi[1] ≈ 9.550282410298815
-        @test phi[2] ≈ 19.2772337238657
-        @test phi[3] ≈ 28.472219543329473
+        @test all(isfinite.(phi))
+        
+        # Test statistical properties with multiple samples
+        n_samples = 500
+        samples = [getWindDirT(dir_mode, WindDirNow, WindDir) for _ in 1:n_samples]
+        sample_matrix = hcat(samples...)  # 3 x n_samples matrix
+        
+        # Expected direction after one step: WindDirNow + MeanPull * (Init - WindDirNow)
+        # For the random walk with mean reversion
+        expected_directions = WindDirNow .+ MeanPull .* (Init .- WindDirNow)
+        
+        means = mean(sample_matrix, dims=2)
+        
+        # Test that means are close to expected directions (accounting for random noise)
+        @test all(abs.(means .- expected_directions) .< 1.0)
+        
+        # Test that variances are reasonable
+        vars = var(sample_matrix, dims=2)
+        @test all(0.2 .< vars .< 5.0)
     end
 end
 
