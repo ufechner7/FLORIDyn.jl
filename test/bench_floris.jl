@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, Test
+using FLORIDyn, Test, BenchmarkTools
 
 set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), 
                 Direction_All(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA())
@@ -41,7 +41,7 @@ States_WF = [8.2  255.0  0.062  255.0;
 States_T_multi = [0.33 0.0 0.06;
                     0.33 0.0 0.06]
 D = [178.4, 178.4]
-@time T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = runFLORIS(set, LocationT_multi, States_WF, States_T_multi, D, 
+@btime T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = runFLORIS(set, LocationT_multi, States_WF, States_T_multi, D, 
                                                         paramFLORIS, windshear)
 
 nothing

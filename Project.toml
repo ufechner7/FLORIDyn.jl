@@ -4,6 +4,7 @@ authors = ["Uwe Fechner <u.fechner-1@tudelft.nl> and contributors"]
 version = "0.1.0"
 
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
@@ -21,6 +22,7 @@ TerminalPager = "0c614874-6106-40ed-a7c2-2f1cd0bff883"
 YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 
 [compat]
+BenchmarkTools = "1.6.0"
 CSV = "0.10.15"
 DataFrames = "1.7.0"
 DelimitedFiles = "1.9.1"
