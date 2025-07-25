@@ -3,4 +3,4 @@
 
 # julia --project -i -e 'using Revise; using Infiltrator'
 # julia --project -i -e 'using Revise'
-julia --project
+julia --project --gcthreads=1,0
