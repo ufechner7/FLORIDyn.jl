@@ -16,6 +16,7 @@ TurbulenceModel
 VelCorrection
 DirCorrection
 TurbulenceCorrection
+IterateOPs_model
 ControllerModel
 ```
 
@@ -97,6 +98,17 @@ An instance of these structs needs to be passed to the functions that control tu
 Yaw_Constant
 Yaw_InterpTurbine
 Yaw_SOWFA
+```
+
+## Defining the OP iteration model
+An instance of these structs needs to be passed to the functions that iterate operational points (OPs) through the wind field. They are all subtypes of [`IterateOPs_model`](@ref)
+
+```@docs
+IterateOPs_average
+IterateOPs_basic
+IterateOPs_buffer
+IterateOPs_maximum
+IterateOPs_weighted
 ```
 
 ## Types for storing wind field params
