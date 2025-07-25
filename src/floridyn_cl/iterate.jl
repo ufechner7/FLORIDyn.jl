@@ -122,13 +122,13 @@ function iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris,
 
     # Check if OPs are in order
     for iT in 1:wf.nT
-        inds =wf.StartI[iT]:(wf.StartI[iT] +wf.nOP - 1)
+        inds = wf.StartI[iT]:(wf.StartI[iT] + wf.nOP - 1)
 
         indOP = sortperm(wf.States_OP[inds, 4])
         if indOP != sort(indOP)  # check if already sorted
-           wf.States_OP[inds, :] =wf.States_OP[inds[indOP], :]
-           wf.States_T[inds, :]  =wf.States_T[inds[indOP], :]
-           wf.States_WF[inds, :] =wf.States_WF[inds[indOP], :]
+           wf.States_OP[inds, :] = wf.States_OP[inds[indOP], :]
+           wf.States_T[inds, :]  = wf.States_T[inds[indOP], :]
+           wf.States_WF[inds, :] = wf.States_WF[inds[indOP], :]
         end
 
     end
