@@ -30,7 +30,7 @@ wind = FLORIDyn.Wind(
 @testset verbose=true "correction" begin
     @testset "correctDir!" begin
         # Setup
-        set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_All(), 
+        set = Settings(Velocity_Constant(), Direction_All(), TI_Constant(), Shear_PowerLaw(), Direction_All(), 
                     Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA())
         wf = WindFarm(
             States_WF = zeros(3, 4),
@@ -40,7 +40,7 @@ wind = FLORIDyn.Wind(
             nOP = 4,
             intOPs = [[1 0.5 2 0.5; 2 0.5 3 0.5]]
         )
-         sim_time = 20000  # dummy input
+        sim_time = 20000  # dummy input
 
         # Call the function
         correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
