@@ -23,11 +23,12 @@ end
 wf, sim, floris, floridyn, set = create_test_setup()
 wf_original = deepcopy(wf)
 
-# Test that function executes without error
-t = @benchmark iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_prop, sim)
+wf.dep = findTurbineGroups(wf, floridyn)
+t = @benchmark  wf.intOPs = interpolateOPs(wf)
 
 time = mean(t.times)/1e9
 rel_time = time * 301 / 0.115  # Relative to the total time of 0.115 seconds
 println("Benchmark time: $time seconds, relative to 0.115s: $(round(rel_time * 100, digits=2)) %")
 
-# Benchmark time: 0.0001022896801 seconds, relative to 0.115s: 26.77 %
+# Benchmark time: 1.99795341e-5 seconds, relative to 0.115s: 5.23 %
