@@ -89,7 +89,7 @@ end
 Return wind direction in SOWFA-deg for the requested turbine(s).
 
 # Arguments
-- `WindDir::Matrix`: Matrix where each row is [time, phi_T0, phi_T1, ... phi_Tn]
+- `WindDir::Matrix`: Matrix where each row is [time, `phi_T0`, `phi_T1`, ... `phi_Tn`]
 - `iT`: Index or indices of the turbines (can be integer or vector)
 - `t`: Time of request (scalar)
 

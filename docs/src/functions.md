@@ -8,6 +8,7 @@ CurrentModule = FLORIDyn
 ```@docs
 getWindDirT
 getWindDirT_EnKF
+correctDir!
 ```
 
 # Calculating the wind shear

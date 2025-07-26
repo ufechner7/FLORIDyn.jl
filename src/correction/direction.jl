@@ -28,25 +28,25 @@ function getDataDir(set::Settings, Wind, wf, SimTime)
 end
 
 """
-    correctDir!(::Direction_All, set::Settings, wf, Wind, SimTime)
+    correctDir!(::Direction_All, set::Settings, wf, Wind, t)
 
 Corrects the direction based on the provided parameters.
 
 # Arguments
 - `::Direction_All`: The direction correction strategy or type.
-- `set`: The settings for the simulation.`
-- `wf`: The current turbine (???)
-- `Wind`: The wind data or wind state.
-- `SimTime`: The simulation time.
+- `set`:     The settings for the simulation.`
+- `wf`:      The [WindFarm](@ref)
+- `wind`:    The wind data or wind state.
+- `t`:       The simulation time.
 
 # Description
 This function applies a direction correction using the specified strategy, updating the state in-place.
 """
-function correctDir!(::Direction_Interpolation, set::Settings, wf, Wind, SimTime)
+function correctDir!(::Direction_All, set::Settings, wf, wind, t)
     # Get Data
-    phi = getDataDir(set, Wind, wf, SimTime)
+    phi = getDataDir(set, wind, wf, t)
     # Correct
-   wf.States_WF[:, 2] .= phi[1]
+    wf.States_WF[:, 2] .= phi[1]
     # OP Orientation = turbine wind direction
     if size(wf.States_WF, 2) == 4
        wf.States_WF[wf.StartI, 4] .= phi[1]
@@ -54,20 +54,20 @@ function correctDir!(::Direction_Interpolation, set::Settings, wf, Wind, SimTime
     return nothing
 end
 
-function correctDir!(::Direction_All, set::Settings, wf, Wind, SimTime)
-    # CORRECTDIR Correction of the wind direction
+# function correctDir!(::Direction_All, set::Settings, wf, Wind, SimTime)
+#     # CORRECTDIR Correction of the wind direction
 
-    ## Get Data
-    phi = getDataDir(set, Wind, wf, SimTime)
+#     ## Get Data
+#     phi = getDataDir(set, Wind, wf, SimTime)
 
-    ## Correct the wind direction in the turbine states
-   wf.States_WF[:, 2] .= phi[1]
+#     ## Correct the wind direction in the turbine states
+#     wf.States_WF[:, 2] .= phi[1]
 
-    # OP Orientation = turbine wind direction
-    if size(wf.States_WF, 2) == 4
-       wf.States_WF[wf.StartI, 4] .= phi[1]
-    end
+#     # OP Orientation = turbine wind direction
+#     if size(wf.States_WF, 2) == 4
+#        wf.States_WF[wf.StartI, 4] .= phi[1]
+#     end
 
-    return wf
-end
+#     return wf
+# end
 
