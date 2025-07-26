@@ -342,7 +342,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     wf.Names_OP = states.OP_names
     wf.States_T  = zeros(n_op * wf.nT, states.Turbine)
     wf.Names_T   = states.T_names
-    wf.States_WF = zeros(n_op * wf.nT, states.WF)
+    wf.States_WF = zeros(states.WF, n_op * wf.nT)  # TRANSPOSED: (3, n_op * nT) for performance
     wf.Names_WF  = states.WF_names
     wf.StartI    = collect(1:n_op:(n_op * wf.nT))'
     wf.nOP       = n_op

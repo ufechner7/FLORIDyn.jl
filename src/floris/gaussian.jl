@@ -94,7 +94,7 @@ function centerline(states_op, states_t, states_wf, floris, d_rotor)
         a  = states_t[i, 1]
         b  = states_t[i, 2]
         c  = states_t[i, 3]
-        d  = states_wf[i, 3]
+        d  = states_wf[3, i]
         OP = states_op[i, 4]
 
         ############# 2. basic derived quantities #############################
@@ -215,13 +215,13 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
         rangeOPs = ((iT-1)*nOP+1):(iT*nOP)
 
         # Initialize the States of the OPs and turbines
-        states_wf[rangeOPs, 1] .= u
-        states_wf[rangeOPs, 2] .= phi_s
-        states_wf[rangeOPs, 3] .= ti
+        states_wf[1, rangeOPs] .= u
+        states_wf[2, rangeOPs] .= phi_s
+        states_wf[3, rangeOPs] .= ti
 
         # Add orientation if used
         if length(wf.Names_WF) == 4
-            states_wf[rangeOPs, 4] .= phi_s
+            states_wf[4, rangeOPs] .= phi_s
         end
 
         # Downwind distance (wake coord)
@@ -232,10 +232,10 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
 
         # Crosswind position
         states_op[rangeOPs, 5:6] = centerline(states_op[rangeOPs, :], states_t[rangeOPs, :],
-                                              states_wf[rangeOPs, :], floris, wf.D[iT])
+                                              states_wf[:, rangeOPs], floris, wf.D[iT])
 
         # Convert wind dir in fitting radians
-        phi_w = angSOWFA2world.(states_wf[rangeOPs, 2])
+        phi_w = angSOWFA2world.(states_wf[2, rangeOPs])
 
         # World coordinate position x0 and y0 including tower base and nacelle pos
         states_op[rangeOPs, 1] .= cos.(phi_w) .* states_op[rangeOPs, 4] .-
@@ -464,8 +464,8 @@ function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, flor
 
     for iT in 1:(nT - 1)
 
-        tmp_phi = size(states_wf,2) == 4 ? angSOWFA2world(states_wf[iT, 4]) :
-                                           angSOWFA2world(states_wf[iT, 2])
+        tmp_phi = size(states_wf,1) == 4 ? angSOWFA2world(states_wf[4, iT]) :
+                                           angSOWFA2world(states_wf[2, iT])
 
         tmp_RPs = RPl .- location_t[iT, :]'
         R_phi = [cos(tmp_phi)  sin(tmp_phi)  0.0;
@@ -483,7 +483,7 @@ function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, flor
         yaw = -deg2rad(yaw_deg)
         TI = states_t[iT, 3]
         Ct = calcCt(a, yaw_deg)
-        TI0 = states_wf[iT, 3]
+        TI0 = states_wf[3, iT]
 
         sig_y, sig_z, C_T, x_0, delta, pc_y, pc_z = getVars(
             tmp_RPs, Ct, yaw, TI, TI0, floris, d_rotor[iT]
@@ -539,7 +539,7 @@ function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, flor
     T_red_arr[end] = dot(RPw, redShear)
 
     T_red = prod(T_red_arr)
-    T_Ueff = states_wf[end, 1] * T_red
+    T_Ueff = states_wf[1, end] * T_red
 
     return T_red_arr, T_aTI_arr, T_Ueff, T_weight
 end
@@ -663,7 +663,7 @@ function getUadv(states_op, states_t, states_wf, floris::Floris, d_rotor)
     # States
     C_T = calcCt(states_t[:, 1], states_t[:, 2])
     yaw = -deg2rad.(states_t[:, 2])
-    I = sqrt.(states_t[:, 3].^2 .+ states_wf[:, 3].^2)  # I_f & I_0
+    I = sqrt.(states_t[:, 3].^2 .+ states_wf[3, :].^2)  # I_f & I_0
     OPdw = states_op[:, 4]
 
     # Calc x_0 (Core length)

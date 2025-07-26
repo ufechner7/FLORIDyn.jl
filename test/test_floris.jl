@@ -75,11 +75,11 @@ using FLORIDyn, Test
         States_T = zeros(200, 3)
         States_T[:, 1] .= 0.33
         States_T[:, 3] .= 0.06 # Example turbulence intensity
-        States_WF = zeros(200, 4)
-        States_WF[:, 4] .= 255
-        States_WF[:, 3] .= 0.0620 
-        States_WF[:, 2] .= 255
-        States_WF[:, 1] .= 8.2
+        States_WF = zeros(4, 200)
+        States_WF[4, :] .= 255
+        States_WF[3, :] .= 0.0620 
+        States_WF[2, :] .= 255
+        States_WF[1, :] .= 8.2
 
         paramFLORIS = FLORIDyn.Floris(
             2.32,      # alpha
@@ -169,7 +169,7 @@ using FLORIDyn, Test
         set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), 
                        Direction_All(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA())
         LocationT = [600.0  2400.0  119.0]
-        States_WF = [8.2     255.0    0.062  255.0]
+        States_WF = [8.2; 255.0; 0.062; 255.0]
         States_T  = [0.33      0.0    0.06]
         D = 178.4
         paramFLORIS = FLORIDyn.Floris(
@@ -199,8 +199,10 @@ using FLORIDyn, Test
         # Additional test: Check that runFLORIS handles multiple turbines (dummy example)
         LocationT_multi = [600.0 2400.0 119.0;
                            1200.0 2600.0 119.0] 
-        States_WF = [8.2  255.0  0.062  255.0;
-                     8.2  255.0  0.062  255.0]
+        States_WF = [8.2  8.2;
+                     255.0  255.0;
+                     0.062  0.062;
+                     255.0  255.0]
         States_T_multi = [0.33 0.0 0.06;
                           0.33 0.0 0.06]
         D = [178.4, 178.4]
@@ -217,7 +219,7 @@ using FLORIDyn, Test
         # Test 1: Basic functionality with single observation point
         states_op = [881.928  -185.932  -61.0219  1000.0  0.0  0.0]  # Single OP with downstream distance 1000m
         states_t = [0.33  0.0  0.06]   # Axial induction, yaw angle (deg), turbulence intensity
-        states_wf = [8.2  255.0  0.062]  # Wind speed, direction, ambient TI
+        states_wf = [8.2; 255.0; 0.062]  # Wind speed, direction, ambient TI (column vector)
         
         floris = FLORIDyn.Floris(
             alpha = 2.32,
@@ -252,7 +254,7 @@ using FLORIDyn, Test
             300.0   0.0    0.0    3000.0 0.0  0.0      # Far downstream
         ]
         states_t_multi = repeat([0.33 0.0 0.06], 4, 1)
-        states_wf_multi = repeat([8.2 255.0 0.062], 4, 1)
+        states_wf_multi = repeat([8.2; 255.0; 0.062], 1, 4)  # Each row is a different state component, each column is an observation
         
         result_multi = getUadv(states_op_multi, states_t_multi, states_wf_multi, floris, d_rotor)
         
@@ -288,8 +290,8 @@ using FLORIDyn, Test
         @test 0.5 <= result_zero[1] <= 1.0
         
         # Test 6: Effect of turbulence intensity
-        states_wf_low_ti = [8.2 255.0 0.01]   # Low ambient TI
-        states_wf_high_ti = [8.2 255.0 0.15]  # High ambient TI
+        states_wf_low_ti = [8.2; 255.0; 0.01]   # Low ambient TI
+        states_wf_high_ti = [8.2; 255.0; 0.15]  # High ambient TI
         
         result_low_ti = getUadv(states_op, states_t, states_wf_low_ti, floris, d_rotor)
         result_high_ti = getUadv(states_op, states_t, states_wf_high_ti, floris, d_rotor)

@@ -177,17 +177,17 @@ where:
     
     # Velocity
     if Wind.pertubation.vel
-       wf.States_WF[:, 1] .+= Wind.pertubation.vel_sigma * randn(wf.nOP *wf.nT)
+       wf.States_WF[1, :] .+= Wind.pertubation.vel_sigma * randn(wf.nOP *wf.nT)
     end
 
     # Direction
     if Wind.pertubation.dir
-       wf.States_WF[:, 2] .+= Wind.pertubation.dir_sigma * randn(wf.nOP *wf.nT)
+       wf.States_WF[2, :] .+= Wind.pertubation.dir_sigma * randn(wf.nOP *wf.nT)
     end
 
     # Turbulence Intensity
     if Wind.pertubation.ti
-       wf.States_WF[:, 3] .+= Wind.pertubation.ti_sigma * randn(wf.nOP *wf.nT)
+       wf.States_WF[3, :] .+= Wind.pertubation.ti_sigma * randn(wf.nOP *wf.nT)
     end
 
     return nothing
@@ -262,7 +262,7 @@ where:
             I_op = wf.StartI[iT] + I_op - 1
 
             # Angle and relative vector
-            phi = angSOWFA2world.(wf.States_WF[I_op, 2])
+            phi = angSOWFA2world.(wf.States_WF[2, I_op])
             r0 = wf.States_OP[I_op, 1:2] .- wf.posBase[iiT, 1:2]
             r1 = R01(phi) * r0
 
@@ -482,14 +482,14 @@ The function supports optional wind field interpolation via coefficient matrices
 
     for iT in 1:wf.nT
         # Interpolate Wind field if needed
-        iTWFState = copy(wf.States_WF[wf.StartI[iT], :])
+        iTWFState = copy(wf.States_WF[:, wf.StartI[iT]])
 
         if hasfield(typeof(wf), :C_Vel)
-            iTWFState[1] = dot(wf.C_Vel[iT, :],wf.States_WF[:, 1])
+            iTWFState[1] = dot(wf.C_Vel[iT, :], wf.States_WF[1, :])
         end
 
         if hasfield(typeof(wf), :C_Dir)
-            iTWFState[2] = dot(wf.C_Dir[iT, :],wf.States_WF[:, 2])
+            iTWFState[2] = dot(wf.C_Dir[iT, :], wf.States_WF[2, :])
         end
 
         if isempty(wf.dep[iT])
@@ -503,7 +503,7 @@ The function supports optional wind field interpolation via coefficient matrices
                 floris,
                 wind.shear
             )
-            M[iT, :] = [T_red_arr, 0, T_red_arr *wf.States_WF[wf.StartI[iT], 1]]
+            M[iT, :] = [T_red_arr, 0, T_red_arr * wf.States_WF[1, wf.StartI[iT]]]
            wf.red_arr[iT, iT] = T_red_arr
             continue
         end
@@ -530,19 +530,19 @@ The function supports optional wind field interpolation via coefficient matrices
             OPi_l = OP1_r * wf.States_OP[OP1_i, :] + OP2_r * wf.States_OP[OP2_i, :]
             tmp_Tpos[iiT, :] = OPi_l[1:3]
             tmp_Tst[iiT, :] = OP1_r *wf.States_T[OP1_i, :] + OP2_r *wf.States_T[OP2_i, :]
-            tmp_WF[iiT, :]  = OP1_r *wf.States_WF[OP1_i, :] + OP2_r *wf.States_WF[OP2_i, :]
+            tmp_WF[iiT, :]  = OP1_r * wf.States_WF[:, OP1_i] + OP2_r * wf.States_WF[:, OP2_i]
 
             si = wf.StartI[wf.dep[iT][iiT]]
 
             if hasfield(typeof(wf), :C_Vel)
                 C_weights = wf.C_Vel[iT, si:(si + wf.nOP - 1)]
                 C_weights ./= sum(C_weights)
-                tmp_WF[iiT, 1] = dot(C_weights, wf.States_WF[si:si + wf.nOP - 1, 1])
+                tmp_WF[iiT, 1] = dot(C_weights, wf.States_WF[1, si:si + wf.nOP - 1])
             end
             if hasfield(typeof(wf), :C_Dir)
                 C_weights = wf.C_Dir[iT, si:(si + wf.nOP - 1)]
                 C_weights ./= sum(C_weights)
-                tmp_WF[iiT, 2] = dot(C_weights, wf.States_WF[si:si + wf.nOP - 1, 2])
+                tmp_WF[iiT, 2] = dot(C_weights, wf.States_WF[2, si:si + wf.nOP - 1])
             end
 
             tmp_phi = size(tmp_WF, 2) == 4 ? angSOWFA2world(tmp_WF[iiT, 4]) : angSOWFA2world(tmp_WF[iiT, 2])
@@ -562,13 +562,13 @@ The function supports optional wind field interpolation via coefficient matrices
 
         if wf.D[end] <= 0
             dists = zeros(tmp_nT - 1)
-            plot_WF = zeros(tmp_nT - 1, size(wf.States_WF, 2))
+            plot_WF = zeros(tmp_nT - 1, size(wf.States_WF, 1))
             plot_OP = zeros(tmp_nT - 1, 2)
             for iiT in 1:(tmp_nT - 1)
                 OP1_i, OP1_r, OP2_i, OP2_r =wf.intOPs[iT][iiT, :]
                 OPi_l = OP1_r *wf.States_OP[OP1_i, :] + OP2_r *wf.States_OP[OP2_i, :]
                 plot_OP[iiT, :] = OPi_l[1:2]
-                plot_WF[iiT, :] = OP1_r *wf.States_WF[OP1_i, :] + OP2_r *wf.States_WF[OP2_i, :]
+                plot_WF[iiT, :] = OP1_r * wf.States_WF[:, OP1_i] + OP2_r * wf.States_WF[:, OP2_i]
                 dists[iiT] = norm(OPi_l[1:2] .-wf.posBase[iT,1:2])
             end
 
@@ -668,11 +668,11 @@ function runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con
         correctTI!(set.cor_turb_mode, set, wf, wind, SimTime)
 
         # Save free wind speed as measurement
-        M[(it-1)*nT+1 : it*nT, 5] = wf.States_WF[wf.StartI, 1]
+        M[(it-1)*nT+1 : it*nT, 5] = wf.States_WF[1, wf.StartI]
 
         # ========== Get Control settings ==========
         wf.States_T[wf.StartI, 2] = (
-            wf.States_WF[wf.StartI, 2] .-
+            wf.States_WF[2, wf.StartI] .-
                 getYaw(set.control_mode, con.yaw_data, (1:nT), SimTime)'
         )
 

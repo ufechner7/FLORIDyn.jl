@@ -40,7 +40,7 @@ function correctTI!(::TI_None, set, wf, wind, sim_time)
 
     # Update the TI value in the States_WF matrix
     try
-       wf.States_WF[wf.StartI, 3] .= TI'
+       wf.States_WF[3, wf.StartI] .= TI'
     catch e
         error("Error updating wf.States_WF: $(e.msg)")
     end
@@ -91,7 +91,7 @@ function getDataTI(set, wind, wf, sim_time)
         # 'phi' is not defined in your snippet. Replace with wf.nT if that's correct.
         TI = TI .+ (randn(1, wf.nT) * wind.ti.CholSig)'
     elseif wind.input_ti == "CLC_weighted_ZOH"
-        TI = wf.C_TI *wf.States_WF[:, 3]
+        TI = wf.C_TI * wf.States_WF[3, :]
     else
         TI = getWindTiT(set.turb_mode, wind.ti, collect(1:wf.nT), sim_time)
     end

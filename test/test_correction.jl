@@ -46,7 +46,7 @@ wind = FLORIDyn.Wind(
         correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
 
         # Validate
-        @test all(wf.States_WF[:, 2] .== 255.0)
+        @test all(wf.States_WF[2, :] .== 255.0)
         @test wf.States_WF[2, 4] == 255.0
     end
 
