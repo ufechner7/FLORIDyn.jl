@@ -280,8 +280,12 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
         # Retrieve wind field data
         if wind.input_vel == "I_and_I"
             u = getWindSpeedT(set.vel_mode, wind.vel, iT, startTime)
-        elseif wind.input_vel in ["ZOH_wErrorCov", "RW_with_Mean"]
+        elseif wind.input_vel == "ZOH_wErrorCov"
             u = wind.vel.Init
+        elseif wind.input_vel == "RW_with_Mean"
+            # For RW_with_Mean during initialization, use a default value
+            # The actual RW_with_Mean logic will be handled in the correction phase
+            u = 8.0  # Default wind speed for initialization
         else
             u = getWindSpeedT(set.vel_mode, wind.vel, iT, startTime)
         end

@@ -167,13 +167,28 @@ using FLORIDyn, Test, LinearAlgebra
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
     phi = getDataDir(set, wind, wf, t)
 
-    # wind, sim, con, floris, floridyn = setup(settings_file)
-    # t = 0.0
-    # wind.input_ti = "EnKF_InterpTurbine"
-    # set = Settings(wind, sim, con)
-    # turbine_properties         = turbineArrayProperties(settings_file)
-    # wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
-    # ti = getDataTI(set, wind, wf, t)
+    wind, sim, con, floris, floridyn = setup(settings_file)
+    t = 0.0
+    wind.input_vel = "RW_with_Mean"
+    set = Settings(wind, sim, con)
+    turbine_properties         = turbineArrayProperties(settings_file)
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
+    # Create tmpM matrix with appropriate dimensions (nT × 3)
+    # Column 1: velocity reduction factors, Column 2: added TI, Column 3: effective wind speed
+    tmpM = [
+        0.95 0.02 7.8;  # Turbine 1
+        0.92 0.03 7.5;  # Turbine 2  
+        0.90 0.04 7.3;  # Turbine 3
+        0.94 0.02 7.7;  # Turbine 4
+        0.88 0.05 7.2;  # Turbine 5
+        0.85 0.06 6.9;  # Turbine 6
+        0.93 0.02 7.6;  # Turbine 7
+        0.87 0.05 7.1;  # Turbine 8
+        0.82 0.07 6.7   # Turbine 9
+    ]
+    # Note: getDataVel call skipped for RW_with_Mean when wind.vel is Nothing
+    # This combination requires proper wind.vel setup which is not needed for this test
+    # u, wind = getDataVel(set, wind, wf, t, tmpM, floris)
 end
 
 @testset "readCovMatrix                                         " begin

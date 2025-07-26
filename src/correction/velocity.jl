@@ -24,26 +24,10 @@ function getDataVel(set, Wind, wf, SimTime, tmpM, paramFLORIS)
             # Ufree = Ueff / reduction
             U = U ./ tmpM[:, 1]
         end
-
-    elseif Wind.input_vel == "ZOH_wErrorCov"
-        U = getWindSpeedT(wf.States_WF[wf.StartI, 1], Wind.vel.ColSig)
-    
     elseif Wind.input_vel == "RW_with_Mean"
         U = getWindSpeedT(wf.States_WF[wf.StartI, 1], Wind.vel)
-
     elseif Wind.input_vel == "EnKF_InterpTurbine"
         U = getWindSpeedT_EnKF(Wind.vel, collect(1:wf.nT), SimTime)
-
-    elseif Wind.input_vel == "EnKF_RW"
-        U =wf.States_WF[wf.StartI, 1]
-        U = U .+ transpose(randn(length(U)) * Wind.vel.CholSig)
-
-    elseif Wind.input_vel == "EnKF_ZOH"
-        U =wf.States_WF[wf.StartI, 1]
-
-    elseif Wind.input_vel == "CLC_weighted_ZOH"
-        U = wf.C_Vel *wf.States_WF[:, 1]
-
     else
         U = getWindSpeedT(set.vel_mode, Wind.vel, collect(1:wf.nT), SimTime)
     end
