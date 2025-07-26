@@ -80,21 +80,7 @@ and closed-loop control with weighted interpolation.
 - Time-dependent methods support dynamic turbulence intensity evolution
 """
 function getDataTI(set, wind, wf, sim_time)
-    # GETDATATI retrieves the data for the ambient turbulence intensity
-
-    if wind.input_ti == "EnKF_InterpTurbine"
-        TI = getWindTiT_EnKF(set.turb_mode, wind.ti, collect(1:wf.nT), sim_time)
-    elseif wind.input_ti == "EnKF_ZOH"
-        TI =wf.States_WF[wf.StartI, 3]
-    elseif wind.input_ti == "EnKF_RW"
-        TI =wf.States_WF[wf.StartI, 3]
-        # 'phi' is not defined in your snippet. Replace with wf.nT if that's correct.
-        TI = TI .+ (randn(1, wf.nT) * wind.ti.CholSig)'
-    elseif wind.input_ti == "CLC_weighted_ZOH"
-        TI = wf.C_TI *wf.States_WF[:, 3]
-    else
-        TI = getWindTiT(set.turb_mode, wind.ti, collect(1:wf.nT), sim_time)
-    end
+    TI = getWindTiT(set.turb_mode, wind.ti, collect(1:wf.nT), sim_time)
 
     return TI
 end

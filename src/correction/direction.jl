@@ -6,20 +6,6 @@ function getDataDir(set::Settings, Wind, wf, SimTime)
 
     if Wind.input_dir == "RW_with_Mean"
         phi = getWindDirT(set.dir_mode,wf.States_WF[wf.StartI, 2], Wind.dir)
-    elseif Wind.input_dir == "EnKF_ZOH"
-        phi =wf.States_WF[wf.StartI, 2]
-    elseif Wind.input_dir == "EnKF_RW"
-        phi =wf.States_WF[wf.StartI, 2]
-        # (randn(1, length(phi))*Wind.dir.CholSig)' in MATLAB
-        # randn generates standard normals. In Julia, randn(length) gives a vector.
-        # Matrix multiplication and transpose need to be handled explicitly.
-        phi = phi + (randn(length(phi))' * Wind.dir.CholSig)'
-    elseif Wind.input_dir == "EnKF_InterpTurbine"
-        # (1:wf.nT)' in MATLAB is just 1:wf.nT in Julia if used as a range, need to convert to an array if needed.
-        phi = getWindDirT_EnKF(set.dir_mode, Wind.dir, collect(1:wf.nT), SimTime)
-    elseif Wind.input_dir == "CLC_weighted_ZOH"
-        # wf.C_Dir *wf.States_WF(:,2) in MATLAB is wf.C_Dir *wf.States_WF[:,2] in Julia
-        phi = wf.C_Dir *wf.States_WF[:, 2]
     else
         phi = getWindDirT(set.dir_mode, Wind.dir, collect(1:wf.nT), SimTime)
     end

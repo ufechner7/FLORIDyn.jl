@@ -158,6 +158,22 @@ using FLORIDyn, Test, LinearAlgebra
     set = Settings(wind, sim, con)
     turbine_properties         = turbineArrayProperties(settings_file)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
+
+    wind, sim, con, floris, floridyn = setup(settings_file)
+    t = 0.0
+    wind.input_dir = "RW_with_Mean"
+    set = Settings(wind, sim, con)
+    turbine_properties         = turbineArrayProperties(settings_file)
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
+    phi = getDataDir(set, wind, wf, t)
+
+    # wind, sim, con, floris, floridyn = setup(settings_file)
+    # t = 0.0
+    # wind.input_ti = "EnKF_InterpTurbine"
+    # set = Settings(wind, sim, con)
+    # turbine_properties         = turbineArrayProperties(settings_file)
+    # wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_properties, sim)
+    # ti = getDataTI(set, wind, wf, t)
 end
 
 @testset "readCovMatrix                                         " begin

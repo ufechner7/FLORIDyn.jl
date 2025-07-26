@@ -31,6 +31,7 @@ export getWindDirT, getWindDirT_EnKF
 export getWindShearT
 export getWindTiT, getWindTiT_EnKF
 export getWindSpeedT, getWindSpeedT_EnKF
+export getDataDir
 export correctDir!
 
 export discretizeRotor, calcCt, States

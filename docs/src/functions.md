@@ -20,7 +20,6 @@ getWindShearT
 ```@docs
 getDataTI
 getWindTiT
-getWindTiT_EnKF
 correctTI!
 ```
 
