@@ -3,3 +3,4 @@
 docs/Manifest.toml
 docs/build
 cspell.json
+coverage/lcov.info
