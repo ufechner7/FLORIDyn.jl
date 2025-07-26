@@ -18,3 +18,17 @@ for fun in exported_functions
     end
 end
 println("\nTotal: $total")
+
+function check_exported_docs(mod::Module)
+    exported_symbols = names(mod, all=false)
+    doc_status = Dict{Symbol,Bool}()
+    for sym in exported_symbols
+        doc_status[sym] = Base.Docs.hasdoc(mod, sym)
+    end
+    return doc_status
+end
+
+# Usage example:
+results = check_exported_docs(FLORIDyn)
+undocumented = filter(kv -> !kv[2], results)
+println("\nUndocumented exported functions: \n", keys(undocumented))
