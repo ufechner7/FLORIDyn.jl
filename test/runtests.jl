@@ -51,6 +51,7 @@ FLORIDyn.set_rng(rng)
     include("test_floris.jl")
     include("test_correction.jl")
     include("test_floridyn_cl.jl")
+    include("test_iterate.jl")
     include("test_init.jl")
     include("test_settings.jl")
 end
