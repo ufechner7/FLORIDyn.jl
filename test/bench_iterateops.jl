@@ -22,4 +22,6 @@ println("Benchmark time: $time seconds, relative to 0.115s: $(round(rel_time * 1
 # On AMD 7890X:
 # 149 µs (180 allocations: 892.77 KiB)
 # 136 μs  (90 allocations: 579.94 KiB) (using views)
+#  82 μs  (0 allocations)  (allocation free version with preallocated buffers)
 # Benchmark time: 0.00010247352280000001 seconds, relative to 0.115s: 26.82 %
+# Benchmark time: 8.33199938e-5 seconds, relative to 0.115s: 21.81 %
