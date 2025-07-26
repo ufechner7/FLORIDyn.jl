@@ -6,7 +6,7 @@ function correctVel(::Velocity_None, set, wf, Wind, SimTime, paramFLORIS, tmpM)
     U, Wind = getDataVel(set, Wind, wf, SimTime, tmpM, paramFLORIS)
 
     # Correct Velocity
-   wf.States_WF[wf.StartI, 1] = U
+   wf.States_WF[1, wf.StartI] = U
 
     return wf, Wind
 end
@@ -42,7 +42,7 @@ function getDataVel(set, Wind, wf, SimTime, tmpM, paramFLORIS)
         U =wf.States_WF[wf.StartI, 1]
 
     elseif Wind.input_vel == "CLC_weighted_ZOH"
-        U = wf.C_Vel *wf.States_WF[:, 1]
+        U = wf.C_Vel * wf.States_WF[1, :]
 
     else
         U = getWindSpeedT(set.vel_mode, Wind.vel, collect(1:wf.nT), SimTime)

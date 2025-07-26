@@ -89,11 +89,11 @@ where `φ` is the wind direction angle in world coordinates.
     # Save turbine OPs
     tmpOPStates = copy(wf.States_OP[wf.StartI, :])
     tmpTStates  = copy(wf.States_T[wf.StartI, :])
-    tmpWFSTates = copy(wf.States_WF[wf.StartI, :])
+    tmpWFSTates = copy(wf.States_WF[:, wf.StartI])
 
     # Shift states
     # Downwind step
-    step_dw = sim.time_step .* sim.dyn.advection .* wf.States_WF[:, 1] 
+    step_dw = sim.time_step .* sim.dyn.advection .* wf.States_WF[1, :] 
      wf.States_OP[:, 4] .+= step_dw
 
     # Crosswind step
@@ -103,7 +103,7 @@ where `φ` is the wind direction angle in world coordinates.
 
     # World coordinate system adjustment
     @inbounds @simd for i in axes(wf.States_OP,1)
-      phiwi = angSOWFA2world(wf.States_WF[i, 2])  # Convert wind direction to world coordinates
+      phiwi = angSOWFA2world(wf.States_WF[2, i])  # Convert wind direction to world coordinates
       cphiwi = cos(phiwi)
       sphiwi = sin(phiwi)
       ai = step_cw[i, 1]
@@ -123,8 +123,8 @@ where `φ` is the wind direction angle in world coordinates.
      wf.States_T[wf.StartI, :] .= tmpTStates
 
     # Wind Farm
-    wf.States_WF = circshift(wf.States_WF, (1, 0))
-     wf.States_WF[wf.StartI, :] .= tmpWFSTates
+    wf.States_WF = circshift(wf.States_WF, (0, 1))
+     wf.States_WF[:, wf.StartI] .= tmpWFSTates
 
     # Check if OPs are in order
     buf = zeros(Int,size(wf.States_OP, 1))
@@ -135,7 +135,7 @@ where `φ` is the wind direction angle in world coordinates.
         if ! issorted(indOP)  # check if already sorted
            wf.States_OP[inds, :] .= wf.States_OP[inds[indOP], :]
            wf.States_T[inds, :]  .= wf.States_T[inds[indOP], :]
-           wf.States_WF[inds, :] .= wf.States_WF[inds[indOP], :]
+           wf.States_WF[:, inds] .= wf.States_WF[:, inds[indOP]]
         end
 
     end

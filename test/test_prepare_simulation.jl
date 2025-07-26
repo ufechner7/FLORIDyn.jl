@@ -72,7 +72,7 @@ using FLORIDyn, Test, LinearAlgebra
     @test size(wf.States_T) == (1800, 3)
     @test sum(wf.States_T) ≈ 702 rtol=1e-4
 
-    @test size(wf.States_WF) == (1800, 4)
+    @test size(wf.States_WF) == (4, 1800)
     @test sum(wf.States_WF) ≈ 9.3287e+05 rtol=1e-4
 
     @test sim.n_sim_steps == 301

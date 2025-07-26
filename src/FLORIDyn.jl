@@ -196,7 +196,7 @@ A mutable struct representing a wind farm. Fields can be specified using keyword
 @kwdef mutable struct WindFarm
     nT::Int64 = 0                                               # Number of turbines
     nOP::Int64 = 0                                              # Number of operating points
-    States_WF::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)   # States of the wind farm
+    States_WF::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)   # States of the wind farm (TRANSPOSED: 3 x n_op*nT for performance)
     States_OP::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)   # States of the operating points
     States_T::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)    # States of the turbines
     posBase::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)     # Base positions of the turbines
