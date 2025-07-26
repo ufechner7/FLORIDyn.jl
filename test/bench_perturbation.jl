@@ -20,9 +20,14 @@ wind.pertubation.dir = true
 perturbationOfTheWF!(wf, wind)
 wind.pertubation.dir = false
 wind.pertubation.ti = true
-@btime perturbationOfTheWF!(wf, wind)
+t = @benchmark perturbationOfTheWF!(wf, wind)
+
+time = mean(t.times)/1e9
+rel_time = time * 301 / 0.115  # Relative to the total time of 0.115 seconds
+println("Benchmark time: $time seconds, relative to 0.115s: $(round(rel_time * 100, digits=2)) %")
 
 # On AMD 7890X:
 # 9.830 ns (0 allocations: 0 bytes)
 # 2.681 μs (9 allocations: 42.40 KiB)
 # 2.667 μs (9 allocations: 42.40 KiB)
+# Benchmark time: 3.1538405666666664e-6 seconds, relative to 0.115s: 0.83 %

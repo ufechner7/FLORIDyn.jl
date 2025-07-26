@@ -12,8 +12,13 @@ set = Settings(wind, sim, con)
 turbine_prop        = turbineArrayProperties(settings_file)
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_prop, sim)
 wf_old = deepcopy(wf)
-@btime iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
+t = @benchmark iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
+
+time = mean(t.times)/1e9
+rel_time = time * 301 / 0.115  # Relative to the total time of 0.115 seconds
+println("Benchmark time: $time seconds, relative to 0.115s: $(round(rel_time * 100, digits=2)) %")
 
 # On AMD 7890X:
 # 149 µs (180 allocations: 892.77 KiB)
 # 136 μs  (90 allocations: 579.94 KiB) (using views)
+# Benchmark time: 0.00010247352280000001 seconds, relative to 0.115s: 26.82 %
