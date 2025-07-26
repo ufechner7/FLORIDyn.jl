@@ -33,6 +33,7 @@ export getWindTiT, getWindTiT_EnKF
 export getWindSpeedT, getWindSpeedT_EnKF
 export getDataDir, getDataTI, getDataVel
 export correctDir!
+export getYaw
 
 export discretizeRotor, calcCt, States
 export turbineArrayProperties

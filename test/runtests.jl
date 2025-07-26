@@ -54,4 +54,5 @@ FLORIDyn.set_rng(rng)
     include("test_iterate.jl")
     include("test_init.jl")
     include("test_settings.jl")
+    include("test_controller.jl")
 end

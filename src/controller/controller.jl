@@ -18,6 +18,17 @@ function getYaw(::Yaw_SOWFA, ConYawData::Matrix{Float64}, iT, t)
     time = ConYawData[:, 1]
     yaw_data = ConYawData[:, 2:end]
 
+    # Handle special case of single time point
+    if length(time) == 1
+        if isa(iT, Integer)
+            return yaw_data[1, iT]
+        elseif isa(iT, AbstractVector{<:Integer})
+            return [yaw_data[1, i] for i in iT]
+        else
+            error("Invalid type for iT. Should be Integer or Vector of Integers.")
+        end
+    end
+
     # Create interpolation object for each turbine column
     interp_funcs = [linear_interpolation(time, yaw_data[:, j], extrapolation_bc=Flat()) for j in 1:size(yaw_data, 2)]
 
