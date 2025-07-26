@@ -103,14 +103,14 @@ where `φ` is the wind direction angle in world coordinates.
 
     # World coordinate system adjustment
     @inbounds @simd for i in axes(wf.States_OP,1)
-      phiwi = angSOWFA2world(wf.States_WF[i, 2])  # Convert wind direction to world coordinates
-      cphiwi = cos(phiwi)
-      sphiwi = sin(phiwi)
-      ai = step_cw[i, 1]
-      sdwi = step_dw[i]
-      wf.States_OP[i, 1] += cphiwi * sdwi - sphiwi * ai
-      wf.States_OP[i, 2] += sphiwi * sdwi + cphiwi * ai
-      wf.States_OP[i, 3] += step_cw[i, 2]
+        phiwi = angSOWFA2world(wf.States_WF[i, 2])  # Convert wind direction to world coordinates
+        cphiwi = cos(phiwi)
+        sphiwi = sin(phiwi)
+        ai = step_cw[i, 1]
+        sdwi = step_dw[i]
+        wf.States_OP[i, 1] += cphiwi * sdwi - sphiwi * ai
+        wf.States_OP[i, 2] += sphiwi * sdwi + cphiwi * ai
+        wf.States_OP[i, 3] += step_cw[i, 2]
     end
 
     # Circshift & init first OPs
@@ -133,11 +133,10 @@ where `φ` is the wind direction angle in world coordinates.
         indOP = buf[inds]
         sortperm!(indOP,wf.States_OP[inds, 4])
         if ! issorted(indOP)  # check if already sorted
-           wf.States_OP[inds, :] .= wf.States_OP[inds[indOP], :]
-           wf.States_T[inds, :]  .= wf.States_T[inds[indOP], :]
-           wf.States_WF[inds, :] .= wf.States_WF[inds[indOP], :]
+            wf.States_OP[inds, :] .= wf.States_OP[inds[indOP], :]
+            wf.States_T[inds, :]  .= wf.States_T[inds[indOP], :]
+            wf.States_WF[inds, :] .= wf.States_WF[inds[indOP], :]
         end
-
     end
     return nothing
 end
