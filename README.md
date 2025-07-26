@@ -20,7 +20,7 @@ The basic example works.
 ```julia
 include("examples/main.jl")
 ```
-### TODO:
+### TODO
 - implement the visualization
 - add more unit tests
 - implement the missing functions
