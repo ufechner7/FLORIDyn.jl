@@ -244,8 +244,6 @@ where:
     # Initialize outputs
     vv_dep = Vector{Vector{Int64}}(undef,wf.nT)  # Equivalent of cell array in MATLAB[1][3]
     dep  = falses(wf.nT, wf.nT)
-    
-    R01(phi) = @SMatrix [cos(phi)  sin(phi); -sin(phi) cos(phi)]
 
     for iT in 1:wf.nT
         for iiT in 1:wf.nT
@@ -253,29 +251,64 @@ where:
                 continue
             end
 
-            # Closest OP from wake of iT to turbine iiT
-            idx_range = (wf.StartI[iT]):(wf.StartI[iT] +wf.nOP - 1)
-            distOP_iiT = sum((wf.posBase[iiT, 1:2]' .-wf.States_OP[idx_range, 1:2]).^2, dims=2)
+            # Find closest OP from wake of iT to turbine iiT without allocations
+            start_idx = wf.StartI[iT]
+            end_idx = start_idx + wf.nOP - 1
+            
+            min_dist_sq = Inf
+            I_op = start_idx
+            
+            # Manual loop to find minimum distance without allocations
+            @inbounds for op_idx in start_idx:end_idx
+                dx = wf.States_OP[op_idx, 1] - wf.posBase[iiT, 1]
+                dy = wf.States_OP[op_idx, 2] - wf.posBase[iiT, 2]
+                dist_sq = dx * dx + dy * dy
+                
+                if dist_sq < min_dist_sq
+                    min_dist_sq = dist_sq
+                    I_op = op_idx
+                end
+            end
 
-            I = LinearIndices(distOP_iiT)
-            I_op = I[argmin(distOP_iiT)]
-            I_op = wf.StartI[iT] + I_op - 1
-
-            # Angle and relative vector
-            phi = angSOWFA2world.(wf.States_WF[I_op, 2])
-            r0 = wf.States_OP[I_op, 1:2] .- wf.posBase[iiT, 1:2]
-            r1 = R01(phi) * r0
+            # Compute angle and relative vector without allocations
+            phi = angSOWFA2world(wf.States_WF[I_op, 2])
+            cos_phi = cos(phi)
+            sin_phi = sin(phi)
+            
+            # Relative vector r0 = States_OP - posBase
+            r0_x = wf.States_OP[I_op, 1] - wf.posBase[iiT, 1]
+            r0_y = wf.States_OP[I_op, 2] - wf.posBase[iiT, 2]
+            
+            # Apply rotation matrix R01(phi) * r0 manually
+            r1_x = cos_phi * r0_x + sin_phi * r0_y
+            r1_y = -sin_phi * r0_x + cos_phi * r0_y
 
             # Apply dependency check
-            if (-r1[1] <= uw*wf.D[iT]) && (r1[1] <= dw*wf.D[iT]) && (abs(r1[2]) <= cw*wf.D[iT])
+            if (-r1_x <= uw*wf.D[iT]) && (r1_x <= dw*wf.D[iT]) && (abs(r1_y) <= cw*wf.D[iT])
                 dep[iiT, iT] = true
             end
         end
     end
 
+    # Extract indices manually to avoid allocations in findall
     for iT in 1:wf.nT
-        # find indices where dep[iT, :] is true
-        vv_dep[iT] = findall(x -> x, dep[iT, :])
+        # Count true values first
+        count = 0
+        @inbounds for iiT in 1:wf.nT
+            if dep[iT, iiT]
+                count += 1
+            end
+        end
+        
+        # Allocate vector of exact size and fill it
+        vv_dep[iT] = Vector{Int64}(undef, count)
+        idx = 1
+        @inbounds for iiT in 1:wf.nT
+            if dep[iT, iiT]
+                vv_dep[iT][idx] = iiT
+                idx += 1
+            end
+        end
     end
 
     return vv_dep
