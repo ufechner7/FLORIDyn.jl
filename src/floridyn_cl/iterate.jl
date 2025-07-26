@@ -94,12 +94,12 @@ where `φ` is the wind direction angle in world coordinates.
     # Shift states
     # Downwind step
     step_dw = sim.time_step .* sim.dyn.advection .* wf.States_WF[:, 1] 
-     wf.States_OP[:, 4] .+= step_dw
+    wf.States_OP[:, 4] .+= step_dw
 
     # Crosswind step
     deflection = centerline(wf.States_OP, wf.States_T, wf.States_WF, floris, wf.D[1])
     step_cw = deflection .- wf.States_OP[:, 5:6]
-     wf.States_OP[:, 5:6] .= deflection
+    wf.States_OP[:, 5:6] .= deflection
 
     # World coordinate system adjustment
     @inbounds @simd for i in axes(wf.States_OP,1)
@@ -116,18 +116,18 @@ where `φ` is the wind direction angle in world coordinates.
     # Circshift & init first OPs
     # OPs
     wf.States_OP = circshift(wf.States_OP, (1, 0))
-     wf.States_OP[wf.StartI, :] .= tmpOPStates
+    wf.States_OP[wf.StartI, :] .= tmpOPStates
 
     # Turbines
     wf.States_T = circshift(wf.States_T, (1, 0))
-     wf.States_T[wf.StartI, :] .= tmpTStates
+    wf.States_T[wf.StartI, :] .= tmpTStates
 
     # Wind Farm
     wf.States_WF = circshift(wf.States_WF, (1, 0))
-     wf.States_WF[wf.StartI, :] .= tmpWFSTates
+    wf.States_WF[wf.StartI, :] .= tmpWFSTates
 
     # Check if OPs are in order
-    buf = zeros(Int,size(wf.States_OP, 1))
+    buf = zeros(Int, size(wf.States_OP, 1))
     for iT in 1:wf.nT
         inds = wf.StartI[iT]:(wf.StartI[iT] + wf.nOP - 1)
         indOP = buf[inds]
