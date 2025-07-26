@@ -642,12 +642,13 @@ function runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con
     M_int   = Vector{Matrix{Float64}}(undef, nSim)
 
     SimTime = sim.start_time
-
+    
+    buffers = FLORIDyn.IterateOPsBuffers(wf)
     for it in 1:nSim
         sim.sim_step = it
 
         # ========== PREDICTION ==========
-        iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
+        iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn, buffers)
 
         # ========== Wind Field Perturbation ==========
         perturbationOfTheWF!(wf, wind)

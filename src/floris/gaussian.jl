@@ -79,11 +79,11 @@ Compute the centerline wake properties for a wind farm simulation.
 - The computed centerline wake properties `delta`, which includes the deflection in the y and z directions.
 
 # Notes
-This function is part of the Gaussian wake model implementation for wind farm simulations using the FLORIDyn.jl package.
+This function is part of the Gaussian wake model implementation for wind farm simulations using the FLORISdyn.jl package.
 """
 function centerline(states_op, states_t, states_wf, floris, d_rotor)
     N          = size(states_op, 1)                     # number of rows
-    Δ          = Matrix{ComplexF64}(undef, N, 2)        # output
+    Δ          = Matrix{Float64}(undef, N, 2)        # output
     is8      = 1 / sqrt(8)
     s2         = sqrt(2)
     α, β       = floris.alpha, floris.beta
@@ -132,7 +132,8 @@ function centerline(states_op, states_t, states_wf, floris, d_rotor)
         den  = (1.6 - sqrt(C_T)) *
                (1.6 * sqrt((8 * σ_y * σ_z) / (d_rotor^2 * cosyaw)) + sqrt(C_T))
 
-        Δ_fw₂ = log(complex(num / den, 0.0))   # keep domain identical
+        # The real part of the complex logarithm is log(abs(ratio)), which is what we need.
+        Δ_fw₂ = real(log(complex(num / den, 0.0)))
 
         factor = sign(OP - x₀) / 2 + 0.5        # 0, 0.5, or 1
 
@@ -140,10 +141,91 @@ function centerline(states_op, states_t, states_wf, floris, d_rotor)
 
         ############# 7. store result ##########################################
         Δ[i, 1] = Δy
-        Δ[i, 2] = 0        # Δz was always zero in the original
+        Δ[i, 2] = 0.0        # Δz was always zero in the original
     end
 
     return Δ
+end
+
+"""
+    centerline!(deflection, states_op, states_t, states_wf, floris, d_rotor)
+
+In-place version of the `centerline` function that calculates the wake centerline deflection.
+
+This function computes the wake centerline deflection for each operational point without 
+allocating new memory for the result. The results are stored in the pre-allocated `deflection`
+matrix.
+
+# Arguments
+- `deflection::AbstractMatrix`: A pre-allocated matrix (`N × 2`) to store the deflection results (Δy, Δz).
+- `states_op`, `states_t`, `states_wf`: Matrices containing the operational point, turbine, and wind farm states.
+- `floris::Floris`: FLORIS model parameters.
+- `d_rotor::Real`: The rotor diameter.
+
+# Returns
+- `nothing`: The `deflection` matrix is modified in-place.
+"""
+function centerline!(deflection::AbstractMatrix, states_op, states_t, states_wf, floris, d_rotor)
+    N = size(states_op, 1)
+    is8 = 1 / sqrt(8)
+    s2 = sqrt(2)
+    α, β = floris.alpha, floris.beta
+    k_a, k_b = floris.k_a, floris.k_b
+
+    @inbounds for i in 1:N
+        # Unpack states
+        a = states_t[i, 1]
+        b = states_t[i, 2]
+        c = states_t[i, 3]
+        d = states_wf[i, 3]
+        OP = states_op[i, 4]
+
+        # Basic derived quantities
+        C_T = calcCt(a, b)
+        yaw = -deg2rad(b)
+        cosyaw = cos(yaw)
+        I = sqrt(c * c + d * d)
+
+        # Core length x₀
+        x₀ = (cosyaw * (1 + sqrt(1 - C_T)) /
+             (s2 * (α * I + β * (1 - sqrt(1 - C_T))))) * d_rotor
+
+        # Wake expansion (σ_y / σ_z)
+        k_y = k_a * I + k_b
+        k_z = k_y
+
+        diff = OP - x₀
+        f1 = max(diff, 0.0)
+        f2 = min(OP / x₀, 1.0)
+
+        σ_y = f1 * k_y + f2 * cosyaw * d_rotor * is8
+        σ_z = f1 * k_z + f2 * d_rotor * is8
+
+        # Deflection angles
+        Θ = 0.3 * yaw / cosyaw * (1 - sqrt(1 - C_T * cosyaw))
+
+        # Near-field / far-field pieces
+        Δ_nfw = Θ * min(OP, x₀)
+
+        Δ_fw₁ = Θ / 14.7 * sqrt(cosyaw / (k_y * k_z * C_T)) *
+                (2.9 + 1.3 * sqrt(1 - C_T) - C_T)
+
+        num = (1.6 + sqrt(C_T)) *
+              (1.6 * sqrt((8 * σ_y * σ_z) / (d_rotor^2 * cosyaw)) - sqrt(C_T))
+        den = (1.6 - sqrt(C_T)) *
+              (1.6 * sqrt((8 * σ_y * σ_z) / (d_rotor^2 * cosyaw)) + sqrt(C_T))
+
+        # The real part of the complex logarithm is log(abs(ratio)), which is what we need.
+        Δ_fw₂ = real(log(complex(num / den, 0.0)))
+
+        factor = sign(OP - x₀) / 2 + 0.5
+
+        Δy = Δ_nfw + factor * Δ_fw₁ * Δ_fw₂ * d_rotor
+
+        # Store result in the pre-allocated matrix
+        deflection[i, 1] = Δy
+        deflection[i, 2] = 0.0  # Δz is always zero
+    end
 end
 
 """
@@ -626,7 +708,7 @@ Uadv(x) = 0.5 * (U_inf + U_centre(x))
 
 Solved for the ratio Uadv(x)/U_inf:
 ```
-Uadv(x)/U_inf = sqrt(1 - Ct*cos(gamma)/(8*(sig_y*sig_z)/D^2))
+Uadv(x)/Uinf = sqrt(1 - Ct*cos(gamma)/(8*(sig_y*sig_z)/D^2))
 ```
 
 # Arguments
@@ -691,7 +773,7 @@ function getUadv(states_op, states_t, states_wf, floris::Floris, d_rotor)
 
     # Calc advection speed ratio
     # U_adv(x) = 0.5*(U_inf + U_cen(x))
-    # =>  U_adv(x)/U_inf = 0.5*(1 + U_cen/U_inf)
+    # =>  U_adv(x)/Uinf = 0.5*(1 + U_cen/U_inf)
     
     # Centerspeed outside of the potential core
     # Clamp the argument to prevent negative values under sqrt

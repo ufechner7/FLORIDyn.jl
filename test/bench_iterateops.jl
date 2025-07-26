@@ -12,7 +12,8 @@ set = Settings(wind, sim, con)
 turbine_prop        = turbineArrayProperties(settings_file)
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_prop, sim)
 wf_old = deepcopy(wf)
-t = @benchmark iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
+buffers = FLORIDyn.IterateOPsBuffers(wf)
+t = @benchmark iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn, buffers)
 
 time = mean(t.times)/1e9
 rel_time = time * 301 / 0.115  # Relative to the total time of 0.115 seconds
