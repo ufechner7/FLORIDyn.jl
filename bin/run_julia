@@ -3,4 +3,14 @@
 
 # julia --project -i -e 'using Revise; using Infiltrator'
 # julia --project -i -e 'using Revise'
+julia -e 'using Pkg;
+function globaldependencies()
+    projectpath = Pkg.project().path
+    basepath, _ = splitdir(projectpath)
+    Pkg.activate()
+    globaldependencies = keys(Pkg.project().dependencies)
+    Pkg.activate(basepath)
+    globaldependencies
+end
+if ! ("TerminalPager" in globaldependencies()); Pkg.add("TerminalPager"); end'
 julia --project --gcthreads=1,0
