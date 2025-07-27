@@ -66,7 +66,7 @@ include("controller/structs_controller.jl")
 
 function str2type(name)
     typename = Symbol(name)
-    t = getfield(Main, typename)
+    t = getfield(FLORIDyn, typename)
     instance = t()
 end
 
@@ -250,8 +250,8 @@ include("controller/controller.jl")
         settings_file = "data/2021_9T_Data.yaml"
         wind, sim, con, floris, floridyn = setup(settings_file)
         a = Velocity_Constant()
-        # b = str2type("Velocity_Constant")
-        # set = Settings(wind, sim, con)
+        b = str2type("Velocity_Constant")
+        set = Settings(wind, sim, con)
     end
 end
 end # module FLORIDyn
