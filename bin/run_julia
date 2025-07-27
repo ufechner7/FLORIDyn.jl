@@ -1,8 +1,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# julia --project -i -e 'using Revise; using Infiltrator'
-# julia --project -i -e 'using Revise'
+# Install TerminalPager globally, if not yet installed
 julia -e 'using Pkg;
 function globaldependencies()
     projectpath = Pkg.project().path
@@ -13,4 +12,5 @@ function globaldependencies()
     globaldependencies
 end
 if ! ("TerminalPager" in globaldependencies()); Pkg.add("TerminalPager"); end'
+# run Julia single threaded
 julia --project --gcthreads=1,0
