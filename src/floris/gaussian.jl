@@ -79,7 +79,7 @@ Compute the centerline wake properties for a wind farm simulation.
 - The computed centerline wake properties `delta`, which includes the deflection in the y and z directions.
 
 # Notes
-This function is part of the Gaussian wake model implementation for wind farm simulations using the FLORISdyn.jl package.
+This function is part of the Gaussian wake model implementation.
 """
 function centerline(states_op, states_t, states_wf, floris, d_rotor)
     N          = size(states_op, 1)                     # number of rows
