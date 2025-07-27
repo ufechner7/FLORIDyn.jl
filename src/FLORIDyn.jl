@@ -7,7 +7,7 @@ using PrecompileTools: @setup_workload, @compile_workload
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
 using Statistics, StaticArrays
 
-export setup, str2type, Settings, getTurbineData, initSimulation
+export setup, Settings, getTurbineData, initSimulation
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
