@@ -3,12 +3,12 @@
 
 # MainFLORIDyn Center-Line model
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
-using Timers
-tic()
 using Pkg
 if ! ("TerminalPager" ∈ keys(Pkg.project().dependencies))
     using TestEnv; TestEnv.activate()
 end
+using Timers
+tic()
 using FLORIDyn, TerminalPager
 toc()
 
