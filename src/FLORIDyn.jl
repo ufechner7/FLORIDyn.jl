@@ -249,9 +249,11 @@ include("controller/controller.jl")
         # they belong to your package or not (on Julia 1.8 and higher)
         settings_file = "data/2021_9T_Data.yaml"
         wind, sim, con, floris, floridyn = setup(settings_file)
-        a = Velocity_Constant()
-        b = str2type("Velocity_Constant")
         set = Settings(wind, sim, con)
+        turbProp        = turbineArrayProperties(settings_file)
+        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
+        wf = initSimulation(wf, sim)
+        runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
     end
 end
 end # module FLORIDyn
