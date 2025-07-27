@@ -24,9 +24,7 @@ end
 using LocalCoverage
 import LiveServer as LS
 
-git_dir = pwd()
-
 html_dir = tempdir()
 coverage = generate_coverage("FLORIDyn"; run_test = true)
-html_coverage(coverage; gitroot=git_dir, open = false, dir = html_dir)
+html_coverage(coverage; open = false, dir = html_dir)
 LS.serve(launch_browser=true, dir=html_dir)
