@@ -3,6 +3,7 @@
 
 module FLORIDyn
 
+using PrecompileTools: @setup_workload, @compile_workload  
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
 using Statistics, StaticArrays
 
@@ -48,12 +49,6 @@ function set_rng(rng)
     RNG = rng
 end
 
-function str2type(name)
-    typename = Symbol(name)
-    t = getfield(Main, typename)
-    instance = t()
-end
-
 # marker structs
 include("windfield/structs_dir.jl")
 include("windfield/structs_shear.jl")
@@ -64,6 +59,12 @@ include("correction/structs_vel.jl")
 include("correction/structs_turb.jl")
 include("floridyn_cl/structs.jl")
 include("controller/structs_controller.jl")
+
+function str2type(name)
+    typename = Symbol(name)
+    t = getfield(Main, typename)
+    instance = t()
+end
 
 """
     Settings
@@ -236,4 +237,27 @@ include("floridyn_cl/iterate.jl")
 
 include("controller/controller.jl")
 
+@setup_workload begin
+    # Putting some things in `@setup_workload` instead of `@compile_workload` can reduce the size of the
+    # precompile file and potentially make loading faster.
+    @compile_workload begin
+        # all calls in this block will be precompiled, regardless of whether
+        # they belong to your package or not (on Julia 1.8 and higher)
+        settings_file = "data/2021_9T_Data.yaml"
+        wind, sim, con, floris, floridyn = setup(settings_file)
+        a = Velocity_Constant()
+        # b = str2type("Velocity_Constant")
+        # set = Settings(wind, sim, con)
+    end
 end
+end # module FLORIDyn
+
+# --> Without compile_workload:
+# Time elapsed: 1.115915423 s
+# Time elapsed: 3.398632348 s
+# Time elapsed: 3.559121232 s
+# Time elapsed: 7.671075958 s
+# Time elapsed: 8.222971185 s
+#   0.308294 seconds (1.16 M allocations: 190.392 MiB, 8.79% gc time, 66.92% compilation time)
+# [ Info: Type 'md |> pager' to see the results of the simulation.
+# [ Info: Type 'q' to exit the pager.
