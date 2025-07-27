@@ -3,6 +3,7 @@
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://ufechner7.github.io/FLORIDyn.jl/dev)
 [![Build Status](https://github.com/ufechner7/FLORIDyn.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/ufechner7/FLORIDyn.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/ufechner7/FLORIDyn.jl/graph/badge.svg?token=O7wXT62VSR)](https://codecov.io/gh/ufechner7/FLORIDyn.jl)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 ## Introduction
 A dynamic wind farm simulation software, translated from https://github.com/TUDelft-DataDrivenControl/FLORIDyn_Matlab, which was written by Marcus Becker.

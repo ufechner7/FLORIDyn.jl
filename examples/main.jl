@@ -5,6 +5,10 @@
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
 tic()
+using Pkg
+if ! ("TerminalPager" ∈ keys(Pkg.project().dependencies))
+    using TestEnv; TestEnv.activate()
+end
 using FLORIDyn, TerminalPager
 toc()
 
