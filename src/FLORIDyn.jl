@@ -258,18 +258,3 @@ include("controller/controller.jl")
 end
 end # module FLORIDyn
 
-# --> Without compile_workload:
-# Time elapsed: 1.115915423 s
-# Time elapsed: 3.398632348 s
-# Time elapsed: 3.559121232 s
-# Time elapsed: 7.671075958 s
-# Time elapsed: 8.222971185 s
-#   0.308294 seconds (1.16 M allocations: 190.392 MiB, 8.79% gc time, 66.92% compilation time)
-
-# --> With compile_workload:
-# Time elapsed: 1.117815199 s
-# Time elapsed: 1.237678098 s
-# Time elapsed: 1.387095712 s
-# Time elapsed: 5.469984983 s
-# Time elapsed: 6.034418235 s
-#   0.311222 seconds (1.16 M allocations: 190.379 MiB, 10.51% gc time, 66.15% compilation time)
