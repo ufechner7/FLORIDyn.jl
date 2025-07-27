@@ -3,7 +3,10 @@
 
 # MainFLORIDyn Center-Line model
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
+using Timers
+tic()
 using FLORIDyn, TerminalPager
+toc()
 
 settings_file = "data/2021_9T_Data.yaml"
 
@@ -12,15 +15,19 @@ wind, sim, con, floris, floridyn = setup(settings_file)
 
 # create settings struct
 set = Settings(wind, sim, con)
+toc()
 
 # % Load linked data
 turbProp        = turbineArrayProperties(settings_file)
+toc()
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
+toc()
 
 # Run initial conditions until no more change happens (wrong comment in original code)
 wf = initSimulation(wf, sim)
 
+toc()
 @time wf, md, mi = runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
 # 0.115 s on Desktop, 0.39 s with MATLAB
 # 0.115 seconds (891.24 k allocations: 368.147 MiB, 10.18% gc time)
