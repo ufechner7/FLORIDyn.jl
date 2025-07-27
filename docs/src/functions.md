@@ -23,6 +23,11 @@ getWindTiT
 correctTI!
 ```
 
+# Controller functions
+```@docs
+getYaw
+```
+
 # FLORIS
 ```@docs
 calcCt

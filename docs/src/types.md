@@ -27,6 +27,13 @@ all subtypes of [`VelModel`](@ref)
 Velocity_Constant
 Velocity_Constant_wErrorCov
 Velocity_EnKF_InterpTurbine
+Velocity_I_and_I
+Velocity_Interpolation
+Velocity_Interpolation_wErrorCov
+Velocity_InterpTurbine
+Velocity_InterpTurbine_wErrorCov
+Velocity_RW_with_Mean
+Velocity_ZOH_wErrorCov
 ```
 
 ## Defining the wind direction model
