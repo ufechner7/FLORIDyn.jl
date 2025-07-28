@@ -240,6 +240,7 @@ include("floridyn_cl/prepare_simulation.jl")
 include("floridyn_cl/iterate.jl")
 
 include("controller/controller.jl")
+include("visualisation/plot_flowfield.jl")
 
 @setup_workload begin
     # Putting some things in `@setup_workload` instead of `@compile_workload` can reduce the size of the
