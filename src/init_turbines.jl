@@ -8,13 +8,13 @@ A structure representing the configuration and properties of a wind turbine arra
 
 # Fields
 - `pos::Matrix{Float64}`: A matrix containing the positions of turbines. Each row represents
-  a turbine with columns for x, y, and z coordinates (in meters).
+                          a turbine with columns for x, y, and z coordinates (in meters).
 - `type::Vector{String}`: A vector of strings specifying the type/model of each turbine.
 - `init_States::Matrix{Float64}`: A matrix containing the initial states of each turbine.
-  Each row represents a turbine with columns for:
-  - Column 1: `a` - axial induction factor
-  - Column 2: `yaw` - initial yaw angle (in degrees)
-  - Column 3: `ti` - turbulence intensity
+                                  Each row represents a turbine with columns for:
+                                  - Column 1: `a` - axial induction factor
+                                  - Column 2: `yaw` - initial yaw angle (in degrees)
+                                  - Column 3: `ti` - turbulence intensity
 
 # Example
 ```julia
@@ -25,7 +25,7 @@ init_states = [0.33 0.0 0.1; 0.33 0.0 0.1]  # Both start with same initial condi
 turbines = TurbineArray(pos, type, init_states)
 ```
 
-# See Also
+# See also:
 - [`turbineArrayProperties`](@ref): Function to load turbine array data from YAML files
 """
 struct TurbineArray
