@@ -1,5 +1,5 @@
 """
-    getMeasurements(mx, my, nM, zh, wf, floris, wind)
+    getMeasurements(mx::Matrix, my::Matrix, nM::Int, zh::Real, wf::WindFarm, floris::Floris, wind::Wind)
 
 Wrapper function to disguise the grid points as turbines with one rotor
 point and experience almost the same calculations as the rotor points in
