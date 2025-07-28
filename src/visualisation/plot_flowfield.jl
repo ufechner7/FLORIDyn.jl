@@ -130,3 +130,61 @@ function plotFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris)
     
     return Z, X, Y
 end
+
+"""
+    plotFF(mx::Matrix, my::Matrix, mz::Array{Float64,3}; measurement_idx=1, title="Flow Field")
+
+Plot a 2D contour of the flow field data.
+
+# Arguments
+- `mx::Matrix`: X-coordinate grid
+- `my::Matrix`: Y-coordinate grid  
+- `mz::Array{Float64,3}`: 3D array of measurements with dimensions (rows, cols, nM)
+- `measurement_idx::Int`: Which measurement to plot (1, 2, or 3). Default is 1.
+- `title::String`: Plot title. Default is "Flow Field".
+
+# Returns
+- `nothing`
+
+# Note
+The measurement indices typically correspond to:
+- 1: Velocity reduction
+- 2: Added turbulence  
+- 3: Effective wind speed
+
+This function requires a plotting package like PyPlot.jl to be loaded and available as `plt`.
+"""
+function plotFF(mx, my, mz; measurement_idx=1, title="Flow Field")
+    # Extract the 2D slice for the specified measurement
+    if measurement_idx > size(mz, 3)
+        error("measurement_idx ($measurement_idx) exceeds number of measurements ($(size(mz, 3)))")
+    end
+    
+    # Get the 2D slice
+    mz_2d = mz[:, :, measurement_idx]
+    
+    # Try to use PyPlot if available
+    try
+        # This will work if PyPlot is loaded and plt is available
+        plt.figure()
+        contour_plot = plt.contourf(mx, my, mz_2d, 40) # 40 levels, no lines
+        plt.axis("equal")
+        plt.colorbar()
+        plt.title(title)
+        plt.xlabel("X [m]")
+        plt.ylabel("Y [m]")
+        println("Contour plot created successfully")
+    catch e
+        if isa(e, UndefVarError) && e.var == :plt
+            @warn "PyPlot not available. Please load PyPlot.jl first with: using PyPlot; const plt = PyPlot"
+            println("Data shape: ", size(mz_2d))
+            println("X range: [", minimum(mx), ", ", maximum(mx), "]")
+            println("Y range: [", minimum(my), ", ", maximum(my), "]") 
+            println("Z range: [", minimum(mz_2d), ", ", maximum(mz_2d), "]")
+        else
+            rethrow(e)
+        end
+    end
+    
+    return nothing
+end

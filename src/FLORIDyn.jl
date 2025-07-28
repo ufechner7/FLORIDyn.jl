@@ -6,6 +6,8 @@ $(DocStringExtensions.README)
 """
 module FLORIDyn
 
+using ControlPlots
+
 using PrecompileTools: @setup_workload, @compile_workload
 import DocStringExtensions
 
@@ -46,7 +48,7 @@ export discretizeRotor, calcCt, States
 export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimulation
 export runFLORIS, init_states, getUadv
 export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, interpolateOPs, perturbationOfTheWF!, findTurbineGroups
-export getMeasurements, plotFlowField
+export getMeasurements, plotFlowField, plotFF, plotFF
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()

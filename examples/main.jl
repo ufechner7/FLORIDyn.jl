@@ -27,6 +27,9 @@ toc()
 # 0.110 seconds (883.14 k allocations: 272.819 MiB, 9.62% gc time) iterateOPs! allocation free
 # 0.081 seconds (723.31 k allocations: 168.226 MiB, 8.10% gc time) findTurbineGroups allocation free
 
-@info "Type 'md |> pager' to see the results of the simulation."
-@info "Type 'q' to exit the pager."
+# @info "Type 'md |> pager' to see the results of the simulation."
+# @info "Type 'q' to exit the pager."
+
+Z, X, Y = plotFlowField(set, wf, wind, floris)
+plotFF(X, Y, Z)
 nothing
