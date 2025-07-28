@@ -173,6 +173,7 @@ function plotFlowField(plt, mx, my, mz; msr=3, title="Flow Field", unit_test=fal
         elseif msr == 3
             figure = "Effective Wind Speed"
         end
+        title = figure
         fig = plt.figure(figure)
         contour_plot = plt.contourf(my, mx, mz_2d, 40) # 40 levels, no lines
         plt.axis("equal")
