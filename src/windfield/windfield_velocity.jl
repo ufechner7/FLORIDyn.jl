@@ -4,15 +4,16 @@
 # Functions to calculate the wind velocity depending on time and location.
 
 """
-    getWindSpeedT_EnKF(::Velocity_EnKF_InterpTurbine, wind_vel::Matrix, iT, t)
+    getWindSpeedT_EnKF(::Velocity_EnKF_InterpTurbine, wind_vel::AbstractMatrix, iT, t)
 
-Returns the wind speed at the turbine index or indices `iT` at time `t`, using linear interpolation of the measurement table `wind_vel`. 
+Returns the wind speed at the turbine index or indices `iT` at time `t`, using linear interpolation of 
+the measurement table `wind_vel`. 
 
 - wind_vel: A matrix of size (ntimes, nturbines+1). First column is time, rest are wind speeds for each turbine.
 - iT: Index or array of indices of turbines for output.
 - t: Time at which to query wind speed.
 """
-function getWindSpeedT_EnKF(::Velocity_EnKF_InterpTurbine, wind_vel::Matrix, iT, t)
+function getWindSpeedT_EnKF(::Velocity_EnKF_InterpTurbine, wind_vel::AbstractMatrix, iT, t)
     times = wind_vel[:, 1]
     n_turbines = size(wind_vel, 2) - 1
 
@@ -210,7 +211,7 @@ function getWindSpeedT(::Velocity_I_and_I, wind_vel, iT, t, wind_dir, p_p)
 end
 
 """
-    getWindSpeedT(::Velocity_Interpolation, wind_vel::Matrix{Float64}, iT, t)
+    getWindSpeedT(::Velocity_Interpolation, wind_vel::AbstractMatrix, iT, t)
 
 Interpolates the wind speed at a given time `t` using the provided wind velocity matrix `wind_vel`.
 Uniform interpolation - all turbines experience the same changes.
@@ -224,7 +225,7 @@ Uniform interpolation - all turbines experience the same changes.
 # Returns
 - Interpolated wind speed at the respective turbine(s).
 """
-function getWindSpeedT(::Velocity_Interpolation, wind_vel::Matrix{Float64}, iT, t)
+function getWindSpeedT(::Velocity_Interpolation, wind_vel::AbstractMatrix, iT, t)
     times = wind_vel[:, 1]
     speeds = wind_vel[:, 2]
 
@@ -303,7 +304,7 @@ function getWindSpeedT(::Velocity_Interpolation_wErrorCov, wind_vel::WindVelMatr
     return Vel
 end
 """
-    getWindSpeedT(::Velocity_InterpTurbine, wind_vel::Matrix{Float64}, iT, t)
+    getWindSpeedT(::Velocity_InterpTurbine, wind_vel::AbstractMatrix, iT, t)
 
 Returns the wind speed at the specific turbine(s) and time.
 The values are interpolated linearly between the set points.
@@ -317,7 +318,7 @@ The values are interpolated linearly between the set points.
 # Returns
 - The interpolated wind speed at the specified turbine(s) and time as a `Float64`.
 """
-function getWindSpeedT(::Velocity_InterpTurbine, wind_vel::Matrix{Float64}, iT, t)
+function getWindSpeedT(::Velocity_InterpTurbine, wind_vel::AbstractMatrix, iT, t)
     times = wind_vel[:, 1]
     wind_data = wind_vel[:, 2:end]
 
@@ -400,27 +401,27 @@ end
 # end
 
 """
-    getWindSpeedT(::Velocity_ZOH_wErrorCov, Vel::Vector{Float64}, WindVelCholSig::Matrix{Float64})
+    getWindSpeedT(::Velocity_ZOH_wErrorCov, vel::Vector, wind_vel_chol_sig::AbstractMatrix)
 
 Computes the wind speed at a given time step using the zero-order hold (ZOH) method with error covariance.
 
 # Arguments
 - `::Velocity_ZOH_wErrorCov`: Type indicator for dispatch, representing the ZOH method with error covariance.
-- `Vel::Vector{Float64}`: The velocity at the previous time step.
-- `WindVelCholSig::Matrix{Float64}`: The Cholesky factor of the wind velocity error covariance matrix.
+- `vel::Vector`: The velocity vector from the previous time step.
+- `wind_vel_chol_sig::AbstractMatrix`: The Cholesky factor of the wind velocity error covariance matrix.
 
 # Returns
 - `wind_speed::Vector{Float64}`: The computed wind speed vector at the current time step.
 """
-function getWindSpeedT(:: Velocity_ZOH_wErrorCov, Vel::Vector{Float64}, WindVelCholSig::Matrix{Float64})
+function getWindSpeedT(:: Velocity_ZOH_wErrorCov, vel::Vector, wind_vel_chol_sig::AbstractMatrix)
     # Generate standard normal random vector of same length as Vel
-    noise = randn(RNG, length(Vel))
+    noise = randn(RNG, length(vel))
 
     # Multiply by Cholesky factor to induce correlation
-    correlated_noise = WindVelCholSig * noise
+    correlated_noise = wind_vel_chol_sig * noise
 
     # Add the correlated noise to Vel
-    Vel .+= correlated_noise
+    vel .+= correlated_noise
 end
 
 

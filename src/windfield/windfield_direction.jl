@@ -82,7 +82,7 @@ end
 # end
 
 """
-    getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind_dir::Matrix, iT, t)
+    getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind_dir::AbstractMatrix, iT, t)
 
 # Direction_EnKF_InterpTurbine 
 
@@ -96,7 +96,7 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 # Returns
 - `phi`: Wind direction(s) at time `t` for turbine(s) `iT`
 """
-function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind_dir::Matrix, iT, t)
+function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind_dir::AbstractMatrix, iT, t)
     times = wind_dir[:, 1]
     n_turbines = size(wind_dir, 2) - 1
 
@@ -120,7 +120,7 @@ function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind_dir::Matrix, iT, 
 end
 
 """
-    getWindDirT(::Direction_Interpolation, wind_dir::Matrix, iT, t)
+    getWindDirT(::Direction_Interpolation, wind_dir::AbstractMatrix, iT, t)
 
 # Direction_Interpolation 
 
@@ -135,7 +135,7 @@ Arguments:
 Returns:
 - phi: Vector of wind directions for each turbine in iT
 """
-function getWindDirT(::Direction_Interpolation, wind_dir::Matrix, iT, t)
+function getWindDirT(::Direction_Interpolation, wind_dir::AbstractMatrix, iT, t)
     times = wind_dir[:, 1]
     phis = wind_dir[:, 2]
 
@@ -212,7 +212,7 @@ function interp(x, y, t)
 end
 
 """
-    getWindDirT(::Direction_InterpTurbine, wind_dir::Matrix, iT, t)
+    getWindDirT(::Direction_InterpTurbine, wind_dir::AbstractMatrix iT, t)
 
 Return wind direction in SOWFA-degrees for the requested turbine(s).
 

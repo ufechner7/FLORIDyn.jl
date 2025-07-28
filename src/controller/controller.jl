@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    getYaw(::Yaw_SOWFA, ConYawData::Matrix{Float64}, iT, t) -> Float64 or Vector{Float64}
+    getYaw(::Yaw_SOWFA, ConYawData::AbstractMatrix, iT, t) -> Float64 or Vector{Float64}
 
 Return the yaw angle at time `t` for the specified turbine(s) using linear interpolation.
 
@@ -59,7 +59,7 @@ yaw_oob = getYaw(Yaw_SOWFA(), ConYawData, 1, 5.0)  # Returns 20.0° with warning
 - [`Yaw_SOWFA`](@ref): Controller type for SOWFA-style yaw control
 - `Interpolations.linear_interpolation`: Underlying interpolation method used
 """
-function getYaw(::Yaw_SOWFA, ConYawData::Matrix{Float64}, iT, t)  
+function getYaw(::Yaw_SOWFA, ConYawData::AbstractMatrix, iT, t)  
     if t < ConYawData[1, 1]
         @warn "The time $t is out of bounds, will use $(ConYawData[1, 1]) instead."
         t = ConYawData[1, 1]

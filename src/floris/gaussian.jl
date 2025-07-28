@@ -631,7 +631,7 @@ function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, flor
 end
 
 """
-    getPower(wf::WindFarm, m::Matrix, floris::Floris, con::Con)
+    getPower(wf::WindFarm, m::AbstractMatrix, floris::Floris, con::Con)
 
 Calculate the power output of wind turbines in a wind farm simulation.
 
@@ -680,7 +680,7 @@ f_yaw_constraints = [0.5 × tanh((γ_max - γ) × 50) + 0.5] ×
 - Axial induction factors are extracted from `wf.States_T[wf.StartI, 1]` for current time step
 - Yaw angles are converted from degrees to radians internally
 """
-function getPower(wf::WindFarm, m::Matrix, floris::Floris, con::Con)
+function getPower(wf::WindFarm, m::AbstractMatrix, floris::Floris, con::Con)
     a   = wf.States_T[wf.StartI, 1]
     yaw = deg2rad.(wf.States_T[wf.StartI, 2])
     
