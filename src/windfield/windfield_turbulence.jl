@@ -2,28 +2,28 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    getWindTiT(::TI_Constant, WindTi, iT, _)
+    getWindTiT(::TI_Constant, wind_ti::Number, iT, _)
 
 Return turbulence intensity for the requested turbine(s).
 
 # Arguments
 - `::TI_Constant`: type parameter to indicate constant wind turbulence
-- `WindTi`: Constant value (turbulence intensity)
+- `wind_ti::Number`: Constant value (turbulence intensity)
 - `iT`: Index or indices of the turbines
 - `_`: will be ignored
 
 # Returns
 - `Ti`: Array of turbulence intensity values for each turbine index
 """
-function getWindTiT(::TI_Constant, WindTi, iT, _)
+function getWindTiT(::TI_Constant, wind_ti, iT, _)
     if isa(iT, AbstractArray)
-        return fill(WindTi, size(iT))
+        return fill(wind_ti, size(iT))
     else
-        return WindTi
+        return wind_ti
     end
 end
 
-# function Ti = getWindTiT(WindTi,iT,t)
+# function Ti = getWindTiT(wind_ti,iT,t)
 # %GETWINDTI Return turbulence intensity for the requested turbine(s)
 # % Uniform interpolation version - all turbines experience the same changes
 # %   Expects a .csv called "WindTI" with the structure
@@ -33,32 +33,32 @@ end
 # %       time TI
 # %   The value is interpolated linearly between the setpoints
 # % ======= Input ======
-# % WindTi    = (t,TI) pairs between which is linearly interpolated
+# % wind_ti    = (t,TI) pairs between which is linearly interpolated
 # % iT        = Index/Indeces of the turbines
 # % t         = time of request
 # % ======================================================================= %
 
-# if t<WindTi(1,1)
+# if t<wind_ti(1,1)
 #     warning(['The time ' num2str(t) ' is out of bounds, will use '...
-#         num2str(WindTi(1,1)) ' instead.']);
-#     t = WindTi(1,1);
-# elseif t>WindTi(end,1)
+#         num2str(wind_ti(1,1)) ' instead.']);
+#     t = wind_ti(1,1);
+# elseif t>wind_ti(end,1)
 #     warning(['The time ' num2str(t) ' is out of bounds, will use '...
-#         num2str(WindTi(end,1)) ' instead.']);
-#     t = WindTi(end,1);
+#         num2str(wind_ti(end,1)) ' instead.']);
+#     t = wind_ti(end,1);
 # end
 
-# Ti = ones(size(iT))*interp1(WindTi(:,1),WindTi(:,2),t);
+# Ti = ones(size(iT))*interp1(wind_ti(:,1),wind_ti(:,2),t);
 # end
 
 """
-    getWindTiT(::TI_Interpolation, WindTi::AbstractMatrix, iT, t)
+    getWindTiT(::TI_Interpolation, wind_ti::AbstractMatrix, iT, t)
 
 Interpolates the wind turbulence intensity (TI) at a given time `t` using the specified `TI_Interpolation` method.
 
 # Arguments
 - `::TI_Interpolation`: Use linear interpolation to calculate the turbulence intensity.
-- `WindTi::Matrix`: Matrix containing wind turbulence intensity values over time.
+- `wind_ti::Matrix`: Matrix containing wind turbulence intensity values over time.
 - `iT`: Index/indices of the turbines (can be Int or array).
 - `t`: The specific time at which to interpolate the turbulence intensity.
 
@@ -66,15 +66,15 @@ Interpolates the wind turbulence intensity (TI) at a given time `t` using the sp
 - The interpolated turbulence for the requested turbine(s) at time `t`.
 
 # Notes
-- The function assumes that `WindTi` contains the necessary data for interpolation
+- The function assumes that `wind_ti` contains the necessary data for interpolation
   as (time, TI) pairs (n×2 matrix)
 - Uniform interpolation version - all turbines experience the same changes.
 """
-function getWindTiT(::TI_Interpolation, WindTi::AbstractMatrix, iT, t)
+function getWindTiT(::TI_Interpolation, wind_ti::AbstractMatrix, iT, t)
 
     # Extract time and TI columns
-    times = WindTi[:, 1]
-    TIs = WindTi[:, 2]
+    times = wind_ti[:, 1]
+    TIs = wind_ti[:, 2]
 
     # Clamp t to the bounds, with warnings
     if t < times[1]
@@ -108,7 +108,7 @@ function getWindTiT(::TI_Interpolation, WindTi::AbstractMatrix, iT, t)
     end
 end
 
-# function Ti = getWindTiT(WindTi,iT,t)
+# function Ti = getWindTiT(wind_ti,iT,t)
 # %GETWINDTI Return turbulence intensity for the requested turbine(s)
 # % ======================================================================= %
 # % Individual Turbine value implementation
@@ -118,45 +118,45 @@ end
 # %   setpoint in time. The values are interploated linearly between the
 # %   setpoints.
 # % ======= Input ======
-# % WindTi    = (t,TI_T0, TI_T1, ... TI_Tn)
+# % wind_ti    = (t,TI_T0, TI_T1, ... TI_Tn)
 # % iT        = Index/Indeces of the turbines
 # % t         = time of request
 # % ======================================================================= %
 
-# if t<WindTi(1,1)
+# if t<wind_ti(1,1)
 #     warning(['The time ' num2str(t) ' is out of bounds, will use '...
-#         num2str(WindTi(1,1)) ' instead.']);
-#     t = WindTi(1,1);
-# elseif t>WindTi(end,1)
+#         num2str(wind_ti(1,1)) ' instead.']);
+#     t = wind_ti(1,1);
+# elseif t>wind_ti(end,1)
 #     warning(['The time ' num2str(t) ' is out of bounds, will use '...
-#         num2str(WindTi(end,1)) ' instead.']);
-#     t = WindTi(end,1);
+#         num2str(wind_ti(end,1)) ' instead.']);
+#     t = wind_ti(end,1);
 # end
-# Ti_out = interp1(WindTi(:,1),WindTi(:,2:end),t);
+# Ti_out = interp1(wind_ti(:,1),wind_ti(:,2:end),t);
 # Ti = Ti_out(iT);
 # end
 
 """
-    getWindTiT(::TI_InterpTurbine, WindTi, iT, t)
+    getWindTiT(::TI_InterpTurbine, wind_ti::AbstractMatrix, iT, t)
 
 Retrieve the wind turbulence intensity (TI) for a specific turbine at a given time.
 
 # Arguments
 - `::TI_InterpTurbine`: The turbulence intensity interpolation object for the turbine.
-- `WindTi`: Array or data structure containing wind turbulence intensity values.
+- `wind_ti::AbstractMatrix`: Matrix containing wind turbulence intensity values.
 - `iT`: Index of the turbine for which the TI is requested.
 - `t`: Time at which the TI value is needed.
 
 # Returns
 - The interpolated wind turbulence intensity value for the specified turbine at time `t`.
 """
-function getWindTiT(::TI_InterpTurbine, WindTi, iT, t)
-    # WindTi: Matrix (time, TI_T0, TI_T1, ..., TI_Tn)
+function getWindTiT(::TI_InterpTurbine, wind_ti::AbstractMatrix, iT, t)
+    # wind_ti: Matrix (time, TI_T0, TI_T1, ..., TI_Tn)
     # iT: Index or indices of turbines (1-based)
     # t: Requested time
 
-    times = WindTi[:, 1]
-    n_turbines = size(WindTi, 2) - 1
+    times = wind_ti[:, 1]
+    n_turbines = size(wind_ti, 2) - 1
 
     # Clamp t to the bounds of times
     if t < times[1]
@@ -168,7 +168,7 @@ function getWindTiT(::TI_InterpTurbine, WindTi, iT, t)
     end
 
     # Interpolate for each turbine
-    Ti_out = [interp1d(times, WindTi[:, j+1], t) for j in 1:n_turbines]
+    Ti_out = [interp1d(times, wind_ti[:, j+1], t) for j in 1:n_turbines]
 
     # Return value(s) for the requested turbine(s)
     return Ti_out[iT]
