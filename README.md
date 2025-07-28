@@ -24,8 +24,8 @@ The basic example works.
 include("examples/main.jl")
 ```
 ### TODO:
-- implement the visualization
-- add more unit tests
+- implement more plots
+- add missing unit tests
 - implement the missing functions
 
 A Python version of FLORIDyn is available at [https://github.com/TUDelft-DataDrivenControl/OFF](https://github.com/TUDelft-DataDrivenControl/OFF) .
