@@ -126,8 +126,6 @@ function plotFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris)
     zh = wf.posNac[1, 3]
     
     # Get data
-    println(size(X), size(Y))
-    println("nM: ", nM, " zh: ", zh)
     Z = getMeasurements(X, Y, nM, zh, wf, set, floris, wind)
     
     return Z, X, Y
