@@ -1,5 +1,5 @@
 """
-    getMeasurements(X, Y, nM, zh, wf, floris, wind)
+    getMeasurements(mx, my, nM, zh, wf, floris, wind)
 
 Wrapper function to disguise the grid points as turbines with one rotor
 point and experience almost the same calculations as the rotor points in
@@ -8,8 +8,8 @@ the simulation.
 Single thread version
 
 # Arguments
-- `X::Matrix`: X-coordinates of grid points
-- `Y::Matrix`: Y-coordinates of grid points  
+- `mx::Matrix`: X-coordinates of grid points
+- `my::Matrix`: Y-coordinates of grid points  
 - `nM::Int`: Number of measurements
 - `zh::Real`: Hub height
 - `wf::WindFarm`: Wind farm object containing turbine data
@@ -17,16 +17,16 @@ Single thread version
 - `wind::Wind`: Wind field configuration
 
 # Returns
-- `Z::Array{Float64,3}`: 3D array of measurements with dimensions (size(X,1), size(X,2), nM)
+- `mz::Array{Float64,3}`: 3D array of measurements with dimensions (size(mx,1), size(mx,2), nM)
 """
-function getMeasurements(X, Y, nM, zh, wf::WindFarm, floris::Floris, wind::Wind)
-    sizeX = size(X)
-    Z = zeros(sizeX[1], sizeX[2], nM)
+function getMeasurements(mx, my, nM, zh, wf::WindFarm, floris::Floris, wind::Wind)
+    size_mx = size(mx)
+    mz = zeros(size_mx[1], size_mx[2], nM)
     
     # Single-threaded loop (can be parallelized with @threads or Distributed.@distributed)
-    for iGP in 1:length(X)
-        xGP = X[iGP]
-        yGP = Y[iGP]
+    for iGP in 1:length(mx)
+        xGP = mx[iGP]
+        yGP = my[iGP]
         
         GPdep = [1:wf.nT]
 
@@ -52,11 +52,11 @@ function getMeasurements(X, Y, nM, zh, wf::WindFarm, floris::Floris, wind::Wind)
         tmpM, _ = setUpTmpWFAndRun(floris, GP, floris, wind)
         
         # Convert linear index to subscripts
-        rw, cl = divrem(iGP - 1, sizeX[1])
+        rw, cl = divrem(iGP - 1, size_mx[1])
         rw += 1
         cl += 1
-        Z[rw, cl, 1:3] = tmpM
+        mz[rw, cl, 1:3] = tmpM
     end
     
-    return Z
+    return mz
 end
