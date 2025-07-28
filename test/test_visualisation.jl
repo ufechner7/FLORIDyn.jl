@@ -3,6 +3,21 @@
 
 using FLORIDyn, Test
 
+function get_parameters()
+    settings_file = "data/2021_9T_Data.yaml"
+
+    # get the settings for the wind field, simulator and controller
+    wind, sim, con, floris, floridyn, ta = setup(settings_file)
+
+    # create settings struct
+    set = Settings(wind, sim, con)
+
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
+    wf = initSimulation(wf, sim)
+    wf, md, mi = runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
+    return wf, set, floris, wind 
+end
+
 @testset verbose=true "visualisation                                           " begin
     @testset "getMeasurements" begin
         # Create a simple test wind farm configuration
@@ -12,6 +27,9 @@ using FLORIDyn, Test
             my = [0.0 0.0; 100.0 100.0]    # 2x2 grid of y-coordinates
             nM = 3  # Number of measurements (typically velocity reduction, added turbulence, effective wind speed)
             zh = 90.0  # Hub height
+            wf, set, floris, wind = get_parameters()
+            # Call the function with the correct number of parameters
+            measurements = getMeasurements(mx, my, nM, zh, wf, set, floris, wind)
             
             # Test basic input properties that should be satisfied
             @test size(mx) == size(my)  # Matrices must have same dimensions
@@ -19,6 +37,10 @@ using FLORIDyn, Test
             @test zh > 0  # Hub height must be positive
             @test isa(nM, Int)  # nM should be an integer
             @test isa(zh, Real)  # zh should be a real number
+            
+            # Test output properties
+            @test isa(measurements, Array{Float64,3})
+            @test size(measurements) == (size(mx, 1), size(mx, 2), nM)
         end
         
         @testset "output dimensions" begin
