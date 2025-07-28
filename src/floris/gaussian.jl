@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    calcCt(a, _)
+    calcCt(a, _) -> Number or Vector
 
 Calculate the thrust coefficient `ct` for a wind turbine based on the axial induction factor `a`.
 
