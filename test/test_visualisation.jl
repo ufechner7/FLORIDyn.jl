@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, Test
+using FLORIDyn, Test, ControlPlots
 
 function get_parameters()
     settings_file = "data/2021_9T_Data.yaml"
@@ -63,7 +63,7 @@ end
             # Call the plotFlowField function
             Z, X, Y = plotFlowField(set, wf, wind, floris)
 
-            # plotFF(X, Y, Z; unit_test=true)
+            plotFF(plt, X, Y, Z; unit_test=true)
             
             # Test that outputs have the correct types
             @test isa(Z, Array{Float64,3})
