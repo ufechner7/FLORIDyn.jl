@@ -19,10 +19,10 @@ makedocs(;
     sitename="FLORIDyn.jl",
     checkdocs=:none,
     format=Documenter.HTML(;
+      assets = String["assets/custom.css"],
       repolink = "https://github.com/ufechner7/FLORIDyn.jl",
         prettyurls=get(ENV, "CI", "false") == "true",
         canonical="https://ufechner7.github.io/FLORIDyn.jl",
-        assets=String[],
     ),
     pages=[
         "Home" => "index.md",
