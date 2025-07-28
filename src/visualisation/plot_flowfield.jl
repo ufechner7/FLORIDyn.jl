@@ -151,7 +151,7 @@ The measurement indices correspond to:
 - 2: Added turbulence  
 - 3: Effective wind speed
 
-This function requires a plotting package like PyPlot.jl to be loaded and available as `plt`.
+This function requires a plotting package like ControlPlots.jl to be loaded and available as `plt`.
 """
 function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
     # Extract the 2D slice for the specified measurement
@@ -162,9 +162,9 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
     # Get the 2D slice
     mz_2d = mz[:, :, msr]
     
-    # Try to use PyPlot if available
+    # Try to use ControlPlots if available
     try
-        # This will work if PyPlot is loaded and plt is available
+        # This will work if ControlPlots is loaded and plt is available
         if msr == 1
             figure = "Velocity Reduction"
         elseif msr == 2
@@ -178,7 +178,7 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
         vmin = 2.0; vmax = 10.0; n=40
         levels = range(vmin, stop=vmax, length=n+1)
         contour_plot = plt.contourf(my, mx, mz_2d, n; levels, cmap="inferno") # 40 levels, no lines
-        #plt.axis("equal")
+        # plt.axis("equal")
         cb = plt.colorbar()
         cb[:set_label](L"Wind speed~[ms^{-1}]", labelpad=3)
 
@@ -208,13 +208,13 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
             ax.plot(rot_pos[1, :], rot_pos[2, :], [20, 20], color="k", linewidth=3)
         end
         # Plot the OPs
-        # Plot all points with size 5 and white filled marker
+        # Plot all points with size 2 and white filled marker
         n = 20
         plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=2, color="white", marker="o")
         plt.xlim(minimum(mx), maximum(mx))
         plt.ylim(minimum(mx), maximum(mx))
 
-        # Plot every 10th point with size 15 and white filled marker
+        # Plot every 10th point with size 6 and white filled marker
         plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=6, color="white", marker="o")
         
         plt.xlim(minimum(mx), maximum(mx))
@@ -230,7 +230,7 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
         end
     catch e
         if isa(e, UndefVarError) && e.var == :plt
-            @warn "PyPlot not available. Please load PyPlot.jl first with: using PyPlot; const plt = PyPlot"
+            @warn "ControlPlots not available. Please load ControlPlots.jl first with: using ControlPlots"
             println("Data shape: ", size(mz_2d))
             println("X range: [", minimum(mx), ", ", maximum(mx), "]")
             println("Y range: [", minimum(my), ", ", maximum(my), "]") 
