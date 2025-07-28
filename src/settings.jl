@@ -223,9 +223,6 @@ type = ["NREL_5MW", "NREL_5MW"]
 init_states = [0.33 0.0 0.1; 0.33 0.0 0.1]  # Both start with same initial conditions
 turbines = TurbineArray(pos, type, init_states)
 ```
-
-# See also:
-- [`turbineArrayProperties`](@ref): Function to load turbine array data from YAML files
 """
 struct TurbineArray
     pos::Matrix{Float64}

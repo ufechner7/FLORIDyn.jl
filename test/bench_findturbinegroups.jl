@@ -5,12 +5,10 @@ using FLORIDyn, Test, BenchmarkTools
 
 settings_file = "data/2021_9T_Data.yaml"
 # get the settings for the wind field, simulator and controller
-wind, sim, con, floris, floridyn = setup(settings_file)
+wind, sim, con, floris, floridyn, ta = setup(settings_file)
 # create settings struct
 set = Settings(wind, sim, con)
-# % Load linked data
-turbProp        = turbineArrayProperties(settings_file)
-wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
+wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 t = @benchmark vv_dep = findTurbineGroups(wf, floridyn)
 
 time = mean(t.times)/1e9

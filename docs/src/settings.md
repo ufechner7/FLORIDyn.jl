@@ -22,6 +22,5 @@ TurbineArray
 setup
 Settings
 Settings(wind::Wind, sim::Sim, con::Con)
-turbineArrayProperties
 getTurbineData
 ```

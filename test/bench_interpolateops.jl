@@ -11,10 +11,9 @@ Uses the standard test configuration to ensure physical validity.
 """
 function create_test_setup()
     settings_file = "data/2021_9T_Data.yaml"
-    wind, sim, con, floris, floridyn = setup(settings_file)
+    wind, sim, con, floris, floridyn, ta = setup(settings_file)
     set = Settings(wind, sim, con)
-    turbProp = turbineArrayProperties(settings_file)
-    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     
     return wf, sim, floris, floridyn, set
 end
