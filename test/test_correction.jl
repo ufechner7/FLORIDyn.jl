@@ -5,7 +5,7 @@ using FLORIDyn
 using Test
 
 correction = FLORIDyn.WindCorrection("None", "All", "None")
-pertubation = FLORIDyn.WindPerturbation(0.0, 0.2, 0.0, 0.5, 0.0, 0.005)
+perturbation = FLORIDyn.WindPerturbation(0.0, 0.2, 0.0, 0.5, 0.0, 0.005)
 shear = FLORIDyn.WindShear(0.08, 1.0)
 
 dir_array = [
@@ -21,7 +21,7 @@ wind = FLORIDyn.Wind(
     "Constant",
     "PowerLaw",
     correction,
-    pertubation,
+    perturbation,
     8.2,
     dir_array,
     0.062,

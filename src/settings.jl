@@ -62,7 +62,7 @@ A mutable struct representing wind settings.
     input_ti::String
     input_shear::String
     correction::WindCorrection
-    pertubation::WindPerturbation
+    perturbation::WindPerturbation
     vel::Union{Nothing, Float64} = nothing
     dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType, WindDirTriple} = nothing
     ti::Union{Nothing, Float64, Matrix{Float64}} = nothing

@@ -66,15 +66,15 @@ using FLORIDyn, Test
         wf_old = deepcopy(wf)
         perturbationOfTheWF!(wf, wind)
         @test structs_equal(wf_old, wf)
-        wind.pertubation.vel = true
+        wind.perturbation.vel = true
         perturbationOfTheWF!(wf, wind)
         @test ! structs_equal(wf_old, wf; prn=false)
-        wind.pertubation.vel = false
-        wind.pertubation.dir = true
+        wind.perturbation.vel = false
+        wind.perturbation.dir = true
         perturbationOfTheWF!(wf, wind)
         @test ! structs_equal(wf_old, wf; prn=false)
-        wind.pertubation.dir = false
-        wind.pertubation.ti = true
+        wind.perturbation.dir = false
+        wind.perturbation.ti = true
         perturbationOfTheWF!(wf, wind)
         @test ! structs_equal(wf_old, wf; prn=false)
     end

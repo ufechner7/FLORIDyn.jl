@@ -121,7 +121,7 @@ function initSimulation(wf::Union{Nothing, WindFarm}, sim::Sim)
 end
 
 """
-    perturbationOfTheWF!(wf, wind)
+    perturbationOfTheWF!(wf::WindFarm, wind::Wind)
 
 Apply stochastic perturbations to the wind field states in-place.
 
@@ -131,8 +131,8 @@ conditionally based on the wind perturbation configuration and are added directl
 to the wind farm state matrix.
 
 # Arguments
-- `wf`: Wind farm object containing the state matrix `States_WF` to be perturbed
-- `wind`: Wind configuration object containing perturbation settings. See [`Wind`](@ref)
+- `wf::WindFarm`: Wind farm struct containing the state matrix `States_WF` to be perturbed
+- `wind::Wind`: Wind configuration struct containing perturbation settings. See [`Wind`](@ref)
 
 # Returns
 - `nothing`: The function modifies the wind farm state in-place
@@ -141,19 +141,19 @@ to the wind farm state matrix.
 The function applies independent Gaussian perturbations to three wind field parameters:
 
 ## Velocity Perturbation
-- **Condition**: `wind.pertubation.vel == true`
+- **Condition**: `wind.perturbation.vel == true`
 - **Target**: Column 1 of `wf.States_WF` (wind velocity [m/s])
-- **Noise**: `wind.pertubation.vel_sigma * randn(nOP × nT)`
+- **Noise**: `wind.perturbation.vel_sigma * randn(nOP × nT)`
 
 ## Direction Perturbation  
-- **Condition**: `wind.pertubation.dir == true`
+- **Condition**: `wind.perturbation.dir == true`
 - **Target**: Column 2 of `wf.States_WF` (wind direction [degrees])
-- **Noise**: `wind.pertubation.dir_sigma * randn(nOP × nT)`
+- **Noise**: `wind.perturbation.dir_sigma * randn(nOP × nT)`
 
 ## Turbulence Intensity Perturbation
-- **Condition**: `wind.pertubation.ti == true`  
+- **Condition**: `wind.perturbation.ti == true`  
 - **Target**: Column 3 of `wf.States_WF` (turbulence intensity [-])
-- **Noise**: `wind.pertubation.ti_sigma * randn(nOP × nT)`
+- **Noise**: `wind.perturbation.ti_sigma * randn(nOP × nT)`
 
 # Mathematical Description
 For each enabled perturbation type, the function applies:
@@ -172,22 +172,22 @@ where:
 - The random noise follows a standard normal distribution scaled by the respective sigma values
 - Only enabled perturbation types (based on boolean flags) are applied
 """
-@views function perturbationOfTheWF!(wf, Wind)
+@views function perturbationOfTheWF!(wf::WindFarm, wind::Wind)
     # perturbationOfTheWF! adds noise to the entire wind field state
     
     # Velocity
-    if Wind.pertubation.vel
-       wf.States_WF[:, 1] .+= Wind.pertubation.vel_sigma * randn(wf.nOP *wf.nT)
+    if wind.perturbation.vel
+       wf.States_WF[:, 1] .+= wind.perturbation.vel_sigma * randn(wf.nOP *wf.nT)
     end
 
     # Direction
-    if Wind.pertubation.dir
-       wf.States_WF[:, 2] .+= Wind.pertubation.dir_sigma * randn(wf.nOP *wf.nT)
+    if wind.perturbation.dir
+       wf.States_WF[:, 2] .+= wind.perturbation.dir_sigma * randn(wf.nOP *wf.nT)
     end
 
     # Turbulence Intensity
-    if Wind.pertubation.ti
-       wf.States_WF[:, 3] .+= Wind.pertubation.ti_sigma * randn(wf.nOP *wf.nT)
+    if wind.perturbation.ti
+       wf.States_WF[:, 3] .+= wind.perturbation.ti_sigma * randn(wf.nOP *wf.nT)
     end
 
     return nothing
@@ -315,7 +315,7 @@ where:
 end
 
 """
-    interpolateOPs(wf)
+    interpolateOPs(wf::WindFarm)
 
 Compute interpolation weights and indices for operational points affecting each turbine.
 
@@ -325,7 +325,7 @@ indices that enable smooth interpolation of wind field states and turbine condit
 arbitrary turbine positions.
 
 # Arguments
-- `wf`: Wind farm object containing turbine dependencies, operational point states, and positional data
+- `wf::WindFarm`: Wind farm object containing turbine dependencies, operational point states, and positional data
   - `wf.nT`: Number of turbines
   - `wf.StartI`: Starting indices for each turbine's operational points  
   - `wf.dep`: Dependency relationships between turbines (from [`findTurbineGroups`](@ref))
@@ -375,7 +375,7 @@ where:
 - Interpolation indices are global across the entire operational point matrix
 - This preprocessing enables efficient interpolation during simulation time steps
 """
-function interpolateOPs(wf)
+function interpolateOPs(wf::WindFarm)
     @assert length(wf.dep) > 0 "No dependencies found! Ensure `findTurbineGroups` was called first."
     intOPs = Vector{Matrix{Float64}}(undef,wf.nT)  # Cell equivalent in Julia
 

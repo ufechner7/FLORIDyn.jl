@@ -11,13 +11,13 @@ set = Settings(wind, sim, con)
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 wf_old = deepcopy(wf)
 @btime perturbationOfTheWF!(wf, wind)
-wind.pertubation.vel = true
+wind.perturbation.vel = true
 @btime perturbationOfTheWF!(wf, wind)
-wind.pertubation.vel = false
-wind.pertubation.dir = true
+wind.perturbation.vel = false
+wind.perturbation.dir = true
 perturbationOfTheWF!(wf, wind)
-wind.pertubation.dir = false
-wind.pertubation.ti = true
+wind.perturbation.dir = false
+wind.perturbation.ti = true
 t = @benchmark perturbationOfTheWF!(wf, wind)
 
 time = mean(t.times)/1e9

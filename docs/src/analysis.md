@@ -14,9 +14,9 @@ Based on my analysis of the src folder, I found several performance-critical pat
 **File:** floridyn_cl.jl (Lines 180, 185, 190)
 ```julia
 # PROBLEMATIC: Column-wise access on potentially large matrices
-wf.States_WF[:, 1] .+= Wind.pertubation.vel_sigma * randn(wf.nOP *wf.nT)
-wf.States_WF[:, 2] .+= Wind.pertubation.dir_sigma * randn(wf.nOP *wf.nT)  
-wf.States_WF[:, 3] .+= Wind.pertubation.ti_sigma * randn(wf.nOP *wf.nT)
+wf.States_WF[:, 1] .+= Wind.perturbation.vel_sigma * randn(wf.nOP *wf.nT)
+wf.States_WF[:, 2] .+= Wind.perturbation.dir_sigma * randn(wf.nOP *wf.nT)  
+wf.States_WF[:, 3] .+= Wind.perturbation.ti_sigma * randn(wf.nOP *wf.nT)
 ```
 **Impact:** High - These are in `perturbationOfTheWF!()` which runs every simulation step.
 
