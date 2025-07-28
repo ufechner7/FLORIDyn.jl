@@ -168,7 +168,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     # ========== WIND: Velocity ==========
     vel_file_dir = sim.path_to_data
 
-    nT = size(turbProp.Pos, 1)
+    nT = size(turbProp.pos, 1)
     input_vel = wind.input_vel
 
     if input_vel == "I_and_I"
@@ -211,7 +211,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     #     error("Unknown wind velocity method: $input_vel")
     # end
 
-    nT = size(turbProp.Pos, 1)
+    nT = size(turbProp.pos, 1)
     data_path = sim.path_to_data
 
     if wind.input_dir == "Interpolation"
@@ -321,10 +321,10 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
 
     # ========== Wind Farm Setup ==========
     wf = WindFarm()
-    wf.posBase = turbProp.Pos
-    wf.nT = size(turbProp.Pos, 1)
+    wf.posBase = turbProp.pos
+    wf.nT = size(turbProp.pos, 1)
         
-        t_data = getTurbineData(turbProp.Type)
+    t_data = getTurbineData(turbProp.type)
     wf.posNac = t_data.NacPos
     wf.D = t_data.D
 
@@ -381,7 +381,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     # end
 
     # # ========== Init State ===========
-   wf.States_OP, wf.States_T, wf.States_WF = init_states(set, wf, wind, turbProp.Init_States, floris, sim)
+   wf.States_OP, wf.States_T, wf.States_WF = init_states(set, wf, wind, turbProp.init_States, floris, sim)
 
     # # ========== Simulation Setup ==========
     sim.n_sim_steps = length(sim.start_time:sim.time_step:sim.end_time)

@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 struct TurbineArray
-    Pos::Matrix{Float64}
-    Type::Vector{String}
-    Init_States::Matrix{Float64}
+    pos::Matrix{Float64}
+    type::Vector{String}
+    init_States::Matrix{Float64}
 end
 
 """
