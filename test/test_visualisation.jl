@@ -60,10 +60,10 @@ end
             # Get test parameters
             wf, set, floris, wind = get_parameters()
             
-            # Call the plotFlowField function
-            Z, X, Y = plotFlowField(set, wf, wind, floris)
+            # Call the calcFlowField function
+            Z, X, Y = calcFlowField(set, wf, wind, floris)
 
-            plotFF(plt, X, Y, Z; unit_test=true)
+            plotFlowField(plt, X, Y, Z; unit_test=true)
             
             # Test that outputs have the correct types
             @test isa(Z, Array{Float64,3})
@@ -110,7 +110,7 @@ end
             wf, set, floris, wind = get_parameters()
             
             # Call the function
-            Z, X, Y = plotFlowField(set, wf, wind, floris)
+            Z, X, Y = calcFlowField(set, wf, wind, floris)
             
             # Test coordinate range
             @test minimum(X) >= 0.0
