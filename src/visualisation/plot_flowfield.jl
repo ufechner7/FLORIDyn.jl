@@ -1,5 +1,5 @@
 """
-    getMeasurements(X, Y, nM, zh, T, paramFLORIS, Wind, Vis)
+    getMeasurements(X, Y, nM, zh, wf, floris, wind)
 
 Wrapper function to disguise the grid points as turbines with one rotor
 point and experience almost the same calculations as the rotor points in
@@ -12,15 +12,14 @@ Single thread version
 - `Y::Matrix`: Y-coordinates of grid points  
 - `nM::Int`: Number of measurements
 - `zh::Real`: Hub height
-- `T::WindFarm`: Wind farm object containing turbine data
-- `paramFLORIS::Floris`: FLORIS model parameters
-- `Wind::Wind`: Wind field configuration
-- `Vis`: Visualization parameters (currently unused)
+- `wf::WindFarm`: Wind farm object containing turbine data
+- `floris::Floris`: FLORIS model parameters
+- `wind::Wind`: Wind field configuration
 
 # Returns
 - `Z::Array{Float64,3}`: 3D array of measurements with dimensions (size(X,1), size(X,2), nM)
 """
-function getMeasurements(X, Y, nM, zh, T, paramFLORIS, Wind, Vis)
+function getMeasurements(X, Y, nM, zh, wf::WindFarm, floris::Floris, wind::Wind)
     sizeX = size(X)
     Z = zeros(sizeX[1], sizeX[2], nM)
     
@@ -29,28 +28,28 @@ function getMeasurements(X, Y, nM, zh, T, paramFLORIS, Wind, Vis)
         xGP = X[iGP]
         yGP = Y[iGP]
         
-        GPdep = [1:T.nT]
+        GPdep = [1:wf.nT]
 
         # Create T equivalent to get interpolated OPs
         # Initialize GP as a similar structure to WindFarm
-        GP = deepcopy(T)  # Start with a copy to get the right structure
+        GP = deepcopy(wf)  # Start with a copy to get the right structure
         
         # Modify the necessary fields
         GP.dep = Vector{Vector{Int64}}(undef, 1)
         GP.dep[1] = GPdep
-        GP.StartI = T.StartI
+        GP.StartI = wf.StartI
         GP.nT = 1
-        GP.States_OP = T.States_OP
+        GP.States_OP = wf.States_OP
         GP.posBase = reshape([xGP, yGP, 0.0], 1, 3)  # Make it a 1×3 matrix
-        GP.nOP = T.nOP
+        GP.nOP = wf.nOP
         GP.intOPs = interpolateOPs(GP)
         
         GP.posNac = reshape([0.0, 0.0, zh], 1, 3)  # Make it a 1×3 matrix
-        GP.States_WF = T.States_WF
-        GP.States_T = T.States_T
-        GP.D = vcat(T.D, 0.0)  # Append 0 to the diameter array
+        GP.States_WF = wf.States_WF
+        GP.States_T = wf.States_T
+        GP.D = vcat(wf.D, 0.0)  # Append 0 to the diameter array
         
-        tmpM, _ = setUpTmpWFAndRun(paramFLORIS, GP, paramFLORIS, Wind)
+        tmpM, _ = setUpTmpWFAndRun(floris, GP, floris, wind)
         
         # Convert linear index to subscripts
         rw, cl = divrem(iGP - 1, sizeX[1])
