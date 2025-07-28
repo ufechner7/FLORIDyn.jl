@@ -63,32 +63,32 @@ end
             # Call the plotFlowField function
             Z, X, Y = plotFlowField(set, wf, wind, floris)
             
-            # # Test that outputs have the correct types
-            # @test isa(Z, Array{Float64,3})
-            # @test isa(X, Matrix{Float64})
-            # @test isa(Y, Matrix{Float64})
+            # Test that outputs have the correct types
+            @test isa(Z, Array{Float64,3})
+            @test isa(X, Matrix{Float64})
+            @test isa(Y, Matrix{Float64})
             
-            # # Test that X and Y have the same dimensions
-            # @test size(X) == size(Y)
+            # Test that X and Y have the same dimensions
+            @test size(X) == size(Y)
             
-            # # Test that Z has the correct dimensions
-            # # Z should have the same x,y dimensions as X,Y and 3 measurements in the third dimension
-            # @test size(Z, 1) == size(X, 1)
-            # @test size(Z, 2) == size(X, 2)
-            # @test size(Z, 3) == 3  # nM = 3 measurements
+            # Test that Z has the correct dimensions
+            # Z should have the same x,y dimensions as X,Y and 3 measurements in the third dimension
+            @test size(Z, 1) == size(X, 1)
+            @test size(Z, 2) == size(X, 2)
+            @test size(Z, 3) == 3  # nM = 3 measurements
             
-            # # Test that the coordinate grids are reasonable
-            # # X should vary along columns, Y should vary along rows
-            # @test X[1, 1] < X[1, end]  # X increases along columns
-            # @test Y[1, 1] < Y[end, 1]  # Y increases along rows
+            # Test that the coordinate grids are reasonable
+            # X should vary along columns, Y should vary along rows
+            @test X[1, 1] < X[1, end]  # X increases along columns
+            @test Y[1, 1] < Y[end, 1]  # Y increases along rows
             
-            # # Test grid spacing is consistent (20m resolution)
-            # if size(X, 2) > 1
-            #     @test abs((X[1, 2] - X[1, 1]) - 20.0) < 1e-10  # 20m spacing
-            # end
-            # if size(Y, 1) > 1
-            #     @test abs((Y[2, 1] - Y[1, 1]) - 20.0) < 1e-10  # 20m spacing
-            # end
+            # Test grid spacing is consistent (20m resolution)
+            if size(X, 2) > 1
+                @test abs((X[1, 2] - X[1, 1]) - 20.0) < 1e-10  # 20m spacing
+            end
+            if size(Y, 1) > 1
+                @test abs((Y[2, 1] - Y[1, 1]) - 20.0) < 1e-10  # 20m spacing
+            end
         end
         
         @testset "function exists and is callable" begin
