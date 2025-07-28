@@ -4,12 +4,7 @@
 # Install TerminalPager globally, if not yet installed
 julia -e 'using Pkg;
 function globaldependencies()
-    projectpath = Pkg.project().path
-    basepath, _ = splitdir(projectpath)
-    Pkg.activate()
     globaldependencies = keys(Pkg.project().dependencies)
-    Pkg.activate(basepath)
-    globaldependencies
 end
 if ! ("TerminalPager" in globaldependencies()); Pkg.add("TerminalPager"); end'
 # run Julia single threaded
