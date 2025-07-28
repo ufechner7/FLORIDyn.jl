@@ -7,6 +7,7 @@ function globaldependencies()
     globaldependencies = keys(Pkg.project().dependencies)
 end
 if ! ("TerminalPager" in globaldependencies()); Pkg.add("TerminalPager"); end;
-if ! ("Timers" in globaldependencies()); Pkg.add("Timers"); end;'
+if ! ("Timers" in globaldependencies()); Pkg.add("Timers"); end;
+if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
 # run Julia single threaded
-julia --project --gcthreads=1,0 -i -e 'using Revise; using FLORIDyn'
+julia --project --gcthreads=1,0 -i -e 'using Revise; using FLORIDyn; using ControlPlots'

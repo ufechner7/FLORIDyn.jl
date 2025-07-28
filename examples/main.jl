@@ -5,7 +5,7 @@
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
 tic()
-using FLORIDyn, TerminalPager
+using FLORIDyn, TerminalPager, ControlPlots
 
 settings_file = "data/2021_9T_Data.yaml"
 
@@ -30,6 +30,8 @@ toc()
 # @info "Type 'md |> pager' to see the results of the simulation."
 # @info "Type 'q' to exit the pager."
 
-Z, X, Y = plotFlowField(set, wf, wind, floris)
-plotFF(X, Y, Z)
+tic()
+@time Z, X, Y = plotFlowField(set, wf, wind, floris)
+plotFF(plt, X, Y, Z)
+toc()
 nothing

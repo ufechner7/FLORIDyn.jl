@@ -62,6 +62,8 @@ end
             
             # Call the plotFlowField function
             Z, X, Y = plotFlowField(set, wf, wind, floris)
+
+            # plotFF(X, Y, Z; unit_test=true)
             
             # Test that outputs have the correct types
             @test isa(Z, Array{Float64,3})

@@ -6,7 +6,7 @@ $(DocStringExtensions.README)
 """
 module FLORIDyn
 
-using ControlPlots
+# using ControlPlots
 
 using PrecompileTools: @setup_workload, @compile_workload
 import DocStringExtensions

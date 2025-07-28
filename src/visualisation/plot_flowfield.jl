@@ -154,7 +154,7 @@ The measurement indices typically correspond to:
 
 This function requires a plotting package like PyPlot.jl to be loaded and available as `plt`.
 """
-function plotFF(mx, my, mz; measurement_idx=1, title="Flow Field")
+function plotFF(plt, mx, my, mz; measurement_idx=1, title="Flow Field", unit_test=false)
     # Extract the 2D slice for the specified measurement
     if measurement_idx > size(mz, 3)
         error("measurement_idx ($measurement_idx) exceeds number of measurements ($(size(mz, 3)))")
@@ -173,7 +173,7 @@ function plotFF(mx, my, mz; measurement_idx=1, title="Flow Field")
         elseif measurement_idx == 3
             figure = "Effective Wind Speed"
         end
-        plt.figure(figure)
+        fig = plt.figure(figure)
         contour_plot = plt.contourf(mx, my, mz_2d, 40) # 40 levels, no lines
         plt.axis("equal")
         plt.colorbar()
@@ -181,6 +181,10 @@ function plotFF(mx, my, mz; measurement_idx=1, title="Flow Field")
         plt.xlabel("X [m]")
         plt.ylabel("Y [m]")
         println("Contour plot created successfully")
+        if unit_test
+            plt.pause(2)
+            plt.close(fig)
+        end
     catch e
         if isa(e, UndefVarError) && e.var == :plt
             @warn "PyPlot not available. Please load PyPlot.jl first with: using PyPlot; const plt = PyPlot"
@@ -192,6 +196,8 @@ function plotFF(mx, my, mz; measurement_idx=1, title="Flow Field")
             rethrow(e)
         end
     end
+
+
     
     return nothing
 end
