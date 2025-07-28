@@ -1,17 +1,12 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-"""
-$(DocStringExtensions.README)
-"""
 module FLORIDyn
 
-using PrecompileTools: @setup_workload, @compile_workload
-import DocStringExtensions
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
 using Statistics, StaticArrays
 
-export setup, Settings, getTurbineData, initSimulation
+export setup, str2type, Settings, getTurbineData, initSimulation
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
@@ -34,7 +29,7 @@ export Yaw_Constant, Yaw_InterpTurbine, Yaw_SOWFA
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
-export getWindTiT
+export getWindTiT, getWindTiT_EnKF
 export getWindSpeedT, getWindSpeedT_EnKF
 export getDataDir, getDataTI, getDataVel
 export correctDir!
@@ -53,6 +48,12 @@ function set_rng(rng)
     RNG = rng
 end
 
+function str2type(name)
+    typename = Symbol(name)
+    t = getfield(Main, typename)
+    instance = t()
+end
+
 # marker structs
 include("windfield/structs_dir.jl")
 include("windfield/structs_shear.jl")
@@ -63,12 +64,6 @@ include("correction/structs_vel.jl")
 include("correction/structs_turb.jl")
 include("floridyn_cl/structs.jl")
 include("controller/structs_controller.jl")
-
-function str2type(name)
-    typename = Symbol(name)
-    t = getfield(FLORIDyn, typename)
-    instance = t()
-end
 
 """
     Settings
@@ -241,20 +236,4 @@ include("floridyn_cl/iterate.jl")
 
 include("controller/controller.jl")
 
-@setup_workload begin
-    # Putting some things in `@setup_workload` instead of `@compile_workload` can reduce the size of the
-    # precompile file and potentially make loading faster.
-    @compile_workload begin
-        # all calls in this block will be precompiled, regardless of whether
-        # they belong to your package or not (on Julia 1.8 and higher)
-        settings_file = "data/2021_9T_Data.yaml"
-        wind, sim, con, floris, floridyn = setup(settings_file)
-        set = Settings(wind, sim, con)
-        turbProp        = turbineArrayProperties(settings_file)
-        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
-        wf = initSimulation(wf, sim)
-        runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
-    end
 end
-end # module FLORIDyn
-
