@@ -429,7 +429,7 @@ function interpolateOPs(wf::WindFarm)
 end
 
 """
-    setUpTmpWFAndRun(set::Settings, wf, floris::Floris, wind::Wind)
+    setUpTmpWFAndRun(set::Settings, wf::WindFarm, floris::Floris, wind::Wind)
 
 Execute FLORIS wake calculations for all turbines in a wind farm with wake interactions.
 
@@ -440,7 +440,7 @@ interaction patterns.
 
 # Arguments
 - `set::Settings`: Simulation settings and configuration parameters
-- `wf`: Wind farm object containing turbine positions, operational points, dependencies, and interpolation data
+- `wf::WindFarm`: Wind farm object containing turbine positions, operational points, dependencies, and interpolation data
   - `wf.nT`: Number of turbines
   - `wf.States_WF`: Wind field states matrix
   - `wf.States_T`: Turbine states matrix
@@ -507,7 +507,7 @@ The function supports optional wind field interpolation via coefficient matrices
 - Coordinate transformations use the SOWFA to world conversion via [`angSOWFA2world`](@ref)
 - The algorithm efficiently handles both simple single-turbine and complex multi-turbine wake scenarios
 """
-@views function setUpTmpWFAndRun(set::Settings, wf, floris::Floris, wind::Wind)
+@views function setUpTmpWFAndRun(set::Settings, wf::WindFarm, floris::Floris, wind::Wind)
     # Initialize outputs
     M = zeros(wf.nT, 3)
     wf.Weight = Vector{Vector{Float64}}(undef,wf.nT)
