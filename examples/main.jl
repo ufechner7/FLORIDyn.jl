@@ -32,6 +32,6 @@ toc()
 
 tic()
 @time Z, X, Y = calcFlowField(set, wf, wind, floris)
-plotFlowField(plt, wf, X, Y, Z)
 toc()
+plotFlowField(plt, wf, X, Y, Z)
 nothing
