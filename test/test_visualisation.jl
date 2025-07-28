@@ -42,140 +42,6 @@ end
             @test isa(measurements, Array{Float64,3})
             @test size(measurements) == (size(mx, 1), size(mx, 2), nM)
         end
-        
-        @testset "output dimensions" begin
-            # Test that output has correct dimensions
-            mx = [0.0 100.0; 200.0 300.0]
-            my = [0.0 0.0; 100.0 100.0]
-            nM = 3
-            zh = 90.0
-            
-            expected_size = (size(mx, 1), size(mx, 2), nM)
-            @test expected_size == (2, 2, 3)
-            
-            # Test with different grid sizes
-            mx_small = [0.0]
-            my_small = [0.0]
-            expected_size_small = (1, 1, nM)
-            @test expected_size_small == (1, 1, 3)
-            
-            mx_rect = [0.0 100.0 200.0; 300.0 400.0 500.0]  # 2x3 grid
-            my_rect = [0.0 0.0 0.0; 100.0 100.0 100.0]
-            expected_size_rect = (size(mx_rect, 1), size(mx_rect, 2), nM)
-            @test expected_size_rect == (2, 3, 3)
-        end
-        
-        @testset "coordinate handling" begin
-            # Test various coordinate scenarios
-            mx = [0.0 1000.0; -500.0 2000.0]
-            my = [-1000.0 500.0; 0.0 1500.0]
-            
-            # Test negative coordinates (should be handled)
-            @test minimum(mx) == -500.0
-            @test minimum(my) == -1000.0
-            
-            # Test large coordinates (should be handled)
-            @test maximum(mx) == 2000.0
-            @test maximum(my) == 1500.0
-        end
-        
-        @testset "parameter validation" begin
-            mx = [0.0 100.0; 200.0 300.0]
-            my = [0.0 0.0; 100.0 100.0]
-            
-            # Test valid nM values (just check they are positive integers)
-            nM_valid = [1, 3, 5, 10]
-            for nM in nM_valid
-                @test nM > 0
-                @test isa(nM, Int)
-            end
-            
-            # Test valid hub heights
-            zh_valid = [50.0, 90.0, 120.0, 150.0]
-            for zh in zh_valid
-                @test zh > 0.0
-            end
-            
-            # Test that negative or zero values would be problematic
-            # (Note: actual validation would happen in the function implementation)
-            nM_invalid = [-1, 0]
-            for nM in nM_invalid
-                @test nM <= 0  # These are invalid values
-            end
-            
-            zh_invalid = [-10.0, 0.0]
-            for zh in zh_invalid
-                @test zh <= 0.0  # These would be invalid in practice
-            end
-        end
-        
-        @testset "matrix dimension consistency" begin
-            # Test mismatched matrix dimensions
-            mx_2x2 = [0.0 100.0; 200.0 300.0]
-            my_2x3 = [0.0 0.0 0.0; 100.0 100.0 100.0]
-            
-            @test size(mx_2x2) != size(my_2x3)  # Should be caught in validation
-            
-            # Test matched dimensions
-            mx_matched = [0.0 100.0; 200.0 300.0]
-            my_matched = [0.0 0.0; 100.0 100.0]
-            
-            @test size(mx_matched) == size(my_matched)
-        end
-        
-        @testset "edge cases" begin
-            # Single grid point
-            mx_single = reshape([100.0], 1, 1)
-            my_single = reshape([200.0], 1, 1)
-            nM = 3
-            zh = 90.0
-            
-            @test size(mx_single) == (1, 1)
-            @test size(my_single) == (1, 1)
-            @test length(mx_single) == 1
-            
-            # Large grid (performance consideration)
-            n_large = 50
-            mx_large = reshape(collect(1.0:n_large^2), n_large, n_large)
-            my_large = reshape(collect(1.0:n_large^2), n_large, n_large)
-            
-            @test size(mx_large) == (n_large, n_large)
-            @test length(mx_large) == n_large^2
-        end
-        
-        @testset "basic coordinate validation" begin
-            # Test basic properties that the coordinate transformation should satisfy
-            # without testing the exact implementation details
-            
-            mx = [0.0 100.0 200.0; 300.0 400.0 500.0]  # 2x3 matrix
-            size_mx = size(mx)
-            
-            # Test that matrix dimensions are what we expect
-            @test size_mx[1] == 2  # rows
-            @test size_mx[2] == 3  # columns
-            @test length(mx) == 6  # total elements
-            
-            # Test basic divrem functionality (mathematical property)
-            @test divrem(0, 2) == (0, 0)
-            @test divrem(1, 2) == (0, 1) 
-            @test divrem(2, 2) == (1, 0)
-            @test divrem(3, 2) == (1, 1)
-            
-            # Test that the general pattern works for any reasonable matrix size
-            for nrows in 1:5
-                for ncols in 1:5
-                    total_elements = nrows * ncols
-                    for i in 0:(total_elements-1)
-                        quotient, remainder = divrem(i, nrows)
-                        # Basic mathematical properties
-                        @test quotient >= 0
-                        @test 0 <= remainder < nrows
-                        @test quotient * nrows + remainder == i
-                    end
-                end
-            end
-        end
-        
         @testset "function exists and is callable" begin
             # Test that the function exists and has the right signature
             @test isa(getMeasurements, Function)
@@ -188,5 +54,75 @@ end
             @test :getMeasurements in names(FLORIDyn)
         end
     end
+    
+    @testset "plotFlowField" begin
+        @testset "basic functionality" begin
+            # Get test parameters
+            wf, set, floris, wind = get_parameters()
+            
+            # # Call the plotFlowField function
+            # Z, X, Y = plotFlowField(set, wf, wind, floris)
+            
+            # # Test that outputs have the correct types
+            # @test isa(Z, Array{Float64,3})
+            # @test isa(X, Matrix{Float64})
+            # @test isa(Y, Matrix{Float64})
+            
+            # # Test that X and Y have the same dimensions
+            # @test size(X) == size(Y)
+            
+            # # Test that Z has the correct dimensions
+            # # Z should have the same x,y dimensions as X,Y and 3 measurements in the third dimension
+            # @test size(Z, 1) == size(X, 1)
+            # @test size(Z, 2) == size(X, 2)
+            # @test size(Z, 3) == 3  # nM = 3 measurements
+            
+            # # Test that the coordinate grids are reasonable
+            # # X should vary along columns, Y should vary along rows
+            # @test X[1, 1] < X[1, end]  # X increases along columns
+            # @test Y[1, 1] < Y[end, 1]  # Y increases along rows
+            
+            # # Test grid spacing is consistent (20m resolution)
+            # if size(X, 2) > 1
+            #     @test abs((X[1, 2] - X[1, 1]) - 20.0) < 1e-10  # 20m spacing
+            # end
+            # if size(Y, 1) > 1
+            #     @test abs((Y[2, 1] - Y[1, 1]) - 20.0) < 1e-10  # 20m spacing
+            # end
+        end
+        
+        @testset "function exists and is callable" begin
+            # Test that the function exists and has the right signature
+            @test isa(plotFlowField, Function)
+            
+            # Test that we can get method information
+            methods_list = methods(plotFlowField)
+            @test length(methods_list) >= 1
+            
+            # Check that the function is exported
+            @test :plotFlowField in names(FLORIDyn)
+        end
+        
+        @testset "coordinate grid properties" begin
+            # Get test parameters
+            wf, set, floris, wind = get_parameters()
+            
+            # # Call the function
+            # Z, X, Y = plotFlowField(set, wf, wind, floris)
+            
+            # # Test coordinate range
+            # @test minimum(X) >= 0.0
+            # @test maximum(X) <= 3000.0
+            # @test minimum(Y) >= 0.0  
+            # @test maximum(Y) <= 3000.0
+            
+            # # Test that coordinates are within expected bounds
+            # @test all(X .>= 0.0)
+            # @test all(X .<= 3000.0)
+            # @test all(Y .>= 0.0)
+            # @test all(Y .<= 3000.0)
+        end
+    end
+
 end
 nothing

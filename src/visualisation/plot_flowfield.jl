@@ -62,7 +62,7 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         # Grid point (last "turbine") depends on all original turbines
         GP.dep[end] = GPdep
         
-                # Update StartI to include the grid point
+        # Update StartI to include the grid point
         GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
         # Update arrays to accommodate the additional grid point
         GP.States_OP = wf.States_OP
@@ -88,4 +88,43 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
     end
     
     return mz
+end
+
+"""
+    plotFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris)
+
+Generate full flow field plot data by calculating measurements across a grid.
+
+# Arguments
+- `wf::WindFarm`: Wind farm object containing turbine data
+- `wind::Wind`: Wind field configuration  
+- `set::Settings`: Settings object containing simulation parameters
+- `floris::Floris`: FLORIS model parameters
+
+# Returns
+- `Z::Array{Float64,3}`: 3D array of flow field measurements
+- `X::Matrix{Float64}`: X-coordinate grid
+- `Y::Matrix{Float64}`: Y-coordinate grid
+"""
+function plotFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris)
+    # Preallocate field
+    nM = 3
+    fieldLims = [0.0 0.0 0.0;
+                 3000.0 3000.0 400.0]  # [xmin ymin zmin; xmax ymax zmax]
+    fieldRes = 20.0  # Resolution of the field in m
+    
+    xAx = fieldLims[1,1]:fieldRes:fieldLims[2,1]
+    yAx = fieldLims[1,2]:fieldRes:fieldLims[2,2]
+    
+    # Create coordinate grids (Julia equivalent of meshgrid)
+    X = repeat(collect(xAx)', length(yAx), 1)
+    Y = repeat(collect(yAx), 1, length(xAx))
+    
+    # Get hub height from first turbine
+    zh = wf.posNac[1, 3]
+    
+    # Get data
+    Z = getMeasurements(X, Y, nM, zh, wf, set, floris, wind)
+    
+    return Z, X, Y
 end
