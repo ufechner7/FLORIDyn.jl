@@ -202,7 +202,8 @@ function IterateOPsBuffers(wf::WindFarm)
 end
 
 """
-    iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris, floridyn::FloriDyn, buffers::IterateOPsBuffers)
+    iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris, 
+                floridyn::FloriDyn, buffers::IterateOPsBuffers)
 
 Allocation-free version of iterateOPs! that uses pre-allocated buffers.
 
@@ -215,7 +216,7 @@ All temporary arrays are pre-allocated in the buffers parameter to eliminate run
 - `sim::Sim`: Simulation configuration object (same as standard version)  
 - `floris::Floris`: FLORIS model parameters (same as standard version)
 - `floridyn::FloriDyn`: FLORIDyn model parameters (same as standard version)
-- `buffers::IterateOPsBuffers`: Pre-allocated buffers for all temporary calculations
+- `buffers::IterateOPsBuffers`: Pre-allocated buffers for all temporary calculations. See [`IterateOPsBuffers`](@ref).
 
 # Returns
 - nothing

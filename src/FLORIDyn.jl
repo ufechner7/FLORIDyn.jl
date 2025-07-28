@@ -26,6 +26,7 @@ export Velocity_ZOH_wErrorCov
 
 export WindDirType, WindDirMatrix, WindDirTriple
 export WindVelType, WindVelMatrix, WindFarm
+export Floris, FloriDyn, Wind, Sim, Con, IterateOPsBuffers
 
 export Direction_All, Direction_Influence, Direction_None, Direction_wGaspariAndCohn
 export Velocity_Influence, Velocity_None, Velocity_wGaspariAndCohn

@@ -370,17 +370,17 @@ function getTurbineData(names::Vector{String})
 end
 
 """
-    importSOWFAFile(filename::String, dataLines = 2:typemax(Int))
+    importSOWFAFile(filename, data_lines = 2:typemax(Int))
 
 Reads from a custom-formatted text file and extracts columns: Turbine, Times, and nacelle.
 
 - `filename`: The path to the input file.
-- `dataLines`: A single range (e.g., `2:Inf`) or vector of tuple ranges (e.g., `[(2, Inf)]`) for rows to import.
+- `data_lines`: A single range (e.g., `2:Inf`) or vector of tuple ranges (e.g., `[(2, Inf)]`) for rows to import.
 
 Returns:
 - A Matrix{Float64} with the selected column data.
 """
-function importSOWFAFile(filename::String, dataLines = 2:typemax(Int))
+function importSOWFAFile(filename, data_lines = 2:typemax(Int))
 
     # Read full table first
     df = CSV.read(filename, DataFrame;
@@ -395,11 +395,11 @@ function importSOWFAFile(filename::String, dataLines = 2:typemax(Int))
     )
 
     # Filter rows if needed
-    if dataLines isa UnitRange && dataLines != 2:typemax(Int)
-        df = df[dataLines, :]
-    elseif dataLines isa Vector
+    if data_lines isa UnitRange && data_lines != 2:typemax(Int)
+        df = df[data_lines, :]
+    elseif data_lines isa Vector
         keep_rows = falses(nrow(df))
-        for (start, stop) in dataLines
+        for (start, stop) in data_lines
             keep_rows[start:min(stop, nrow(df))] .= true
         end
         df = df[keep_rows, :]
