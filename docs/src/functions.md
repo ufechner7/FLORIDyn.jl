@@ -58,3 +58,9 @@ angSOWFA2world
 runFLORIDyn
 ```
 
+# Visualization
+```@docs
+calcFlowField
+plotFlowField
+```
+
