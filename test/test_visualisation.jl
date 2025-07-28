@@ -63,7 +63,7 @@ end
             # Call the calcFlowField function
             Z, X, Y = calcFlowField(set, wf, wind, floris)
 
-            plotFlowField(plt, X, Y, Z; unit_test=true)
+            plotFlowField(plt, wf, X, Y, Z; unit_test=true)
             
             # Test that outputs have the correct types
             @test isa(Z, Array{Float64,3})

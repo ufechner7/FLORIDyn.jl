@@ -173,14 +173,13 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
             figure = "Effective Wind Speed"
         end
         title = figure
-        n = 0.84
-        fig = plt.figure(figure, figsize=(7.25n, 6n))
+        size = 0.84
+        fig = plt.figure(figure, figsize=(7.25size, 6size))
         vmin = 2.0; vmax = 10.0; n=40
         levels = range(vmin, stop=vmax, length=n+1)
-        contour_plot = plt.contourf(my, mx, mz_2d, n; levels, cmap="inferno") # 40 levels, no lines
-        # plt.axis("equal")
+        plt.contourf(my, mx, mz_2d, n; levels, cmap="inferno") # 40 levels, no lines
         cb = plt.colorbar()
-        cb[:set_label](L"Wind speed~[ms^{-1}]", labelpad=3)
+        cb.set_label(L"Wind speed~[ms^{-1}]", labelpad=3)
 
         # Plot the turbine rotors as short, thick lines (as seen from above)
         for i_T in 1:length(wf.D)
