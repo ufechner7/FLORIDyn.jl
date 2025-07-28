@@ -42,7 +42,6 @@ export correctDir!
 export getYaw
 
 export discretizeRotor, calcCt, States
-export turbineArrayProperties
 export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimulation
 export runFLORIS, init_states, getUadv
 export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, interpolateOPs, perturbationOfTheWF!, findTurbineGroups
@@ -221,7 +220,6 @@ A mutable struct representing a wind farm. Fields can be specified using keyword
 end
 
 include("settings.jl")
-include("init_turbines.jl")
 
 # functions for calculating the wind field
 include("windfield/windfield_direction.jl")
@@ -249,10 +247,9 @@ include("controller/controller.jl")
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
         settings_file = "data/2021_9T_Data.yaml"
-        wind, sim, con, floris, floridyn = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta = setup(settings_file)
         set = Settings(wind, sim, con)
-        turbProp                   = turbineArrayProperties(settings_file)
-        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
+        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf = initSimulation(wf, sim)
         runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
     end

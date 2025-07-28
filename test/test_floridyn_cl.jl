@@ -36,12 +36,10 @@ using FLORIDyn, Test
     @testset "initSimulation" begin
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
-        wind, sim, con, floris, floridyn = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta = setup(settings_file)
         # create settings struct
         set = Settings(wind, sim, con)
-        # % Load linked data
-        turbProp        = turbineArrayProperties(settings_file)
-        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
+        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf_old = deepcopy(wf)
         wf = initSimulation(wf, sim)
         @test structs_equal(wf_old, wf)
@@ -61,12 +59,10 @@ using FLORIDyn, Test
     @testset "perturbationOfTheWF!" begin
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
-        wind, sim, con, floris, floridyn = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta = setup(settings_file)
         # create settings struct
         set = Settings(wind, sim, con)
-        # % Load linked data
-        turbProp        = turbineArrayProperties(settings_file)
-        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
+        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf_old = deepcopy(wf)
         perturbationOfTheWF!(wf, wind)
         @test structs_equal(wf_old, wf)
@@ -85,12 +81,11 @@ using FLORIDyn, Test
     @testset "findTurbineGroups" begin
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
-        wind, sim, con, floris, floridyn = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta = setup(settings_file)
         # create settings struct
         set = Settings(wind, sim, con)
         # % Load linked data
-        turbProp        = turbineArrayProperties(settings_file)
-        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
+        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         vv_dep = findTurbineGroups(wf, floridyn)
         vv_dep_expected =   [
                                 Int[],
@@ -108,12 +103,10 @@ using FLORIDyn, Test
     @testset "iterateOPs!" begin
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
-        wind, sim, con, floris, floridyn = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta = setup(settings_file)
         # create settings struct
         set = Settings(wind, sim, con)
-        # % Load linked data
-        turbine_prop        = turbineArrayProperties(settings_file)
-        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_prop, sim)
+        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf_old = deepcopy(wf)
         iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
         @test ! structs_equal(wf_old, wf; prn=false)
@@ -121,12 +114,10 @@ using FLORIDyn, Test
     @testset "interpolateOPs" begin
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
-        wind, sim, con, floris, floridyn = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta = setup(settings_file)
         # create settings struct
         set = Settings(wind, sim, con)
-        # % Load linked data
-        turbine_prop        = turbineArrayProperties(settings_file)
-        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_prop, sim)
+        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf.dep = findTurbineGroups(wf, floridyn)
         wf.intOPs = interpolateOPs(wf)
         @test length(wf.intOPs) == wf.nT
@@ -134,12 +125,10 @@ using FLORIDyn, Test
     @testset "setUpTmpWFAndRun" begin
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
-        wind, sim, con, floris, floridyn = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta = setup(settings_file)
         # create settings struct
         set = Settings(wind, sim, con)
-        # % Load linked data
-        turbine_prop        = turbineArrayProperties(settings_file)
-        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_prop, sim)
+        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf.dep = findTurbineGroups(wf, floridyn)
         wf.intOPs = interpolateOPs(wf)
         wf_old = deepcopy(wf)
@@ -150,12 +139,10 @@ using FLORIDyn, Test
         global md
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
-        wind, sim, con, floris, floridyn = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta = setup(settings_file)
         # create settings struct
         set = Settings(wind, sim, con)
-        # % Load linked data
-        turbine_prop        = turbineArrayProperties(settings_file)
-        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_prop, sim)
+        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf, md, mi = runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
         @test size(md) == (2709, 6) # from Matlab
         @test minimum(md.ForeignReduction) ≈ 72.57019949691814 # Matlab: 73.8438
