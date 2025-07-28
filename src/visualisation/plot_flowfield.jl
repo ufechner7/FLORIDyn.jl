@@ -173,7 +173,8 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
             figure = "Effective Wind Speed"
         end
         title = figure
-        fig = plt.figure(figure)
+        n = 0.84
+        fig = plt.figure(figure, figsize=(7.25n, 6n))
         vmin = 2.0; vmax = 10.0; n=40
         levels = range(vmin, stop=vmax, length=n+1)
         contour_plot = plt.contourf(my, mx, mz_2d, n; levels, cmap="inferno") # 40 levels, no lines
@@ -209,12 +210,12 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
         # Plot the OPs
         # Plot all points with size 5 and white filled marker
         n = 20
-        plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=5, color="white", marker="o")
+        plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=2, color="white", marker="o")
         plt.xlim(0, 3000)
         plt.ylim(0, 3000)
 
         # Plot every 10th point with size 15 and white filled marker
-        plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=15, color="white", marker="o")
+        plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=6, color="white", marker="o")
         
         plt.xlim(0, 3000)
         plt.ylim(0, 3000)
