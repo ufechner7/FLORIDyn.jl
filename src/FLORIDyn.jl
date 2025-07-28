@@ -9,6 +9,7 @@ module FLORIDyn
 # using ControlPlots
 
 using PrecompileTools: @setup_workload, @compile_workload
+using LaTeXStrings
 import DocStringExtensions
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2

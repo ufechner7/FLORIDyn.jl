@@ -132,7 +132,7 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris)
 end
 
 """
-    plotFlowField(mx::Matrix, my::Matrix, mz::Array{Float64,3}; measurement_idx=1, title="Flow Field")
+    plotFlowField(mx::Matrix, my::Matrix, mz::Array{Float64,3}; msr=1, title="Flow Field")
 
 Plot a 2D contour of the flow field data.
 
@@ -140,7 +140,7 @@ Plot a 2D contour of the flow field data.
 - `mx::Matrix`: X-coordinate grid
 - `my::Matrix`: Y-coordinate grid  
 - `mz::Array{Float64,3}`: 3D array of measurements with dimensions (rows, cols, nM)
-- `measurement_idx::Int`: Which measurement to plot (1, 2, or 3). Default is 1.
+- `msr::Int`: Which measurement to plot (1, 2, or 3). Default is 3.
 - `title::String`: Plot title. Default is "Flow Field".
 
 # Returns
@@ -154,32 +154,34 @@ The measurement indices typically correspond to:
 
 This function requires a plotting package like PyPlot.jl to be loaded and available as `plt`.
 """
-function plotFlowField(plt, mx, my, mz; measurement_idx=1, title="Flow Field", unit_test=false)
+function plotFlowField(plt, mx, my, mz; msr=3, title="Flow Field", unit_test=false)
     # Extract the 2D slice for the specified measurement
-    if measurement_idx > size(mz, 3)
-        error("measurement_idx ($measurement_idx) exceeds number of measurements ($(size(mz, 3)))")
+    if msr > size(mz, 3)
+        error("msr ($msr) exceeds number of measurements ($(size(mz, 3)))")
     end
     
     # Get the 2D slice
-    mz_2d = mz[:, :, measurement_idx]
+    mz_2d = mz[:, :, msr]
     
     # Try to use PyPlot if available
     try
         # This will work if PyPlot is loaded and plt is available
-        if measurement_idx == 1
+        if msr == 1
             figure = "Velocity Reduction"
-        elseif measurement_idx == 2
+        elseif msr == 2
             figure = "Added Turbulence"
-        elseif measurement_idx == 3
+        elseif msr == 3
             figure = "Effective Wind Speed"
         end
         fig = plt.figure(figure)
-        contour_plot = plt.contourf(mx, my, mz_2d, 40) # 40 levels, no lines
+        contour_plot = plt.contourf(my, mx, mz_2d, 40) # 40 levels, no lines
         plt.axis("equal")
-        plt.colorbar()
+        cb = plt.colorbar()
+        cb[:set_label](L"Wind speed~[ms^{-1}]", labelpad=10)
         plt.title(title)
         plt.xlabel("X [m]")
         plt.ylabel("Y [m]")
+        plt.tight_layout()
         println("Contour plot created successfully")
         if unit_test
             plt.pause(2)
