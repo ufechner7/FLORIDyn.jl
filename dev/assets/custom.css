@@ -1,0 +1,4 @@
+img {
+  max-width: 70%; /* or fixed width like 200px */
+  height: auto;
+}
