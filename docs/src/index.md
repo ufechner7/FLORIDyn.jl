@@ -15,14 +15,16 @@ His code uses the gaussian wake model from the quasi static wind farm simulation
 - Apply heterogeneous and time-varying wind speeds and directions
 - Test different modeling approaches
 
-## Status
+![Flow Field](flowfield.png)
+
+## Status:
 The basic example works.
 ```julia
 include("examples/main.jl")
 ```
 ### TODO:
-- implement the visualization
-- add more unit tests
+- implement more plots
+- add missing unit tests
 - implement the missing functions
 
 A Python version of FLORIDyn is available at [https://github.com/TUDelft-DataDrivenControl/OFF](https://github.com/TUDelft-DataDrivenControl/OFF) .
