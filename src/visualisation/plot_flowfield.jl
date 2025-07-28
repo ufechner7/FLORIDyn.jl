@@ -211,14 +211,14 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
         # Plot all points with size 5 and white filled marker
         n = 20
         plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=2, color="white", marker="o")
-        plt.xlim(0, 3000)
-        plt.ylim(0, 3000)
+        plt.xlim(minimum(mx), maximum(mx))
+        plt.ylim(minimum(mx), maximum(mx))
 
         # Plot every 10th point with size 15 and white filled marker
         plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=6, color="white", marker="o")
         
-        plt.xlim(0, 3000)
-        plt.ylim(0, 3000)
+        plt.xlim(minimum(mx), maximum(mx))
+        plt.ylim(minimum(mx), maximum(mx))
         plt.title(title)
         plt.xlabel("West-East [m]")
         plt.ylabel("South-North [m]")
