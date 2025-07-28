@@ -174,15 +174,15 @@ function plotFlowField(plt, mx, my, mz; msr=3, unit_test=false)
         end
         title = figure
         fig = plt.figure(figure)
-        vmin = 0.0; vmax = 10.0; n=40
+        vmin = 2.0; vmax = 10.0; n=40
         levels = range(vmin, stop=vmax, length=n+1)
-        contour_plot = plt.contourf(my, mx, mz_2d, n; levels) # 40 levels, no lines
+        contour_plot = plt.contourf(my, mx, mz_2d, n; levels, cmap="inferno") # 40 levels, no lines
         plt.axis("equal")
         cb = plt.colorbar()
-        cb[:set_label](L"Wind speed~[ms^{-1}]", labelpad=10)
+        cb[:set_label](L"Wind speed~[ms^{-1}]", labelpad=3)
         plt.title(title)
-        plt.xlabel("X [m]")
-        plt.ylabel("Y [m]")
+        plt.xlabel("West-East [m]")
+        plt.ylabel("South-North [m]")
         plt.tight_layout()
         println("Contour plot created successfully")
         if unit_test
