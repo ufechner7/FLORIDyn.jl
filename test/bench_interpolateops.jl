@@ -15,19 +15,19 @@ function create_test_setup()
     set = Settings(wind, sim, con)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     
-    return wf, sim, floris, floridyn, set
+    return wf, wind, sim, con, floris, floridyn, ta, set
 end
 
-    
-wf, sim, floris, floridyn, set = create_test_setup()
+
+wf, wind, sim, con, floris, floridyn, ta, set = create_test_setup()
 wf_original = deepcopy(wf)
 
-wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_prop, sim)
+wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 wf.dep = findTurbineGroups(wf, floridyn)
 t = @benchmark  wf.intOPs = interpolateOPs(wf)
 
 time = mean(t.times)/1e9
-rel_time = time * 301 / 0.115  # Relative to the total time of 0.115 seconds
-println("Benchmark time: $time seconds, relative to 0.115s: $(round(rel_time * 100, digits=2)) %")
+rel_time = time * 301 / 0.08  # Relative to the total time of 0.08 seconds
+println("Benchmark time: $time seconds, relative to 0.08s: $(round(rel_time * 100, digits=2)) %")
 
 # Benchmark time: 1.99795341e-5 seconds, relative to 0.115s: 5.23 %
