@@ -26,7 +26,7 @@ to indicate that the wind velocity does not vary in space or time.
 struct Velocity_Constant <: VelModel end
 
 """
-    Velocity_Constant_wErrorCov
+    Velocity_Constant_wErrorCov <: VelModel
 
 A velocity model representing a constant wind field with associated 
 error covariance. This struct is a subtype of `VelModel` and is used 
@@ -39,7 +39,7 @@ for uncertainty quantification.
 struct Velocity_Constant_wErrorCov <: VelModel end
 
 """
-    Velocity_EnKF_InterpTurbine
+    Velocity_EnKF_InterpTurbine <: VelModel
 
 A velocity model type representing an interpolated turbine velocity field using the 
 Ensemble Kalman Filter (EnKF) approach.
