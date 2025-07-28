@@ -228,7 +228,21 @@ function setup(filename)
     floris = convertdict(Floris, floris_data)
     floridyn_data = data["floridyn"]
     floridyn = convertdict(FloriDyn, floridyn_data)
-    wind, sim, con, floris, floridyn
+    turbines = data["turbines"]
+
+    # Extract Position: x, y, z
+    pos = [Float64[t["x"], t["y"], t["z"]] for t in turbines]
+    pos = reduce(vcat, [p' for p in pos])  # transpose and concatenate into matrix (9×3)
+
+    # Extract Type
+    type = [String(t["type"]) for t in turbines]
+
+    # Extract Init States: a, yaw, ti
+    init_states = [Float64[t["a"], t["yaw"], t["ti"]] for t in turbines]
+    init_states = reduce(vcat, [s' for s in init_states])  # transpose and concatenate
+
+    ta = TurbineArray(pos, type, init_states)
+    wind, sim, con, floris, floridyn, ta
 end
 
 """
