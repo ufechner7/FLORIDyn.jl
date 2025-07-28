@@ -91,15 +91,15 @@ function turbineArrayProperties(filepath::String)
     turbines = data["turbines"]
 
     # Extract Position: x, y, z
-    Pos = [Float64[t["x"], t["y"], t["z"]] for t in turbines]
-    Pos = reduce(vcat, [p' for p in Pos])  # transpose and concatenate into matrix (9×3)
+    pos = [Float64[t["x"], t["y"], t["z"]] for t in turbines]
+    pos = reduce(vcat, [p' for p in pos])  # transpose and concatenate into matrix (9×3)
 
     # Extract Type
-    Type = [String(t["type"]) for t in turbines]
+    type = [String(t["type"]) for t in turbines]
 
     # Extract Init States: a, yaw, ti
-    Init_States = [Float64[t["a"], t["yaw"], t["ti"]] for t in turbines]
-    Init_States = reduce(vcat, [s' for s in Init_States])  # transpose and concatenate
+    init_states = [Float64[t["a"], t["yaw"], t["ti"]] for t in turbines]
+    init_states = reduce(vcat, [s' for s in init_states])  # transpose and concatenate
 
-    return TurbineArray(Pos, Type, Init_States)
+    return TurbineArray(pos, type, init_states)
 end
