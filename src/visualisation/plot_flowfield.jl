@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Marcus Becker, Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
 """
     getMeasurements(mx::Matrix, my::Matrix, nM::I        # Update StartI to include the grid point
         GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
