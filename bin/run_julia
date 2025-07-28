@@ -8,4 +8,4 @@ function globaldependencies()
 end
 if ! ("TerminalPager" in globaldependencies()); Pkg.add("TerminalPager"); end'
 # run Julia single threaded
-julia --project --gcthreads=1,0
+julia --project --gcthreads=1,0 -i -e 'using FLORIDyn'
