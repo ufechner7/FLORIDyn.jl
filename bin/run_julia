@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Install TerminalPager globally, if not yet installed
+# Install TerminalPager and Timers globally, if not yet installed
 julia -e 'using Pkg;
 function globaldependencies()
     globaldependencies = keys(Pkg.project().dependencies)
