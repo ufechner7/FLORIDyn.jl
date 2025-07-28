@@ -34,7 +34,8 @@ Single thread version
 function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
     size_mx = size(mx)
     mz = zeros(size_mx[1], size_mx[2], nM)
-    
+    @info size(mz)
+    @info length(mx)
     # Single-threaded loop (can be parallelized with @threads or Distributed.@distributed)
     for iGP in 1:length(mx)
         xGP = mx[iGP]
@@ -68,23 +69,23 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         GP.States_OP = wf.States_OP
         GP.posBase = vcat(wf.posBase, reshape([xGP, yGP, 0.0], 1, 3))  # Add grid point position
         GP.nOP = wf.nOP
-        GP.intOPs = interpolateOPs(GP)
+    #     GP.intOPs = interpolateOPs(GP)
         
-        GP.posNac = vcat(wf.posNac, reshape([0.0, 0.0, zh], 1, 3))  # Add grid point nacelle position
-        GP.States_WF = wf.States_WF
-        GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))  # Add row for grid point
-        GP.D = vcat(wf.D, [0.0])  # Add 0 diameter for grid point (it's not a real turbine)
+    #     GP.posNac = vcat(wf.posNac, reshape([0.0, 0.0, zh], 1, 3))  # Add grid point nacelle position
+    #     GP.States_WF = wf.States_WF
+    #     GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))  # Add row for grid point
+    #     GP.D = vcat(wf.D, [0.0])  # Add 0 diameter for grid point (it's not a real turbine)
         
-        tmpM, _ = setUpTmpWFAndRun(set, GP, floris, wind)
+    #     tmpM, _ = setUpTmpWFAndRun(set, GP, floris, wind)
         
-        # Extract only the result for the grid point (last "turbine")
-        gridPointResult = tmpM[end, :]
+    #     # Extract only the result for the grid point (last "turbine")
+    #     gridPointResult = tmpM[end, :]
         
-        # Convert linear index to subscripts
-        rw, cl = divrem(iGP - 1, size_mx[1])
-        rw += 1
-        cl += 1
-        mz[rw, cl, 1:3] = gridPointResult
+    #     # Convert linear index to subscripts
+    #     rw, cl = divrem(iGP - 1, size_mx[1])
+    #     rw += 1
+    #     cl += 1
+    #     mz[rw, cl, 1:3] = gridPointResult
     end
     
     return mz
@@ -124,7 +125,10 @@ function plotFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris)
     zh = wf.posNac[1, 3]
     
     # Get data
+    println(size(X), size(Y))
+    println("nM: ", nM, " zh: ", zh)
     Z = getMeasurements(X, Y, nM, zh, wf, set, floris, wind)
+    # Z = nothing
     
     return Z, X, Y
 end

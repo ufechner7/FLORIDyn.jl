@@ -60,8 +60,8 @@ end
             # Get test parameters
             wf, set, floris, wind = get_parameters()
             
-            # # Call the plotFlowField function
-            # Z, X, Y = plotFlowField(set, wf, wind, floris)
+            # Call the plotFlowField function
+            Z, X, Y = plotFlowField(set, wf, wind, floris)
             
             # # Test that outputs have the correct types
             # @test isa(Z, Array{Float64,3})
