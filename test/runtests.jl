@@ -54,5 +54,6 @@ FLORIDyn.set_rng(rng)
     include("test_iterate.jl")
     include("test_settings.jl")
     include("test_controller.jl")
+    include("test_visualisation.jl")
     include("aqua.jl")
 end
