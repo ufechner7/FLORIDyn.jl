@@ -14,6 +14,7 @@ Wind
 Con
 Floris
 FloriDyn
+TurbineArray
 ```
 
 # Settings
