@@ -6,7 +6,7 @@
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 ## Introduction
-A dynamic wind farm simulation software, translated from https://github.com/TUDelft-DataDrivenControl/FLORIDyn_Matlab, which was written by Marcus Becker.
+A dynamic wind farm simulation software, translated from [FLORIDyn_Matlab](https://github.com/TUDelft-DataDrivenControl/FLORIDyn_Matlab), which was written by Marcus Becker.
 
 His code uses the gaussian wake model from the quasi static wind farm simulation software [FLORIS](https://github.com/NREL/floris), developed by NREL.
 
@@ -21,12 +21,12 @@ The basic example works.
 ```julia
 include("examples/main.jl")
 ```
-### TODO
+### TODO:
 - implement the visualization
 - add more unit tests
 - implement the missing functions
 
-A Python version of FLORIDyn is available at https://github.com/TUDelft-DataDrivenControl/OFF .
+A Python version of FLORIDyn is available at [https://github.com/TUDelft-DataDrivenControl/OFF](https://github.com/TUDelft-DataDrivenControl/OFF) .
 
 ## Installation
 Install [Julia 1.10](https://ufechner7.github.io/2024/08/09/installing-julia-with-juliaup.html) or later, if you haven't already.
