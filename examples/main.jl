@@ -16,9 +16,9 @@ wind, sim, con, floris, floridyn = setup(settings_file)
 set = Settings(wind, sim, con)
 
 # % Load linked data
-turbProp        = turbineArrayProperties(settings_file)
+turbine_array        = turbineArrayProperties(settings_file)
 
-wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim)
+wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, turbine_array, sim)
 
 # Run initial conditions until no more change happens (wrong comment in original code)
 wf = initSimulation(wf, sim)

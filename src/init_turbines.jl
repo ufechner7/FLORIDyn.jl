@@ -1,6 +1,12 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+struct TurbineArray
+    Pos::Matrix{Float64}
+    Type::Vector{String}
+    Init_States::Matrix{Float64}
+end
+
 """
     turbineArrayProperties(filepath::String)
 
@@ -34,9 +40,5 @@ function turbineArrayProperties(filepath::String)
     Init_States = [Float64[t["a"], t["yaw"], t["ti"]] for t in turbines]
     Init_States = reduce(vcat, [s' for s in Init_States])  # transpose and concatenate
 
-    return (
-        Pos = Pos,
-        Type = Type,
-        Init_States = Init_States
-    )
+    return TurbineArray(Pos, Type, Init_States)
 end
