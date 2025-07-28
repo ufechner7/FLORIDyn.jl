@@ -107,20 +107,20 @@ end
             # Get test parameters
             wf, set, floris, wind = get_parameters()
             
-            # # Call the function
-            # Z, X, Y = plotFlowField(set, wf, wind, floris)
+            # Call the function
+            Z, X, Y = plotFlowField(set, wf, wind, floris)
             
-            # # Test coordinate range
-            # @test minimum(X) >= 0.0
-            # @test maximum(X) <= 3000.0
-            # @test minimum(Y) >= 0.0  
-            # @test maximum(Y) <= 3000.0
+            # Test coordinate range
+            @test minimum(X) >= 0.0
+            @test maximum(X) <= 3000.0
+            @test minimum(Y) >= 0.0  
+            @test maximum(Y) <= 3000.0
             
-            # # Test that coordinates are within expected bounds
-            # @test all(X .>= 0.0)
-            # @test all(X .<= 3000.0)
-            # @test all(Y .>= 0.0)
-            # @test all(Y .<= 3000.0)
+            # Test that coordinates are within expected bounds
+            @test all(X .>= 0.0)
+            @test all(X .<= 3000.0)
+            @test all(Y .>= 0.0)
+            @test all(Y .<= 3000.0)
         end
     end
 
