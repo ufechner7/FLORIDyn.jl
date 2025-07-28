@@ -537,7 +537,7 @@ The function supports optional wind field interpolation via coefficient matrices
                 wind.shear
             )
             M[iT, :] = [T_red_arr, 0, T_red_arr *wf.States_WF[wf.StartI[iT], 1]]
-           wf.red_arr[iT, iT] = T_red_arr
+            wf.red_arr[iT, iT] = T_red_arr
             continue
         end
 
