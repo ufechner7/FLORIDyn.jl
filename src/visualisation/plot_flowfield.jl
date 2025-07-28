@@ -141,20 +141,19 @@ Plot a 2D contour of the flow field data.
 - `my::Matrix`: Y-coordinate grid  
 - `mz::Array{Float64,3}`: 3D array of measurements with dimensions (rows, cols, nM)
 - `msr::Int`: Which measurement to plot (1, 2, or 3). Default is 3.
-- `title::String`: Plot title. Default is "Flow Field".
 
 # Returns
 - `nothing`
 
 # Note
-The measurement indices typically correspond to:
+The measurement indices correspond to:
 - 1: Velocity reduction
 - 2: Added turbulence  
 - 3: Effective wind speed
 
 This function requires a plotting package like PyPlot.jl to be loaded and available as `plt`.
 """
-function plotFlowField(plt, mx, my, mz; msr=3, title="Flow Field", unit_test=false)
+function plotFlowField(plt, mx, my, mz; msr=3, unit_test=false)
     # Extract the 2D slice for the specified measurement
     if msr > size(mz, 3)
         error("msr ($msr) exceeds number of measurements ($(size(mz, 3)))")
@@ -175,7 +174,9 @@ function plotFlowField(plt, mx, my, mz; msr=3, title="Flow Field", unit_test=fal
         end
         title = figure
         fig = plt.figure(figure)
-        contour_plot = plt.contourf(my, mx, mz_2d, 40) # 40 levels, no lines
+        vmin = 0.0; vmax = 10.0; n=40
+        levels = range(vmin, stop=vmax, length=n+1)
+        contour_plot = plt.contourf(my, mx, mz_2d, n; levels) # 40 levels, no lines
         plt.axis("equal")
         cb = plt.colorbar()
         cb[:set_label](L"Wind speed~[ms^{-1}]", labelpad=10)
