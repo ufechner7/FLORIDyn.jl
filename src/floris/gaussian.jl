@@ -408,9 +408,8 @@ function getVars(rps::Union{Matrix, Adjoint}, c_t, yaw, ti, ti0, floris::Floris,
 
     # Intermediate term
     term = 1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (d_rotor.^2 .* cos.(yaw)))
-
-    delta_fw_2 = log.(((1.6 .+ sqrt.(c_t)) .* (term .- sqrt.(c_t))) ./ 
-                      ((1.6 .- sqrt.(c_t)) .* (term .+ sqrt.(c_t))))
+    arg = (1.6 .+ sqrt.(c_t)) .* (term .- sqrt.(c_t)) ./ ((1.6 .- sqrt.(c_t)) .* (term .+ sqrt.(c_t)))
+    delta_fw_2 = log.(max.(eps(), arg))
 
     # Condition mask: OPdw > x_0 => 1.0, else 0.0
     mask = (OPdw .> x_0)
