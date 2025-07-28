@@ -31,7 +31,7 @@ toc()
 # @info "Type 'q' to exit the pager."
 
 tic()
-@time Z, X, Y = plotFlowField(set, wf, wind, floris)
-plotFF(plt, X, Y, Z)
+@time Z, X, Y = calcFlowField(set, wf, wind, floris)
+plotFlowField(plt, X, Y, Z)
 toc()
 nothing
