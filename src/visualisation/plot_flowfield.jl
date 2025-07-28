@@ -153,7 +153,7 @@ The measurement indices correspond to:
 
 This function requires a plotting package like PyPlot.jl to be loaded and available as `plt`.
 """
-function plotFlowField(plt, mx, my, mz; msr=3, unit_test=false)
+function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
     # Extract the 2D slice for the specified measurement
     if msr > size(mz, 3)
         error("msr ($msr) exceeds number of measurements ($(size(mz, 3)))")
@@ -180,6 +180,32 @@ function plotFlowField(plt, mx, my, mz; msr=3, unit_test=false)
         plt.axis("equal")
         cb = plt.colorbar()
         cb[:set_label](L"Wind speed~[ms^{-1}]", labelpad=3)
+        ###
+        for i_T in 1:length(wf.D)
+            # Compute yaw angle
+            yaw = angSOWFA2world(wf.States_WF[wf.StartI[i_T], 2] - wf.States_T[wf.StartI[i_T], 2])
+
+            # Rotation matrix
+            R = [cos(yaw) -sin(yaw);
+                sin(yaw) cos(yaw)]
+
+            # Define rotor line endpoints before rotation (z ignored here)
+            # Two points: (0, D/2) and (0, -D/2) along the vertical axis in local coords
+            rotor_points = [0 0;
+                            wf.D[i_T]/2 -wf.D[i_T]/2]
+
+            # Apply rotation
+            rot_pos = R * rotor_points
+
+            # Add base position coordinates (broadcast)
+            base_pos = wf.posBase[i_T, 1:2]  # (x,y)
+            rot_pos .+= base_pos
+
+            # Plot in 3D at height z=20 for both points
+            ax = plt.gca()
+            ax.plot(rot_pos[1, :], rot_pos[2, :], [20, 20], color="k", linewidth=3)
+        end
+        ###
         plt.title(title)
         plt.xlabel("West-East [m]")
         plt.ylabel("South-North [m]")
