@@ -166,7 +166,14 @@ function plotFF(mx, my, mz; measurement_idx=1, title="Flow Field")
     # Try to use PyPlot if available
     try
         # This will work if PyPlot is loaded and plt is available
-        plt.figure()
+        if measurement_idx == 1
+            figure = "Velocity Reduction"
+        elseif measurement_idx == 2
+            figure = "Added Turbulence"
+        elseif measurement_idx == 3
+            figure = "Effective Wind Speed"
+        end
+        plt.figure(figure)
         contour_plot = plt.contourf(mx, my, mz_2d, 40) # 40 levels, no lines
         plt.axis("equal")
         plt.colorbar()
