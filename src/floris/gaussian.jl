@@ -4,18 +4,18 @@
 """
     calcCt(a, _)
 
-Calculate the thrust coefficient (Ct) for a wind turbine based on the axial induction factor `a`.
+Calculate the thrust coefficient `ct` for a wind turbine based on the axial induction factor `a`.
 
 # Arguments
-- `a::Number`: Axial induction factor, typically between 0 and 0.5.
+- `a`: Axial induction factor, typically between 0 and 0.5 (can be a scalar or vector)
 - _: unused parameter
 
 # Returns
-- `Ct::Number`: The calculated thrust coefficient.
+- ` ct::Number`: The calculated thrust coefficient.
 """
 @inline function calcCt(a, _)
-    Ct = 4 .* a .* (1 .- a)
-    return Ct
+    ct = 4 .* a .* (1 .- a)
+    return ct
 end
 
 """
