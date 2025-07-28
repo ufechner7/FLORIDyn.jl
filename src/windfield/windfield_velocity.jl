@@ -1,82 +1,84 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+# Functions to calculate the wind velocity depending on time and location.
+
 """
-    getWindSpeedT(::Velocity_Constant, WindVel::Number, iT, _)
+    getWindSpeedT_EnKF(::Velocity_EnKF_InterpTurbine, wind_vel::Matrix, iT, t)
+
+Returns the wind speed at the turbine index or indices `iT` at time `t`, using linear interpolation of the measurement table `wind_vel`. 
+
+- wind_vel: A matrix of size (ntimes, nturbines+1). First column is time, rest are wind speeds for each turbine.
+- iT: Index or array of indices of turbines for output.
+- t: Time at which to query wind speed.
+"""
+function getWindSpeedT_EnKF(::Velocity_EnKF_InterpTurbine, wind_vel::Matrix, iT, t)
+    times = wind_vel[:, 1]
+    n_turbines = size(wind_vel, 2) - 1
+
+    # Clamp t to within the bounds of available times
+    if t < times[1]
+        @warn "The time $t is out of bounds, will use $(times[1]) instead."
+        t = times[1]
+    elseif t > times[end]
+        @warn "The time $t is out of bounds, will use $(times[end]) instead."
+        t = times[end]
+    end
+
+    # Prepare interpolation for each turbine
+    U_out = similar(wind_vel[1, 2:end])
+    for j in 1:n_turbines
+        itp = linear_interpolation(times, wind_vel[:, j+1], extrapolation_bc=Flat())
+        U_out[j] = itp(t)
+    end
+
+    return U_out[iT]
+end
+
+"""
+    getWindSpeedT(::Velocity_Constant, wind_vel::Number, iT, _)
 
 Returns the wind speed at a given time index `iT` for a constant velocity wind field.
 
 # Arguments
 - `::Velocity_Constant`: Type indicator for constant wind velocity.
-- `WindVel::Number`: The scalar wind velocity.
+- `wind_vel::Number`: The scalar wind velocity.
 - `iT`: Single value or array with turbine index/indices.
 - `_`: unused
 
 # Returns
 - The wind speed for the respective turbine(s), scalar or vector.
 """
-function getWindSpeedT(::Velocity_Constant, WindVel, iT, _)
+function getWindSpeedT(::Velocity_Constant, wind_vel, iT, _)
     if isa(iT, AbstractArray)
-        return WindVel .* ones(eltype(WindVel), size(iT))
+        return wind_vel .* ones(eltype(wind_vel), size(iT))
     else
-        return WindVel
+        return wind_vel
     end
 end
 
 """
-    getWindSpeedT(::Velocity_Constant_wErrorCov, WindVel::WindVelType, iT, _)
+    getWindSpeedT(::Velocity_Constant_wErrorCov, wind_vel::WindVelType, iT, _)
 
 Compute the wind speed at a given time step `iT` using a constant velocity model with error covariance.
 
 # Arguments
 - `::Velocity_Constant_wErrorCov`: Type indicating the constant velocity model with error covariance.
-- `WindVel::WindVelType`: [WindVelType](@ref)
+- `wind_vel::WindVelType`: [WindVelType](@ref)
 - `iT`: Scalar or array of turbine indices
 - `_`: Placeholder for additional arguments (unused).
 
 # Returns
 - The wind speed at the respective turbine(s)
 """
-function getWindSpeedT(::Velocity_Constant_wErrorCov, WindVel::WindVelType, iT)
-    # Create a vector of the same size as iT filled with WindVel.Data
-    Vel = fill(WindVel.Data, length(iT))
+function getWindSpeedT(::Velocity_Constant_wErrorCov, wind_vel::WindVelType, iT)
+    # Create a vector of the same size as iT filled with wind_vel.Data
+    Vel = fill(wind_vel.Data, length(iT))
 
-    # Add Gaussian noise scaled by WindVel.CholSig
-    Vel .+= (randn(RNG, 1, length(Vel)) * WindVel.CholSig)'
+    # Add Gaussian noise scaled by wind_vel.CholSig
+    Vel .+= (randn(RNG, 1, length(Vel)) * wind_vel.CholSig)'
 
     return Vel
-end
-
-using Interpolations
-
-"""
-    getWindSpeedT_EnKF(::Velocity_EnKF_InterpTurbine, WindVel::Matrix, iT, t)
-
-Returns the wind speed at the turbine index or indices `iT` at time `t`, using linear interpolation of the measurement table `WindVel`. 
-
-- WindVel: A matrix of size (ntimes, nturbines+1). First column is time, rest are wind speeds for each turbine.
-- iT: Index or array of indices of turbines for output.
-- t: Time at which to query wind speed.
-"""
-function getWindSpeedT_EnKF(::Velocity_EnKF_InterpTurbine, WindVel::Matrix, iT, t)
-    times  = WindVel[:, 1]
-    speeds = WindVel[:, 2:end]  # size: (N_time, N_turbines)
-
-    # Clamp time to in-bounds with warning
-    mint, maxt = times[1], times[end]
-    if t < mint
-        @warn "The time $t is out of bounds, will use $mint instead."
-        t = mint
-    elseif t > maxt
-        @warn "The time $t is out of bounds, will use $maxt instead."
-        t = maxt
-    end
-
-    # Interpolate each turbine column independently
-    wind_at_t = [linear_interpolation(times, speeds[:, j], extrapolation_bc=Flat())(t) for j in 1:size(speeds, 2)]
-
-    # Select desired turbine(s)
-    return wind_at_t[iT]
 end
 
 mutable struct TurbineProps
@@ -154,77 +156,77 @@ function WindSpeedEstimatorIandI_FLORIDyn(WSE, Rotor_Speed, Blade_pitch, Gen_Tor
     return WSE.V, WSE
 end
 
-function getWindSpeedT(::Velocity_I_and_I, WindVel, iT, SimTime, WindDir, p_p)
+function getWindSpeedT(::Velocity_I_and_I, wind_vel, iT, t, wind_dir, p_p)
     # Returns the wind speed at the respective turbine(s)
     # iT        = single value or array with turbine index/indices
-    # WindVel   = Data for I&I wind speed estimator
-    # SimTime   = Current simulation time
+    # wind_vel   = Data for I&I wind speed estimator
+    # t   = Current simulation time
     # Returns:
     # U         = Velocity
-    # WindVel   = Updated struct for I&I estimator
+    # wind_vel   = Updated struct for I&I estimator
     
-    if SimTime == WindVel.StartTime
-        U = WindVel.WSE.V[iT]
-        return U, WindVel
+    if t == wind_vel.StartTime
+        U = wind_vel.WSE.V[iT]
+        return U, wind_vel
     end
 
     # Calculate current and previous index
-    indCurr = round(Int, (SimTime - WindVel.StartTime) / WindVel.WSE.dt_SOWF)
-    indPrev = Int((WindVel.TimePrev - WindVel.StartTime) / WindVel.WSE.dt_SOWF + 1)
+    indCurr = round(Int, (t - wind_vel.StartTime) / wind_vel.WSE.dt_SOWF)
+    indPrev = Int((wind_vel.TimePrev - wind_vel.StartTime) / wind_vel.WSE.dt_SOWF + 1)
 
     # Number of Turbines
-    nT = WindVel.WSE.nT
+    nT = wind_vel.WSE.nT
 
     # Run I&I estimator from last time step to current one
     for i in indPrev:indCurr
         try
             idx = (1:nT) .+ nT * (i-1)
-            Rotor_Speed = WindVel.WSE.rotorSpeed[idx, 3]
+            Rotor_Speed = wind_vel.WSE.rotorSpeed[idx, 3]
         catch
             println("Failed to get Wind Speed")
             # Optionally break or continue, depending on the desired error handling
         end
-        Blade_pitch = WindVel.WSE.bladePitch[idx, 3]
-        Gen_Torque  = WindVel.WSE.genTorque[idx, 3]
+        Blade_pitch = wind_vel.WSE.bladePitch[idx, 3]
+        Gen_Torque  = wind_vel.WSE.genTorque[idx, 3]
 
-        yaw = deg2rad.(WindDir .- WindVel.WSE.nacelleYaw[idx, 3])
+        yaw = deg2rad.(wind_dir .- wind_vel.WSE.nacelleYaw[idx, 3])
 
         # Run estimator (assumes WindSpeedEstimatorIandI_FLORIDyn is implemented elsewhere)
-        V_out, WindVel.WSE = WindSpeedEstimatorIandI_FLORIDyn(
-            WindVel.WSE, Rotor_Speed, Blade_pitch, Gen_Torque, yaw, p_p
+        V_out, wind_vel.WSE = WindSpeedEstimatorIandI_FLORIDyn(
+            wind_vel.WSE, Rotor_Speed, Blade_pitch, Gen_Torque, yaw, p_p
         )
     end
 
     # Update previous time
-    WindVel.TimePrev = indCurr * WindVel.WSE.dt_SOWF + WindVel.StartTime
+    wind_vel.TimePrev = indCurr * wind_vel.WSE.dt_SOWF + wind_vel.StartTime
 
-    if (SimTime - WindVel.StartTime) > WindVel.WSE.Offset
-        U = WindVel.WSE.V[iT]
+    if (t - wind_vel.StartTime) > wind_vel.WSE.Offset
+        U = wind_vel.WSE.V[iT]
     else
-        U = WindVel.WSE.Vinit[iT]
+        U = wind_vel.WSE.Vinit[iT]
     end
 
-    return U, WindVel
+    return U, wind_vel
 end
 
 """
-    getWindSpeedT(::Velocity_Interpolation, WindVel::Matrix{Float64}, iT, t)
+    getWindSpeedT(::Velocity_Interpolation, wind_vel::Matrix{Float64}, iT, t)
 
-Interpolates the wind speed at a given time `t` using the provided wind velocity matrix `WindVel`.
+Interpolates the wind speed at a given time `t` using the provided wind velocity matrix `wind_vel`.
 Uniform interpolation - all turbines experience the same changes.
 
 # Arguments
 - `::Velocity_Interpolation`: Specifies the interpolation strategy to use.
-- `WindVel::Matrix{Float64}`: A 2-column matrix: [time, wind_speed].
+- `wind_vel::Matrix{Float64}`: A 2-column matrix: [time, wind_speed].
 - `iT`: A single index or array of turbine indices.
 - `t`: The requested time at which to interpolate the wind speed.
 
 # Returns
 - Interpolated wind speed at the respective turbine(s).
 """
-function getWindSpeedT(::Velocity_Interpolation, WindVel::Matrix{Float64}, iT, t)
-    times = WindVel[:, 1]
-    speeds = WindVel[:, 2]
+function getWindSpeedT(::Velocity_Interpolation, wind_vel::Matrix{Float64}, iT, t)
+    times = wind_vel[:, 1]
+    speeds = wind_vel[:, 2]
 
     if t < times[1]
         @warn "The time $t is out of bounds, will use $(times[1]) instead."
@@ -242,26 +244,26 @@ function getWindSpeedT(::Velocity_Interpolation, WindVel::Matrix{Float64}, iT, t
 end
 
 """
-    getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatrix, iT, 
+    getWindSpeedT(::Velocity_Interpolation_wErrorCov, wind_vel::WindVelMatrix, iT, 
                   t)
 
 Compute the wind speed at a given time `t` for the specified indices `iT` using the provided wind velocity data 
-`WindVel` and a velocity interpolation method with error covariance. 
+`wind_vel` and a velocity interpolation method with error covariance. 
 Applies the same interpolated value across requested turbine indices.
 Adds random noise from a given Cholesky decomposition matrix.
 
 # Arguments
 - `::Velocity_Interpolation_wErrorCov`: The interpolation method that includes error covariance handling.
-- `WindVel::WindVelMatrix`: See: [WindVelMatrix](@ref)
+- `wind_vel::WindVelMatrix`: See: [WindVelMatrix](@ref)
 - `iT: Index or indices specifying which wind speed(s) to retrieve.
 - `t`: The time at which to interpolate the wind speed.
 
 # Returns
 - The interpolated wind speed(s) at time `t` for the specified indices.
 """
-function getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatrix, iT, t)
-    times = WindVel.Data[:, 1]
-    speeds = WindVel.Data[:, 2]
+function getWindSpeedT(::Velocity_Interpolation_wErrorCov, wind_vel::WindVelMatrix, iT, t)
+    times = wind_vel.Data[:, 1]
+    speeds = wind_vel.Data[:, 2]
 
     # Clamp time within data bounds
     if t < times[1]
@@ -283,16 +285,16 @@ function getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatri
 
     # Add randomness using Cholesky
     # Ensure noise dimensions match both n and CholSig dimensions
-    chol_size = size(WindVel.CholSig, 1)
+    chol_size = size(wind_vel.CholSig, 1)
     if n == chol_size
-        noise = (WindVel.CholSig * randn(RNG, chol_size))[1:n]
+        noise = (wind_vel.CholSig * randn(RNG, chol_size))[1:n]
     else
         # If dimensions don't match, use appropriate subset or scaling
         if n <= chol_size
-            noise = (WindVel.CholSig * randn(RNG, chol_size))[1:n]
+            noise = (wind_vel.CholSig * randn(RNG, chol_size))[1:n]
         else
             # If we need more noise values than CholSig size, repeat the pattern
-            base_noise = WindVel.CholSig * randn(RNG, chol_size)
+            base_noise = wind_vel.CholSig * randn(RNG, chol_size)
             noise = repeat(base_noise, ceil(Int, n/chol_size))[1:n]
         end
     end
@@ -301,23 +303,23 @@ function getWindSpeedT(::Velocity_Interpolation_wErrorCov, WindVel::WindVelMatri
     return Vel
 end
 """
-    getWindSpeedT(::Velocity_InterpTurbine, WindVel::Matrix{Float64}, iT, t)
+    getWindSpeedT(::Velocity_InterpTurbine, wind_vel::Matrix{Float64}, iT, t)
 
 Returns the wind speed at the specific turbine(s) and time.
 The values are interpolated linearly between the set points.
 
 # Arguments
 - `::Velocity_InterpTurbine`: Marker for velocity interpolation at the turbine.
-- `WindVel::Matrix{Float64}`: Matrix where each row is time, U_T0, U_T1, ... U_Tn.
+- `wind_vel::Matrix{Float64}`: Matrix where each row is time, U_T0, U_T1, ... U_Tn.
 - `iT`: Index of the turbine for which the wind speed is requested.
 - `t`: Time at which the wind speed is to be interpolated.
 
 # Returns
 - The interpolated wind speed at the specified turbine(s) and time as a `Float64`.
 """
-function getWindSpeedT(::Velocity_InterpTurbine, WindVel::Matrix{Float64}, iT, t)
-    times = WindVel[:, 1]
-    wind_data = WindVel[:, 2:end]
+function getWindSpeedT(::Velocity_InterpTurbine, wind_vel::Matrix{Float64}, iT, t)
+    times = wind_vel[:, 1]
+    wind_data = wind_vel[:, 2:end]
 
     if t < times[1]
         @warn "The time $t is out of bounds, using $(times[1]) instead."
@@ -334,21 +336,21 @@ function getWindSpeedT(::Velocity_InterpTurbine, WindVel::Matrix{Float64}, iT, t
 end
 
 """
-    getWindSpeedT(::Velocity_InterpTurbine_wErrorCov, WindVel::WindVelMatrix, iT, t)
+    getWindSpeedT(::Velocity_InterpTurbine_wErrorCov, wind_vel::WindVelMatrix, iT, t)
 
 Returns the wind speed at the specified turbine(s) and time `t`,
-including noise based on the covariance structure given in WindVel.
+including noise based on the covariance structure given in wind_vel.
 
 - ::Velocity_InterpTurbine_wErrorCov: Model type indicating interpolation with covariance.
-- WindVel::WindVelMatrix: see [WindVelMatrix](@ref)
+- wind_vel::WindVelMatrix: see [WindVelMatrix](@ref)
 - iT: index or vector of indices of turbines
 - t: time at which to query wind speed
 
 Returns: Vector of wind speeds (with covariance noise) for iT at time t.
 """
-function getWindSpeedT(::Velocity_InterpTurbine_wErrorCov, WindVel::WindVelMatrix, iT, t)
-    times = WindVel.Data[:,1]
-    speeds = WindVel.Data[:,2:end]
+function getWindSpeedT(::Velocity_InterpTurbine_wErrorCov, wind_vel::WindVelMatrix, iT, t)
+    times = wind_vel.Data[:,1]
+    speeds = wind_vel.Data[:,2:end]
 
     # Bounds check (clamp t)
     t_min = times[1]
@@ -372,7 +374,7 @@ function getWindSpeedT(::Velocity_InterpTurbine_wErrorCov, WindVel::WindVelMatri
 
     # Add random error with given covariance (via Cholesky factor)
     # Simulate a noise vector (randn) multiplied by Cholesky factor
-    noise = (WindVel.CholSig * randn(RNG, length(vel)))
+    noise = (wind_vel.CholSig * randn(RNG, length(vel)))
     vel_noisy = vel + noise
     return vel_noisy
 end
