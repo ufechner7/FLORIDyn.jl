@@ -60,6 +60,7 @@ runFLORIDyn
 
 # Visualization
 ```@docs
+getMeasurements
 calcFlowField
 plotFlowField
 ```

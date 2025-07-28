@@ -2,37 +2,66 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    getMeasurements(mx::Matrix, my::Matrix, nM::I        # Update StartI to include the grid point
-        GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
-        # Update arrays to accommodate the additional grid point
-        GP.States_OP = wf.States_OP
-        GP.posBase = vcat(wf.posBase, reshape([xGP, yGP, 0.0], 1, 3))  # Add grid point position
-        GP.nOP = wf.nOP
-        GP.intOPs = interpolateOPs(GP)
-        
-        GP.posNac = vcat(wf.posNac, reshape([0.0, 0.0, zh], 1, 3))  # Add grid point nacelle position
-        GP.States_WF = wf.States_WF
-        GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))  # Add row for grid point
-        GP.D = vcat(wf.D, [0.0])  # Add 0 diameter for grid point (it's not a real turbine), wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
+    getMeasurements(mx::Matrix, my::Matrix, nM::Int, zh::Real, wf::WindFarm, set::Settings, 
+                    floris::Floris, wind::Wind) -> Array{Float64,3}
 
-Wrapper function to disguise the grid points as turbines with one rotor
-point and experience almost the same calculations as the rotor points in
-the simulation.
+Calculate flow field measurements at specified grid points by treating them as virtual turbines.
 
-Single thread version
+This function computes flow field properties (velocity reduction, added turbulence, effective wind speed)
+at grid points by creating virtual turbines at each location and running the FLORIS wake model.
+Each grid point is treated as a turbine that depends on all real turbines in the wind farm,
+allowing wake effects to be captured in the flow field visualization.
 
 # Arguments
-- `mx::Matrix`: X-coordinates of grid points
-- `my::Matrix`: Y-coordinates of grid points  
-- `nM::Int`: Number of measurements
-- `zh::Real`: Hub height
+- `mx::Matrix`: X-coordinates of grid points (m)
+- `my::Matrix`: Y-coordinates of grid points (m)  
+- `nM::Int`: Number of measurements to compute (typically 3)
+- `zh::Real`: Hub height for measurements (m)
 - `wf::WindFarm`: Wind farm object containing turbine data
+  - `wf.nT`: Number of real turbines
+  - `wf.StartI`: Starting indices for turbine data
+  - `wf.posBase`, `wf.posNac`: Turbine positions
+  - `wf.States_*`: Turbine state matrices
 - `set::Settings`: Settings object containing simulation parameters
-- `floris::Floris`: FLORIS model parameters
+- `floris::Floris`: FLORIS model parameters for wake calculations
 - `wind::Wind`: Wind field configuration
 
 # Returns
-- `mz::Array{Float64,3}`: 3D array of measurements with dimensions (size(mx,1), size(mx,2), nM)
+- `mz::Array{Float64,3}`: 3D array of measurements with dimensions `(size(mx,1), size(mx,2), nM)`
+  - `mz[:,:,1]`: Velocity reduction
+  - `mz[:,:,2]`: Added turbulence intensity
+  - `mz[:,:,3]`: Effective wind speed
+
+# Algorithm
+For each grid point:
+1. Creates a temporary wind farm with all original turbines plus one virtual turbine at the grid point
+2. Sets the virtual turbine to depend on all real turbines (to capture wake effects)
+3. Runs the FLORIS simulation to compute wake-affected flow properties
+4. Extracts the result for the virtual turbine position
+
+# Performance Notes
+- Single-threaded implementation (can be parallelized with `@threads` for large grids)
+- Each grid point requires a full wind farm simulation, so computation time scales with grid size
+- Uses `deepcopy` for safety but that is memory-intensive for large wind farms
+
+# Example
+```julia
+# Create a 10x10 grid from 0 to 1000m
+x_range = 0:100:1000
+y_range = 0:100:1000
+mx = repeat(collect(x_range)', length(y_range), 1)
+my = repeat(collect(y_range), 1, length(x_range))
+
+# Calculate 3 measurements at 90m hub height
+mz = getMeasurements(mx, my, 3, 90.0, wind_farm, settings, floris_model, wind_config)
+
+# Extract effective wind speed field
+wind_speed_field = mz[:, :, 3]
+```
+
+# See Also
+- [`calcFlowField`](@ref): Higher-level function that uses this to create complete flow field data
+- [`setUpTmpWFAndRun`](@ref): Underlying simulation function used for each grid point
 """
 function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
     size_mx = size(mx)
@@ -238,8 +267,5 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
             rethrow(e)
         end
     end
-
-
-    
     return nothing
 end
