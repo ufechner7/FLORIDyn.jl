@@ -177,10 +177,11 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
         vmin = 2.0; vmax = 10.0; n=40
         levels = range(vmin, stop=vmax, length=n+1)
         contour_plot = plt.contourf(my, mx, mz_2d, n; levels, cmap="inferno") # 40 levels, no lines
-        plt.axis("equal")
+        #plt.axis("equal")
         cb = plt.colorbar()
         cb[:set_label](L"Wind speed~[ms^{-1}]", labelpad=3)
-        ###
+
+        # Plot the turbine rotors as short, thick lines (as seen from above)
         for i_T in 1:length(wf.D)
             # Compute yaw angle
             yaw = angSOWFA2world(wf.States_WF[wf.StartI[i_T], 2] - wf.States_T[wf.StartI[i_T], 2])
@@ -205,7 +206,14 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
             ax = plt.gca()
             ax.plot(rot_pos[1, :], rot_pos[2, :], [20, 20], color="k", linewidth=3)
         end
-        ###
+        # Plot the OPs
+        # Plot all points with size 5 and white filled marker
+        #plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=5, color="white", marker="o")
+
+        # Plot every 10th point with size 15 and white filled marker
+        # scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=15, color="white", marker="o")
+        
+        # plt.xlim(0, 3000)
         plt.title(title)
         plt.xlabel("West-East [m]")
         plt.ylabel("South-North [m]")
