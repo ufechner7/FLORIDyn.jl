@@ -16,6 +16,8 @@ His code uses the gaussian wake model from the quasi static wind farm simulation
 - Apply heterogeneous and time-varying wind speeds and directions
 - Test different modeling approaches
 
+<p align="center"><img src="https://github.com/ufechner7/FLORIDyn.jl/blob/main/docs/src/flowfield.png?raw=true" width="500" /></p>
+
 ## Status:
 The basic example works.
 ```julia
