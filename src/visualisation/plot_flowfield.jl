@@ -1,5 +1,16 @@
 """
-    getMeasurements(mx::Matrix, my::Matrix, nM::Int, zh::Real, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
+    getMeasurements(mx::Matrix, my::Matrix, nM::I        # Update StartI to include the grid point
+        GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
+        # Update arrays to accommodate the additional grid point
+        GP.States_OP = wf.States_OP
+        GP.posBase = vcat(wf.posBase, reshape([xGP, yGP, 0.0], 1, 3))  # Add grid point position
+        GP.nOP = wf.nOP
+        GP.intOPs = interpolateOPs(GP)
+        
+        GP.posNac = vcat(wf.posNac, reshape([0.0, 0.0, zh], 1, 3))  # Add grid point nacelle position
+        GP.States_WF = wf.States_WF
+        GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))  # Add row for grid point
+        GP.D = vcat(wf.D, [0.0])  # Add 0 diameter for grid point (it's not a real turbine), wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
 
 Wrapper function to disguise the grid points as turbines with one rotor
 point and experience almost the same calculations as the rotor points in
@@ -51,8 +62,8 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         # Grid point (last "turbine") depends on all original turbines
         GP.dep[end] = GPdep
         
-        # Update StartI to include the grid point
-        GP.StartI = vcat(wf.StartI, reshape([wf.StartI[end] + 1], 1, 1))
+                # Update StartI to include the grid point
+        GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
         # Update arrays to accommodate the additional grid point
         GP.States_OP = wf.States_OP
         GP.posBase = vcat(wf.posBase, reshape([xGP, yGP, 0.0], 1, 3))  # Add grid point position
@@ -62,7 +73,7 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         GP.posNac = vcat(wf.posNac, reshape([0.0, 0.0, zh], 1, 3))  # Add grid point nacelle position
         GP.States_WF = wf.States_WF
         GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))  # Add row for grid point
-        GP.D = vcat(wf.D, 0.0)  # Add 0 diameter for grid point (it's not a real turbine)
+        GP.D = vcat(wf.D, [0.0])  # Add 0 diameter for grid point (it's not a real turbine)
         
         tmpM, _ = setUpTmpWFAndRun(set, GP, floris, wind)
         

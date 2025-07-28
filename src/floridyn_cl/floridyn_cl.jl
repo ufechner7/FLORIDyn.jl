@@ -598,11 +598,13 @@ The function supports optional wind field interpolation via coefficient matrices
             plot_WF = zeros(tmp_nT - 1, size(wf.States_WF, 2))
             plot_OP = zeros(tmp_nT - 1, 2)
             for iiT in 1:(tmp_nT - 1)
-                OP1_i, OP1_r, OP2_i, OP2_r =wf.intOPs[iT][iiT, :]
-                OPi_l = OP1_r *wf.States_OP[OP1_i, :] + OP2_r *wf.States_OP[OP2_i, :]
+                OP1_i_f, OP1_r, OP2_i_f, OP2_r = wf.intOPs[iT][iiT, :]
+                OP1_i = Int(round(OP1_i_f))
+                OP2_i = Int(round(OP2_i_f))
+                OPi_l = OP1_r * wf.States_OP[OP1_i, :] + OP2_r * wf.States_OP[OP2_i, :]
                 plot_OP[iiT, :] = OPi_l[1:2]
-                plot_WF[iiT, :] = OP1_r *wf.States_WF[OP1_i, :] + OP2_r *wf.States_WF[OP2_i, :]
-                dists[iiT] = norm(OPi_l[1:2] .-wf.posBase[iT,1:2])
+                plot_WF[iiT, :] = OP1_r * wf.States_WF[OP1_i, :] + OP2_r * wf.States_WF[OP2_i, :]
+                dists[iiT] = norm(OPi_l[1:2] .- wf.posBase[iT,1:2])
             end
 
             I = sortperm(dists)
