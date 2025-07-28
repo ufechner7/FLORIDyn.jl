@@ -1,12 +1,15 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+"""
+$(DocStringExtensions.README)
+"""
 module FLORIDyn
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
-using Statistics, StaticArrays
+using Statistics, StaticArrays, DocStringExtensions
 
-export setup, str2type, Settings, getTurbineData, initSimulation
+export setup, str2type, Settings, getTurbineData, initSimulation, TurbineArray
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
@@ -29,7 +32,7 @@ export Yaw_Constant, Yaw_InterpTurbine, Yaw_SOWFA
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
-export getWindTiT, getWindTiT_EnKF
+export getWindTiT
 export getWindSpeedT, getWindSpeedT_EnKF
 export getDataDir, getDataTI, getDataVel
 export correctDir!
