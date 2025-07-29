@@ -64,7 +64,7 @@ function States()
 end
 
 """
-    centerline(states_op, states_t, states_wf, floris, d_rotor)
+    centerline(states_op, states_t, states_wf, floris, d_rotor) -> Matrix{Float64}
 
 Compute the centerline wake properties for a wind farm simulation.
 
@@ -229,7 +229,8 @@ function centerline!(deflection::AbstractMatrix, states_op, states_t, states_wf,
 end
 
 """
-    init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris::Floris, sim::Sim)
+    init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, 
+                floris::Floris, sim::Sim) -> Tuple{Matrix, Matrix, Matrix}
 
 Initialize the state arrays for wind farm simulation using the Gaussian wake model.
 
@@ -335,7 +336,8 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
 end
 
 """
-    getVars(rps::Union{Matrix, Adjoint}, c_t, yaw, ti, ti0, floris::Floris, d_rotor)
+    getVars(rps::Union{Matrix, Adjoint}, c_t, yaw, ti, ti0, 
+            floris::Floris, d_rotor) -> Tuple{Vector, Vector, Vector, Vector, Vector, Vector, Vector}
 
 Compute and return variables related to the Gaussian wake model for wind turbines.
 
