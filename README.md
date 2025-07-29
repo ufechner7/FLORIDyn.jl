@@ -52,6 +52,16 @@ pkg"test FLORIDyn"
 ## Documentation
 The documentation is available [here](https://ufechner7.github.io/FLORIDyn.jl/dev/).
 
+## License
+This project is licensed under the  `BSD-3-Clause`. The documentation is licensed under the `CC-BY-4.0 License`. Please see the below `Copyright notice` in association with the licenses that can be found in the file [LICENSE](LICENSE) in this folder.
+
+## Copyright notice
+Technische Universiteit Delft hereby disclaims all copyright interest in the package “KiteModels.jl” (models for airborne wind energy systems) written by the Author(s).
+
+Prof.dr. H.G.C. (Henri) Werij, Dean of Aerospace Engineering, Technische Universiteit Delft.
+
+See the copyright notices in the source files, and the list of authors in [AUTHORS.md](AUTHORS.md).
+
 ## References
 Citation of the FLORIDyn model:
 FLORIDyn - A dynamic and flexible framework for real-time wind farm control, M. Becker, D. Allaerts, J.W. van Wingerden, 2022, http://doi.org/10.1088/1742-6596/2265/3/032103
