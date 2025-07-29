@@ -305,7 +305,6 @@ function copy_model_settings()
         end
     end
     
-    set_data_path(joinpath(pwd(), "data"))
     println("Copied $(length(files)) files and 1 directories to $(dst_path) !")
 end
 
