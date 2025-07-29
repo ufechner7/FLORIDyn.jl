@@ -48,9 +48,15 @@ if PLT == 1
     @time Z, X, Y = calcFlowField(set, wf, wind, floris)
     plotFlowField(plt, wf, X, Y, Z)
 elseif PLT == 2
+    @time Z, X, Y = calcFlowField(set, wf, wind, floris; msr=2)
+    plotFlowField(plt, wf, X, Y, Z)
+elseif PLT == 3
+    @time Z, X, Y = calcFlowField(set, wf, wind, floris; msr=3)
+    plotFlowField(plt, wf, X, Y, Z)
+elseif PLT == 4
     wf, set, floris, wind = get_parameters()
     plotMeasurements(plt, wf, md; separated=true)
-elseif PLT == 3
+elseif PLT == 5
     wf, set, floris, wind = get_parameters()
     plotMeasurements(plt, wf, md; separated=false)
 end
