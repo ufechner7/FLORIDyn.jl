@@ -31,7 +31,7 @@ export WindDirType, WindDirMatrix, WindDirTriple
 export WindVelType, WindVelMatrix, WindFarm
 export Floris, FloriDyn, Wind, Sim, Con, IterateOPsBuffers
 
-export Direction_All, Direction_Influence, Direction_None, Direction_wGaspariAndCohn
+export Direction_All, Direction_Influence, Direction_None
 export Velocity_Influence, Velocity_None, Velocity_wGaspariAndCohn
 export TI_Influence, TI_None, TI_wGaspariAndCohn
 export IterateOPs_average, IterateOPs_basic, IterateOPs_buffer, IterateOPs_maximum, IterateOPs_weighted
