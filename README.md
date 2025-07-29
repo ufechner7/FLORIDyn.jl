@@ -36,8 +36,10 @@ Before installing this software it is suggested to create a new project, for exa
 ```bash
 mkdir test
 cd test
-julia --project="."
+julia --project=.
 ```
+Don't forget to type the `dot` at the end of the last command.
+
 Then add FLORIDyn from  Julia's package manager, by typing:
 ```julia
 using Pkg
