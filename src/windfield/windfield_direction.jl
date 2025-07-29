@@ -70,17 +70,6 @@ end
 # phi = phi + (randn(1,length(phi))*WindDir.CholSig)';
 # end
 
-
-# # Backward compatibility method with 3 arguments
-# function getWindDirT(::Direction_Constant_wErrorCov, WindDir::WindDirType, iT)
-#     n = length(iT)
-#     phi = fill(WindDir.Data, n)
-#     # randn(RNG,n) gives a vector of n normal random numbers
-#     @assert issquare(WindDir.CholSig)
-#     phi .+= WindDir.CholSig * randn(RNG, n)
-#     return phi
-# end
-
 """
     getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind_dir::AbstractMatrix, iT, t)
 
