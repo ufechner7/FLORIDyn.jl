@@ -33,11 +33,3 @@ struct Direction_Influence <: DirCorrection end
 A marker struct used to indicate that no direction corrections should be applied.
 """
 struct Direction_None <: DirCorrection end
-
-"""
-    Direction_wGaspariAndCohn <: DirCorrection
-
-A marker struct used to represent direction correction using the Gaspari and Cohn localization method.
-This correction method is commonly used in ensemble data assimilation for spatial localization.
-"""
-struct Direction_wGaspariAndCohn <: DirCorrection end
