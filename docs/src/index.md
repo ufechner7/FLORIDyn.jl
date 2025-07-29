@@ -22,10 +22,6 @@ Five examples work, selectable via a menu:
 ```julia
 include("examples/menu.jl")
 ```
-### TODO:
-- add missing unit tests
-- implement the missing functions
-
 A Python version of FLORIDyn is available at [https://github.com/TUDelft-DataDrivenControl/OFF](https://github.com/TUDelft-DataDrivenControl/OFF) .
 
 ## Installation
@@ -35,8 +31,10 @@ Before installing this software it is suggested to create a new project, for exa
 ```bash
 mkdir test
 cd test
-julia --project="."
+julia --project=.
 ```
+Don't forget to type the `dot` at the end of the last command.
+
 Then add FLORIDyn from  Julia's package manager, by typing:
 ```julia
 using Pkg
@@ -59,20 +57,7 @@ then you can get the example menu by typing:
 ```julia
 menu()
 ```
-You can select any of the examples with the \<UP\> and \<DOWN\> keys, and then press \<ENTER\>.
-
-## Documentation
-The documentation is available [here](https://ufechner7.github.io/FLORIDyn.jl/dev/).
-
-## License
-This project is licensed under the  `BSD-3-Clause`. The documentation is licensed under the `CC-BY-4.0 License`. Please see the below `Copyright notice` in association with the licenses that can be found in the file [LICENSE](LICENSE) in this folder.
-
-## Copyright notice
-Technische Universiteit Delft hereby disclaims all copyright interest in the package “FLORIDyn.jl” (dynamic wind farm simulation) written by the Author(s).
-
-Prof.dr. H.G.C. (Henri) Werij, Dean of Aerospace Engineering, Technische Universiteit Delft.
-
-See the copyright notices in the source files, and the list of authors in [AUTHORS.md](AUTHORS.md).
+You can select any of the examples with the `<UP>` and `<DOWN>` keys, and then press `<ENTER>`.
 
 ## References
 Citation of the FLORIDyn model:
