@@ -164,6 +164,7 @@ Prepares the simulation environment for a wind farm analysis using the provided 
 function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriDyn, 
                            floris::Floris, turbProp, sim::Sim)
     loadDataWarnings = String[]
+    pkg_path = joinpath(dirname(pathof(@__MODULE__)), "..")
 
     # ========== WIND: Velocity ==========
     vel_file_dir = sim.path_to_data
@@ -183,13 +184,16 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     #     end
     # elseif input_vel == "InterpTurbine"
     #     try
-    #         wind.Vel = CSV.read("WindVelTurbine.csv", DataFrame)
+    #         wind.Vel = CSV.read("WindVelTurbine.csv",!DataFrame)
     #     catch
     #         push!(loadDataWarnings, "WindVelTurbine.csv not found, default created.")
     #     end
     elseif input_vel == "Constant"
         try 
             path = joinpath(vel_file_dir, "WindVelConstant.csv")
+            if !isfile(path)
+                path = joinpath(pkg_path, path)
+            end
             if !isfile(path)
                 @error "WindVelConstant.csv not found in $vel_file_dir"
             end
@@ -217,6 +221,9 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     if wind.input_dir == "Interpolation"
         try
             path = joinpath(data_path, "WindDir.csv")
+            if !isfile(path)
+                path = joinpath(pkg_path, path)
+            end
             wind.dir = readdlm(path, ',', Float64)
         catch
             push!(loadDataWarnings, "WindDir.csv not found.")
@@ -224,6 +231,9 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     elseif wind.input_dir == "InterpTurbine"
         try
             path = joinpath(data_path, "WindDirTurbine.csv")
+            if !isfile(path)
+                path = joinpath(pkg_path, path)
+            end
             wind.dir = readdlm(path, ',', Float64)
         catch
             push!(loadDataWarnings, "WindDirTurbine.csv not found")
@@ -234,6 +244,9 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     elseif wind.input_dir == "Constant"
         try
             path = joinpath(data_path, "WindDirConstant.csv")
+            if !isfile(path)
+                path = joinpath(pkg_path, path)
+            end
             wind.dir = readdlm(path, ',', Float64)
         catch
             push!(loadDataWarnings, "WindDirConstant.csv not found.")
@@ -266,6 +279,9 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     # ============= TI =============        
     if wind.input_ti == "Interpolation"
         path = joinpath(data_path, "WindTI.csv")
+        if !isfile(path)
+            path = joinpath(pkg_path, path)
+        end
         try
             df = CSV.read(path, DataFrame)
             wind.ti = Matrix{Float64}(df)
@@ -277,6 +293,9 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         end
     elseif wind.input_ti == "InterpTurbine"
         path = joinpath(data_path, "WindTITurbine.csv")
+        if !isfile(path)
+            path = joinpath(pkg_path, path)
+        end
         try
             df = CSV.read(path, DataFrame)
             wind.ti = Matrix{Float64}(df)
@@ -289,6 +308,9 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     elseif wind.input_ti == "Constant"
         try
             path = joinpath(data_path, "WindTIConstant.csv")
+            if !isfile(path)
+                path = joinpath(pkg_path, path)
+            end
             df = CSV.read(path, DataFrame; header=false)
             wind.ti = df[1,1]
         catch e
@@ -301,11 +323,17 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     # ============= WindShear =============
     if wind.input_shear == "PowerLaw"
         path = joinpath(data_path, "WindShearPowerLaw.csv")
+        if !isfile(path)
+            path = joinpath(pkg_path, path)
+        end
         alpha = CSV.read(path, DataFrame; header=false)[1,1] # Assuming alpha is in the first row, first column
         z0 = 1.0 # Default roughness length
         wind.shear = WindShear(alpha, z0)
     elseif wind.input_shear == "Interpolation"
         path = joinpath(data_path, "WindShearProfile.csv")
+        if !isfile(path)
+            path = joinpath(pkg_path, path)
+        end
         try
             df = CSV.read(path, DataFrame)
             wind.shear = Matrix{Float64}(df)
