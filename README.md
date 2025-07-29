@@ -19,12 +19,11 @@ The code uses the Gaussian wake model from the quasi static wind farm simulation
 <p align="center"><img src="https://github.com/ufechner7/FLORIDyn.jl/blob/main/docs/src/flowfield.png?raw=true" width="500" /></p>
 
 ## Status:
-The basic example works.
+Five examples work, selectable via a menu:
 ```julia
-include("examples/main.jl")
+include("examples/menu.jl")
 ```
 ### TODO:
-- implement more plots
 - add missing unit tests
 - implement the missing functions
 
