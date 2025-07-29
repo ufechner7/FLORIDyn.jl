@@ -63,5 +63,6 @@ runFLORIDyn
 getMeasurements
 calcFlowField
 plotFlowField
+plotMeasurements
 ```
 

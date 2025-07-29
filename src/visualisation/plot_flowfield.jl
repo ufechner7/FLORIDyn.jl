@@ -269,26 +269,45 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
 end
 
 """
-    plotMeasurements(plt, wf::WindFarm, md; separated=true) -> Nothing
+    plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false, unit_test=false) -> Nothing
 
-Plot all requested measurements including time series data and foreign reduction analysis.
+Plot foreign reduction measurements from FLORIDyn simulation data.
 
 # Arguments
 - `plt`: Plotting package (e.g., ControlPlots)
 - `wf::WindFarm`: Wind farm object with field `nT` (number of turbines)
-- `md::DataFrame`: Measurements DataFrame containing time series data
-- `separated::Bool`: Whether to use separated (subplot) layout (default: true)
+- `md::DataFrame`: Measurements DataFrame containing time series data with columns:
+  - `Time`: Time series data [s]
+  - `ForeignReduction`: Foreign reduction percentage data [%]
+- `separated::Bool`: Whether to use separated subplot layout (default: false)
+- `unit_test::Bool`: Whether to close plots automatically for testing (default: false)
 
 # Returns
 - `nothing`
 
 # Description
-This function creates time series plots of simulation measurements. It handles:
-1. Foreign reduction plots in either separated (subplot) or combined layout
-2. Automatic color mapping using inferno color map
-3. Grid lines, labels, and proper axis limits
+This function creates time series plots of foreign reduction measurements from FLORIDyn simulations. It handles:
+1. Time normalization by subtracting the start time
+2. Foreign reduction plots in either separated (subplot) or combined layout
 
-The function supports FLORIDyn simulation data visualization.
+# Plotting Modes
+- **Separated mode** (`separated=true`): Creates individual subplots for each turbine
+- **Combined mode** (`separated=false`): Plots all turbines on a single figure with different colors
+
+# Example
+```julia
+using ControlPlots
+
+# Plot foreign reduction for all turbines in combined mode
+plotMeasurements(plt, wind_farm, measurements_df)
+
+# Plot foreign reduction with separated subplots
+plotMeasurements(plt, wind_farm, measurements_df; separated=true)
+```
+
+# See Also
+- [`plotFlowField`](@ref): For flow field visualization
+- [`getMeasurements`](@ref): For generating measurement data
 """
 function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false, unit_test=false)
     local fig
