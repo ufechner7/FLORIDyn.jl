@@ -1,4 +1,4 @@
-# Exported Functions
+# Low-Level Functions
 
 ```@meta
 CurrentModule = FLORIDyn
@@ -33,36 +33,3 @@ correctTI!
 ```@docs
 getYaw
 ```
-
-# FLORIS
-```@docs
-calcCt
-centerline
-discretizeRotor
-init_states
-getVars
-getPower
-runFLORIS
-```
-
-# FLORIDyn
-```@docs
-initSimulation
-findTurbineGroups
-prepareSimulation
-perturbationOfTheWF!
-setUpTmpWFAndRun
-interpolateOPs
-iterateOPs!
-angSOWFA2world
-runFLORIDyn
-```
-
-# Visualization
-```@docs
-getMeasurements
-calcFlowField
-plotFlowField
-plotMeasurements
-```
-
