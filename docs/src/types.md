@@ -85,7 +85,6 @@ all subtypes of [`DirCorrection`](@ref)
 Direction_All
 Direction_Influence
 Direction_None
-Direction_wGaspariAndCohn
 ```
 
 ## Defining the turbulence correction
