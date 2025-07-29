@@ -194,19 +194,23 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
         # This will work if ControlPlots is loaded and plt is available
         if msr == 1
             figure = "Velocity Reduction"
+            label = L"Wind speed~[ms^{-1}]"
+            vmin = 2.0; vmax = 10.0;
         elseif msr == 2
             figure = "Added Turbulence"
+            label = "Added Turbulence [%]"
+            vmin = 0.0; vmax = maximum(mz_2d);
         elseif msr == 3
             figure = "Effective Wind Speed"
         end
         title = figure
         size = 0.84
         fig = plt.figure(figure, figsize=(7.25size, 6size))
-        vmin = 2.0; vmax = 10.0; n=40
+        n=40
         levels = range(vmin, stop=vmax, length=n+1)
         plt.contourf(my, mx, mz_2d, n; levels, cmap="inferno") # 40 levels, no lines
         cb = plt.colorbar()
-        cb.set_label(L"Wind speed~[ms^{-1}]", labelpad=3)
+        cb.set_label(label, labelpad=3)
 
         # Plot the turbine rotors as short, thick lines (as seen from above)
         for i_T in 1:length(wf.D)
