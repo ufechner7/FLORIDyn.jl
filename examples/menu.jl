@@ -12,7 +12,7 @@ for the FLORIDyn.jl wind farm simulation package.
 using Pkg
 using REPL.TerminalMenus
 
-options = ["main_example = include(\"examples/main.jl\")",
+options = ["main_example = include(\"main.jl\")",
            "open_documentation()",
            "quit"]
 
@@ -22,11 +22,11 @@ function open_documentation()
     
     try
         if Sys.islinux()
-            run(`xdg-open $doc_url`)
+            run(pipeline(`xdg-open $doc_url`, stdout=devnull, stderr=devnull))
         elseif Sys.iswindows()
-            run(`cmd /c start $doc_url`)
+            run(pipeline(`cmd /c start $doc_url`, stdout=devnull, stderr=devnull))
         elseif Sys.isapple()
-            run(`open $doc_url`)
+            run(pipeline(`open $doc_url`, stdout=devnull, stderr=devnull))
         else
             println("Cannot automatically open browser on this system.")
             println("Please manually open: $doc_url")
