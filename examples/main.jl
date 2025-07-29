@@ -46,7 +46,7 @@ toc()
 
 if PLT == 1
     @time Z, X, Y = calcFlowField(set, wf, wind, floris)
-    plotFlowField(plt, wf, X, Y, Z)
+    plotFlowField(plt, wf, X, Y, Z; msr=1)
 elseif PLT == 2
     @time Z, X, Y = calcFlowField(set, wf, wind, floris)
     plotFlowField(plt, wf, X, Y, Z; msr=2)

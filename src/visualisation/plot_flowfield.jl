@@ -194,14 +194,17 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
         # This will work if ControlPlots is loaded and plt is available
         if msr == 1
             figure = "Velocity Reduction"
-            label = L"Wind speed~[ms^{-1}]"
-            vmin = 2.0; vmax = 10.0;
+            label = "Relative Wind Speed [%]"
+            mz_2d .*= 100
+            vmin = minimum(mz_2d); vmax = maximum(mz_2d);
         elseif msr == 2
             figure = "Added Turbulence"
             label = "Added Turbulence [%]"
             vmin = 0.0; vmax = maximum(mz_2d);
         elseif msr == 3
             figure = "Effective Wind Speed"
+            vmin = 2.0; vmax = 10.0;
+            label = L"Wind speed~[ms^{-1}]"
         end
         title = figure
         size = 0.84

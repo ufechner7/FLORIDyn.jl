@@ -12,11 +12,11 @@ for the FLORIDyn.jl wind farm simulation package.
 using Pkg
 using REPL.TerminalMenus
 
-options = ["plot_wind_field            = PLT=1; include(\"main.jl\")",
-           "plot_wind_field            = PLT=2; include(\"main.jl\")",
-           "plot_wind_field            = PLT=3; include(\"main.jl\")",
-           "plot_measurements          = PLT=4; include(\"main.jl\")",
-           "plot_measurements_lineplot = PLT=5; include(\"main.jl\")",
+options = ["flow_field_vel_reduction    = PLT=1; include(\"main.jl\")",
+           "flow_field_added_turbulence = PLT=2; include(\"main.jl\")",
+           "flow_field_eff_wind_speed   = PLT=3; include(\"main.jl\")",
+           "plot_measurements           = PLT=4; include(\"main.jl\")",
+           "plot_measurements_lineplot  = PLT=5; include(\"main.jl\")",
            "open_documentation()",
            "quit"]
 
