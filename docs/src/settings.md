@@ -168,6 +168,11 @@ TurbineArray
 
 # Settings
 ```@docs
+install_examples
+copy_examples
+copy_model_settings
+copy_bin
+copy_files
 setup
 Settings
 Settings(wind::Wind, sim::Sim, con::Con)

@@ -246,12 +246,67 @@ include("floridyn_cl/iterate.jl")
 include("controller/controller.jl")
 include("visualisation/plot_flowfield.jl")
 
+"""
+    copy_model_settings()
+
+Copy model configuration files and data directories to the local data directory.
+
+This function copies essential model configuration files and simulation data from the package's 
+data directory to a local `data/` directory in the current working directory. 
+
+# Files and Directories Copied
+
+## Configuration File
+- `2021_9T_Data.yaml`: Main wind farm configuration file containing turbine layout, simulation parameters, 
+  and model settings
+
+## Data Directory  
+- `2021_9T_Data/`: Complete SOWFA simulation data directory containing:
+  - `SOWFA_bladePitch.csv`: Blade pitch angle time series
+  - `SOWFA_generatorPower.csv`: Generator power output data
+  - `SOWFA_generatorTorque.csv`: Generator torque measurements
+  - `SOWFA_nacelleYaw.csv`: Nacelle yaw angle data
+  - `SOWFA_rotorSpeedFiltered.csv`: Filtered rotor speed measurements
+  - `U.csv`, `WindVel.csv`: Wind velocity data
+  - `WindDir.csv`, `WindDirConstant.csv`: Wind direction measurements
+  - `WindTI.csv`, `WindTIConstant.csv`: Turbulence intensity data
+  - Additional covariance and profile files
+
+# Automatic Operations
+The function automatically:
+- Creates the `data/` directory if it doesn't exist
+- Copies the main YAML configuration file using [`copy_files`](@ref)
+- Recursively copies the entire `2021_9T_Data/` subdirectory with all CSV files
+- Sets proper file permissions (0o774) on all copied files
+
+This function is called as part of [`install_examples`](@ref) to set up a complete 
+working environment with all necessary configuration files and simulation data.
+
+See also: [`copy_files`](@ref), [`install_examples`](@ref)
+"""
 function copy_model_settings()
     files = ["2021_9T_Data.yaml"]
     dst_path = abspath(joinpath(pwd(), "data"))
+    
+    # Copy main configuration file
     copy_files("data", files)
+    
+    # Copy the 2021_9T_Data directory and all its contents
+    src_data_dir = joinpath(dirname(pathof(@__MODULE__)), "..", "data", "2021_9T_Data")
+    dst_data_dir = joinpath(pwd(), "data", "2021_9T_Data")
+    
+    if isdir(src_data_dir)
+        cp(src_data_dir, dst_data_dir, force=true)
+        # Set permissions for all copied files in the directory
+        for (root, dirs, files_in_dir) in walkdir(dst_data_dir)
+            for file in files_in_dir
+                chmod(joinpath(root, file), 0o774)
+            end
+        end
+    end
+    
     set_data_path(joinpath(pwd(), "data"))
-    println("Copied $(length(files)) files to $(dst_path) !")
+    println("Copied $(length(files)) files and 1 directories to $(dst_path) !")
 end
 
 """
@@ -276,9 +331,9 @@ end
 Install example files, executables, and data files for the FLORIDyn.jl package.
 
 This function sets up a complete working environment by copying:
-- Example Julia scripts from the package's examples directory
-- Executable scripts (like `run_julia`) to a local `bin` directory  
-- Model configuration files and data to a local `data` directory
+- Example Julia scripts from the package's examples directory (via [`copy_examples`](@ref))
+- Executable scripts (like `run_julia`) to a local `bin` directory (via [`copy_bin`](@ref))
+- Model configuration files and data to a local `data` directory (via [`copy_model_settings`](@ref))
 
 # Arguments
 - `add_packages::Bool=true`: Whether to automatically install additional required packages 
@@ -294,11 +349,11 @@ install_examples(false)
 ```
 
 After running this function, you can:
-- Run example scripts from the created directories
+- Run example scripts from the created `examples/` directory
 - Execute `./bin/run_julia` to start Julia with the project environment
-- Access model data files in the `data` directory
+- Access model data files in the `data/` directory
 
-See also: [`copy_bin`](@ref), [`copy_model_settings`](@ref)
+See also: [`copy_examples`](@ref), [`copy_bin`](@ref), [`copy_model_settings`](@ref)
 """
 function install_examples(add_packages=true)
     copy_examples()
@@ -324,6 +379,44 @@ function copy_examples()
     copy_files("examples", readdir(src_path))
 end
 
+"""
+    copy_files(relpath, files)
+
+Copy a list of files from the package directory to a local directory.
+
+This utility function copies files from the package's source directory structure to 
+a corresponding local directory. It automatically handles directory creation and 
+sets appropriate file permissions.
+
+# Arguments
+- `relpath::String`: The relative path (directory name) within both the package and 
+  local filesystem where files should be copied
+- `files::Vector{String}`: A vector of filenames to copy from the source to destination
+
+# Details
+The function:
+- Creates the destination directory (`relpath`) if it doesn't exist
+- Copies each file from `<package_dir>/<relpath>/<file>` to `./<relpath>/<file>`
+- Sets executable permissions (0o774) on all copied files
+- Overwrites existing files (uses `force=true`)
+
+# Returns
+- `Vector{String}`: The list of files that were copied (same as input `files`)
+
+# Example
+```julia
+# Copy specific example files to local examples directory
+copy_files("examples", ["main.jl", "menu.jl"])
+
+# Copy data files to local data directory  
+copy_files("data", ["config.yaml", "turbine_data.csv"])
+```
+
+This function is used internally by [`copy_examples`](@ref), [`copy_model_settings`](@ref), 
+and other file copying utilities.
+
+See also: [`copy_examples`](@ref), [`copy_model_settings`](@ref), [`copy_bin`](@ref)
+"""
 function copy_files(relpath, files)
     if ! isdir(relpath) 
         mkdir(relpath)
