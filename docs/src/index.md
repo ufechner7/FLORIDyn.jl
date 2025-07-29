@@ -46,6 +46,33 @@ at the Julia prompt. You can run the unit tests with the command:
 ```julia
 pkg"test FLORIDyn"
 ```
+You can install the examples using the following command:
+```julia
+using FLORIDyn
+install_examples()
+```
+If you now quit Julia with <ctrl><d> and restart it with
+```bash
+./bin/run_julia
+```
+then you can get the example menu by typing:
+```julia
+menu()
+```
+You can select any of the examples with the \<UP\> and \<DOWN\> keys, and then press \<ENTER\>.
+
+## Documentation
+The documentation is available [here](https://ufechner7.github.io/FLORIDyn.jl/dev/).
+
+## License
+This project is licensed under the  `BSD-3-Clause`. The documentation is licensed under the `CC-BY-4.0 License`. Please see the below `Copyright notice` in association with the licenses that can be found in the file [LICENSE](LICENSE) in this folder.
+
+## Copyright notice
+Technische Universiteit Delft hereby disclaims all copyright interest in the package “FLORIDyn.jl” (dynamic wind farm simulation) written by the Author(s).
+
+Prof.dr. H.G.C. (Henri) Werij, Dean of Aerospace Engineering, Technische Universiteit Delft.
+
+See the copyright notices in the source files, and the list of authors in [AUTHORS.md](AUTHORS.md).
 
 ## References
 Citation of the FLORIDyn model:
