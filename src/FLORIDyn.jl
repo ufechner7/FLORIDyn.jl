@@ -49,7 +49,7 @@ export discretizeRotor, calcCt, States
 export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimulation
 export runFLORIS, init_states, getUadv
 export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, interpolateOPs, perturbationOfTheWF!, findTurbineGroups
-export getMeasurements, calcFlowField, plotFlowField
+export getMeasurements, calcFlowField, plotFlowField, plotMeasurements
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()

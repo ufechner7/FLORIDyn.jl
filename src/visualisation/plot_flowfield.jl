@@ -304,13 +304,14 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=true)
     #         timeSOW = powSOWFA[:, 2]
     #     end
     # end
+    timeFDyn = md.Time .- md.Time[1]
     
     # Foreign Reduction plotting
     if separated
         lay = getLayout(wf.nT)
         
         # Calculate y-axis limits
-        foreign_red_data = md["Foreign Reduction [%]"]
+        foreign_red_data = md[!, "ForeignReduction"]
         y_lim = [minimum(foreign_red_data), maximum(foreign_red_data)]
         y_range = y_lim[2] - y_lim[1]
         y_lim = y_lim .+ [-0.1, 0.1] * max(y_range, 0.5)
