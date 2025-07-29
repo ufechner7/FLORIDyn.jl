@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    discretizeRotor(n_rp::Int)
+    discretizeRotor(n_rp::Int) -> Tuple{Matrix{Float64}, Vector{Float64}}
 
 Discretizes the rotor into a `n_rp` segments. The algorithm returns the normalized center location ∈ [-0.5, 0.5] and the
 relative area the segment represents.
