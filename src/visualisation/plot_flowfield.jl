@@ -267,3 +267,126 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
     end
     return nothing
 end
+
+"""
+    plotMeasurements(plt, wf::WindFarm, md; separated=true) -> Nothing
+
+Plot all requested measurements including time series data and foreign reduction analysis.
+
+# Arguments
+- `plt`: Plotting package (e.g., ControlPlots)
+- `wf::WindFarm`: Wind farm object with field `nT` (number of turbines)
+- `md::DataFrame`: Measurements DataFrame containing time series data
+- `separated::Bool`: Whether to use separated (subplot) layout (default: true)
+
+# Returns
+- `nothing`
+
+# Description
+This function creates time series plots of simulation measurements. It handles:
+1. Foreign reduction plots in either separated (subplot) or combined layout
+2. Automatic color mapping using inferno color map
+3. Grid lines, labels, and proper axis limits
+
+The function supports FLORIDyn simulation data visualization.
+"""
+function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=true)
+    
+    # # Subtract starting time
+    # if vis.SubtractOffset
+    #     timeFDyn = md["Time [s]"] .- md["Time [s]"][1] .- vis.Msmnts.Data.TimeOffset
+    #     if pSOW && powSOWFA !== nothing
+    #         timeSOW = powSOWFA[:, 2] .- powSOWFA[1, 2] .- vis.Msmnts.Data.TimeOffset
+    #     end
+    # else
+    #     timeFDyn = md["Time [s]"]
+    #     if pSOW && powSOWFA !== nothing
+    #         timeSOW = powSOWFA[:, 2]
+    #     end
+    # end
+    
+    # Foreign Reduction plotting
+    if separated
+        lay = getLayout(wf.nT)
+        
+        # Calculate y-axis limits
+        foreign_red_data = md["Foreign Reduction [%]"]
+        y_lim = [minimum(foreign_red_data), maximum(foreign_red_data)]
+        y_range = y_lim[2] - y_lim[1]
+        y_lim = y_lim .+ [-0.1, 0.1] * max(y_range, 0.5)
+        
+        f = plt.figure()
+        c = plt.get_cmap("inferno")(0.5)  # Single color for separated plots
+        
+        for iT in 1:wf.nT
+            plt.subplot(lay[1], lay[2], iT)
+            plt.plot(
+                timeFDyn[iT:wf.nT:end],
+                foreign_red_data[iT:wf.nT:end],
+                linewidth=2, color=c
+            )
+            plt.grid(true)
+            plt.title("Turbine $(iT-1)")
+            plt.xlim(max(timeFDyn[1], 0), timeFDyn[end])
+            plt.ylim(y_lim...)
+            plt.xlabel("Time [s]")
+            plt.ylabel("Foreign Reduction [%]")
+        end
+    else
+        f = plt.figure()
+        colors = plt.get_cmap("inferno")(range(0, 1, length=wf.nT))
+        
+        for iT in 1:wf.nT
+            plt.plot(
+                timeFDyn[iT:wf.nT:end],
+                md["Foreign Reduction [%]"][iT:wf.nT:end],
+                linewidth=2, color=colors[iT]
+            )
+        end
+        plt.grid(true)
+        plt.title("Foreign Reduction [%]")
+        plt.xlim(max(timeFDyn[1], 0), timeFDyn[end])
+        plt.xlabel("Time [s]")
+        plt.ylabel("Foreign Reduction [%]")
+    end
+        
+    return nothing
+end
+
+"""
+    getLayout(nT::Int) -> Tuple{Int, Int}
+
+Calculate optimal subplot layout (rows, columns) for a given number of turbines.
+
+# Arguments
+- `nT::Int`: Number of turbines
+
+# Returns
+- `Tuple{Int, Int}`: (rows, columns) for subplot arrangement
+
+# Description
+Determines the most square-like arrangement of subplots to accommodate `nT` plots.
+"""
+function getLayout(nT::Int)
+    if nT <= 0
+        return (1, 1)
+    elseif nT == 1
+        return (1, 1)
+    elseif nT <= 4
+        return (2, 2)
+    elseif nT <= 6
+        return (2, 3)
+    elseif nT <= 9
+        return (3, 3)
+    elseif nT <= 12
+        return (3, 4)
+    elseif nT <= 16
+        return (4, 4)
+    else
+        # For larger numbers, calculate a roughly square layout
+        cols = ceil(Int, sqrt(nT))
+        rows = ceil(Int, nT / cols)
+        return (rows, cols)
+    end
+end
+
