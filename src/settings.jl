@@ -381,7 +381,10 @@ Returns:
 - A Matrix{Float64} with the selected column data.
 """
 function importSOWFAFile(filename, data_lines = 2:typemax(Int))
-
+    pkg_path = joinpath(dirname(pathof(@__MODULE__)), "..")
+    if ! isfile(filename)
+        filename = joinpath(pkg_path, filename)
+    end
     # Read full table first
     df = CSV.read(filename, DataFrame;
         delim=' ',
