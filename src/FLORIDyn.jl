@@ -13,7 +13,7 @@ using LaTeXStrings
 import DocStringExtensions
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
-using Statistics, StaticArrays
+using Statistics, StaticArrays, Pkg
 
 export setup, Settings, getTurbineData, initSimulation, TurbineArray
 
@@ -270,6 +270,36 @@ function copy_bin()
     chmod(joinpath(PATH, "run_julia"), 0o774)
 end
 
+"""
+    install_examples(add_packages=true)
+
+Install example files, executables, and data files for the FLORIDyn.jl package.
+
+This function sets up a complete working environment by copying:
+- Example Julia scripts from the package's examples directory
+- Executable scripts (like `run_julia`) to a local `bin` directory  
+- Model configuration files and data to a local `data` directory
+
+# Arguments
+- `add_packages::Bool=true`: Whether to automatically install additional required packages 
+  ("LaTeXStrings", "Timers") that are commonly used in the examples
+
+# Example
+```julia
+# Install examples with automatic package installation
+install_examples()
+
+# Install examples without installing additional packages
+install_examples(false)
+```
+
+After running this function, you can:
+- Run example scripts from the created directories
+- Execute `./bin/run_julia` to start Julia with the project environment
+- Access model data files in the `data` directory
+
+See also: [`copy_bin`](@ref), [`copy_model_settings`](@ref)
+"""
 function install_examples(add_packages=true)
     copy_examples()
     copy_bin()
@@ -277,6 +307,21 @@ function install_examples(add_packages=true)
     if add_packages
         Pkg.add(["LaTeXStrings", "Timers"])
     end
+end
+
+"""
+    copy_examples()
+
+Copy all example scripts to the folder "examples"
+(it will be created if it doesn't exist).
+"""
+function copy_examples()
+    PATH = "examples"
+    if ! isdir(PATH) 
+        mkdir(PATH)
+    end
+    src_path = joinpath(dirname(pathof(@__MODULE__)), "..", PATH)
+    copy_files("examples", readdir(src_path))
 end
 
 function copy_files(relpath, files)
