@@ -7,6 +7,155 @@ The settings are defined in a `.yaml` file in the folder `data`. The function [`
 
 For each of these yaml files there must be a folder with the same name (without the `.yaml` extension) in the data directory. In this folder the required `.csv` files must be stored.
 
+```yaml
+# FLORIDyn project configuration
+#
+# Flow conditions
+# Choose the input files for wind velocity, direction and ambient turbulence intensity as well as shear.
+wind:
+  # Velocity Input
+  # - I_and_I       uses the Immersion and Invariance effective wind speed estimator based on SOWFA data. 
+  # - Interpolation linearly interpolates between set-points, the value is equally used for all turbines.
+  # - Interpolation_wErrorCov Same as above, but with error covariance. 
+  # - InterpTurbine also linearly interpolates between set-points, but individually for every turbine. 
+  # - InterpTurbine_wErrorCov Same as above, but with error covariance.
+  # - Constant      provides a constant velocity for all turbines.
+  # - Constant_wErrorCov      Same as above, but with error covariance.
+  # - EnKF_InterpTurbine
+  # - RW_with_Mean  random walk with mean
+  # - ZOH_wErrorCov
+  input_vel: Constant
+
+  # Wind Direction Input
+  # - Constant
+  # - Constant_wErrorCov
+  # - Interpolation
+  # - Interpolation_wErrorCov
+  # - InterpTurbine
+  # - InterpTurbine_wErrorCov
+  # - RW_with_mean             random walk with mean
+  input_dir: Interpolation
+  input_ti: Constant
+  input_shear: PowerLaw
+  correction:
+    vel: None
+    dir: All
+    ti: None
+  perturbation:
+    vel: 0
+    vel_sigma: 0.2
+    dir: 0
+    dir_sigma: 0.5
+    ti: 0
+    ti_sigma: 0.005
+
+sim:
+  # the used FLORIS model; currently, only 'gaussian' is supported
+  floris: gaussian
+  # start & end time of the simulation and the time resolution. 
+  start_time: 20000       # [s]
+  end_time: 21200         # [s]
+  time_step: 4            # [s]
+
+  # The discretization method, 'sunflower' or 'isocell'. The latter provides a regular grid 
+  # with equal sized cells. This is the favoured method! Downside is that the number of cells
+  # can not be chosen freely, the algorithm might correct the requested number of cells to 
+  # the nearest possible number (3, 12, 27, 48, 75, 108, 147, ...).  
+  # Sunflower distributes based on an outgoing spiral, the number of cells can be freely chosen.
+  rotor_discret: isocell
+  rotor_points: 50 # number of points for the discretization of the rotor disk
+  
+  # Dynamic settings
+  dyn:
+    # Advection speed
+    # Multiplier of the travel speed of the OPs with their own wind speed. 
+    # The published FLORIDyn models used 1, other literature suggests values as low as 0.6.
+    advection: 1
+    advection_mod: linear
+    # Operating point (OP) / wind field propagation
+    # 'Basic'    iterates the OPs based on their wind speed, OPs do not interact with each other. 
+    # 'Averaged' is a weighted average between the new wind speed value and the old value. 
+    #            This smoothes out turbulent inputs and reduces the occasions when one OP overtakes another OP. 
+    # 'Maximum'  overwrites the state of a slower OP once the faster one overtakes it.
+    op_iteration: IterateOPs_basic
+    # In case the averaging is used, provide weights for the new value (first weight) 
+    # and the old value (second value). They have to sum up to 1.
+    op_iter_weights: [0.7, 0.3]
+    vel:
+      # Spacial-Time-Averaged weight settings for the wind speed
+      #   Lejeune: 512 63 126
+      #   Becker Energies: 256 126 256
+      #   Becker CLC: 256 256 50
+      iter_sigma_dw: 256
+      iter_sigma_cw: 256
+      iter_sigma_time: 50
+    dir:
+      # Spacial-Time-Averaged weight settings for the wind direction
+      iter_sigma_dw: 512
+      iter_sigma_cw: 512
+      iter_sigma_time: 50
+  # Choose if simulation should be initialized, an initialized state should be loaded 
+  # or should be started without initialization.
+  init: noinit # 'noinit' or 'load' (load requires initT.jld2)
+  path_to_data: "data/2021_9T_Data"
+  save_init_state: false  # if true, stores T_init.jld2
+  save_final_state: false # if true, stores T_final.jld2
+
+# Controller
+# Currently only the yaw angle can be set, the axial induction factor is always set to 1/3.
+# - 'Interpolate' per turbine reads an orientation file 'Control_YawInterpolation.csv' 
+#                 to interpolate the turbines world orientation between different set-points. 
+# - SOWFA         reads the file 'SOWFA_nacelleYaw.csv' which is directly the renamed file
+#                 from a SOWFA simulation. 
+# - Constant      reads a single orientation and applies it to all turbines at all times.
+con:
+  yaw: SOWFA
+
+floris:
+  alpha: 2.32
+  beta: 0.154
+  k_a: 0.3837
+  k_b: 0.0037
+  k_fa: 0.73
+  k_fb: 0.8325
+  k_fc: 0.0325
+  k_fd: -0.32
+  eta: 1
+  p_p: 2.2
+  airDen: 1.225 # kg/m^3 (SOWFA)
+  TIexp: 3 # TI crosswind distribution is modelled as a factor of sigma_y and sigma_z.
+           # This is in contrast to previous literature which assumed a fixed box area and the
+           # turbines therein as source of higher TI.
+
+floridyn:
+  n_op: 200
+  deltaUW: 10.0
+  deltaDW: 0.5
+  deltaCW: 3.0
+  dynStateChange: "None"
+  twf_model: "heterogeneous"
+
+turbines:
+    - id: 1
+      type: DTU 10MW
+      x: 600
+      y: 2400
+      z: 0
+      a: 0.33
+      yaw: 0
+      ti: 0.06
+...
+    - id: 9
+      type: DTU 10MW
+      x: 2400
+      y: 600
+      z: 0
+      a: 0.33
+      yaw: 0
+      ti: 0.06
+
+```
+
 # Types created from the yaml file
 ```@docs
 Sim
