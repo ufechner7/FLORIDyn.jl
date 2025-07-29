@@ -23,9 +23,6 @@ Five examples work, selectable via a menu:
 ```julia
 include("examples/menu.jl")
 ```
-### TODO:
-- add missing unit tests
-- implement the missing functions
 
 A Python version of FLORIDyn is available at [https://github.com/TUDelft-DataDrivenControl/OFF](https://github.com/TUDelft-DataDrivenControl/OFF) .
 
