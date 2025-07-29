@@ -49,7 +49,7 @@ export discretizeRotor, calcCt, States
 export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimulation
 export runFLORIS, init_states, getUadv
 export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, interpolateOPs, perturbationOfTheWF!, findTurbineGroups
-export getMeasurements, calcFlowField, plotFlowField, plotMeasurements
+export getMeasurements, calcFlowField, plotFlowField, plotMeasurements, install_examples
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
@@ -245,6 +245,51 @@ include("floridyn_cl/iterate.jl")
 
 include("controller/controller.jl")
 include("visualisation/plot_flowfield.jl")
+
+function copy_model_settings()
+    files = ["2021_9T_Data.yaml"]
+    dst_path = abspath(joinpath(pwd(), "data"))
+    copy_files("data", files)
+    set_data_path(joinpath(pwd(), "data"))
+    println("Copied $(length(files)) files to $(dst_path) !")
+end
+
+"""
+    copy_bin()
+
+Copy the script run_julia to the folder "bin"
+(it will be created if it doesn't exist).
+"""
+function copy_bin()
+    PATH = "bin"
+    if ! isdir(PATH) 
+        mkdir(PATH)
+    end
+    src_path = joinpath(dirname(pathof(@__MODULE__)), "..", PATH)
+    cp(joinpath(src_path, "run_julia"), joinpath(PATH, "run_julia"), force=true)
+    chmod(joinpath(PATH, "run_julia"), 0o774)
+end
+
+function install_examples(add_packages=true)
+    copy_examples()
+    copy_bin()
+    copy_model_settings()
+    if add_packages
+        Pkg.add(["LaTeXStrings", "Timers"])
+    end
+end
+
+function copy_files(relpath, files)
+    if ! isdir(relpath) 
+        mkdir(relpath)
+    end
+    src_path = joinpath(dirname(pathof(@__MODULE__)), "..", relpath)
+    for file in files
+        cp(joinpath(src_path, file), joinpath(relpath, file), force=true)
+        chmod(joinpath(relpath, file), 0o774)
+    end
+    files
+end
 
 @setup_workload begin
     # Putting some things in `@setup_workload` instead of `@compile_workload` can reduce the size of the
