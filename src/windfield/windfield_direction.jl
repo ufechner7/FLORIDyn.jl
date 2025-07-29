@@ -83,7 +83,7 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 - `t`: Time of request (scalar)
 
 # Returns
-- `phi`: Wind direction(s) at time `t` for turbine(s) `iT`
+- `phi`: Wind direction(s) at time `t` for turbine(s) `iT` [°]
 """
 function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind_dir::AbstractMatrix, iT, t)
     times = wind_dir[:, 1]
@@ -122,7 +122,7 @@ Arguments:
 - t: time of request
 
 Returns:
-- phi: Vector of wind directions for each turbine in iT
+- phi: Vector of wind directions for each turbine in iT [°]
 """
 function getWindDirT(::Direction_Interpolation, wind_dir::AbstractMatrix, iT, t)
     times = wind_dir[:, 1]
@@ -157,7 +157,7 @@ Arguments:
 - t: time of request
 
 Returns:
-- phi: Vector of wind directions for each turbine in iT
+- phi: Vector of wind directions for each turbine in iT [°]
 """
 function getWindDirT(::Direction_Interpolation_wErrorCov, wind_dir::WindDirMatrix, iT, t)
     # Ensure t is within bounds
@@ -208,10 +208,10 @@ Return wind direction in SOWFA-degrees for the requested turbine(s).
 # Arguments
 - `wind_dir::Matrix`: Each row is `[time, phi_T0, phi_T1, ...]`.
 - `iT: Index or indices of turbines.
-- `t`: Time of request.
+- `t`: Time of request. [s]
 
 # Returns
-- `phi::Vector{Float64}`: Wind direction(s) for the selected turbine(s) at time `t`.
+- `phi::Vector{Float64}`: Wind direction(s) for the selected turbine(s) at time `t`. [°]
 """
 function getWindDirT(::Direction_InterpTurbine, wind_dir, iT, t)
     # Handle case where wind_dir is Nothing
@@ -247,10 +247,10 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 # Arguments
 - `wind_dir::WindDirMatrix`: See: [`WindDirMatrix`](@ref)
 - `iT`: Index or indices of the turbines (can be integer or vector)
-- `t`: Time of request (Float64)
+- `t`: Time of request (Float64) [s]
 
 # Returns
-- `phi`: Wind direction(s) for requested turbine(s), perturbed with noise.
+- `phi`: Wind direction(s) for requested turbine(s), perturbed with noise. [°]
 """
 function getWindDirT(::Direction_InterpTurbine_wErrorCov, wind_dir, iT, t)
     times = wind_dir.Data[:, 1]
@@ -290,7 +290,7 @@ Returns the wind direction at the respective turbine(s).
 - `wind_dir::WindDirTriple`: [`WindDirTriple`](@ref)
 
 # Returns
-- `phi`: Updated wind direction(s) (vector)
+- `phi`: Updated wind direction(s) (vector) [°]
 """
 function getWindDirT(::Direction_RW_with_Mean, wind_dir_now, wind_dir::WindDirTriple)
     # Random walk model with mean implementation
@@ -311,10 +311,10 @@ Random walk with mean reversion model for wind direction.
 - `::Direction_RW_with_Mean`: Direction mode indicator
 - `wind_dir::WindDirTriple`: Wind direction data containing Init, CholSig, and MeanPull
 - `iT`: Turbine index or indices
-- `t`: Time value (unused in this implementation)
+- `t`: Time value (unused in this implementation) [s]
 
 # Returns
-- `phi`: Wind direction(s) for the requested turbine(s)
+- `phi`: Wind direction(s) for the requested turbine(s) [°]
 """
 function getWindDirT(::Direction_RW_with_Mean, wind_dir::WindDirTriple, iT, t)
     if isa(iT, AbstractArray)
