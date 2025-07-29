@@ -124,9 +124,16 @@ end
             @test all(Y .>= 0.0)
             @test all(Y .<= 3000.0)
         end
-    end
 
+    end
+    @testset "plotMeasurements" begin
+        # Get test parameters
+        wf, set, floris, wind = get_parameters()
+        plotMeasurements(plt, wf, md; separated=true, unit_test=true)
+        plotMeasurements(plt, wf, md; unit_test=true)
+    end
 end
+nothing
 
 
 

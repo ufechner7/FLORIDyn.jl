@@ -290,21 +290,14 @@ This function creates time series plots of simulation measurements. It handles:
 
 The function supports FLORIDyn simulation data visualization.
 """
-function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=true)
-    
-    # # Subtract starting time
-    # if vis.SubtractOffset
-    #     timeFDyn = md["Time [s]"] .- md["Time [s]"][1] .- vis.Msmnts.Data.TimeOffset
-    #     if pSOW && powSOWFA !== nothing
-    #         timeSOW = powSOWFA[:, 2] .- powSOWFA[1, 2] .- vis.Msmnts.Data.TimeOffset
-    #     end
-    # else
-    #     timeFDyn = md["Time [s]"]
-    #     if pSOW && powSOWFA !== nothing
-    #         timeSOW = powSOWFA[:, 2]
-    #     end
-    # end
+function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false, unit_test=false)
+    local fig
+
+    # Subtract start time
     timeFDyn = md.Time .- md.Time[1]
+
+    title="Foreign Reduction"
+    size = 1
     
     # Foreign Reduction plotting
     if separated
@@ -316,7 +309,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=true)
         y_range = y_lim[2] - y_lim[1]
         y_lim = y_lim .+ [-0.1, 0.1] * max(y_range, 0.5)
         
-        f = plt.figure()
+        fig = plt.figure(title, figsize=(10size, 6size))
         c = plt.get_cmap("inferno")(0.5)  # Single color for separated plots
         
         for iT in 1:wf.nT
@@ -327,21 +320,23 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=true)
                 linewidth=2, color=c
             )
             plt.grid(true)
-            plt.title("Turbine $(iT-1)")
+            plt.title("Turbine $(iT)")
             plt.xlim(max(timeFDyn[1], 0), timeFDyn[end])
             plt.ylim(y_lim...)
             plt.xlabel("Time [s]")
             plt.ylabel("Foreign Reduction [%]")
+            plt.tight_layout()   
         end
+        println("Foreign reduction plot created successfully")
     else
-        f = plt.figure()
+        fig = plt.figure(title*" - Line Plot")
         colors = plt.get_cmap("inferno")(range(0, 1, length=wf.nT))
         
         for iT in 1:wf.nT
             plt.plot(
                 timeFDyn[iT:wf.nT:end],
-                md["Foreign Reduction [%]"][iT:wf.nT:end],
-                linewidth=2, color=colors[iT]
+                md.ForeignReduction[iT:wf.nT:end],
+                linewidth=2, color=colors[iT, :]
             )
         end
         plt.grid(true)
@@ -349,6 +344,11 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=true)
         plt.xlim(max(timeFDyn[1], 0), timeFDyn[end])
         plt.xlabel("Time [s]")
         plt.ylabel("Foreign Reduction [%]")
+        println("Foreign reduction line plot created successfully")
+    end
+    if unit_test
+        plt.pause(2)
+        plt.close(fig)
     end
         
     return nothing
