@@ -10,4 +10,4 @@ if ! ("TerminalPager" in globaldependencies()); Pkg.add("TerminalPager"); end;
 if ! ("Timers" in globaldependencies()); Pkg.add("Timers"); end;
 if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
 # run Julia garbage collector single threaded
-julia --project --gcthreads=1,0 -i -e 'using Revise; using FLORIDyn; function main(); include("examples/main.jl"); end'
+julia --project --gcthreads=1,0 -i -e 'using Revise; using FLORIDyn; function menu(); include("examples/menu.jl"); end'

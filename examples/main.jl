@@ -8,6 +8,20 @@ tic()
 using FLORIDyn, TerminalPager, ControlPlots
 
 settings_file = "data/2021_9T_Data.yaml"
+if !  @isdefined PLT; PLT=1; end
+
+function get_parameters()
+    # get the settings for the wind field, simulator and controller
+    wind, sim, con, floris, floridyn, ta = setup(settings_file)
+
+    # create settings struct
+    set = Settings(wind, sim, con)
+
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
+    wf = initSimulation(wf, sim)
+    wf, md, mi = runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
+    return wf, set, floris, wind 
+end
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -30,8 +44,14 @@ toc()
 # @info "Type 'md |> pager' to see the results of the simulation."
 # @info "Type 'q' to exit the pager."
 
-tic()
-@time Z, X, Y = calcFlowField(set, wf, wind, floris)
-toc()
-plotFlowField(plt, wf, X, Y, Z)
+if PLT == 1
+    @time Z, X, Y = calcFlowField(set, wf, wind, floris)
+    plotFlowField(plt, wf, X, Y, Z)
+elseif PLT == 2
+    wf, set, floris, wind = get_parameters()
+    plotMeasurements(plt, wf, md; separated=true)
+elseif PLT == 3
+    wf, set, floris, wind = get_parameters()
+    plotMeasurements(plt, wf, md; separated=false)
+end
 nothing

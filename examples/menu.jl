@@ -12,7 +12,9 @@ for the FLORIDyn.jl wind farm simulation package.
 using Pkg
 using REPL.TerminalMenus
 
-options = ["main_example = include(\"main.jl\")",
+options = ["plot_wind_field            = PLT=1; include(\"main.jl\")",
+           "plot_measurements          = PLT=2; include(\"main.jl\")",
+           "plot_measurements_lineplot = PLT=3; include(\"main.jl\")",
            "open_documentation()",
            "quit"]
 
