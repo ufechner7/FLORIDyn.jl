@@ -12,6 +12,7 @@ The FLORIDyn.jl package is organized into several modules:
   - `floridyn_cl/` - Main simulation loop
   - `floris/` - FLORIS model implementations
   - `windfield/` - Wind field modeling
+  - `visualisation/` - Plotting and helper functions
 - `test/` - Test suite
 - `examples/` - Example scripts
 - `docs/` - Documentation source
