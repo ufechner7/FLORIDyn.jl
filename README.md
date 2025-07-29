@@ -56,7 +56,7 @@ The documentation is available [here](https://ufechner7.github.io/FLORIDyn.jl/de
 This project is licensed under the  `BSD-3-Clause`. The documentation is licensed under the `CC-BY-4.0 License`. Please see the below `Copyright notice` in association with the licenses that can be found in the file [LICENSE](LICENSE) in this folder.
 
 ## Copyright notice
-Technische Universiteit Delft hereby disclaims all copyright interest in the package “KiteModels.jl” (models for airborne wind energy systems) written by the Author(s).
+Technische Universiteit Delft hereby disclaims all copyright interest in the package “FLORIDyn.jl” (dynamic wind farm simulation) written by the Author(s).
 
 Prof.dr. H.G.C. (Henri) Werij, Dean of Aerospace Engineering, Technische Universiteit Delft.
 
