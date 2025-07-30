@@ -285,7 +285,7 @@ vis = Vis(online=false, save=false)
     v_max::Float64 = 10
     rel_v_min::Float64 = 20
     rel_v_max::Float64 = 100
-    turb_max::Float64 = 50
+    turb_max::Float64 = 35
     up_int::Int = 1  # update interval
 end
 
