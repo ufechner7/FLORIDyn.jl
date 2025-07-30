@@ -1,7 +1,6 @@
 # Frequently asked questions FAQ
 
 ## Why should I use Julia?
-
 **Short answer:** Speed (this code is 3-5 times faster than Matlab and 10-50 times faster than Python), which is very useful for example for solving optimization problems.
 **Long answer:** Read [Why am I using Julia](https://ufechner7.github.io/2022/08/13/why-julia.html).
 
@@ -12,6 +11,9 @@ There are different options. Suggested way:
 - Improved method: Type `./bin/run_julia`. This script installs missing packages if needed and loads `Revise` and `FLORIDyn`.
 - Expert method: Add the line `alias jl='bin/run_julia'` to your `.bashrc` file. Now you can start Julia by just typing `jl`.
 Do NOT use `run` button from VSCode to run Julia.
+
+## Where can I find Julia packages?
+If you need extra packages to solve your tasks, look at: https://juliahub.com/ui/Packages . They have a good search function. Don't ask AI, they often suggest outdated packages. If there are multiple packages for your problem, you can also ask on [Discourse](https://discourse.julialang.org/) for suggestions.
 
 ## What is a Julia environment?
 A Julia environment is a folder that contains a `Project.toml` and a `Manifest.toml` file.
@@ -78,5 +80,4 @@ You can easily use Python packages in your own Julia project. I would suggest [P
 The other way, to use `FLORIDyn.jl` from Python is - in theory - possible using [PythonCall.jl](https://github.com/JuliaPy/PythonCall.jl). This was not yet tested. 
 
 ## I have a Problem. Where can I get help?
-
 Ask your question at [Discourse](https://discourse.julialang.org/). Most of the times you will get an answer in 15 min. Half of the people who answer are scientists.
