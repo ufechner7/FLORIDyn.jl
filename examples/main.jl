@@ -21,7 +21,7 @@ function get_parameters()
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
-    wf, md, mi = runFLORIDyn(set, wf, wind, sim, con, vis, floridyn, floris)
+    wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
     return wf, set, floris, wind 
 end
 
