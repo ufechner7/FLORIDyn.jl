@@ -67,7 +67,10 @@ Linux, Windows and Mac are supported. In some of the examples you might have to 
 - copy the file `examples/main.jl` to a new file
 - edit the line `settings_file = "data/2021_9T_Data.yaml"` to match the name of your new configuration file
 - edit the new input files to match your test case
-- run your new example using "include("examples/<new_main.jl>")" 
+- run your new example using "include("examples/<new_main.jl>")"
+
+## Can I use other plotting packages?
+You can use other plotting packages than `ControlPlots.jl`, but then you have to adapt the plotting scripts that can be found [here](https://github.com/ufechner7/FLORIDyn.jl/blob/main/src/visualisation/plot_flowfield.jl) yourself. Pull requests to support other plotting packages like `Plots.jl` or `Makie.jl` are welcome.
 
 ## I have a Problem. Where can I get help?
 
