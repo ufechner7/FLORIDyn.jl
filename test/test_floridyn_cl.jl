@@ -142,8 +142,9 @@ using FLORIDyn, Test
         wind, sim, con, floris, floridyn, ta = setup(settings_file)
         # create settings struct
         set = Settings(wind, sim, con)
+        vis = Vis(online=false, save=false, rel_v_min=20.0, up_int = 4)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-        wf, md, mi = runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
+        wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
         @test size(md) == (2709, 6) # from Matlab
         @test minimum(md.ForeignReduction) ≈ 72.57019949691814 # Matlab: 73.8438
         @test mean(md.ForeignReduction)    ≈ 98.54434468415639 # Matlab: 98.2902

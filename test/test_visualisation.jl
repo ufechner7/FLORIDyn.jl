@@ -14,8 +14,11 @@ function get_parameters()
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
-    wf, md, mi = runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
-    return wf, set, floris, wind 
+    
+    # Create visualization settings for testing
+    vis = Vis(online=false, save=false)
+    wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
+    return wf, set, floris, wind, md
 end
 
 @testset verbose=true "visualisation                                           " begin
@@ -27,7 +30,7 @@ end
             my = [0.0 0.0; 100.0 100.0]    # 2x2 grid of y-coordinates
             nM = 3  # Number of measurements (typically velocity reduction, added turbulence, effective wind speed)
             zh = 90.0  # Hub height
-            wf, set, floris, wind = get_parameters()
+            wf, set, floris, wind, md = get_parameters()
             # Call the function with the correct number of parameters
             measurements = getMeasurements(mx, my, nM, zh, wf, set, floris, wind)
             
@@ -58,7 +61,7 @@ end
     @testset "plotFlowField" begin
         @testset "basic functionality" begin
             # Get test parameters
-            wf, set, floris, wind = get_parameters()
+            wf, set, floris, wind, md = get_parameters()
             
             # Call the calcFlowField function
             Z, X, Y = calcFlowField(set, wf, wind, floris)
@@ -107,7 +110,7 @@ end
         
         @testset "coordinate grid properties" begin
             # Get test parameters
-            wf, set, floris, wind = get_parameters()
+            wf, set, floris, wind, md = get_parameters()
             
             # Call the function
             Z, X, Y = calcFlowField(set, wf, wind, floris)
@@ -128,7 +131,7 @@ end
     end
     @testset "plotMeasurements" begin
         # Get test parameters
-        wf, set, floris, wind = get_parameters()
+        wf, set, floris, wind, md = get_parameters()
         plotMeasurements(plt, wf, md; separated=true, unit_test=true)
         plotMeasurements(plt, wf, md; unit_test=true)
     end
