@@ -50,6 +50,7 @@ export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimul
 export runFLORIS, init_states, getUadv
 export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, interpolateOPs, perturbationOfTheWF!, findTurbineGroups
 export getMeasurements, calcFlowField, plotFlowField, plotMeasurements, install_examples
+export createVideo, createAllVideos, natural_sort_key
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
@@ -246,6 +247,7 @@ include("floridyn_cl/iterate.jl")
 include("controller/controller.jl")
 include("visualisation/calc_flowfield.jl")
 include("visualisation/plot_flowfield.jl")
+include("visualisation/create_video.jl")
 
 """
     copy_model_settings()

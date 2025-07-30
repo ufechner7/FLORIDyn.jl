@@ -8,8 +8,15 @@ tic()
 using FLORIDyn, TerminalPager, ControlPlots
 
 settings_file = "data/2021_9T_Data.yaml"
-vis = Vis(online=true, rel_v_min=20.0)
+vis = Vis(online=true, save=true, rel_v_min=20.0, up_int = 12)
 
+# PLT options:
+# PLT=1: Velocity reduction plot (if not using online visualization)
+# PLT=2: Added turbulence plot  
+# PLT=3: Wind speed plot
+# PLT=4: Measurements plot (separated subplots)
+# PLT=5: Measurements plot (combined)
+# PLT=6: Create videos from saved frames
 if !  @isdefined PLT; PLT=1; end
 
 function get_parameters()
@@ -63,5 +70,21 @@ elseif PLT == 4
 elseif PLT == 5
     wf, set, floris, wind = get_parameters()
     plotMeasurements(plt, wf, md; separated=false)
+elseif PLT == 6
+    # Create videos from saved plot frames
+    println("Creating videos from saved plot frames...")
+    if isdir("video")
+        video_paths = createAllVideos(fps=4, delete_frames=false)
+        if !isempty(video_paths)
+            println("Videos created successfully!")
+            for path in video_paths
+                println("  - $path")
+            end
+        else
+            println("No videos created. Make sure you have run the simulation with vis.save=true first.")
+        end
+    else
+        println("No 'video' directory found. Run simulation with vis.save=true to generate frames first.")
+    end
 end
 nothing
