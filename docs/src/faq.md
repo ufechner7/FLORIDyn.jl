@@ -13,7 +13,7 @@ There are different options. Suggested way:
 Do NOT use `run` button from VSCode to run Julia.
 
 ## Where can I find Julia packages?
-If you need extra packages to solve your tasks, look at: https://juliahub.com/ui/Packages . They have a good search function. Don't ask AI, they often suggest outdated packages. If there are multiple packages for your problem, you can also ask on [Discourse](https://discourse.julialang.org/) for suggestions.
+If you need extra packages to solve your tasks, look at: [https://juliahub.com/ui/Packages](https://juliahub.com/ui/Packages) . They have a good search function. Don't ask AI, they often suggest outdated packages. If there are multiple packages for your problem, you can also ask on [Discourse](https://discourse.julialang.org/) for suggestions.
 
 ## What is a Julia environment?
 A Julia environment is a folder that contains a `Project.toml` and a `Manifest.toml` file.
