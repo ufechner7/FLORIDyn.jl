@@ -2,12 +2,61 @@
 
 ## Why should I use Julia?
 
-**Short answer:** Speed (this code is 3-5 times faster han Matlab and at least 10 times faster than Python), which is very useful for solving optimization problems.
+**Short answer:** Speed (this code is 3-5 times faster than Matlab and at least 10 times faster than Python), which is very useful for example for solving optimization problems.
 **Long answer:** Read [Why am I using Julia](https://ufechner7.github.io/2022/08/13/why-julia.html).
+
+## How can I start Julia?
+There are different options. Suggested way:
+- Use a Bash terminal. On Linux this is the default, on Windows Bash is included in [Git for Windows](https://gitforwindows.org/). You can launch Bash from VSCode from the menu with `View->Terminal`. There is a small drop-down menu at the top left of the terminal window where you might have to select Bash if it is not the default.
+- Basic method to launch Julia: Type `julia --project` in the Bash terminal.
+- Improved method: Type `./bin/run_julia`. This script installs missing packages if needed and loads `Revise` and `FLORIDyn`.
+- Expert method: Add the line `alias jl='bin/run_julia'` to your `.bashrc` file. Now you can start Julia by just typing `jl`.
+Do NOT use `run` button from VSCode to run Julia.
 
 ## What is a Julia environment?
 A Julia environment is a folder that contains a `Project.toml` and a `Manifest.toml` file.
 The `Project.toml` contains a list of the packages that are needed to run your code. It can also contain a list of the compatible package versions and more. It is important to use separate projects for each of your pieces of software that you develop, if you are not doing that (and use only the global environment), the things will break after some time. Further reading: [Working with Julia projects](https://ufechner7.github.io/2022/08/16/julia-projects.html).
+
+### What should be in the global environment?
+Start Julia with `julia`. On my PC I have:
+```
+julia> using Pkg; Pkg.status()
+Status `~/.julia/environments/v1.11/Project.toml`
+  [23c2ee80] ControlPlots v0.2.7
+  [5903a43b] Infiltrator v1.9.2
+  [16fef848] LiveServer v1.5.0
+  [295af30f] Revise v3.8.1
+  [0c614874] TerminalPager v0.6.4
+  [1e6cf692] TestEnv v1.102.1
+  [21f18d07] Timers v0.1.5
+```
+You can have a few more packages in there. But if you have 20 packages in your global environment you did something wrong.
+
+### What should be in my project environment?
+If you followed the developer guide and launched Julia with `jl` or `julia --project`, you should see something like:
+```
+julia> using Pkg; Pkg.status()
+Project FLORIDyn v0.1.0
+Status `~/repos/FLORIDyn.jl/Project.toml`
+  [336ed68f] CSV v0.10.15
+  [a93c6f00] DataFrames v1.7.0
+  [8bb1440f] DelimitedFiles v1.9.1
+  [ffbed154] DocStringExtensions v0.9.5
+  [a98d9a8b] Interpolations v0.16.1
+  [033835bb] JLD2 v0.5.15
+  [b964fa9f] LaTeXStrings v1.4.0
+  [d96e819e] Parameters v0.12.3
+⌅ [aea7be01] PrecompileTools v1.2.1
+  [90137ffa] StaticArrays v1.9.14
+  [10745b16] Statistics v1.11.1
+  [7c3b921d] StructMapping v0.2.3
+  [ddb6d928] YAML v0.4.14
+  [37e2e46d] LinearAlgebra v1.11.0
+  [56ddb016] Logging v1.11.0
+  [44cfe95a] Pkg v1.11.0
+  [9a3f8284] Random v1.11.0
+Info Packages marked with ⌅ have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated`
+``` 
 
 ## Which operating systems are supported?
 Linux, Windows and Mac are supported. In some of the examples you might have to replace `/` with `\\` on Windows. If you still have a problem, create an issue on [https://github.com/ufechner7/FLORIDyn.jl/issues](https://github.com/ufechner7/FLORIDyn.jl/issues).
