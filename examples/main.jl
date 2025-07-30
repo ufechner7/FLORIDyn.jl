@@ -8,7 +8,7 @@ tic()
 using FLORIDyn, TerminalPager, ControlPlots
 
 settings_file = "data/2021_9T_Data.yaml"
-vis = Vis(online=true, save=true, rel_v_min=20.0, up_int = 4)
+vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
 
 # PLT options:
 # PLT=1: Velocity reduction plot (if not using online visualization)
@@ -16,7 +16,8 @@ vis = Vis(online=true, save=true, rel_v_min=20.0, up_int = 4)
 # PLT=3: Wind speed plot
 # PLT=4: Measurements plot (separated subplots)
 # PLT=5: Measurements plot (combined)
-# PLT=6: Create videos from saved frames
+# PLT=6: Velocity reduction plot with online visualization
+# PLT=7: Create videos from saved frames
 if !  @isdefined PLT; PLT=1; end
 
 function get_parameters(vis)
@@ -53,16 +54,17 @@ toc()
 # @info "Type 'q' to exit the pager."
 
 if PLT == 1
-    if ! vis.online
-        @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-        @time Z, X, Y = calcFlowField(set, wf, wind, floris)
-        plotFlowField(plt, wf, X, Y, Z; msr=1)
-    end
+    vis.online = false
+    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    @time Z, X, Y = calcFlowField(set, wf, wind, floris)
+    plotFlowField(plt, wf, X, Y, Z; msr=1)
 elseif PLT == 2
+    vis.online = false
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris)
     plotFlowField(plt, wf, X, Y, Z; msr=2)
 elseif PLT == 3
+    vis.online = false
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris)
     plotFlowField(plt, wf, X, Y, Z; msr=3)
@@ -75,6 +77,25 @@ elseif PLT == 5
     wf, md, set, floris, wind = get_parameters(vis)
     plotMeasurements(plt, wf, md; separated=false)
 elseif PLT == 6
+    vis.online = true
+    # Clean up any existing PNG files in video folder before starting
+    if isdir("video")
+        println("Cleaning up existing PNG files in video folder...")
+        video_files = readdir("video")
+        png_files = filter(f -> endswith(f, ".png"), video_files)
+        for file in png_files
+            try
+                rm(joinpath("video", file))
+            catch e
+                @warn "Failed to delete $file: $e"
+            end
+        end
+        if !isempty(png_files)
+            println("Deleted $(length(png_files)) PNG files")
+        end
+    end
+    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+elseif PLT == 7
     # Create videos from saved plot frames
     println("Creating videos from saved plot frames...")
     if isdir("video")
