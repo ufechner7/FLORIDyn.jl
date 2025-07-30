@@ -122,7 +122,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         elseif msr == 3
             figure_name = "Effective Wind Speed"
             lev_min = vis.v_min; lev_max = 10.0;
-            label = "Wind speed [m/s]"
+            label = L"Wind speed~[ms^{-1}]"
         end
         title = figure_name
         
