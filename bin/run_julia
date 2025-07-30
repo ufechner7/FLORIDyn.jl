@@ -1,13 +1,12 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Install TerminalPager and Timers and ControlPlots globally, if not yet installed
+# Install TerminalPager and Timers and Revise and ControlPlots globally, if not yet installed
 julia -e 'using Pkg;
-function globaldependencies()
-    globaldependencies = keys(Pkg.project().dependencies)
-end
+globaldependencies() = keys(Pkg.project().dependencies)
 if ! ("TerminalPager" in globaldependencies()); Pkg.add("TerminalPager"); end;
 if ! ("Timers" in globaldependencies()); Pkg.add("Timers"); end;
+if ! ("Revise" in globaldependencies()); Pkg.add("Revise"); end;
 if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
 # run Julia garbage collector single threaded
 julia --project --gcthreads=1,0 -i -e 'using Revise; using FLORIDyn; function menu(); include("examples/menu.jl"); end'
