@@ -23,13 +23,20 @@ The FLORIDyn.jl package is organized into several modules:
 
 ### Setting up the development environment
 
-1. Clone the repository:
+1. On Linux, make sure that Python3 and Matplotlib are installed:
+```
+sudo apt install python3-matplotlib
+```
+ 
+Make sure that `ControlPlots.jl` works as explained [here](https://github.com/aenarete/ControlPlots.jl?tab=readme-ov-file#installation).
+
+2. Clone the repository:
    ```bash
    git clone https://github.com/ufechner7/FLORIDyn.jl.git
    cd FLORIDyn.jl
    ```
 
-2. Activate the project environment and update the packages:
+3. Activate the project environment and update the packages:
    ```julia
    using Pkg
    Pkg.activate(".")
