@@ -1,6 +1,8 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+using Printf
+
 """
     createVideo(prefix::String; video_dir="video", output_dir="video", fps=2, delete_frames=false)
 
@@ -80,25 +82,28 @@ function createVideo(prefix::String; video_dir="video", output_dir="video", fps=
     temp_list_file = "temp_file_list.txt"
     
     try
-        # Write file list for FFmpeg concat demuxer
-        open(temp_list_file, "w") do f
-            for file in sorted_files
-                full_path = joinpath(video_dir, file)
-                # FFmpeg requires forward slashes even on Windows
-                normalized_path = replace(full_path, "\\" => "/")
-                println(f, "file '$normalized_path'")
-                println(f, "duration $(1.0/fps)")
-            end
-            # Add the last frame one more time to ensure it's displayed
-            if !isempty(sorted_files)
-                last_file = joinpath(video_dir, sorted_files[end])
-                normalized_path = replace(last_file, "\\" => "/")
-                println(f, "file '$normalized_path'")
-            end
+        # Use a simpler approach: create symbolic links or copy files to a temporary numbered sequence
+        # This is more reliable than complex concat approaches
+        
+        println("Creating temporary numbered sequence...")
+        temp_dir = "temp_video_frames"
+        
+        # Create temporary directory
+        if isdir(temp_dir)
+            rm(temp_dir; recursive=true)
+        end
+        mkpath(temp_dir)
+        
+        # Copy files to temporary directory with sequential numbering
+        for (i, file) in enumerate(sorted_files)
+            src_path = joinpath(video_dir, file)
+            dst_path = joinpath(temp_dir, @sprintf("frame_%04d.png", i))
+            cp(src_path, dst_path)
         end
         
-        # Build FFmpeg command
-        ffmpeg_cmd = `ffmpeg -y -f concat -safe 0 -i $temp_list_file -vf "fps=$fps,scale=trunc(iw/2)*2:trunc(ih/2)*2" -c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p $output_path`
+        # Build FFmpeg command using the temporary numbered sequence
+        input_pattern = joinpath(temp_dir, "frame_%04d.png")
+        ffmpeg_cmd = `ffmpeg -y -framerate $fps -i $input_pattern -c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p -movflags +faststart $output_path`
         
         println("Creating video with FFmpeg...")
         println("Command: $ffmpeg_cmd")
@@ -139,7 +144,16 @@ function createVideo(prefix::String; video_dir="video", output_dir="video", fps=
         return ""
         
     finally
-        # Clean up temporary file
+        # Clean up temporary files and directory
+        temp_dir = "temp_video_frames"
+        if isdir(temp_dir)
+            try
+                rm(temp_dir; recursive=true)
+            catch
+                # Ignore cleanup errors
+            end
+        end
+        
         if isfile(temp_list_file)
             try
                 rm(temp_list_file)
