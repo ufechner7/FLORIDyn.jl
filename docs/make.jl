@@ -31,6 +31,7 @@ makedocs(;
         "High-Level Functions" => "functions_II.md",
         "Settings" => "settings.md",
         "Developer notes" => "developer.md",
+        "FAQ" => "faq.md"
     ],
 )
 
