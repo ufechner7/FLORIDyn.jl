@@ -95,7 +95,7 @@ function play_video(video_path::String, player_cmd::String)
                 run(`mpv --loop=inf --osd-fractions --osd-level=2 $video_path`)
             elseif player_cmd == "vlc"
                 # VLC without repeat option
-                run(`vlc --intf dummy --play-and-exit $video_path`)
+                run(`vlc --intf dummy --quiet --play-and-exit $video_path`)
             else
                 # Generic player
                 run(`$player_cmd $video_path`)

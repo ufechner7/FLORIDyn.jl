@@ -19,6 +19,7 @@ options = ["flow_field_vel_reduction        = PLT=1; include(\"main.jl\")",
            "plot_measurements_lineplot      = PLT=5; include(\"main.jl\")",
            "flow_field_vel_reduction_online = PLT=6; include(\"main.jl\")",
            "create_video_from_saved_frames  = PLT=7; include(\"main.jl\")",
+           "play_videos                     = include(\"play_video.jl\")",
            "open_documentation()",
            "quit"]
 
