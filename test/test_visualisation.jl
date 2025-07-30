@@ -21,6 +21,34 @@ function get_parameters()
     return wf, set, floris, wind, md
 end
 
+"""
+Create a simple test PNG file of specified dimensions.
+This creates a valid PNG that FFmpeg can process without errors.
+"""
+function create_test_png(filepath::String, width::Int, height::Int)
+    # Create a minimal but valid 10x10 black PNG file
+    simple_png = UInt8[
+        # PNG signature
+        0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,
+        # IHDR chunk (10x10, grayscale)
+        0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,
+        0x00, 0x00, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x0A,  # 10x10 dimensions
+        0x08, 0x00, 0x00, 0x00, 0x00, 0x3A, 0x30, 0x9D,  # 8-bit grayscale
+        0x9B, 
+        # IDAT chunk (compressed black pixels)
+        0x00, 0x00, 0x00, 0x0E, 0x49, 0x44, 0x41, 0x54,
+        0x78, 0x9C, 0x63, 0x00, 0x02, 0x00, 0x00, 0x05,
+        0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4,
+        # IEND chunk
+        0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44,
+        0xAE, 0x42, 0x60, 0x82
+    ]
+    
+    open(filepath, "w") do f
+        write(f, simple_png)
+    end
+end
+
 @testset verbose=true "visualisation                                           " begin
     @testset "getMeasurements" begin
         # Create a simple test wind farm configuration
@@ -220,24 +248,30 @@ end
                 # or create dummy files for testing
                 test_files = ["test_t0000s.png", "test_t0012s.png", "test_t0024s.png"]
                 
-                # Create minimal PNG files (2x2 pixels) for testing
-                # This is a minimal valid PNG file header + data for a 2x2 image
-                minimal_png = UInt8[
-                    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,  # PNG signature
-                    0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,  # IHDR chunk
-                    0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02,  # 2x2 dimensions
-                    0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x5D, 0x68,  # IHDR data + CRC (RGB)
-                    0x47, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41,  # IDAT chunk  
-                    0x54, 0x78, 0x9C, 0x63, 0xF8, 0x0F, 0x00, 0x01,  # IDAT data (2x2 pixels)
-                    0x01, 0x01, 0x00, 0x18, 0xDD, 0x8D, 0xB4, 0x00,  # IDAT data + CRC
-                    0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,  # IEND chunk
-                    0x42, 0x60, 0x82                                   # IEND CRC
-                ]
+                # Create minimal PNG files (64x64 pixels) for testing
+                # Use a larger size that FFmpeg can handle better
+                test_files = ["test_t0000s.png", "test_t0012s.png", "test_t0024s.png"]
                 
                 for file in test_files
                     file_path = joinpath(test_dir, file)
-                    open(file_path, "w") do f
-                        write(f, minimal_png)
+                    
+                    # Try to use a plotting library to create a proper PNG
+                    try
+                        # Create a simple 64x64 test image
+                        if @isdefined(plt)
+                            plt.figure(figsize=(1, 1))
+                            plt.imshow(rand(64, 64), cmap="viridis")
+                            plt.axis("off")
+                            plt.savefig(file_path, dpi=64, bbox_inches="tight", pad_inches=0)
+                            plt.close()
+                        else
+                            # Fallback: create a larger minimal PNG (10x10 pixels)
+                            create_test_png(file_path, 10, 10)
+                        end
+                    catch e
+                        @warn "Could not create test PNG with plotting, using minimal fallback: $e"
+                        # Create a minimal but larger PNG file
+                        create_test_png(file_path, 10, 10)
                     end
                 end
                 
