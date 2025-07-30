@@ -8,6 +8,8 @@ tic()
 using FLORIDyn, TerminalPager, ControlPlots
 
 settings_file = "data/2021_9T_Data.yaml"
+vis = Vis(online=false)
+
 if !  @isdefined PLT; PLT=1; end
 
 function get_parameters()
@@ -19,7 +21,7 @@ function get_parameters()
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
-    wf, md, mi = runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
+    wf, md, mi = runFLORIDyn(set, wf, wind, sim, con, vis, floridyn, floris)
     return wf, set, floris, wind 
 end
 
@@ -35,7 +37,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 wf = initSimulation(wf, sim)
 
 toc()
-@time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, floridyn, floris)
+@time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 # 0.115 s on Desktop, 0.39 s with MATLAB
 # 0.115 seconds (891.24 k allocations: 368.147 MiB, 10.18% gc time)
 # 0.110 seconds (883.14 k allocations: 272.819 MiB, 9.62% gc time) iterateOPs! allocation free
@@ -45,8 +47,10 @@ toc()
 # @info "Type 'q' to exit the pager."
 
 if PLT == 1
-    @time Z, X, Y = calcFlowField(set, wf, wind, floris)
-    plotFlowField(plt, wf, X, Y, Z; msr=1)
+    if ! vis.online
+        @time Z, X, Y = calcFlowField(set, wf, wind, floris)
+        plotFlowField(plt, wf, X, Y, Z; msr=1)
+    end
 elseif PLT == 2
     @time Z, X, Y = calcFlowField(set, wf, wind, floris)
     plotFlowField(plt, wf, X, Y, Z; msr=2)

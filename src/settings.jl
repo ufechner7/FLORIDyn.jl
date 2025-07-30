@@ -231,6 +231,37 @@ struct TurbineArray
 end
 
 """
+    Vis
+
+A mutable struct for visualization settings in wind farm simulations.
+
+This struct controls visualization options during simulation runtime, particularly for
+live plotting and animation features.
+
+# Fields
+- `online::Bool`: Enable/disable online visualization during simulation. When `true`, 
+                  live plots and animations are displayed during the simulation run.
+                  When `false`, visualization is disabled for faster computation.
+
+# Example
+```julia
+# Enable online visualization
+vis = Vis(online=true)
+
+# Disable online visualization for batch processing
+vis = Vis(online=false)
+```
+
+# Notes
+- Online visualization may significantly slow down simulation performance
+- Useful for debugging, monitoring simulation progress, or creating demonstrations
+- When disabled, visualization functions are skipped to improve computational efficiency
+"""
+@with_kw mutable struct Vis
+    online::Bool
+end
+
+"""
     setup(filename)
 
 Initializes or configures the system using the provided `filename`. The `filename` should specify the path to a configuration or settings file required for setup.

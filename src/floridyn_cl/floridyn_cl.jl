@@ -638,7 +638,7 @@ end
 
 """
     runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
-                floridyn::FloriDyn, floris::Floris)
+                vis::Vis, floridyn::FloriDyn, floris::Floris)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
@@ -649,6 +649,7 @@ Main entry point for the FLORIDyn closed-loop simulation.
 - `wind::Wind`: See: [Wind](@ref) field settings.
 - `sim::Sim`: Simulation state or configuration object. See: [`Sim`](@ref)
 - `con::Con`: Controller object or control parameters. See: [`Con`](@ref)
+- `vis::Vis`: Visualization settings controlling online plotting and animation. See: [`Vis`](@ref)
 - `floridyn::FloriDyn`: Parameters specific to the FLORIDyn model. See: [`FloriDyn`](@ref)
 - `floris::Floris`: Parameters specific to the FLORIS model. See: [`Floris`](@ref)
 
@@ -670,7 +671,7 @@ Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models,
 applying control strategies and updating turbine states over time.
 
 """
-function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, floridyn::FloriDyn, floris::Floris)
+function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, vis::Vis, floridyn::FloriDyn, floris::Floris)
     nT      = wf.nT
     sim_steps    = sim.n_sim_steps
     ma       = zeros(sim_steps * nT, 6)
@@ -678,6 +679,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
     vm_int   = Vector{Matrix{Float64}}(undef, sim_steps)
 
     sim_time = sim.start_time
+    plot_state = nothing  # Initialize animation state
     
     buffers = FLORIDyn.IterateOPsBuffers(wf)
     for it in 1:sim_steps
@@ -718,11 +720,9 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         ma[(it-1)*nT+1:it*nT, 6] = P
 
         # ========== Live Plotting ============
-        if (sim_time - sim.start_time) < 20
-            # println(sim_time)
-            # Z, X, Y = calcFlowField(set, wf, wind, floris)
-            # plotFlowField(plt, wf, X, Y, Z; msr=1)
-            # sleep(1)
+        if vis.online
+            Z, X, Y = calcFlowField(set, wf, wind, floris)
+            plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z; msr=1)
         end
 
         sim_time += sim.time_step

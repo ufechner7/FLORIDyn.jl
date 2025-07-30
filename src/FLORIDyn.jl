@@ -15,7 +15,7 @@ import DocStringExtensions
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
 using Statistics, StaticArrays, Pkg
 
-export setup, Settings, getTurbineData, initSimulation, TurbineArray
+export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
@@ -434,6 +434,7 @@ end
     # precompile file and potentially make loading faster.
     path = dirname(pathof(@__MODULE__))
     path = (joinpath(path, "..", "data"))
+    vis = Vis(online=false)
     @compile_workload begin
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
@@ -442,7 +443,7 @@ end
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf = initSimulation(wf, sim)
-        runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
+        runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
     end
 
 end

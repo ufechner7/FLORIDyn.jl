@@ -2,28 +2,96 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    plotFlowField(mx::Matrix, my::Matrix, mz::Array{Float64,3}; msr=1, title="Flow Field")
+    PlotState
 
-Plot a 2D contour of the flow field data.
+Mutable struct to hold animation state for flow field plotting.
+
+# Fields
+- `fig`: Matplotlib figure object
+- `ax`: Matplotlib axes object  
+- `cb`: Colorbar object
+- `contour_collection`: Collection from contourf for updating data
+- `turbine_lines`: Vector of line objects for turbine rotors
+- `op_scatter1`: Scatter plot object for all operational points
+- `op_scatter2`: Scatter plot object for every 10th operational point
+- `title_obj`: Title text object for updating
+- `figure_name`: Name of the figure window
+- `label`: Colorbar label text
+- `vmin`: Minimum value for color scale
+- `vmax`: Maximum value for color scale
+- `levels`: Contour levels
+"""
+mutable struct PlotState
+    fig
+    ax
+    cb
+    contour_collection
+    turbine_lines::Vector
+    op_scatter1
+    op_scatter2
+    title_obj
+    figure_name::String
+    label::String
+    vmin::Float64
+    vmax::Float64
+    levels
+end
+
+"""
+    plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz; msr=3, unit_test=false)
+
+Plot a 2D contour of the flow field data with support for animation.
 
 # Arguments
+- `state::Union{Nothing, PlotState}`: Animation state object. Pass `nothing` for the first call, 
+  then pass the returned state for subsequent calls to maintain the same figure and layout.
+- `plt`: Plotting package (e.g., ControlPlots)
+- `wf`: Wind farm object containing turbine data
 - `mx::Matrix`: X-coordinate grid
 - `my::Matrix`: Y-coordinate grid  
 - `mz::Array{Float64,3}`: 3D array of measurements with dimensions (rows, cols, nM)
 - `msr::Int`: Which measurement to plot (1, 2, or 3). Default is 3.
+- `unit_test::Bool`: Whether to automatically close plots for testing. Default is false.
 
 # Returns
-- `nothing`
+- `state::PlotState`: Updated or newly created plot state for use in subsequent calls
 
-# Note
-The measurement indices correspond to:
-- 1: Velocity reduction
-- 2: Added turbulence  
-- 3: Effective wind speed
+# Description
+This function supports creating animations by maintaining plot state across multiple calls:
 
-This function requires a plotting package like ControlPlots.jl to be loaded and available as `plt`.
+## First Call (state = nothing)
+- Creates new figure, axes, colorbar, and all plot elements
+- Initializes and returns a PlotState object
+
+## Subsequent Calls (state = PlotState)
+- Updates existing contour data, turbine positions, and operational points
+- Reuses the same figure and layout for smooth animation
+
+# Animation Example
+```julia
+using ControlPlots
+
+# Initialize state (first frame)
+state = nothing
+for t in time_steps
+    Z, X, Y = calcFlowField(settings, wind_farm, wind, floris)
+    state = plotFlowField(state, plt, wind_farm, X, Y, Z; msr=1)
+    plt.pause(0.1)  # Small delay for animation
+end
+```
+
+# Measurement Types
+- `msr=1`: Velocity reduction [%]
+- `msr=2`: Added turbulence [%]  
+- `msr=3`: Effective wind speed [m/s]
+
+# Notes
+- The function automatically handles coordinate system transformations for turbine orientations
+- Operational points are displayed as white scatter points for reference
+- Color scales are kept consistent across animation frames when using the same measurement type
+- This function requires a plotting package like ControlPlots.jl to be loaded and available as `plt`
 """
-function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
+function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz; msr=3, unit_test=false)
     # Extract the 2D slice for the specified measurement
     if msr > size(mz, 3)
         error("msr ($msr) exceeds number of measurements ($(size(mz, 3)))")
@@ -36,27 +104,77 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
     try
         # This will work if ControlPlots is loaded and plt is available
         if msr == 1
-            figure = "Velocity Reduction"
+            figure_name = "Velocity Reduction"
             label = "Relative Wind Speed [%]"
             mz_2d .*= 100
             vmin = minimum(mz_2d); vmax = maximum(mz_2d);
         elseif msr == 2
-            figure = "Added Turbulence"
+            figure_name = "Added Turbulence"
             label = "Added Turbulence [%]"
             vmin = 0.0; vmax = maximum(mz_2d);
         elseif msr == 3
-            figure = "Effective Wind Speed"
+            figure_name = "Effective Wind Speed"
             vmin = 2.0; vmax = 10.0;
             label = L"Wind speed~[ms^{-1}]"
         end
-        title = figure
-        size = 0.84
-        fig = plt.figure(figure, figsize=(7.25size, 6size))
-        n=40
-        levels = range(vmin, stop=vmax, length=n+1)
-        plt.contourf(my, mx, mz_2d, n; levels, cmap="inferno") # 40 levels, no lines
-        cb = plt.colorbar()
-        cb.set_label(label, labelpad=3)
+        title = figure_name
+        
+        # Initialize or update plot state
+        if state === nothing
+            # First call - create new figure and all elements
+            size = 0.84
+            fig = plt.figure(figure_name, figsize=(7.25size, 6size))
+            ax = plt.gca()
+            n = 40
+            levels = range(vmin, stop=vmax, length=n+1)
+            contour_collection = plt.contourf(my, mx, mz_2d, n; levels, cmap="inferno")
+            cb = plt.colorbar()
+            cb.set_label(label, labelpad=3)
+            
+            # Initialize empty containers for dynamic elements
+            turbine_lines = []
+            op_scatter1 = nothing
+            op_scatter2 = nothing
+            title_obj = plt.title(title)
+            
+            # Create state object
+            state = PlotState(fig, ax, cb, contour_collection, turbine_lines, op_scatter1, op_scatter2, 
+                             title_obj, figure_name, label, vmin, vmax, levels)
+        else
+            # Subsequent calls - update existing plot
+            plt.figure(state.figure_name)
+            
+            # Clear previous dynamic elements
+            for line in state.turbine_lines
+                try
+                    line.remove()
+                catch
+                    # Line might already be removed
+                end
+            end
+            empty!(state.turbine_lines)
+            
+            if state.op_scatter1 !== nothing
+                try
+                    state.op_scatter1.remove()
+                catch
+                end
+            end
+            if state.op_scatter2 !== nothing
+                try
+                    state.op_scatter2.remove()
+                catch
+                end
+            end
+            
+            # Update contour data
+            for collection in state.contour_collection.collections
+                collection.remove()
+            end
+            
+            # Create new contour with updated data
+            state.contour_collection = plt.contourf(my, mx, mz_2d, 40; levels=state.levels, cmap="inferno")
+        end
 
         # Plot the turbine rotors as short, thick lines (as seen from above)
         for i_T in 1:length(wf.D)
@@ -79,30 +197,37 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
             base_pos = wf.posBase[i_T, 1:2]  # (x,y)
             rot_pos .+= base_pos
 
-            # Plot in 3D at height z=20 for both points
+            # Plot turbine line and store reference
             ax = plt.gca()
-            ax.plot(rot_pos[1, :], rot_pos[2, :], [20, 20], color="k", linewidth=3)
+            line = ax.plot(rot_pos[1, :], rot_pos[2, :], [20, 20], color="k", linewidth=3)[1]
+            push!(state.turbine_lines, line)
         end
+        
         # Plot the OPs
         # Plot all points with size 2 and white filled marker
-        n = 20
-        plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=2, color="white", marker="o")
-        plt.xlim(minimum(mx), maximum(mx))
-        plt.ylim(minimum(mx), maximum(mx))
-
+        state.op_scatter1 = plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=2, color="white", marker="o")
+        
         # Plot every 10th point with size 6 and white filled marker
-        plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=6, color="white", marker="o")
+        state.op_scatter2 = plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=6, color="white", marker="o")
         
         plt.xlim(minimum(mx), maximum(mx))
         plt.ylim(minimum(mx), maximum(mx))
-        plt.title(title)
+        state.title_obj.set_text(title)
         plt.xlabel("West-East [m]")
         plt.ylabel("South-North [m]")
         plt.tight_layout()
-        println("Contour plot created successfully")
+        
+        # Force display update for animation
+        plt.draw()
+        
+        if !unit_test
+            println("Contour plot updated successfully")
+        end
+        
         if unit_test
             plt.pause(2)
-            plt.close(fig)
+            plt.close(state.fig)
+            return nothing
         end
     catch e
         if isa(e, UndefVarError) && e.var == :plt
@@ -111,10 +236,40 @@ function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
             println("X range: [", minimum(mx), ", ", maximum(mx), "]")
             println("Y range: [", minimum(my), ", ", maximum(my), "]") 
             println("Z range: [", minimum(mz_2d), ", ", maximum(mz_2d), "]")
+            return state
         else
             rethrow(e)
         end
     end
+    return state
+end
+
+"""
+    plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
+
+Compatibility method for the original plotFlowField interface.
+
+This method provides backward compatibility by calling the new state-based version 
+with `state=nothing`, effectively creating a single plot without animation support.
+
+# Arguments
+- `plt`: Plotting package (e.g., ControlPlots)
+- `wf`: Wind farm object containing turbine data
+- `mx::Matrix`: X-coordinate grid
+- `my::Matrix`: Y-coordinate grid  
+- `mz::Array{Float64,3}`: 3D array of measurements with dimensions (rows, cols, nM)
+- `msr::Int`: Which measurement to plot (1, 2, or 3). Default is 3.
+- `unit_test::Bool`: Whether to automatically close plots for testing. Default is false.
+
+# Returns
+- `nothing`: For compatibility with the original interface
+
+# Note
+This method is provided for backward compatibility. For animation support, 
+use the new interface with explicit state management.
+"""
+function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
+    plotFlowField(nothing, plt, wf, mx, my, mz; msr=msr, unit_test=unit_test)
     return nothing
 end
 
