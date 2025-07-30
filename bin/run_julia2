@@ -1,5 +1,14 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+# Start script for debugging with Infiltrator.jl
+
+# Install TerminalPager, Timers, Revise, Infiltrator and ControlPlots globally, if not yet installed
+julia -e 'using Pkg;
+globaldependencies() = keys(Pkg.project().dependencies)
+if ! ("TerminalPager" in globaldependencies()); Pkg.add("TerminalPager"); end;
+if ! ("Timers" in globaldependencies()); Pkg.add("Timers"); end;
+if ! ("Revise" in globaldependencies()); Pkg.add("Revise"); end;
+if ! ("Infiltrator" in globaldependencies()); Pkg.add("Infiltrator"); end;
+if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
 julia --project -i -e 'using Revise; using Infiltrator'
-# julia --project
