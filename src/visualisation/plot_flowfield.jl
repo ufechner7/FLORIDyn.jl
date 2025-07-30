@@ -221,7 +221,8 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz; ms
         plt.draw()
         
         if !unit_test
-            println("Contour plot updated successfully")
+            print(".")
+            # println("Contour plot updated successfully")
         end
         
         if unit_test
