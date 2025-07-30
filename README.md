@@ -67,6 +67,9 @@ menu()
 ```
 You can select any of the examples with the \<UP\> and \<DOWN\> keys, and then press \<ENTER\>.
 
+## Installation using GIT
+For developers, follow the [developer notes](https://ufechner7.github.io/FLORIDyn.jl/dev/developer/).
+
 ## Documentation
 The documentation is available [here](https://ufechner7.github.io/FLORIDyn.jl/dev/).
 

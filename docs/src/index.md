@@ -65,6 +65,9 @@ menu()
 ```
 You can select any of the examples with the `<UP>` and `<DOWN>` keys, and then press `<ENTER>`.
 
+## Installation using GIT
+For developers, follow the [developer notes](https://ufechner7.github.io/FLORIDyn.jl/dev/developer/).
+
 ## References
 Citation of the FLORIDyn model:
 FLORIDyn - A dynamic and flexible framework for real-time wind farm control, M. Becker, D. Allaerts, J.W. van Wingerden, 2022, http://doi.org/10.1088/1742-6596/2265/3/032103

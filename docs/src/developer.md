@@ -29,11 +29,11 @@ The FLORIDyn.jl package is organized into several modules:
    cd FLORIDyn.jl
    ```
 
-2. Activate the project environment:
+2. Activate the project environment and update the packages:
    ```julia
    using Pkg
    Pkg.activate(".")
-   Pkg.instantiate()
+   Pkg.up()
    ```
 
 ### Running tests
