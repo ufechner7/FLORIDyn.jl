@@ -135,6 +135,133 @@ end
         plotMeasurements(plt, wf, md; separated=true, unit_test=true)
         plotMeasurements(plt, wf, md; unit_test=true)
     end
+    
+    @testset "createVideo" begin
+        @testset "function exists and is callable" begin
+            # Test that the function exists and has the right signature
+            @test isa(createVideo, Function)
+            
+            # Test that we can get method information
+            methods_list = methods(createVideo)
+            @test length(methods_list) >= 1
+            
+            # Check that the function is exported
+            @test :createVideo in names(FLORIDyn)
+        end
+        
+        @testset "basic functionality with test images" begin
+            # Create a temporary test directory
+            test_dir = "test_video_temp"
+            output_dir = "test_output_temp"
+            
+            try
+                # Create test directory
+                mkpath(test_dir)
+                mkpath(output_dir)
+                
+                # Create some simple test PNG files using ImageMagick convert if available
+                # or create dummy files for testing
+                test_files = ["test_t0000s.png", "test_t0012s.png", "test_t0024s.png"]
+                
+                # Create minimal PNG files (2x2 pixels) for testing
+                # This is a minimal valid PNG file header + data for a 2x2 image
+                minimal_png = UInt8[
+                    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A,  # PNG signature
+                    0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52,  # IHDR chunk
+                    0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02,  # 2x2 dimensions
+                    0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x5D, 0x68,  # IHDR data + CRC (RGB)
+                    0x47, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41,  # IDAT chunk  
+                    0x54, 0x78, 0x9C, 0x63, 0xF8, 0x0F, 0x00, 0x01,  # IDAT data (2x2 pixels)
+                    0x01, 0x01, 0x00, 0x18, 0xDD, 0x8D, 0xB4, 0x00,  # IDAT data + CRC
+                    0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE,  # IEND chunk
+                    0x42, 0x60, 0x82                                   # IEND CRC
+                ]
+                
+                for file in test_files
+                    file_path = joinpath(test_dir, file)
+                    open(file_path, "w") do f
+                        write(f, minimal_png)
+                    end
+                end
+                
+                # Test basic functionality (should fail gracefully without FFmpeg)
+                result = createVideo("test"; video_dir=test_dir, output_dir=output_dir, fps=2)
+                
+                # The function should handle missing FFmpeg gracefully
+                @test isa(result, String)  # Should return a string (empty if failed)
+                
+                # Test with non-existent directory
+                result_nodir = createVideo("test"; video_dir="nonexistent_dir")
+                @test result_nodir == ""  # Should return empty string
+                
+                # Test with no matching files
+                result_nomatch = createVideo("nomatch"; video_dir=test_dir)
+                @test result_nomatch == ""  # Should return empty string
+                
+                # Test natural_sort_key function directly
+                test_filenames = ["test_t0010s.png", "test_t0001s.png", "test_t0100s.png"]
+                sorted_names = sort(test_filenames, by=natural_sort_key)
+                expected_order = ["test_t0001s.png", "test_t0010s.png", "test_t0100s.png"]
+                @test sorted_names == expected_order
+                
+            finally
+                # Clean up test directories
+                if isdir(test_dir)
+                    rm(test_dir; recursive=true)
+                end
+                if isdir(output_dir)
+                    rm(output_dir; recursive=true)
+                end
+            end
+        end
+        
+        @testset "natural_sort_key" begin
+            # Test natural sorting behavior
+            @test isa(natural_sort_key, Function)
+            
+            # Test with simple filenames
+            key1 = natural_sort_key("file1.png")
+            key2 = natural_sort_key("file10.png")
+            key3 = natural_sort_key("file2.png")
+            
+            @test isa(key1, Vector)
+            @test isa(key2, Vector)
+            @test isa(key3, Vector)
+            
+            # Test actual sorting behavior
+            files = ["velocity_reduction_t0010s.png", "velocity_reduction_t0001s.png", "velocity_reduction_t0100s.png"]
+            sorted_files = sort(files, by=natural_sort_key)
+            expected = ["velocity_reduction_t0001s.png", "velocity_reduction_t0010s.png", "velocity_reduction_t0100s.png"]
+            @test sorted_files == expected
+            
+            # Test with mixed content
+            mixed_files = ["a10b.png", "a2b.png", "a1b.png"]
+            sorted_mixed = sort(mixed_files, by=natural_sort_key)
+            expected_mixed = ["a1b.png", "a2b.png", "a10b.png"]
+            @test sorted_mixed == expected_mixed
+        end
+        
+        @testset "createAllVideos" begin
+            # Test that the function exists and is callable
+            @test isa(createAllVideos, Function)
+            
+            # Check that the function is exported
+            @test :createAllVideos in names(FLORIDyn)
+            
+            # Test with empty directory
+            test_dir = "test_empty_video"
+            try
+                mkpath(test_dir)
+                result = createAllVideos(video_dir=test_dir, output_dir=test_dir)
+                @test isa(result, Vector{String})
+                @test isempty(result)  # Should return empty vector
+            finally
+                if isdir(test_dir)
+                    rm(test_dir; recursive=true)
+                end
+            end
+        end
+    end
 end
 nothing
 
