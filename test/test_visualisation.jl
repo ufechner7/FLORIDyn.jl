@@ -94,8 +94,9 @@ end
             # Call the calcFlowField function
             Z, X, Y = calcFlowField(set, wf, wind, floris)
 
-            plotFlowField(plt, wf, X, Y, Z; unit_test=true)
-            
+            vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
+            plotFlowField(nothing, plt, wf, X, Y, Z, vis; unit_test=true)
+
             # Test that outputs have the correct types
             @test isa(Z, Array{Float64,3})
             @test isa(X, Matrix{Float64})
@@ -162,11 +163,12 @@ end
             
             # Call the calcFlowField function
             Z, X, Y = calcFlowField(set, wf, wind, floris)
+            vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
             
             @testset "msr=1 (velocity reduction)" begin
                 # Test plotFlowField with msr=1
-                plotFlowField(plt, wf, X, Y, Z; msr=1, unit_test=true)
-                
+                plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=1, unit_test=true)
+
                 # Test that the function runs without error
                 @test true  # If we get here, the function didn't throw an error
                 
@@ -181,8 +183,8 @@ end
             
             @testset "msr=2 (added turbulence)" begin
                 # Test plotFlowField with msr=2
-                plotFlowField(plt, wf, X, Y, Z; msr=2, unit_test=true)
-                
+                plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=2, unit_test=true)
+
                 # Test that the function runs without error
                 @test true  # If we get here, the function didn't throw an error
                 
@@ -196,14 +198,15 @@ end
             end
             
             @testset "msr parameter validation" begin
+                vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
                 # Test error handling for invalid msr values
                 # msr=0 causes BoundsError (Julia arrays are 1-indexed)
-                @test_throws BoundsError plotFlowField(plt, wf, X, Y, Z; msr=0, unit_test=true)
+                @test_throws BoundsError plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=0, unit_test=true)
                 # msr > 3 causes ErrorException from explicit check
-                @test_throws ErrorException plotFlowField(plt, wf, X, Y, Z; msr=4, unit_test=true)
-                
+                @test_throws ErrorException plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=4, unit_test=true)
+
                 # Test that msr=3 (default) still works
-                plotFlowField(plt, wf, X, Y, Z; msr=3, unit_test=true)
+                plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=3, unit_test=true)
                 @test true  # If we get here, the function didn't throw an error
                 
                 # Test that wind speed data (msr=3) is reasonable
