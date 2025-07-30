@@ -103,7 +103,8 @@ function createVideo(prefix::String; video_dir="video", output_dir="video", fps=
         
         # Build FFmpeg command using the temporary numbered sequence
         input_pattern = joinpath(temp_dir, "frame_%04d.png")
-        ffmpeg_cmd = `ffmpeg -y -framerate $fps -i $input_pattern -c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p -movflags +faststart $output_path`
+        # Add scale filter to ensure dimensions are divisible by 2
+        ffmpeg_cmd = `ffmpeg -y -framerate $fps -i $input_pattern -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p -movflags +faststart $output_path`
         
         println("Creating video with FFmpeg...")
         println("Command: $ffmpeg_cmd")

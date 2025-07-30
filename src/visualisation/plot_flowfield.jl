@@ -114,15 +114,17 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             figure_name = "Velocity Reduction"
             label = "Relative Wind Speed [%]"
             mz_2d .*= 100
-            lev_min = min(vis.rel_v_min, minimum(mz_2d)); lev_max = maximum(mz_2d);
+            # Use fixed color scale for consistency across frames
+            lev_min = vis.rel_v_min; lev_max = vis.rel_v_max;
         elseif msr == 2
             figure_name = "Added Turbulence"
             label = "Added Turbulence [%]"
-            lev_min = 0.0; lev_max = maximum(mz_2d);
+            # Use fixed upper limit for consistency
+            lev_min = 0.0; lev_max = vis.turb_max;
         elseif msr == 3
             figure_name = "Effective Wind Speed"
-            lev_min = vis.v_min; lev_max = 10.0;
-            label = L"Wind speed~[ms^{-1}]"
+            lev_min = vis.v_min; lev_max = vis.v_max;
+            label = "Wind speed [m/s]"
         end
         title = figure_name
         
@@ -144,6 +146,15 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             contour_collection = plt.contourf(my, mx, mz_2d, n; levels, cmap="inferno")
             cb = plt.colorbar()
             cb.set_label(label, labelpad=3)
+            
+            # Set fixed axis limits and labels - do this only once
+            plt.xlim(minimum(mx), maximum(mx))
+            plt.ylim(minimum(my), maximum(my))
+            plt.xlabel("West-East [m]")
+            plt.ylabel("South-North [m]")
+            
+            # Apply tight_layout with custom padding for more top space
+            plt.tight_layout(pad=1.0, h_pad=0.3, w_pad=0.3, rect=[0, 0, 1, 0.97])
             
             # Initialize empty containers for dynamic elements
             turbine_lines = []
@@ -224,12 +235,8 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         # Plot every 10th point with size 6 and white filled marker
         state.op_scatter2 = plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=6, color="white", marker="o")
         
-        plt.xlim(minimum(mx), maximum(mx))
-        plt.ylim(minimum(mx), maximum(mx))
+        # Update title only (don't change layout)
         state.title_obj.set_text(title)
-        plt.xlabel("West-East [m]")
-        plt.ylabel("South-North [m]")
-        plt.tight_layout()
         
         # Force display update for animation
         plt.draw()
@@ -253,7 +260,8 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             
             # Save the current figure
             try
-                plt.savefig(filename, dpi=150, bbox_inches="tight")
+                # Use bbox_inches='tight' with pad_inches for consistent sizing
+                plt.savefig(filename, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
                 if !unit_test
                     println("Plot saved to: $filename")
                 end
@@ -315,7 +323,7 @@ use the new interface with explicit state management.
 """
 function plotFlowField(plt, wf, mx, my, mz, t=nothing; msr=3, unit_test=false)
     # Create default visualization settings for backward compatibility
-    vis_default = Vis(online=true, save=false)
+    vis_default = Vis(online=true, save=false, v_min=2, v_max=10, rel_v_min=20, rel_v_max=100, turb_max=50)
     plotFlowField(nothing, plt, wf, mx, my, mz, vis_default, t; msr=msr, unit_test=unit_test)
     return nothing
 end

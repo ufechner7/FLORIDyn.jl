@@ -6,7 +6,7 @@ using FLORIDyn
 
 # Example 1: Create a video from velocity reduction frames
 println("Example 1: Creating video from velocity reduction frames")
-video_path = createVideo("velocity_reduction"; fps=4)
+video_path = createVideo("velocity_reduction"; fps=6)
 if !isempty(video_path)
     println("✓ Created video: $video_path")
 else

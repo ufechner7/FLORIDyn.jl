@@ -8,7 +8,7 @@ tic()
 using FLORIDyn, TerminalPager, ControlPlots
 
 settings_file = "data/2021_9T_Data.yaml"
-vis = Vis(online=true, save=true, rel_v_min=20.0, up_int = 12)
+vis = Vis(online=true, save=true, rel_v_min=20.0, up_int = 4)
 
 # PLT options:
 # PLT=1: Velocity reduction plot (if not using online visualization)
@@ -19,7 +19,7 @@ vis = Vis(online=true, save=true, rel_v_min=20.0, up_int = 12)
 # PLT=6: Create videos from saved frames
 if !  @isdefined PLT; PLT=1; end
 
-function get_parameters()
+function get_parameters(vis)
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
@@ -29,7 +29,7 @@ function get_parameters()
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
     wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
-    return wf, set, floris, wind 
+    return wf, md, set, floris, wind 
 end
 
 # get the settings for the wind field, simulator and controller
@@ -44,7 +44,6 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 wf = initSimulation(wf, sim)
 
 toc()
-@time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 # 0.115 s on Desktop, 0.39 s with MATLAB
 # 0.115 seconds (891.24 k allocations: 368.147 MiB, 10.18% gc time)
 # 0.110 seconds (883.14 k allocations: 272.819 MiB, 9.62% gc time) iterateOPs! allocation free
@@ -55,20 +54,25 @@ toc()
 
 if PLT == 1
     if ! vis.online
+        @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
         @time Z, X, Y = calcFlowField(set, wf, wind, floris)
         plotFlowField(plt, wf, X, Y, Z; msr=1)
     end
 elseif PLT == 2
+    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris)
     plotFlowField(plt, wf, X, Y, Z; msr=2)
 elseif PLT == 3
+    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris)
     plotFlowField(plt, wf, X, Y, Z; msr=3)
 elseif PLT == 4
-    wf, set, floris, wind = get_parameters()
+    vis.online = false
+    wf, md, set, floris, wind = get_parameters(vis)
     plotMeasurements(plt, wf, md; separated=true)
 elseif PLT == 5
-    wf, set, floris, wind = get_parameters()
+    vis.online = false
+    wf, md, set, floris, wind = get_parameters(vis)
     plotMeasurements(plt, wf, md; separated=false)
 elseif PLT == 6
     # Create videos from saved plot frames

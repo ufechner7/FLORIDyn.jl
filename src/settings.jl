@@ -246,17 +246,23 @@ live plotting and animation features.
                 after displaying it in the 'video' folder. When `false`, plots are only displayed.
 - `v_min::Float64`: Minimum velocity value for color scale in flow field visualizations.
                     Used to set consistent color scale limits across animation frames.
+- `v_max::Float64`: Maximum velocity value for color scale in effective wind speed visualizations (msr=3).
+                    Used to set consistent upper limits across animation frames.
 - `rel_v_min::Float64`: Minimum relative velocity value for velocity reduction visualizations.
                         Controls the color scale for relative wind speed plots (msr=1).
+- `rel_v_max::Float64`: Maximum relative velocity value for velocity reduction visualizations (msr=1).
+                        Controls the upper limit for relative wind speed plots.
+- `turb_max::Float64`: Maximum turbulence value for added turbulence visualizations (msr=2).
+                       Controls the upper limit for turbulence plots.
 - `up_int::Int`: Update interval - controls how frequently visualization updates occur.
                  Higher values result in less frequent updates for better performance.
 
 # Example
 ```julia
-# Enable online visualization with plot saving
-vis = Vis(online=true, save=true, v_min=2.0, rel_v_min=50.0, up_int=5)
+# Enable online visualization with plot saving and custom color scales
+vis = Vis(online=true, save=true, v_min=2.0, v_max=12.0, rel_v_min=20.0, rel_v_max=100.0, up_int=5)
 
-# Display only, no saving
+# Display only, no saving with default color scales
 vis = Vis(online=true, save=false, v_min=2.0, rel_v_min=20.0)
 
 # Disable online visualization for batch processing
@@ -276,7 +282,10 @@ vis = Vis(online=false, save=false)
     online::Bool
     save::Bool = false  # save plots to video folder
     v_min::Float64 = 2
+    v_max::Float64 = 10
     rel_v_min::Float64 = 20
+    rel_v_max::Float64 = 100
+    turb_max::Float64 = 50
     up_int::Int = 1  # update interval
 end
 
