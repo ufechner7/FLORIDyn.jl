@@ -1,6 +1,8 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+using Base.Threads
+
 """
     getMeasurements(mx::Matrix, my::Matrix, nM::Int, zh::Real, wf::WindFarm, set::Settings, 
                     floris::Floris, wind::Wind) -> Array{Float64,3}
@@ -67,30 +69,35 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
     size_mx = size(mx)
     mz = zeros(size_mx[1], size_mx[2], nM)
     
-    # Pre-allocate GP buffer once outside the loop
-    GP = deepcopy(wf)  # Create the buffer once
+    # Create thread-local buffers to avoid race conditions
+    thread_buffers = [deepcopy(wf) for _ in 1:nthreads()]
     
-    # Pre-allocate arrays that will be modified for each grid point
-    # These will be reused and updated for each iteration
+    # Pre-allocate arrays for each thread buffer
     original_nT = wf.nT
-    GP.nT = original_nT + 1  # Original turbines + 1 grid point
-    
-    # Pre-allocate dependency structure
-    GP.dep = Vector{Vector{Int64}}(undef, GP.nT)
-    for i in 1:original_nT
-        GP.dep[i] = Int64[]  # Original turbines are independent (no dependencies)
+    for tid in 1:nthreads()
+        GP = thread_buffers[tid]
+        GP.nT = original_nT + 1  # Original turbines + 1 grid point
+        
+        # Pre-allocate dependency structure
+        GP.dep = Vector{Vector{Int64}}(undef, GP.nT)
+        for i in 1:original_nT
+            GP.dep[i] = Int64[]  # Original turbines are independent (no dependencies)
+        end
+        GP.dep[end] = collect(1:original_nT)  # Grid point depends on all original turbines
+        
+        # Pre-allocate extended arrays
+        GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
+        GP.posBase = vcat(wf.posBase, zeros(1, 3))  # Will be updated for each grid point
+        GP.posNac = vcat(wf.posNac, zeros(1, 3))   # Will be updated for each grid point
+        GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
+        GP.D = vcat(wf.D, [0.0])  # Grid point has 0 diameter
     end
-    GP.dep[end] = collect(1:original_nT)  # Grid point depends on all original turbines
     
-    # Pre-allocate extended arrays
-    GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
-    GP.posBase = vcat(wf.posBase, zeros(1, 3))  # Will be updated for each grid point
-    GP.posNac = vcat(wf.posNac, zeros(1, 3))   # Will be updated for each grid point
-    GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
-    GP.D = vcat(wf.D, [0.0])  # Grid point has 0 diameter
-    
-    # Single-threaded loop (can be parallelized with @threads or Distributed.@distributed)
-    for iGP in 1:length(mx)
+    # Parallel loop using @threads
+    @threads for iGP in 1:length(mx)
+        # Get thread-local buffer
+        GP = thread_buffers[threadid()]
+        
         xGP = mx[iGP]
         yGP = my[iGP]
         
