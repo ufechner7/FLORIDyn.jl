@@ -10,7 +10,7 @@ There are different options. Suggested way:
 - Basic method to launch Julia: Type `julia --project` in the Bash terminal.
 - Improved method: Type `./bin/run_julia`. This script installs missing packages if needed and loads `Revise` and `FLORIDyn`.
 - Expert method: Add the line `alias jl='bin/run_julia'` to your `.bashrc` file. Now you can start Julia by just typing `jl`.
-Do NOT use `run` button from VSCode to run Julia.
+Do NOT use the `run` button from VSCode to run Julia.
 
 ## Where can I find Julia packages?
 If you need extra packages to solve your tasks, look at: [https://juliahub.com/ui/Packages](https://juliahub.com/ui/Packages) . They have a good search function. Don't ask AI, they often suggest outdated packages. If there are multiple packages for your problem, you can also ask on [Discourse](https://discourse.julialang.org/) for suggestions.
