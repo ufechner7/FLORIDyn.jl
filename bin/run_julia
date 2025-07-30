@@ -15,3 +15,5 @@ if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
 # Run Julia (with single threaded garbage collector) and load Revise and FLORIdyn
 # In addition, define the function menu()
 julia --project --gcthreads=1,0 -i -e 'using Revise; using FLORIDyn; function menu(); include("examples/menu.jl"); end'
+
+# 448s for 300 iterations with 1 thread
