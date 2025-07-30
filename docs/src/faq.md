@@ -6,7 +6,7 @@
 
 ## How can I start Julia?
 There are different options. Suggested way:
-- Use a Bash terminal. On Linux this is the default, on Windows Bash is included in [Git for Windows](https://gitforwindows.org/). You can launch Bash from VSCode from the menu with `View->Terminal`. There is a small drop-down menu at the top left of the terminal window where you might have to select Bash if it is not the default.
+- Use a [Bash](https://www.w3schools.com/bash/index.php) terminal. On Linux this is the default, on Windows Bash is included in [Git for Windows](https://gitforwindows.org/). You can launch Bash from VSCode from the menu with `View->Terminal`. There is a small drop-down menu at the top left of the terminal window where you might have to select Bash if it is not the default.
 - Basic method to launch Julia: Type `julia --project` in the Bash terminal.
 - Improved method: Type `./bin/run_julia`. This script installs missing packages if needed and loads `Revise` and `FLORIDyn`.
 - Expert method: Add the line `alias jl='bin/run_julia'` to your `.bashrc` file. Now you can start Julia by just typing `jl`.
@@ -72,7 +72,9 @@ Linux, Windows and Mac are supported. In some of the examples you might have to 
 - run your new example using "include("examples/<new_main.jl>")"
 
 ## Can I use other plotting packages?
-You can use other plotting packages than `ControlPlots.jl`, but then you have to adapt the plotting scripts that can be found [here](https://github.com/ufechner7/FLORIDyn.jl/blob/main/src/visualisation/plot_flowfield.jl) yourself. Pull requests to support other plotting packages like `Plots.jl` or `Makie.jl` are welcome.
+[ControlPlots.jl](https://github.com/aenarete/ControlPlots.jl) is an easy-to-use, powerful plotting package, suitable for teaching. Furthermore it is based on Matplotlib, so you can leverage your knowledge of Matplotlib if you have used Python before. [ControlPlots.jl](https://github.com/aenarete/ControlPlots.jl) exports the variable `plt`, and you can use any Matplotlib command by using the prefix `plt`.
+
+You can use other plotting packages, but then you have to adapt the plotting scripts that can be found [here](https://github.com/ufechner7/FLORIDyn.jl/blob/main/src/visualisation/plot_flowfield.jl) yourself. Pull requests to support other plotting packages like `Plots.jl` or `Makie.jl` are welcome.
 
 ## Can I use this package with Python?
 You can easily use Python packages in your own Julia project. I would suggest [PyCall.jl](https://github.com/JuliaPy/PyCall.jl) to do that. You can use [Conda.jl](https://github.com/JuliaPy/Conda.jl) to install the required Python packages. They become part of your Julia environment and can be managed by the Julia package manager.
