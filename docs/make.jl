@@ -14,7 +14,7 @@ DocMeta.setdocmeta!(FLORIDyn, :DocTestSetup, :(using FLORIDyn); recursive=true)
 
 makedocs(;
     modules=[FLORIDyn],
-    authors="Uwe Fechner <uwe.fechner.msc@gmail.com>, Markus Becker and contributors",
+    authors="Uwe Fechner <uwe.fechner.msc@gmail.com>, Marcus Becker and contributors",
     repo="https://github.com/ufechner7/FLORIDyn.jl/blob/{commit}{path}#{line}",
     sitename="FLORIDyn.jl",
     checkdocs=:none,
