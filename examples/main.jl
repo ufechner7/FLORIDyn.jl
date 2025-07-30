@@ -8,7 +8,7 @@ tic()
 using FLORIDyn, TerminalPager, ControlPlots
 
 settings_file = "data/2021_9T_Data.yaml"
-vis = Vis(online=false)
+vis = Vis(online=false, rel_v_min=20.0)
 
 if !  @isdefined PLT; PLT=1; end
 

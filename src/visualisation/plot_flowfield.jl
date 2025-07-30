@@ -17,8 +17,8 @@ Mutable struct to hold animation state for flow field plotting.
 - `title_obj`: Title text object for updating
 - `figure_name`: Name of the figure window
 - `label`: Colorbar label text
-- `vmin`: Minimum value for color scale
-- `vmax`: Maximum value for color scale
+- `lev_min`: Minimum value for color scale
+- `lev_max`: Maximum value for color scale
 - `levels`: Contour levels
 """
 mutable struct PlotState
@@ -32,8 +32,8 @@ mutable struct PlotState
     title_obj
     figure_name::String
     label::String
-    vmin::Float64
-    vmax::Float64
+    lev_min::Float64
+    lev_max::Float64
     levels
 end
 
@@ -107,14 +107,14 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz; ms
             figure_name = "Velocity Reduction"
             label = "Relative Wind Speed [%]"
             mz_2d .*= 100
-            vmin = minimum(mz_2d); vmax = maximum(mz_2d);
+            lev_min = min(vis.rel_v_min, minimum(mz_2d)); lev_max = maximum(mz_2d);
         elseif msr == 2
             figure_name = "Added Turbulence"
             label = "Added Turbulence [%]"
-            vmin = 0.0; vmax = maximum(mz_2d);
+            lev_min = 0.0; lev_max = maximum(mz_2d);
         elseif msr == 3
             figure_name = "Effective Wind Speed"
-            vmin = 2.0; vmax = 10.0;
+            lev_min = 2.0; lev_max = 10.0;
             label = L"Wind speed~[ms^{-1}]"
         end
         title = figure_name
@@ -126,7 +126,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz; ms
             fig = plt.figure(figure_name, figsize=(7.25size, 6size))
             ax = plt.gca()
             n = 40
-            levels = range(vmin, stop=vmax, length=n+1)
+            levels = range(lev_min, stop=lev_max, length=n+1)
             contour_collection = plt.contourf(my, mx, mz_2d, n; levels, cmap="inferno")
             cb = plt.colorbar()
             cb.set_label(label, labelpad=3)
@@ -139,7 +139,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz; ms
             
             # Create state object
             state = PlotState(fig, ax, cb, contour_collection, turbine_lines, op_scatter1, op_scatter2, 
-                             title_obj, figure_name, label, vmin, vmax, levels)
+                             title_obj, figure_name, label, lev_min, lev_max, levels)
         else
             # Subsequent calls - update existing plot
             plt.figure(state.figure_name)

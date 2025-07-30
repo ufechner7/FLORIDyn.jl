@@ -242,23 +242,31 @@ live plotting and animation features.
 - `online::Bool`: Enable/disable online visualization during simulation. When `true`, 
                   live plots and animations are displayed during the simulation run.
                   When `false`, visualization is disabled for faster computation.
+- `v_min::Float64`: Minimum velocity value for color scale in flow field visualizations.
+                    Used to set consistent color scale limits across animation frames.
+- `rel_v_min::Float64`: Minimum relative velocity value for velocity reduction visualizations.
+                        Controls the color scale for relative wind speed plots (msr=1).
 
 # Example
 ```julia
-# Enable online visualization
-vis = Vis(online=true)
+# Enable online visualization with custom minimum values
+vis = Vis(online=true, v_min=2.0, rel_v_min=50.0)
 
 # Disable online visualization for batch processing
-vis = Vis(online=false)
+vis = Vis(online=false, v_min=0.0, rel_v_min=0.0)
 ```
 
 # Notes
 - Online visualization may significantly slow down simulation performance
 - Useful for debugging, monitoring simulation progress, or creating demonstrations
 - When disabled, visualization functions are skipped to improve computational efficiency
+- `v_min` helps maintain consistent color scales for effective wind speed visualizations (msr=3)
+- `rel_v_min` helps maintain consistent color scales for velocity reduction visualizations (msr=1)
 """
 @with_kw mutable struct Vis
     online::Bool
+    v_min::Float64 = 0
+    rel_v_min::Float64 = 20
 end
 
 """
