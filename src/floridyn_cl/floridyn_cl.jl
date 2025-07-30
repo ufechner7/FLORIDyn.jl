@@ -637,12 +637,13 @@ end
 
 
 """
-    runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
+    runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
                 floridyn::FloriDyn, floris::Floris)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
 # Arguments
+- `plt`: Plot object for live visualization during simulation
 - `set::Settings`: Simulation settings and configuration parameters.
 - `wf::WindFarm`: See: [WindFarm](@ref) simulation state, including turbine and wind farm states.
 - `wind::Wind`: See: [Wind](@ref) field settings.
@@ -669,17 +670,17 @@ Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models,
 applying control strategies and updating turbine states over time.
 
 """
-function runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, floridyn::FloriDyn, floris::Floris)
+function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, floridyn::FloriDyn, floris::Floris)
     nT      = wf.nT
-    nSim    = sim.n_sim_steps
-    M       = zeros(nSim * nT, 6)
-    M[:, 1] .= 1.0  # Set first column to 1
-    M_int   = Vector{Matrix{Float64}}(undef, nSim)
+    sim_steps    = sim.n_sim_steps
+    ma       = zeros(sim_steps * nT, 6)
+    ma[:, 1] .= 1.0  # Set first column to 1
+    vm_int   = Vector{Matrix{Float64}}(undef, sim_steps)
 
-    SimTime = sim.start_time
+    sim_time = sim.start_time
     
     buffers = FLORIDyn.IterateOPsBuffers(wf)
-    for it in 1:nSim
+    for it in 1:sim_steps
         sim.sim_step = it
 
         # ========== PREDICTION ==========
@@ -693,36 +694,44 @@ function runFLORIDyn(set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con
         wf.intOPs = interpolateOPs(wf)
         a, b = setUpTmpWFAndRun(set, wf, floris, wind)
         tmpM, wf = a, b
-        M[(it-1)*nT+1 : it*nT, 2:4] .= tmpM
-        M[(it-1)*nT+1 : it*nT, 1]   .= SimTime
+        ma[(it-1)*nT+1 : it*nT, 2:4] .= tmpM
+        ma[(it-1)*nT+1 : it*nT, 1]   .= sim_time
         wf.States_T[wf.StartI, 3] = tmpM[:, 2]
-        M_int[it] = wf.red_arr
+        vm_int[it] = wf.red_arr
 
         # ========== wind field corrections ==========
-        wf, wind = correctVel(set.cor_vel_mode, set, wf, wind, SimTime, floris, tmpM)
-        correctDir!(set.cor_dir_mode, set, wf, wind, SimTime)
-        correctTI!(set.cor_turb_mode, set, wf, wind, SimTime)
+        wf, wind = correctVel(set.cor_vel_mode, set, wf, wind, sim_time, floris, tmpM)
+        correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
+        correctTI!(set.cor_turb_mode, set, wf, wind, sim_time)
 
         # Save free wind speed as measurement
-        M[(it-1)*nT+1 : it*nT, 5] = wf.States_WF[wf.StartI, 1]
+        ma[(it-1)*nT+1 : it*nT, 5] = wf.States_WF[wf.StartI, 1]
 
         # ========== Get Control settings ==========
         wf.States_T[wf.StartI, 2] = (
             wf.States_WF[wf.StartI, 2] .-
-                getYaw(set.control_mode, con.yaw_data, (1:nT), SimTime)'
+                getYaw(set.control_mode, con.yaw_data, (1:nT), sim_time)'
         )
 
         # ========== Calculate Power ==========
         P = getPower(wf, tmpM, floris, con)
-        M[(it-1)*nT+1:it*nT, 6] = P
+        ma[(it-1)*nT+1:it*nT, 6] = P
 
-        SimTime += sim.time_step
+        # ========== Live Plotting ============
+        if (sim_time - sim.start_time) < 20
+            # println(sim_time)
+            # Z, X, Y = calcFlowField(set, wf, wind, floris)
+            # plotFlowField(plt, wf, X, Y, Z; msr=1)
+            # sleep(1)
+        end
+
+        sim_time += sim.time_step
     end
-    # Convert `M` to DataFrame and scale measurements
+    # Convert `ma` to DataFrame and scale measurements
     md = DataFrame(
-        (M * diagm([1; 100; 100; 1; 1; 1e-6])),
+        (ma * diagm([1; 100; 100; 1; 1; 1e-6])),
         [:Time, :ForeignReduction, :AddedTurbulence, :EffWindSpeed, :FreeWindSpeed, :PowerGen]
     )
-    mi = hcat(md.Time, hcat(M_int...)')
+    mi = hcat(md.Time, hcat(vm_int...)')
     return wf, md, mi
 end

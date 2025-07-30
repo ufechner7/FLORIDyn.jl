@@ -35,7 +35,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 wf = initSimulation(wf, sim)
 
 toc()
-@time wf, md, mi = runFLORIDyn(set, wf, wind, sim, con, floridyn, floris)
+@time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, floridyn, floris)
 # 0.115 s on Desktop, 0.39 s with MATLAB
 # 0.115 seconds (891.24 k allocations: 368.147 MiB, 10.18% gc time)
 # 0.110 seconds (883.14 k allocations: 272.819 MiB, 9.62% gc time) iterateOPs! allocation free
