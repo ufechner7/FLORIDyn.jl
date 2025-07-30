@@ -244,6 +244,7 @@ include("floridyn_cl/prepare_simulation.jl")
 include("floridyn_cl/iterate.jl")
 
 include("controller/controller.jl")
+include("visualisation/calc_flowfield.jl")
 include("visualisation/plot_flowfield.jl")
 
 """
