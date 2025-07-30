@@ -2,9 +2,6 @@
 CurrentModule = FLORIDyn
 Description = "Dynamic wind farm simulation software"
 ```
-```@raw html
-<meta property="og:title" content="FLORIDyn.jl: Dynamic Wind Farm Simulation"> <meta property="og:description" content="Dynamic wind farm simulation software – FLORIDyn.jl"> <meta property="og:image" content="https:https://github.com/ufechner7/FLORIDyn.jl/blob/main/docs/src/assets/logo.png"> <meta property="og:url" content="https://ufechner7.github.io/FLORIDyn.jl/dev/"> <meta name="twitter:card" content="summary_large_image"> <meta name="twitter:image" content="https://github.com/ufechner7/FLORIDyn.jl/blob/main/docs/src/assets/logo.png">
-```
 
 # FLORIDyn
 
