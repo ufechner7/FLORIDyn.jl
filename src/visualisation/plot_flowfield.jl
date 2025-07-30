@@ -195,6 +195,8 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false, uni
             plt.xlabel("Time [s]")
             plt.ylabel("Foreign Reduction [%]")
             plt.tight_layout()   
+            fig.subplots_adjust(wspace=0.295)
+
         end
         println("Foreign reduction plot created successfully")
     else
