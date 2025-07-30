@@ -19,6 +19,11 @@ if !("LiveServer" in globaldependencies())
     run(`julia -e 'using Pkg; Pkg.add("LiveServer")'`)
 end
 
+if !("TestEnv" in globaldependencies())
+    println("Installing TestEnv globally!")
+    run(`julia -e 'using Pkg; Pkg.add("TestEnv")'`)
+end
+
 if !("Documenter" ∈ keys(Pkg.project().dependencies))
     using TestEnv
     TestEnv.activate()
