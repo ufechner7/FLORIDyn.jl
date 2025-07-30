@@ -37,9 +37,6 @@ Create videos from the saved frames:
 # Create video from velocity reduction frames
 video_path = createVideo("velocity_reduction"; fps=4)
 
-# Create videos for all measurement types automatically
-video_paths = createAllVideos(fps=6, delete_frames=false)
-
 # Custom video creation with options
 custom_video = createVideo("wind_speed"; 
                           video_dir="video", 
@@ -63,14 +60,6 @@ Convert PNG files starting with a given prefix into an MP4 video.
 
 **Returns:** Path to created video file, or empty string if failed
 
-### `createAllVideos(; kwargs...)`
-
-Automatically create videos for all common measurement types found in the directory.
-
-**Arguments:** Same as `createVideo()` except `prefix`
-
-**Returns:** Vector of paths to created video files
-
 **Supported prefixes:**
 - "velocity_reduction" - Velocity reduction animations
 - "added_turbulence" - Added turbulence animations  
@@ -89,44 +78,6 @@ Output videos are named:
 - `added_turbulence_animation.mp4`
 - `wind_speed_animation.mp4`
 
-## Examples
-
-### Example 1: Basic Animation Creation
-
-```julia
-using FLORIDyn, ControlPlots
-
-# Run simulation with plot saving
-vis = Vis(online=true, save=true)
-# ... run simulation ...
-
-# Create animation
-video_path = createVideo("velocity_reduction"; fps=4)
-println("Created: $video_path")
-```
-
-### Example 2: Batch Video Creation
-
-```julia
-# Create all available videos
-video_paths = createAllVideos(fps=6, delete_frames=false)
-
-for video in video_paths
-    println("Created: $video")
-end
-```
-
-### Example 3: High-Quality Video
-
-```julia
-# Create high frame rate video in custom directory
-createVideo("wind_speed"; 
-           video_dir="simulation_frames",
-           output_dir="high_quality_videos", 
-           fps=12,
-           delete_frames=true)
-```
-
 ## Tips
 
 1. **Frame Rate**: Start with low FPS (2-4) for overview videos, use higher FPS (8-12) for detailed analysis
@@ -135,13 +86,10 @@ createVideo("wind_speed";
 4. **Troubleshooting**: If video creation fails, check that FFmpeg is installed and PNG files exist
 
 ## Integration with main.jl
-
-The example `main.jl` includes video creation as PLT option 6:
+The example `main.jl` includes video creation as PLT option 7:
 
 ```julia
-# Set PLT=6 to create videos from saved frames
-PLT = 6
+# Set PLT=7 to create videos from saved frames
+PLT = 7
 include("examples/main.jl")
 ```
-
-This will automatically detect and create videos for all available measurement types.
