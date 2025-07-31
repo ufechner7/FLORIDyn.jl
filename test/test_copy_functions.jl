@@ -121,3 +121,163 @@ end
         rm(test_dir, recursive=true, force=true)
     end
 end
+
+@testset "copy_model_settings function" begin
+    # Create a temporary directory for testing
+    test_dir = mktempdir()
+    original_dir = pwd()
+    
+    try
+        cd(test_dir)
+        
+        @testset "basic functionality" begin
+            # Test that copy_model_settings creates data directory and copies files
+            @test !isdir("data")
+            
+            # Call copy_model_settings function (not exported, so call directly)
+            FLORIDyn.copy_model_settings()
+            
+            # Check that data directory was created
+            @test isdir("data")
+            
+            # Check that the YAML configuration file was copied
+            @test isfile("data/2021_9T_Data.yaml")
+            
+            # Check that the 2021_9T_Data directory was copied
+            @test isdir("data/2021_9T_Data")
+            
+            # Check that the file has correct permissions
+            stat_info = stat("data/2021_9T_Data.yaml")
+            mode = stat_info.mode & 0o777
+            @test (mode & 0o700) == 0o700  # Owner should have rwx
+        end
+        
+        @testset "content validation" begin
+            # Call the function first
+            FLORIDyn.copy_model_settings()
+            
+            # Check that the YAML file content is copied correctly
+            pkg_path = pkgdir(FLORIDyn)
+            original_yaml = joinpath(pkg_path, "data", "2021_9T_Data.yaml")
+            if isfile(original_yaml)
+                original_content = read(original_yaml, String)
+                copied_content = read("data/2021_9T_Data.yaml", String)
+                @test original_content == copied_content
+            end
+            
+            # Check that 2021_9T_Data directory contains expected files
+            data_dir = "data/2021_9T_Data"
+            @test isdir(data_dir)
+            
+            # Check for some expected CSV files (these should exist based on the function documentation)
+            expected_files = ["SOWFA_bladePitch.csv", "SOWFA_generatorPower.csv", "U.csv", "WindDir.csv"]
+            for file in expected_files
+                file_path = joinpath(data_dir, file)
+                if isfile(joinpath(pkg_path, "data", "2021_9T_Data", file))
+                    @test isfile(file_path)
+                end
+            end
+        end
+        
+        @testset "overwrite behavior" begin
+            # First call
+            FLORIDyn.copy_model_settings()
+            @test isfile("data/2021_9T_Data.yaml")
+            
+            # Modify the copied file
+            open("data/2021_9T_Data.yaml", "a") do f
+                write(f, "\n# Modified for testing")
+            end
+            original_size = filesize("data/2021_9T_Data.yaml")
+            
+            # Second call should overwrite
+            FLORIDyn.copy_model_settings()
+            @test isfile("data/2021_9T_Data.yaml")
+            
+            # File should be restored to original content (smaller size)
+            new_size = filesize("data/2021_9T_Data.yaml")
+            @test new_size < original_size  # Should be back to original
+        end
+        
+        @testset "directory permissions" begin
+            FLORIDyn.copy_model_settings()
+            
+            # Check permissions on files in the 2021_9T_Data directory
+            data_dir = "data/2021_9T_Data"
+            if isdir(data_dir)
+                for (root, dirs, files_in_dir) in walkdir(data_dir)
+                    for file in files_in_dir
+                        file_path = joinpath(root, file)
+                        stat_info = stat(file_path)
+                        mode = stat_info.mode & 0o777
+                        # Files should have 0o774 permissions as set by the function
+                        @test (mode & 0o700) == 0o700  # Owner should have rwx
+                        @test (mode & 0o070) == 0o070  # Group should have rwx
+                        @test (mode & 0o004) == 0o004  # Others should have read
+                    end
+                end
+            end
+        end
+        
+        @testset "error handling with existing data directory" begin
+            # Create data directory first
+            mkpath("data")
+            existing_file = "data/existing_file.txt"
+            write(existing_file, "This file existed before")
+            
+            # Should still work and copy the model settings
+            @test_nowarn FLORIDyn.copy_model_settings()
+            @test isfile("data/2021_9T_Data.yaml")
+            @test isdir("data/2021_9T_Data")
+            @test isfile(existing_file)  # Existing file should remain
+        end
+        
+        @testset "function output verification" begin
+            # Test that the function runs without error and produces output
+            # Note: The actual output verification is hard to test reliably across systems
+            @test_nowarn FLORIDyn.copy_model_settings()
+            @test isfile("data/2021_9T_Data.yaml")
+            @test isdir("data/2021_9T_Data")
+        end
+        
+    finally
+        cd(original_dir)
+        # Clean up: remove the temporary directory
+        rm(test_dir, recursive=true, force=true)
+    end
+end
+
+@testset "copy_model_settings integration test" begin
+    # Test that copied files are valid and can be used
+    test_dir = mktempdir()
+    original_dir = pwd()
+    
+    try
+        cd(test_dir)
+        
+        FLORIDyn.copy_model_settings()
+        
+        # Test that the YAML file is valid
+        if isfile("data/2021_9T_Data.yaml")
+            # Try to read the YAML file (basic validation)
+            content = read("data/2021_9T_Data.yaml", String)
+            @test !isempty(content)
+            @test occursin("yaml", lowercase(content)) || occursin("wind", lowercase(content)) || length(content) > 100
+        end
+        
+        # Test that the copied data directory structure is reasonable
+        data_dir = "data/2021_9T_Data"
+        if isdir(data_dir)
+            files_in_dir = readdir(data_dir)
+            @test length(files_in_dir) > 0  # Should contain some files
+            
+            # Check that at least some CSV files exist
+            csv_files = filter(f -> endswith(f, ".csv"), files_in_dir)
+            @test length(csv_files) > 0  # Should have some CSV files
+        end
+        
+    finally
+        cd(original_dir)
+        rm(test_dir, recursive=true, force=true)
+    end
+end
