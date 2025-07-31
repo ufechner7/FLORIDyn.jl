@@ -57,25 +57,25 @@ if PLT == 1
     vis.online = false
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris)
-    plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=1)
+    plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
 elseif PLT == 2
     vis.online = false
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris)
-    plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=2)
+    plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
 elseif PLT == 3
     vis.online = false
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris)
-    plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=3)
+    plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
 elseif PLT == 4
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    plotMeasurements(plt, wf, md; separated=true)
+    plotMeasurements(plt, wf, md, vis; separated=true)
 elseif PLT == 5
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    plotMeasurements(plt, wf, md; separated=false)
+    plotMeasurements(plt, wf, md, vis; separated=false)
 elseif PLT == 6
     vis.online = true
     # Clean up any existing PNG files in video folder before starting

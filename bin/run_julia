@@ -12,8 +12,9 @@ if ! ("Timers" in globaldependencies()); Pkg.add("Timers"); end;
 if ! ("Revise" in globaldependencies()); Pkg.add("Revise"); end;
 if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
 
-# Run Julia (with single threaded garbage collector) and load Revise and FLORIdyn
+# Run Julia with 8 threads and load Revise and FLORIdyn
 # In addition, define the function menu()
 julia --project -t 8 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
 
 # 170s for 300 iterations with 8 threads on Ryzen 7 7850X
+# 448s for 300 iterations with 1 thread
