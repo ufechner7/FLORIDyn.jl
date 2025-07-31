@@ -121,7 +121,7 @@ function initSimulation(wf::Union{Nothing, WindFarm}, sim::Sim)
 end
 
 """
-    perturbationOfTheWF!(wf::WindFarm, wind::Wind)
+    perturbationOfTheWF!(wf::WindFarm, wind::Wind) -> Nothing
 
 Apply stochastic perturbations to the wind field states in-place.
 
@@ -460,7 +460,7 @@ interaction patterns.
   - Column 1: Total velocity reduction factor (product of all wake effects)
   - Column 2: Combined added turbulence intensity from all upstream turbines
   - Column 3: Effective wind speed at turbine [m/s]
-- `wf`: Updated wind farm object with modified fields:
+- `wf::WindFarm`: Updated wind farm object with modified fields:
   - `wf.Weight`: Normalized interpolation weights for each turbine
   - `wf.red_arr`: Wake reduction matrix showing turbine-to-turbine wake effects
 
