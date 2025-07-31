@@ -496,6 +496,9 @@ end
                 
                 # The function should handle missing FFmpeg gracefully
                 @test isa(result, String)  # Should return a string (empty if failed)
+
+                # Test basic functionality and delete frames
+                result = createVideo("test"; video_dir=test_dir, output_dir=output_dir, fps=2, delete_frames=false)
                 
                 # Test with non-existent directory
                 result_nodir = createVideo("test"; video_dir="nonexistent_dir")
