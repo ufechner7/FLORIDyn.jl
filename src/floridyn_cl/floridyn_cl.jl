@@ -644,7 +644,7 @@ end
 Main entry point for the FLORIDyn closed-loop simulation.
 
 # Arguments
-- `plt`: Plot object for life visualization during simulation
+- `plt`: Plot object for live visualization during simulation
 - `set::Settings`: Simulation settings and configuration parameters.
 - `wf::WindFarm`: See: [WindFarm](@ref) simulation state, including turbine and wind farm states.
 - `wind::Wind`: See: [Wind](@ref) field settings.
