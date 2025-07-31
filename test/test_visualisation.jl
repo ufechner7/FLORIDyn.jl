@@ -217,6 +217,172 @@ end
         end
 
     end
+    
+    @testset "plotFlowField - backward compatibility method" begin
+        @testset "basic functionality without state parameter" begin
+            # Get test parameters
+            wf, set, floris, wind, md = get_parameters()
+            
+            # Call the calcFlowField function
+            Z, X, Y = calcFlowField(set, wf, wind, floris)
+            vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
+            
+            # Test the second method without state parameter (backward compatibility)
+            result = plotFlowField(plt, wf, X, Y, Z, vis; unit_test=true)
+            
+            # Test that the function runs without error and returns nothing
+            @test result === nothing
+            
+            # Test that the function is callable and accepts all expected parameters
+            result2 = plotFlowField(plt, wf, X, Y, Z, vis; msr=1, unit_test=true)
+            @test result2 === nothing
+            
+            result3 = plotFlowField(plt, wf, X, Y, Z, vis; msr=2, unit_test=true)
+            @test result3 === nothing
+            
+            # Test with time parameter
+            result4 = plotFlowField(plt, wf, X, Y, Z, vis, 120.0; msr=3, unit_test=true)
+            @test result4 === nothing
+        end
+        
+        @testset "parameter validation for backward compatibility method" begin
+            # Get test parameters
+            wf, set, floris, wind, md = get_parameters()
+            Z, X, Y = calcFlowField(set, wf, wind, floris)
+            vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
+            
+            # Test error handling for invalid msr values in backward compatibility method
+            @test_throws BoundsError plotFlowField(plt, wf, X, Y, Z, vis; msr=0, unit_test=true)
+            @test_throws ErrorException plotFlowField(plt, wf, X, Y, Z, vis; msr=4, unit_test=true)
+        end
+    end
+    
+    @testset "getLayout" begin
+        @testset "function exists and is callable" begin
+            # Test that the function exists and has the right signature
+            @test isa(getLayout, Function)
+            
+            # Test that we can get method information
+            methods_list = methods(getLayout)
+            @test length(methods_list) >= 1
+            
+            # Check that the function is exported
+            @test :getLayout in names(FLORIDyn)
+        end
+        
+        @testset "edge cases" begin
+            # Test edge cases
+            @test getLayout(0) == (1, 1)
+            @test getLayout(-1) == (1, 1)
+            @test getLayout(-10) == (1, 1)
+        end
+        
+        @testset "small numbers" begin
+            # Test specific small values
+            @test getLayout(1) == (1, 1)
+            @test getLayout(2) == (2, 2)
+            @test getLayout(3) == (2, 2)
+            @test getLayout(4) == (2, 2)
+        end
+        
+        @testset "medium numbers" begin
+            # Test medium values
+            @test getLayout(5) == (2, 3)
+            @test getLayout(6) == (2, 3)
+            @test getLayout(7) == (3, 3)
+            @test getLayout(8) == (3, 3)
+            @test getLayout(9) == (3, 3)
+            @test getLayout(10) == (3, 4)
+            @test getLayout(11) == (3, 4)
+            @test getLayout(12) == (3, 4)
+        end
+        
+        @testset "larger numbers" begin
+            # Test larger values
+            @test getLayout(13) == (4, 4)
+            @test getLayout(14) == (4, 4)
+            @test getLayout(15) == (4, 4)
+            @test getLayout(16) == (4, 4)
+        end
+        
+        @testset "large numbers - general formula" begin
+            # Test the general formula for large numbers
+            # For nT > 16: cols = ceil(sqrt(nT)), rows = ceil(nT/cols)
+            @test getLayout(17) == (4, 5)  # cols=ceil(sqrt(17))=5, rows=ceil(17/5)=4
+            @test getLayout(20) == (4, 5)  # cols=ceil(sqrt(20))=5, rows=ceil(20/5)=4
+            @test getLayout(25) == (5, 5)  # cols=ceil(sqrt(25))=5, rows=ceil(25/5)=5
+            @test getLayout(30) == (5, 6)  # cols=ceil(sqrt(30))=6, rows=ceil(30/6)=5
+            @test getLayout(50) == (7, 8)  # cols=ceil(sqrt(50))=8, rows=ceil(50/8)=7
+            @test getLayout(100) == (10, 10)  # cols=ceil(sqrt(100))=10, rows=ceil(100/10)=10
+        end
+        
+        @testset "layout properties" begin
+            # Test that layouts can accommodate the required number of plots
+            for nT in 1:50
+                rows, cols = getLayout(nT)
+                
+                # Basic sanity checks
+                @test rows >= 1
+                @test cols >= 1
+                @test isa(rows, Int)
+                @test isa(cols, Int)
+                
+                # The layout should be able to accommodate at least nT plots
+                @test rows * cols >= nT
+                
+                # For efficiency, the layout shouldn't be too oversized 
+                # (except for very small numbers where we use predefined layouts)
+                if nT > 16
+                    # For large numbers, should not be more than 2x oversized
+                    @test rows * cols <= 2 * nT
+                end
+            end
+        end
+        
+        @testset "roughly square layouts for large numbers" begin
+            # Test that large numbers produce roughly square layouts
+            test_cases = [17, 20, 25, 30, 50, 100]
+            
+            for nT in test_cases
+                rows, cols = getLayout(nT)
+                
+                # Should be roughly square (aspect ratio not too extreme)
+                aspect_ratio = max(rows, cols) / min(rows, cols)
+                @test aspect_ratio <= 2.0  # Not more than 2:1 aspect ratio
+                
+                # For perfect squares, should be exactly square
+                sqrt_nT = sqrt(nT)
+                if abs(sqrt_nT - round(sqrt_nT)) < 1e-10 && nT > 16  # Perfect square
+                    expected_side = round(Int, sqrt_nT)
+                    @test rows == expected_side
+                    @test cols == expected_side
+                end
+            end
+        end
+        
+        @testset "consistency checks" begin
+            # Test that the function is deterministic
+            for nT in [1, 5, 10, 25, 50]
+                result1 = getLayout(nT)
+                result2 = getLayout(nT)
+                @test result1 == result2
+            end
+            
+            # Test that increasing nT doesn't decrease the layout size inappropriately
+            prev_area = 0
+            for nT in 1:20
+                rows, cols = getLayout(nT)
+                area = rows * cols
+                
+                # Area should generally increase or stay the same
+                # (allowing for some predefined layout transitions)
+                if nT > 1
+                    @test area >= prev_area || area >= nT
+                end
+                prev_area = area
+            end
+        end
+    end
     @testset "plotMeasurements" begin
         # Get test parameters
         wf, set, floris, wind, md = get_parameters()
