@@ -93,7 +93,7 @@ end
         vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
 
         @testset "basic functionality" begin
-            plotFlowField(nothing, plt, wf, X, Y, Z, vis; unit_test=true)
+            plotFlowField(nothing, plt, wf, X, Y, Z, vis)
 
             # Test that outputs have the correct types
             @test isa(Z, Array{Float64,3})
@@ -153,7 +153,7 @@ end
             
             @testset "msr=1 (velocity reduction)" begin
                 # Test plotFlowField with msr=1
-                plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=1, unit_test=true)
+                plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=1)
 
                 # Test that the function runs without error
                 @test true  # If we get here, the function didn't throw an error
@@ -169,7 +169,7 @@ end
             
             @testset "msr=2 (added turbulence)" begin
                 # Test plotFlowField with msr=2
-                plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=2, unit_test=true)
+                plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=2)
 
                 # Test that the function runs without error
                 @test true  # If we get here, the function didn't throw an error
@@ -187,12 +187,12 @@ end
                 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
                 # Test error handling for invalid msr values
                 # msr=0 causes BoundsError (Julia arrays are 1-indexed)
-                @test_throws BoundsError plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=0, unit_test=true)
+                @test_throws BoundsError plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=0)
                 # msr > 3 causes ErrorException from explicit check
-                @test_throws ErrorException plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=4, unit_test=true)
+                @test_throws ErrorException plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=4)
 
                 # Test that msr=3 (default) still works
-                plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=3, unit_test=true)
+                plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=3)
                 @test true  # If we get here, the function didn't throw an error
                 
                 # Test that wind speed data (msr=3) is reasonable
@@ -207,7 +207,7 @@ end
             state1 = nothing
             
             # First call with nothing state (should create new PlotState)
-            state1 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=3, unit_test=false)
+            state1 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=3)
             
             # Test that state1 is a PlotState object
             @test state1 isa FLORIDyn.PlotState
@@ -236,7 +236,7 @@ end
             @test state1.turbine_lines isa Vector
             
             # Test second call with existing state (should update same PlotState)
-            state2 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 12; msr=1, unit_test=false)
+            state2 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 12; msr=1)
             
             # Test that state2 is the same as state1 (same object, reused)
             @test state2 isa FLORIDyn.PlotState
@@ -248,10 +248,10 @@ end
             end
             
             # Test error handling for invalid msr values
-            @test_throws ErrorException plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=99, unit_test=true)
+            @test_throws ErrorException plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=99)
             
             # Test with msr=2 (added turbulence) - create new state for this test
-            state3 = @test_nowarn plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 24; msr=2, unit_test=false)
+            state3 = @test_nowarn plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 24; msr=2)
             @test state3 isa FLORIDyn.PlotState
             
             # Close the plot after testing
@@ -273,20 +273,21 @@ end
             vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
             
             # Test the second method without state parameter (backward compatibility)
-            result = plotFlowField(plt, wf, X, Y, Z, vis; unit_test=true)
+            vis.unit_test = true
+            result = plotFlowField(plt, wf, X, Y, Z, vis)
             
             # Test that the function runs without error and returns nothing
             @test result === nothing
             
             # Test that the function is callable and accepts all expected parameters
-            result2 = plotFlowField(plt, wf, X, Y, Z, vis; msr=1, unit_test=true)
+            result2 = plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
             @test result2 === nothing
             
-            result3 = plotFlowField(plt, wf, X, Y, Z, vis; msr=2, unit_test=true)
+            result3 = plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
             @test result3 === nothing
             
             # Test with time parameter
-            result4 = plotFlowField(plt, wf, X, Y, Z, vis, 120.0; msr=3, unit_test=true)
+            result4 = plotFlowField(plt, wf, X, Y, Z, vis, 120.0; msr=3)
             @test result4 === nothing
         end
         
@@ -297,8 +298,8 @@ end
             vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
             
             # Test error handling for invalid msr values in backward compatibility method
-            @test_throws BoundsError plotFlowField(plt, wf, X, Y, Z, vis; msr=0, unit_test=true)
-            @test_throws ErrorException plotFlowField(plt, wf, X, Y, Z, vis; msr=4, unit_test=true)
+            @test_throws BoundsError plotFlowField(plt, wf, X, Y, Z, vis; msr=0)
+            @test_throws ErrorException plotFlowField(plt, wf, X, Y, Z, vis; msr=4)
         end
     end
     
@@ -431,8 +432,8 @@ end
     @testset "plotMeasurements" begin
         # Get test parameters
         wf, set, floris, wind, md = get_parameters()
-        plotMeasurements(plt, wf, md; separated=true, unit_test=true)
-        plotMeasurements(plt, wf, md; unit_test=true)
+        plotMeasurements(plt, wf, md; separated=true)
+        plotMeasurements(plt, wf, md)
     end
     
     @testset "createVideo" begin

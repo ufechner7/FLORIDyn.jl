@@ -38,7 +38,7 @@ mutable struct PlotState
 end
 
 """
-    plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t; msr=3, unit_test=false)
+    plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t; msr=3)
 
 Plot a 2D contour of the flow field data with support for animation.
 
@@ -53,7 +53,7 @@ Plot a 2D contour of the flow field data with support for animation.
 - `vis::Vis`: Visualization settings including save options and color scale parameters
 - `t`: Time value for display in the plot title or annotations
 - `msr::Int`: Which measurement to plot (1, 2, or 3). Default is 3.
-- `unit_test::Bool`: Whether to automatically close plots for testing. Default is false.
+- `vis.unit_test::Bool`: Whether to automatically close plots for testing.
 
 # Returns
 - `state::PlotState`: Updated or newly created plot state for use in subsequent calls
@@ -98,7 +98,10 @@ end
 - The `video/` directory is automatically created if it doesn't exist
 - This function requires a plotting package like ControlPlots.jl to be loaded and available as `plt`
 """
-function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t=nothing; msr=3, unit_test=false)
+function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t=nothing; msr=3)
+    # Use unit_test from vis if not explicitly overridden
+    use_unit_test = vis.unit_test
+    
     # Extract the 2D slice for the specified measurement
     if msr > size(mz, 3)
         error("msr ($msr) exceeds number of measurements ($(size(mz, 3)))")
@@ -243,7 +246,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         plt.draw()
         
         # Save plot to video folder if requested
-        if vis.save && !unit_test
+        if vis.save && !use_unit_test
             # Ensure video directory exists
             video_dir = "video"
             if !isdir(video_dir)
@@ -263,7 +266,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             try
                 # Use bbox_inches='tight' with pad_inches for consistent sizing
                 plt.savefig(filename, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
-                if !unit_test
+                if !use_unit_test
                     println("Plot saved to: $filename")
                 end
             catch e
@@ -271,13 +274,13 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             end
         end
         
-        if !unit_test
+        if !use_unit_test
             print(".")
             # println("Contour plot updated successfully")
         end
         
-        if unit_test
-            plt.pause(2)
+        if use_unit_test
+            plt.pause(1)
             plt.close(state.fig)
             return nothing
         end
@@ -297,7 +300,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
 end
 
 """
-    plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=3, unit_test=false)
+    plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=3)
 
 Compatibility method for the original plotFlowField interface.
 
@@ -313,7 +316,7 @@ with `state=nothing`, effectively creating a single plot without animation suppo
 - `vis::Vis`: Visualization settings including save options and color scale parameters
 - `t`: Time value for display in the plot title or annotations
 - `msr::Int`: Which measurement to plot (1, 2, or 3). Default is 3.
-- `unit_test::Bool`: Whether to automatically close plots for testing. Default is false.
+- `vis.unit_test::Bool`: Whether to automatically close plots for testing.
 
 # Returns
 - `nothing`: For compatibility with the original interface
@@ -322,14 +325,14 @@ with `state=nothing`, effectively creating a single plot without animation suppo
 This method is provided for backward compatibility. For animation support, 
 use the new interface with explicit state management.
 """
-function plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=3, unit_test=false)
+function plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=3)
     # Create default visualization settings for backward compatibility
-    plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr=msr, unit_test=unit_test)
+    plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr=msr)
     return nothing
 end
 
 """
-    plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false, unit_test=false) -> Nothing
+    plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false) -> Nothing
 
 Plot foreign reduction measurements from FLORIDyn simulation data.
 
@@ -340,7 +343,7 @@ Plot foreign reduction measurements from FLORIDyn simulation data.
   - `Time`: Time series data [s]
   - `ForeignReduction`: Foreign reduction percentage data [%]
 - `separated::Bool`: Whether to use separated subplot layout (default: false)
-- `unit_test::Bool`: Whether to close plots automatically for testing (default: false)
+- `vis.unit_test::Bool`: Whether to close plots automatically for testing
 
 # Returns
 - `nothing`
@@ -369,7 +372,7 @@ plotMeasurements(plt, wind_farm, measurements_df; separated=true)
 - [`plotFlowField`](@ref): For flow field visualization
 - [`getMeasurements`](@ref): For generating measurement data
 """
-function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false, unit_test=false)
+function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false)
     local fig
 
     # Subtract start time
@@ -426,8 +429,8 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false, uni
         plt.ylabel("Foreign Reduction [%]")
         println("Foreign reduction line plot created successfully")
     end
-    if unit_test
-        plt.pause(2)
+    if vis.unit_test
+        plt.pause(1)
         plt.close(fig)
     end
         

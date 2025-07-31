@@ -277,6 +277,7 @@ vis = Vis(online=false, save=false)
 - `rel_v_min` helps maintain consistent color scales for velocity reduction visualizations (msr=1)
 - `up_int` can be used to reduce visualization frequency and improve simulation speed
 - `save=true` will create a 'video' folder if it doesn't exist and save each plot frame for animation creation
+- `unit_test=true` enables unit test mode for visualization functions (closes plots automatically, disables output)
 """
 @with_kw mutable struct Vis
     online::Bool
@@ -287,6 +288,7 @@ vis = Vis(online=false, save=false)
     rel_v_max::Float64 = 100
     turb_max::Float64 = 35
     up_int::Int = 1  # update interval
+    unit_test::Bool = false  # enable unit test mode for visualization functions
 end
 
 """
