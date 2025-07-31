@@ -1,13 +1,15 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Handle case where modules might already be loaded (e.g., in interactive Revise sessions)
+if !isdefined(Main, :Test)
+    using Test
+end 
+
+if ! isinteractive()
 if !isdefined(Main, :FLORIDyn)
     using FLORIDyn
 end
-if !isdefined(Main, :Test)
-    using Test
-end  
+
 if !isdefined(Main, :ControlPlots)
     using ControlPlots
 end
@@ -605,8 +607,7 @@ end
         end
     end
 end
-nothing
-
-
-
+else
+    @info "Please run 'include(\"test/test_visualisation_safe.jl\")' instead!"
+end
 nothing
