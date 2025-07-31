@@ -94,7 +94,7 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
     end
     
     # Parallel loop using @threads
-    @threads for iGP in 1:length(mx)
+    @threads :static for iGP in 1:length(mx)
         # Get thread-local buffer
         GP = thread_buffers[threadid()]
         
