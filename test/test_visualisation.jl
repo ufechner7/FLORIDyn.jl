@@ -16,7 +16,7 @@ function get_parameters()
     wf = initSimulation(wf, sim)
     
     # Create visualization settings for testing
-    vis = Vis(online=false, save=false)
+    vis = Vis(online=false, save=false, unit_test=true)
     wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
     return wf, set, floris, wind, md
 end
@@ -90,7 +90,7 @@ end
         # Get test parameters once for all plotFlowField tests
         wf, set, floris, wind, md = get_parameters()
         Z, X, Y = calcFlowField(set, wf, wind, floris)
-        vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
+        vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
 
         @testset "basic functionality" begin
             plotFlowField(nothing, plt, wf, X, Y, Z, vis)
@@ -184,7 +184,7 @@ end
             end
             
             @testset "msr parameter validation" begin
-                vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
+                vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
                 # Test error handling for invalid msr values
                 # msr=0 causes BoundsError (Julia arrays are 1-indexed)
                 @test_throws BoundsError plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=0)
@@ -270,7 +270,7 @@ end
             
             # Call the calcFlowField function
             Z, X, Y = calcFlowField(set, wf, wind, floris)
-            vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
+            vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
             
             # Test the second method without state parameter (backward compatibility)
             vis.unit_test = true
@@ -295,7 +295,7 @@ end
             # Get test parameters
             wf, set, floris, wind, md = get_parameters()
             Z, X, Y = calcFlowField(set, wf, wind, floris)
-            vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
+            vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
             
             # Test error handling for invalid msr values in backward compatibility method
             @test_throws BoundsError plotFlowField(plt, wf, X, Y, Z, vis; msr=0)
@@ -432,8 +432,9 @@ end
     @testset "plotMeasurements" begin
         # Get test parameters
         wf, set, floris, wind, md = get_parameters()
-        plotMeasurements(plt, wf, md; separated=true)
-        plotMeasurements(plt, wf, md)
+        vis = Vis(online=false, save=false, unit_test=true)
+        plotMeasurements(plt, wf, md, vis; separated=true)
+        plotMeasurements(plt, wf, md, vis)
     end
     
     @testset "createVideo" begin

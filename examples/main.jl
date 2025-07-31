@@ -71,11 +71,11 @@ elseif PLT == 3
 elseif PLT == 4
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    plotMeasurements(plt, wf, md; separated=true)
+    plotMeasurements(plt, wf, md, vis; separated=true)
 elseif PLT == 5
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    plotMeasurements(plt, wf, md; separated=false)
+    plotMeasurements(plt, wf, md, vis; separated=false)
 elseif PLT == 6
     vis.online = true
     # Clean up any existing PNG files in video folder before starting

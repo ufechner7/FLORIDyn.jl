@@ -79,7 +79,7 @@ vis = Vis(online=true, save=true)  # Enable saving to video folder
 for t in time_steps
     Z, X, Y = calcFlowField(settings, wind_farm, wind, floris)
     state = plotFlowField(state, plt, wind_farm, X, Y, Z, vis, t; msr=1)
-    plt.pause(0.1)  # Small delay for animation
+    plt.pause(0.01)  # Small delay for animation
 end
 ```
 
@@ -276,13 +276,14 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         
         if !use_unit_test
             print(".")
-            # println("Contour plot updated successfully")
-        end
-        
-        if use_unit_test
-            plt.pause(1)
-            plt.close(state.fig)
-            return nothing
+        else
+            # In unit test mode, pause to show the plot then close the figure
+            plt.pause(1.0)
+            try
+                plt.close(state.fig)
+            catch
+                # Figure might already be closed
+            end
         end
     catch e
         if isa(e, UndefVarError) && e.var == :plt
@@ -332,7 +333,7 @@ function plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=3)
 end
 
 """
-    plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false) -> Nothing
+    plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false) -> Nothing
 
 Plot foreign reduction measurements from FLORIDyn simulation data.
 
@@ -342,8 +343,8 @@ Plot foreign reduction measurements from FLORIDyn simulation data.
 - `md::DataFrame`: Measurements DataFrame containing time series data with columns:
   - `Time`: Time series data [s]
   - `ForeignReduction`: Foreign reduction percentage data [%]
+- `vis::Vis`: Visualization settings including unit_test parameter
 - `separated::Bool`: Whether to use separated subplot layout (default: false)
-- `vis.unit_test::Bool`: Whether to close plots automatically for testing
 
 # Returns
 - `nothing`
@@ -362,17 +363,17 @@ This function creates time series plots of foreign reduction measurements from F
 using ControlPlots
 
 # Plot foreign reduction for all turbines in combined mode
-plotMeasurements(plt, wind_farm, measurements_df)
+plotMeasurements(plt, wind_farm, measurements_df, vis)
 
 # Plot foreign reduction with separated subplots
-plotMeasurements(plt, wind_farm, measurements_df; separated=true)
+plotMeasurements(plt, wind_farm, measurements_df, vis; separated=true)
 ```
 
 # See Also
 - [`plotFlowField`](@ref): For flow field visualization
 - [`getMeasurements`](@ref): For generating measurement data
 """
-function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false)
+function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false)
     local fig
 
     # Subtract start time
@@ -430,7 +431,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false)
         println("Foreign reduction line plot created successfully")
     end
     if vis.unit_test
-        plt.pause(1)
+        plt.pause(1.0)
         plt.close(fig)
     end
         
