@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    angSOWFA2world(deg_SOWFA)
+    angSOWFA2world(deg_SOWFA) -> Float64
 
 Convert wind direction angle from SOWFA convention to world coordinate system.
 
@@ -14,7 +14,7 @@ angular reference system than the standard world coordinate system used in calcu
 - `deg_SOWFA::Real`: Wind direction angle in SOWFA convention [degrees]
 
 # Returns
-- `rad_World::Float64`: Wind direction angle in world coordinate system [radians]
+- `rad_World`: Wind direction angle in world coordinate system [radians]
 
 # Coordinate System Conversion
 The transformation follows the relationship:
@@ -194,7 +194,7 @@ where:
 end
 
 """
-    findTurbineGroups(wf::WindFarm, floridyn::FloriDyn)
+    findTurbineGroups(wf::WindFarm, floridyn::FloriDyn) -> Vector{Vector{Int64}}
 
 Determine wake interaction dependencies between turbines in a wind farm.
 
@@ -315,7 +315,7 @@ where:
 end
 
 """
-    interpolateOPs(wf::WindFarm)
+    interpolateOPs(wf::WindFarm) -> Vector{Matrix{Float64}}
 
 Compute interpolation weights and indices for operational points affecting each turbine.
 
@@ -429,7 +429,8 @@ function interpolateOPs(wf::WindFarm)
 end
 
 """
-    setUpTmpWFAndRun(set::Settings, wf::WindFarm, floris::Floris, wind::Wind)
+    setUpTmpWFAndRun(set::Settings, wf::WindFarm, 
+                     floris::Floris, wind::Wind) --> (Matrix, WindFarm)
 
 Execute FLORIS wake calculations for all turbines in a wind farm with wake interactions.
 
@@ -638,12 +639,12 @@ end
 
 """
     runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
-                vis::Vis, floridyn::FloriDyn, floris::Floris)
+                vis::Vis, floridyn::FloriDyn, floris::Floris) -> (WindFarm, DataFrame, Matrix)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
 # Arguments
-- `plt`: Plot object for live visualization during simulation
+- `plt`: Plot object for life visualization during simulation
 - `set::Settings`: Simulation settings and configuration parameters.
 - `wf::WindFarm`: See: [WindFarm](@ref) simulation state, including turbine and wind farm states.
 - `wind::Wind`: See: [Wind](@ref) field settings.
@@ -671,7 +672,8 @@ Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models,
 applying control strategies and updating turbine states over time.
 
 """
-function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, vis::Vis, floridyn::FloriDyn, floris::Floris)
+function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
+                          vis::Vis, floridyn::FloriDyn, floris::Floris)
     nT      = wf.nT
     sim_steps    = sim.n_sim_steps
     ma       = zeros(sim_steps * nT, 6)
