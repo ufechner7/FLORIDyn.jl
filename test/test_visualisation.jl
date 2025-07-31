@@ -87,14 +87,12 @@ end
     end
     
     @testset "plotFlowField" begin
-        @testset "basic functionality" begin
-            # Get test parameters
-            wf, set, floris, wind, md = get_parameters()
-            
-            # Call the calcFlowField function
-            Z, X, Y = calcFlowField(set, wf, wind, floris)
+        # Get test parameters once for all plotFlowField tests
+        wf, set, floris, wind, md = get_parameters()
+        Z, X, Y = calcFlowField(set, wf, wind, floris)
+        vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
 
-            vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
+        @testset "basic functionality" begin
             plotFlowField(nothing, plt, wf, X, Y, Z, vis; unit_test=true)
 
             # Test that outputs have the correct types
@@ -138,12 +136,6 @@ end
         end
         
         @testset "coordinate grid properties" begin
-            # Get test parameters
-            wf, set, floris, wind, md = get_parameters()
-            
-            # Call the function
-            Z, X, Y = calcFlowField(set, wf, wind, floris)
-            
             # Test coordinate range
             @test minimum(X) >= 0.0
             @test maximum(X) <= 3000.0
@@ -158,12 +150,6 @@ end
         end
         
         @testset "msr parameter tests" begin
-            # Get test parameters
-            wf, set, floris, wind, md = get_parameters()
-            
-            # Call the calcFlowField function
-            Z, X, Y = calcFlowField(set, wf, wind, floris)
-            vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
             
             @testset "msr=1 (velocity reduction)" begin
                 # Test plotFlowField with msr=1
@@ -213,6 +199,65 @@ end
                 wind_speed = Z[:, :, 3]
                 @test all(wind_speed .>= 0.0)  # Wind speed should be non-negative
                 @test all(isfinite.(wind_speed))  # Should be finite values
+            end
+        end
+
+        @testset "plotFlowField with PlotState - two consecutive calls" begin
+            # Set up test data
+            state1 = nothing
+            
+            # First call with nothing state (should create new PlotState)
+            state1 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=3, unit_test=false)
+            
+            # Test that state1 is a PlotState object
+            @test state1 isa FLORIDyn.PlotState
+            
+            # Test that PlotState has all required fields
+            @test hasfield(typeof(state1), :fig)
+            @test hasfield(typeof(state1), :ax)
+            @test hasfield(typeof(state1), :cb)
+            @test hasfield(typeof(state1), :contour_collection)
+            @test hasfield(typeof(state1), :turbine_lines)
+            @test hasfield(typeof(state1), :op_scatter1)
+            @test hasfield(typeof(state1), :op_scatter2)
+            @test hasfield(typeof(state1), :title_obj)
+            @test hasfield(typeof(state1), :figure_name)
+            @test hasfield(typeof(state1), :label)
+            @test hasfield(typeof(state1), :lev_min)
+            @test hasfield(typeof(state1), :lev_max)
+            @test hasfield(typeof(state1), :levels)
+            
+            # Test that fields have correct types
+            @test state1.figure_name isa String
+            @test state1.label isa String
+            @test state1.lev_min isa Float64
+            @test state1.lev_max isa Float64
+            @test state1.lev_min < state1.lev_max
+            @test state1.turbine_lines isa Vector
+            
+            # Test second call with existing state (should update same PlotState)
+            state2 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 12; msr=1, unit_test=false)
+            
+            # Test that state2 is the same as state1 (same object, reused)
+            @test state2 isa FLORIDyn.PlotState
+            
+            # Close the plots after testing to avoid accumulation
+            try
+                ControlPlots.plt.close(state1.fig)
+            catch
+            end
+            
+            # Test error handling for invalid msr values
+            @test_throws ErrorException plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=99, unit_test=true)
+            
+            # Test with msr=2 (added turbulence) - create new state for this test
+            state3 = @test_nowarn plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 24; msr=2, unit_test=false)
+            @test state3 isa FLORIDyn.PlotState
+            
+            # Close the plot after testing
+            try
+                ControlPlots.plt.close(state3.fig)
+            catch
             end
         end
 
