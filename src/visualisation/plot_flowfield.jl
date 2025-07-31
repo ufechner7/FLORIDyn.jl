@@ -297,6 +297,38 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
 end
 
 """
+    plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=3, unit_test=false)
+
+Compatibility method for the original plotFlowField interface.
+
+This method provides backward compatibility by calling the new state-based version 
+with `state=nothing`, effectively creating a single plot without animation support.
+
+# Arguments
+- `plt`: Plotting package (e.g., ControlPlots)
+- `wf`: Wind farm object containing turbine data
+- `mx::Matrix`: X-coordinate grid
+- `my::Matrix`: Y-coordinate grid  
+- `mz::Array{Float64,3}`: 3D array of measurements with dimensions (rows, cols, nM)
+- `vis::Vis`: Visualization settings including save options and color scale parameters
+- `t`: Time value for display in the plot title or annotations
+- `msr::Int`: Which measurement to plot (1, 2, or 3). Default is 3.
+- `unit_test::Bool`: Whether to automatically close plots for testing. Default is false.
+
+# Returns
+- `nothing`: For compatibility with the original interface
+
+# Note
+This method is provided for backward compatibility. For animation support, 
+use the new interface with explicit state management.
+"""
+function plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=3, unit_test=false)
+    # Create default visualization settings for backward compatibility
+    plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr=msr, unit_test=unit_test)
+    return nothing
+end
+
+"""
     plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false, unit_test=false) -> Nothing
 
 Plot foreign reduction measurements from FLORIDyn simulation data.
