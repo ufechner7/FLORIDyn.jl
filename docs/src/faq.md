@@ -1,7 +1,7 @@
 # Frequently asked questions FAQ
 
 ## Why should I use Julia?
-**Short answer:** Speed (this code is 3-5 times faster than Matlab and 10-50 times faster than Python), which is very useful for example for solving optimization problems.
+**Short answer:** Speed (this code is 5-8 times faster than Matlab and 10-50 times faster than Python), which is very useful for example for solving optimization problems.
 **Long answer:** Read [Why am I using Julia](https://ufechner7.github.io/2022/08/13/why-julia.html).
 
 ## How can I start Julia?

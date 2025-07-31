@@ -7,17 +7,18 @@ This page contains information for developers who want to contribute to or exten
 The FLORIDyn.jl package is organized into several modules:
 
 - `src/` - Main source code
-  - `controller/` - Controller implementations
-  - `correction/` - Wake correction models
-  - `floridyn_cl/` - Main simulation loop
-  - `floris/` - FLORIS model implementations
-  - `windfield/` - Wind field modeling
+  - `controller/`    - Controller implementations
+  - `correction/`    - Wake correction models
+  - `floridyn_cl/`   - Main simulation loop
+  - `floris/`        - FLORIS model implementations
+  - `windfield/`     - Wind field modeling
   - `visualisation/` - Plotting and helper functions
 - `test/` - Test suite
 - `examples/` - Example scripts
-- `docs/` - Documentation source
-- `data/` - Example data files and configuration settings
-- `bin/` - Bash scripts to start Julia and for statistics
+- `docs/`  - Documentation source
+- `data/`  - Example data files and configuration settings
+- `video/` - PNG and MP4 output files
+- `bin/`   - Bash scripts to start Julia and for statistics
 
 ## Development workflow
 

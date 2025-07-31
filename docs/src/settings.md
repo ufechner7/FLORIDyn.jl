@@ -165,6 +165,10 @@ Floris
 FloriDyn
 TurbineArray
 ```
+# Types created manually
+```@docs
+Vis
+```
 
 # Settings
 ```@docs

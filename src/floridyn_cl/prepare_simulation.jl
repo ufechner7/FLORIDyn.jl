@@ -134,7 +134,8 @@ end
 # end
 
 """
-    prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriDyn, floris::Floris, turbProp, sim::Sim)
+    prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriDyn, 
+                      floris::Floris, turbProp, sim::Sim) -> (WindFarm, Wind, Sim, Con, Floris)
 
 Prepares the simulation environment for a wind farm analysis using the provided settings and parameters.
 
