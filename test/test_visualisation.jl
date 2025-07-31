@@ -1,7 +1,16 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, Test, ControlPlots
+# Handle case where modules might already be loaded (e.g., in interactive Revise sessions)
+if !isdefined(Main, :FLORIDyn)
+    using FLORIDyn
+end
+if !isdefined(Main, :Test)
+    using Test
+end  
+if !isdefined(Main, :ControlPlots)
+    using ControlPlots
+end
 
 function get_parameters()
     settings_file = "data/2021_9T_Data.yaml"
@@ -50,6 +59,9 @@ function create_test_png(filepath::String, width::Int, height::Int)
 end
 
 @testset verbose=true "visualisation                                           " begin
+    # Add explicit garbage collection at start
+    GC.gc()
+    
     @testset "getMeasurements" begin
         # Create a simple test wind farm configuration
         @testset "basic functionality" begin
@@ -433,8 +445,26 @@ end
         # Get test parameters
         wf, set, floris, wind, md = get_parameters()
         vis = Vis(online=false, save=false, unit_test=true)
-        plotMeasurements(plt, wf, md, vis; separated=true)
-        plotMeasurements(plt, wf, md, vis)
+        
+        # Add try-catch to detect potential segfault locations
+        try
+            plotMeasurements(plt, wf, md, vis; separated=true)
+            println("✓ plotMeasurements with separated=true completed successfully")
+        catch e
+            @error "plotMeasurements with separated=true failed: $e"
+            rethrow(e)
+        end
+        
+        try
+            plotMeasurements(plt, wf, md, vis)
+            println("✓ plotMeasurements with separated=false completed successfully")
+        catch e
+            @error "plotMeasurements with separated=false failed: $e"
+            rethrow(e)
+        end
+        
+        # Force garbage collection after plotting operations
+        GC.gc()
     end
     
     @testset "createVideo" begin
@@ -480,6 +510,8 @@ end
                             plt.axis("off")
                             plt.savefig(file_path, dpi=64, bbox_inches="tight", pad_inches=0)
                             plt.close()
+                            # Force garbage collection to prevent memory accumulation
+                            GC.gc()
                         else
                             # Fallback: create a larger minimal PNG (10x10 pixels)
                             create_test_png(file_path, 10, 10)
@@ -498,7 +530,7 @@ end
                 @test isa(result, String)  # Should return a string (empty if failed)
 
                 # Test basic functionality and delete frames
-                result = createVideo("test"; video_dir=test_dir, output_dir=output_dir, fps=2, delete_frames=false)
+                result = createVideo("test"; video_dir=test_dir, output_dir=output_dir, fps=2, delete_frames=true)
                 
                 # Test with non-existent directory
                 result_nodir = createVideo("test"; video_dir="nonexistent_dir")
