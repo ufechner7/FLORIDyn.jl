@@ -3,6 +3,22 @@
 ## Project context
 This project is developed in Julia for scientific computing.
 
+## Folder Structure
+- `/src`: Contains the source code of this package.
+  - `/controller`: Contains implementations of various controllers.
+  - `/correction`: Contains wake correction models.
+  - `/floridyn_cl`: Contains the main simulation loop.
+  - `/floris`: Contains FLORIS model implementations.
+  - `/windfield`: Contains wind field modeling code.
+  - `/visualisation`: Contains plotting and helper functions.
+- `/test`: Contains the test suite for the package.
+- `/examples`: Contains example scripts demonstrating package usage.
+- `/docs`: Contains the documentation source files.
+- `/docs/src`: Contains the documentation source files, including `types.md` and `developer.md`.
+- `/data`: Contains example data files and configuration settings.
+- `/video`: Contains PNG and MP4 output files.
+- `/bin`: Contains bash scripts to start Julia and for statistics.
+
 ## Coding style
 - Use 4 spaces for indentation.
 - Write reusable functions instead of scripts; functions should take parameters explicitly.
