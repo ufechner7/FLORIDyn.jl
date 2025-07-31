@@ -375,7 +375,8 @@ end
             
             # Check that the examples directory exists and is accessible
             @test isdir("examples")
-            @test isreadable("examples")
+            # Test directory accessibility by trying to read it
+            @test_nowarn readdir("examples")
             
             # Check that we can list files in the directory
             files_in_dir = readdir("examples")
@@ -385,7 +386,10 @@ end
             for file in files_in_dir
                 file_path = joinpath("examples", file)
                 if isfile(file_path)
-                    @test isreadable(file_path)
+                    # Test file readability by trying to read first few bytes
+                    @test_nowarn open(file_path, "r") do f
+                        read(f, min(10, filesize(file_path)))
+                    end
                     
                     # Check permissions
                     stat_info = stat(file_path)
