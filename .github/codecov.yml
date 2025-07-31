@@ -3,12 +3,12 @@ coverage:
     project:
       default:
         # Target overall project coverage percentage to maintain or improve
-        target: 70
+        target: 75
       
     patch:
       default:
         # Set patch target to 'auto' so Codecov assesses patch coverage relative to the base
-        target: auto
+        target: 75
         
         # Allow a threshold margin to avoid failures due to minor coverage fluctuations on patch lines
         threshold: 5
