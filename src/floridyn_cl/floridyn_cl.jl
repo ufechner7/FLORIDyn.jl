@@ -59,7 +59,7 @@ world_angle = angSOWFA2world(0.0)   # Returns 4.712388... (270° in radians)
 end
 
 """
-    initSimulation(wf::Union{Nothing, WindFarm}, sim::Sim)
+    initSimulation(wf::Union{Nothing, WindFarm}, sim::Sim) -> Union{Nothing, WindFarm}
 
 Initialize or load a wind farm simulation state based on simulation settings.
 

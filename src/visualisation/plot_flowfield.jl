@@ -45,7 +45,7 @@ Plot a 2D contour of the flow field data with support for animation.
 # Arguments
 - `state::Union{Nothing, PlotState}`: Animation state object. Pass `nothing` for the first call, 
   then pass the returned state for subsequent calls to maintain the same figure and layout.
-- `plt`: Plotting package (e.g., ControlPlots)
+- `plt`: Plotting package (e.g., ControlPlots.plt)
 - `wf`: Wind farm object containing turbine data
 - `mx::Matrix`: X-coordinate grid
 - `my::Matrix`: Y-coordinate grid  
@@ -305,7 +305,7 @@ This method provides backward compatibility by calling the new state-based versi
 with `state=nothing`, effectively creating a single plot without animation support.
 
 # Arguments
-- `plt`: Plotting package (e.g., ControlPlots)
+- `plt`: Plotting package (e.g., ControlPlots.plt)
 - `wf`: Wind farm object containing turbine data
 - `mx::Matrix`: X-coordinate grid
 - `my::Matrix`: Y-coordinate grid  
