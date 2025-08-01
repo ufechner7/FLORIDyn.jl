@@ -238,7 +238,7 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         )
     end
     
-    GC.enable(false)
+    # GC.enable(false)
     # Parallel loop using @threads
     @threads :static for iGP in 1:length(mx)
         # Get thread-local buffers
@@ -279,7 +279,7 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         # Thread-safe assignment using @views to avoid race conditions
         @views mz[rw, cl, 1:3] .= gridPointResult
     end
-    GC.enable(true)
+    # GC.enable(true)
     
     return mz
 end
