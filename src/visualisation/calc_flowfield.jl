@@ -201,7 +201,7 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
     original_nT = wf.nT
     
     # Pre-allocate computation buffers for each thread
-    thread_comp_buffers = Vector{NamedTuple}(undef, nthreads())
+    thread_comp_buffers = Vector{@NamedTuple{dist_buffer::Vector{Float64}, sorted_indices_buffer::Vector{Int}}}(undef, nthreads())
     
     for tid in 1:nthreads()
         GP = thread_buffers[tid]
@@ -238,8 +238,8 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
     end
     
     # Parallel loop using @threads
-    GC.enable(false)
-    @threads for iGP in 1:length(mx)
+    # GC.enable(false)
+    @threads :static for iGP in 1:length(mx)
         # Get thread-local buffers
         tid = threadid()
         GP = thread_buffers[tid]
@@ -278,7 +278,7 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         # Thread-safe assignment using @views to avoid race conditions
         @views mz[rw, cl, 1:3] .= gridPointResult
     end
-    GC.enable(true)
+    # GC.enable(true)
     
     return mz
 end
