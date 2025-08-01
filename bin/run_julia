@@ -18,7 +18,7 @@ julia --project -t 8 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); inc
 
 # 170s for 300 iterations with 8 threads on Ryzen 7 7850X 2.6x advantage
 # 448s for 300 iterations with 1 thread on Ryzen 7 7850X
-# 309s on laptop multithreaded 2.1x advantage
+# 309s on laptop multithreaded 2.1x advantage 296s
 # 654s on laptop single threaded 
 # 1.65s single threaded 1.50s
 # 0.52s multithreaded   0.46s
