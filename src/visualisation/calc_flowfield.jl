@@ -4,6 +4,87 @@
 using Base.Threads
 
 """
+    ThreadBuffers
+
+Thread-local buffers for parallel flow field computation.
+
+# Fields
+- `thread_buffers::Vector{WindFarm}`: Thread-local WindFarm objects for each thread
+- `thread_comp_buffers::Vector{NamedTuple}`: Computation buffers containing distance and sorting arrays
+"""
+struct ThreadBuffers
+    thread_buffers::Vector{WindFarm}
+    thread_comp_buffers::Vector{@NamedTuple{dist_buffer::Vector{Float64}, sorted_indices_buffer::Vector{Int}}}
+end
+
+"""
+    create_thread_buffers(wf::WindFarm, nth::Int) -> ThreadBuffers
+
+Create thread-local buffers for parallel flow field computation.
+
+This function pre-allocates all necessary data structures for each thread to avoid
+race conditions and memory allocations during the parallel computation loop.
+
+# Arguments
+- `wf::WindFarm`: Original wind farm object to use as template
+- `nth::Int`: Number of threads to create buffers for
+
+# Returns
+- `ThreadBuffers`: Struct containing all thread-local buffers
+
+# Performance Notes
+- Each thread gets its own copy of the WindFarm structure
+- Pre-allocates all arrays to minimize allocations during computation
+- Sets up dependency structure for virtual turbines at grid points
+"""
+function create_thread_buffers(wf::WindFarm, nth::Int)
+    # Create thread-local buffers to avoid race conditions
+    thread_buffers = [deepcopy(wf) for _ in 1:nth]
+    
+    # Pre-allocate arrays for each thread buffer
+    original_nT = wf.nT
+    
+    # Pre-allocate computation buffers for each thread
+    thread_comp_buffers = Vector{@NamedTuple{dist_buffer::Vector{Float64}, sorted_indices_buffer::Vector{Int}}}(undef, nth)
+    
+    for tid in 1:nth
+        GP = thread_buffers[tid]
+        GP.nT = original_nT + 1  # Original turbines + 1 grid point
+        
+        # Pre-allocate dependency structure
+        GP.dep = Vector{Vector{Int64}}(undef, GP.nT)
+        for i in 1:original_nT
+            GP.dep[i] = Int64[]  # Original turbines are independent (no dependencies)
+        end
+        GP.dep[end] = collect(1:original_nT)  # Grid point depends on all original turbines
+        
+        # Pre-allocate extended arrays
+        GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
+        GP.posBase = vcat(wf.posBase, zeros(1, 3))  # Will be updated for each grid point
+        GP.posNac = vcat(wf.posNac, zeros(1, 3))   # Will be updated for each grid point
+        GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
+        GP.D = vcat(wf.D, [0.0])  # Grid point has 0 diameter
+        
+        # Ensure all necessary fields are copied to avoid shared references
+        if hasfield(typeof(wf), :intOPs)
+            GP.intOPs = deepcopy(wf.intOPs)
+        end
+        
+        # Pre-allocate buffers for non-allocating interpolateOPs!
+        GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
+        dist_buffer = zeros(wf.nOP)
+        sorted_indices_buffer = zeros(Int, wf.nOP)
+        
+        thread_comp_buffers[tid] = (
+            dist_buffer = dist_buffer,
+            sorted_indices_buffer = sorted_indices_buffer
+        )
+    end
+    
+    return ThreadBuffers(thread_buffers, thread_comp_buffers)
+end
+
+"""
     getMeasurements(mx::Matrix, my::Matrix, nM::Int, zh::Real, wf::WindFarm, set::Settings, 
                     floris::Floris, wind::Wind) -> Array{Float64,3}
 
@@ -168,7 +249,7 @@ For each grid point:
 # Performance Notes
 - Multi-threaded implementation using `@threads` for parallel processing of grid points
 - Each grid point requires a full wind farm simulation, so computation time scales with grid size
-- Uses thread-local buffers to avoid race conditions and minimize memory allocations
+- Uses thread-local buffers created by [`create_thread_buffers`](@ref) to avoid race conditions
 - Scales well with the number of available CPU cores
 
 # Example
@@ -195,56 +276,16 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
     mz = zeros(size_mx[1], size_mx[2], nM)
     nth = nthreads()+1
     
-    # Create thread-local buffers to avoid race conditions
-    thread_buffers = [deepcopy(wf) for _ in 1:nth]
-    
-    # Pre-allocate arrays for each thread buffer
-    original_nT = wf.nT
-    
-    # Pre-allocate computation buffers for each thread
-    thread_comp_buffers = Vector{@NamedTuple{dist_buffer::Vector{Float64}, sorted_indices_buffer::Vector{Int}}}(undef, nth)
-    
-    for tid in 1:nth
-        GP = thread_buffers[tid]
-        GP.nT = original_nT + 1  # Original turbines + 1 grid point
-        
-        # Pre-allocate dependency structure
-        GP.dep = Vector{Vector{Int64}}(undef, GP.nT)
-        for i in 1:original_nT
-            GP.dep[i] = Int64[]  # Original turbines are independent (no dependencies)
-        end
-        GP.dep[end] = collect(1:original_nT)  # Grid point depends on all original turbines
-        
-        # Pre-allocate extended arrays
-        GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
-        GP.posBase = vcat(wf.posBase, zeros(1, 3))  # Will be updated for each grid point
-        GP.posNac = vcat(wf.posNac, zeros(1, 3))   # Will be updated for each grid point
-        GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
-        GP.D = vcat(wf.D, [0.0])  # Grid point has 0 diameter
-        
-        # Ensure all necessary fields are copied to avoid shared references
-        if hasfield(typeof(wf), :intOPs)
-            GP.intOPs = deepcopy(wf.intOPs)
-        end
-        
-        # Pre-allocate buffers for non-allocating interpolateOPs!
-        GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
-        dist_buffer = zeros(wf.nOP)
-        sorted_indices_buffer = zeros(Int, wf.nOP)
-        
-        thread_comp_buffers[tid] = (
-            dist_buffer = dist_buffer,
-            sorted_indices_buffer = sorted_indices_buffer
-        )
-    end
+    # Create thread-local buffers using the new function
+    buffers = create_thread_buffers(wf, nth)
     
     # GC.enable(false)
     # Parallel loop using @threads
     @threads :static for iGP in 1:length(mx)
         # Get thread-local buffers
         tid = threadid()
-        GP = thread_buffers[tid]
-        buffers = thread_comp_buffers[tid]
+        GP = buffers.thread_buffers[tid]
+        comp_buffers = buffers.thread_comp_buffers[tid]
         
         xGP = mx[iGP]
         yGP = my[iGP]
@@ -264,7 +305,7 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         end
         
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
-        interpolateOPs!(GP.intOPs, GP, buffers.dist_buffer, buffers.sorted_indices_buffer)
+        interpolateOPs!(GP.intOPs, GP, comp_buffers.dist_buffer, comp_buffers.sorted_indices_buffer)
 
         tmpM, _ = setUpTmpWFAndRun(set, GP, floris, wind)
         
