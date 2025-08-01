@@ -18,3 +18,4 @@ julia --project -t 1 --gcthreads=1,0 -i -e 'using FLORIDyn; function menu(); inc
 
 # 170s for 300 iterations with 8 threads on Ryzen 7 7850X
 # 448s for 300 iterations with 1 thread
+# 309s on laptop
