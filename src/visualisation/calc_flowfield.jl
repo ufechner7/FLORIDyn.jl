@@ -42,9 +42,10 @@ For each grid point:
 4. Extracts the result for the virtual turbine position
 
 # Performance Notes
-- Single-threaded implementation (can be parallelized with `@threads` for large grids)
+- Multi-threaded implementation using `@threads` for parallel processing of grid points
 - Each grid point requires a full wind farm simulation, so computation time scales with grid size
-- Uses pre-allocated buffer to avoid repeated `deepcopy` operations for better performance
+- Uses thread-local buffers to avoid race conditions and minimize memory allocations
+- Scales well with the number of available CPU cores
 
 # Example
 ```julia
@@ -91,9 +92,15 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         GP.posNac = vcat(wf.posNac, zeros(1, 3))   # Will be updated for each grid point
         GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
         GP.D = vcat(wf.D, [0.0])  # Grid point has 0 diameter
+        
+        # Ensure all necessary fields are copied to avoid shared references
+        if hasfield(typeof(wf), :intOPs)
+            GP.intOPs = deepcopy(wf.intOPs)
+        end
     end
     
     # Parallel loop using @threads
+    GC.enable(false)
     @threads for iGP in 1:length(mx)
         # Get thread-local buffer
         GP = thread_buffers[threadid()]
@@ -101,12 +108,19 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         xGP = mx[iGP]
         yGP = my[iGP]
         
-        # Update only the grid point position in the pre-allocated arrays
-        GP.posBase[end, :] = [xGP, yGP, 0.0]  # Update grid point base position
-        GP.posNac[end, :] = [0.0, 0.0, zh]    # Update grid point nacelle position
+        # Thread-safe updates: create copies to avoid modifying shared arrays
+        GP.posBase[end, 1] = xGP
+        GP.posBase[end, 2] = yGP
+        GP.posBase[end, 3] = 0.0
         
-        # Reset the grid point state (other turbine states remain unchanged)
-        GP.States_T[end, :] .= 0.0
+        GP.posNac[end, 1] = 0.0
+        GP.posNac[end, 2] = 0.0
+        GP.posNac[end, 3] = zh
+        
+        # Reset the grid point state (thread-safe element-wise assignment)
+        for j in 1:size(GP.States_T, 2)
+            GP.States_T[end, j] = 0.0
+        end
         
         # Recalculate interpolated OPs for the updated geometry
         GP.intOPs = interpolateOPs(GP)
@@ -116,12 +130,15 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         # Extract only the result for the grid point (last "turbine")
         @views gridPointResult = tmpM[end, :]
         
-        # Convert linear index to subscripts
+        # Convert linear index to subscripts (thread-safe)
         rw, cl = divrem(iGP - 1, size_mx[1])
         rw += 1
         cl += 1
-        mz[rw, cl, 1:3] = gridPointResult
+        
+        # Thread-safe assignment using @views to avoid race conditions
+        @views mz[rw, cl, 1:3] .= gridPointResult
     end
+    GC.enable(true)
     
     return mz
 end
