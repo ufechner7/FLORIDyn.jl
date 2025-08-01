@@ -91,6 +91,11 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
     GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
     GP.D = vcat(wf.D, [0.0])  # Grid point has 0 diameter
     
+    # Pre-allocate buffers for non-allocating interpolateOPs!
+    GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
+    dist_buffer = zeros(wf.nOP)
+    sorted_indices_buffer = zeros(Int, wf.nOP)
+
     # Single-threaded loop (can be parallelized with @threads or Distributed.@distributed)
     for iGP in 1:length(mx)
         xGP = mx[iGP]
@@ -103,8 +108,8 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         # Reset the grid point state (other turbine states remain unchanged)
         GP.States_T[end, :] .= 0.0
         
-        # Recalculate interpolated OPs for the updated geometry
-        GP.intOPs = interpolateOPs(GP)
+        # Recalculate interpolated OPs for the updated geometry (non-allocating)
+        interpolateOPs!(GP.intOPs, GP, dist_buffer, sorted_indices_buffer)
 
         tmpM, _ = setUpTmpWFAndRun(set, GP, floris, wind)
         
@@ -194,6 +199,10 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
     
     # Pre-allocate arrays for each thread buffer
     original_nT = wf.nT
+    
+    # Pre-allocate computation buffers for each thread
+    thread_comp_buffers = Vector{NamedTuple}(undef, nthreads())
+    
     for tid in 1:nthreads()
         GP = thread_buffers[tid]
         GP.nT = original_nT + 1  # Original turbines + 1 grid point
@@ -216,13 +225,25 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         if hasfield(typeof(wf), :intOPs)
             GP.intOPs = deepcopy(wf.intOPs)
         end
+        
+        # Pre-allocate buffers for non-allocating interpolateOPs!
+        GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
+        dist_buffer = zeros(wf.nOP)
+        sorted_indices_buffer = zeros(Int, wf.nOP)
+        
+        thread_comp_buffers[tid] = (
+            dist_buffer = dist_buffer,
+            sorted_indices_buffer = sorted_indices_buffer
+        )
     end
     
     # Parallel loop using @threads
     GC.enable(false)
     @threads for iGP in 1:length(mx)
-        # Get thread-local buffer
-        GP = thread_buffers[threadid()]
+        # Get thread-local buffers
+        tid = threadid()
+        GP = thread_buffers[tid]
+        buffers = thread_comp_buffers[tid]
         
         xGP = mx[iGP]
         yGP = my[iGP]
@@ -241,8 +262,8 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
             GP.States_T[end, j] = 0.0
         end
         
-        # Recalculate interpolated OPs for the updated geometry
-        GP.intOPs = interpolateOPs(GP)
+        # Recalculate interpolated OPs for the updated geometry (non-allocating)
+        interpolateOPs!(GP.intOPs, GP, buffers.dist_buffer, buffers.sorted_indices_buffer)
 
         tmpM, _ = setUpTmpWFAndRun(set, GP, floris, wind)
         

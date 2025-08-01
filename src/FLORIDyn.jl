@@ -48,7 +48,7 @@ export getYaw
 export discretizeRotor, calcCt, States
 export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimulation
 export runFLORIS, init_states, getUadv
-export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, interpolateOPs, perturbationOfTheWF!, findTurbineGroups
+export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, interpolateOPs, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
 export getMeasurements, calcFlowField, plotFlowField, plotMeasurements, getLayout, install_examples
 export createVideo, createAllVideos, natural_sort_key
 

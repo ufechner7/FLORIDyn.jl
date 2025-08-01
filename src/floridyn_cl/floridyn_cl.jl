@@ -429,6 +429,116 @@ function interpolateOPs(wf::WindFarm)
 end
 
 """
+    interpolateOPs!(intOPs::Vector{Matrix{Float64}}, wf::WindFarm, 
+                   dist_buffer::Vector{Float64}, sorted_indices_buffer::Vector{Int})
+
+Non-allocating version of interpolateOPs that uses pre-allocated buffers.
+
+This function performs the same interpolation calculations as interpolateOPs but avoids 
+memory allocations by reusing pre-allocated buffer arrays. This is critical for performance 
+when called repeatedly in loops, such as in flow field calculations.
+
+# Arguments
+- `intOPs::Vector{Matrix{Float64}}`: Pre-allocated vector of matrices to store interpolation results
+- `wf::WindFarm`: Wind farm object containing turbine positions and operational point data
+- `dist_buffer::Vector{Float64}`: Buffer for distance calculations (length ≥ wf.nOP)
+- `sorted_indices_buffer::Vector{Int}`: Buffer for sorting indices (length ≥ wf.nOP)
+
+# Returns
+- `intOPs::Vector{Matrix{Float64}}`: Results filled in-place
+
+# Performance Notes
+- All temporary arrays are reused from pre-allocated buffers
+- No memory allocations occur during execution
+- Suitable for use in hot loops and parallel contexts
+
+# Example
+```julia
+# Pre-allocate buffers
+intOPs = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
+dist_buffer = zeros(wf.nOP)
+sorted_indices_buffer = zeros(Int, wf.nOP)
+
+# Non-allocating interpolation
+interpolateOPs!(intOPs, wf, dist_buffer, sorted_indices_buffer)
+```
+"""
+function interpolateOPs!(intOPs::Vector{Matrix{Float64}}, wf::WindFarm, 
+                        dist_buffer::Vector{Float64}, sorted_indices_buffer::Vector{Int})
+    @assert length(wf.dep) > 0 "No dependencies found! Ensure `findTurbineGroups` was called first."
+
+    for iT in 1:wf.nT  # For every turbine
+        for iiT in 1:length(wf.dep[iT])  # for every influencing turbine
+            iiaT = wf.dep[iT][iiT]       # actual turbine index
+
+            # Compute distances from OPs of turbine iiaT to current turbine
+            start_idx = wf.StartI[iiaT]
+            turb_pos_x = wf.posBase[iT, 1]
+            turb_pos_y = wf.posBase[iT, 2]
+
+            # Compute Euclidean distances to the turbine position (non-allocating)
+            @views dist = dist_buffer[1:wf.nOP]
+            for i in 1:wf.nOP
+                op_idx = start_idx + i - 1
+                dx = wf.States_OP[op_idx, 1] - turb_pos_x
+                dy = wf.States_OP[op_idx, 2] - turb_pos_y
+                dist[i] = sqrt(dx * dx + dy * dy)
+            end
+
+            # Sort indices by distance (reuse buffer)
+            @views sorted_indices = sorted_indices_buffer[1:wf.nOP]
+            for i in 1:wf.nOP
+                sorted_indices[i] = i
+            end
+            sort!(sorted_indices, by=i -> dist[i])
+
+            if sorted_indices[1] == 1
+                # Closest is first OP (unlikely)
+                intOPs[iT][iiT, 1] = wf.StartI[iiaT]
+                intOPs[iT][iiT, 2] = 1.0
+                intOPs[iT][iiT, 3] = wf.StartI[iiaT] + 1
+                intOPs[iT][iiT, 4] = 0.0
+            elseif sorted_indices[1] == wf.nOP
+                # Closest is last OP (possible)
+                intOPs[iT][iiT, 1] = wf.StartI[iiaT] + wf.nOP - 2
+                intOPs[iT][iiT, 2] = 0.0
+                intOPs[iT][iiT, 3] = wf.StartI[iiaT] + wf.nOP - 1
+                intOPs[iT][iiT, 4] = 1.0
+            else
+                # Use two closest OPs for interpolation
+                indOP1 = wf.StartI[iiaT] - 1 + sorted_indices[1]
+                indOP2 = wf.StartI[iiaT] - 1 + sorted_indices[2]
+
+                a_x = wf.States_OP[indOP1, 1]
+                a_y = wf.States_OP[indOP1, 2]
+                b_x = wf.States_OP[indOP2, 1]
+                b_y = wf.States_OP[indOP2, 2]
+                c_x = wf.posBase[iT, 1]
+                c_y = wf.posBase[iT, 2]
+
+                ab_x = b_x - a_x
+                ab_y = b_y - a_y
+                ac_x = c_x - a_x
+                ac_y = c_y - a_y
+                
+                d = (ab_x * ac_x + ab_y * ac_y) / (ab_x * ab_x + ab_y * ab_y)
+                d = clamp(d, 0.0, 1.0)
+
+                r1 = 1.0 - d
+                r2 = d
+
+                intOPs[iT][iiT, 1] = indOP1
+                intOPs[iT][iiT, 2] = r1
+                intOPs[iT][iiT, 3] = indOP2
+                intOPs[iT][iiT, 4] = r2
+            end
+        end
+    end
+
+    return intOPs
+end
+
+"""
     setUpTmpWFAndRun(set::Settings, wf::WindFarm, 
                      floris::Floris, wind::Wind) --> (Matrix, WindFarm)
 
