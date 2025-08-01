@@ -384,22 +384,60 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
 end
 
 """
-    calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris)
+    calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing)
 
 Generate full flow field plot data by calculating measurements across a grid.
 
+This function creates a rectangular grid over the wind farm domain and calculates flow field
+properties at each grid point by treating them as virtual turbines. The computation can be
+performed in parallel if `set.parallel` is true, with automatic garbage collection management
+for thread safety.
+
 # Arguments
 - `set::Settings`: Settings object containing simulation parameters
+  - `set.parallel`: If true, uses parallel computation with multiple threads
 - `wf::WindFarm`: Wind farm object containing turbine data
 - `wind::Wind`: Wind field configuration  
 - `floris::Floris`: FLORIS model parameters
 
+# Keyword Arguments
+- `plt=nothing`: Plot object for garbage collection control. If provided and `set.parallel` is true,
+  automatically calls `plt.GC.enable(false)` before multithreading and `plt.GC.enable(true)` 
+  after completion to prevent PyCall-related segmentation faults during parallel execution.
+
 # Returns
-- `Z::Array{Float64,3}`: 3D array of flow field measurements
-- `X::Matrix{Float64}`: X-coordinate grid
-- `Y::Matrix{Float64}`: Y-coordinate grid
+- `Z::Array{Float64,3}`: 3D array of flow field measurements with dimensions `(ny, nx, 3)`
+  - `Z[:,:,1]`: Velocity reduction factor
+  - `Z[:,:,2]`: Added turbulence intensity  
+  - `Z[:,:,3]`: Effective wind speed (m/s)
+- `X::Matrix{Float64}`: X-coordinate grid (m)
+- `Y::Matrix{Float64}`: Y-coordinate grid (m)
+
+# Performance Notes
+- Uses parallel computation when `set.parallel=true` for significant speedup on multi-core systems
+- Automatic garbage collection management prevents threading-related crashes
+- Grid resolution is fixed at 20m with domain from [0,0] to [3000,3000] meters
+- Hub height is taken from the first turbine in the wind farm
+
+# Example
+```julia
+# Calculate flow field with parallel computation and GC control
+set.parallel = true
+Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+
+# Extract velocity reduction field
+velocity_reduction = Z[:, :, 1]
+
+# Extract effective wind speed field  
+wind_speed = Z[:, :, 3]
+```
+
+# See Also
+- [`getMeasurements`](@ref): Single-threaded implementation
+- [`getMeasurementsP`](@ref): Multi-threaded implementation
+- [`plotFlowField`](@ref): Visualization function for the generated data
 """
-function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris)
+function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing)
     # Preallocate field
     nM = 3
     fieldLims = [0.0 0.0 0.0;
@@ -418,7 +456,18 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris)
     
     # Get data
     if set.parallel
-        Z = getMeasurementsP(X, Y, nM, zh, wf, set, floris, wind)
+        # Disable garbage collection before multithreading if plt is provided
+        if plt !== nothing
+            plt.GC.enable(false)
+        end
+        try
+            Z = getMeasurementsP(X, Y, nM, zh, wf, set, floris, wind)
+        finally
+            # Re-enable garbage collection after multithreading if plt is provided
+            if plt !== nothing
+                plt.GC.enable(true)
+            end
+        end
     else
         Z = getMeasurements(X, Y, nM, zh, wf, set, floris, wind)
     end

@@ -25,7 +25,7 @@ julia --project -t 8 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); inc
 # 0.27s multithreaded with default GC
 
 # ON LAPTOP, performance mode
-# 309s on laptop multithreaded 2.1x advantage 296s
+# 309s on laptop multithreaded 2.1x advantage
 # 654s on laptop single threaded 
-# 1.50s single threaded 1.50s
-# 0.45s multithreaded   0.45s
+# 1.50s single threaded
+# 0.56s multithreaded

@@ -59,18 +59,20 @@ toc()
 if PLT == 1
     vis.online = false
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    @time Z, X, Y = calcFlowField(set, wf, wind, floris)
+    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
 elseif PLT == 2
     vis.online = false
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    @time Z, X, Y = calcFlowField(set, wf, wind, floris)
+    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
+    GC.gc()
 elseif PLT == 3
     vis.online = false
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    @time Z, X, Y = calcFlowField(set, wf, wind, floris)
+    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
+    GC.gc()
 elseif PLT == 4
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)

@@ -1015,7 +1015,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         if vis.online
             t_rel = sim_time-sim.start_time
             if mod(t_rel, vis.up_int) == 0
-                Z, X, Y = calcFlowField(set, wf, wind, floris)
+                Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
                 plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel; msr=1)
             end
         end
