@@ -43,6 +43,5 @@ vis.online = false
 @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
 plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
 
-wf, md, set, floris, wind = get_parameters(vis)
 plotMeasurements(plt, wf, md, vis; separated=true)
 nothing
