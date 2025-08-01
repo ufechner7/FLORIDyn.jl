@@ -30,7 +30,7 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
 # create settings struct
 set = Settings(wind, sim, con)
-set.parallel = PARALLEL
+set.parallel = false
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 sim.n_sim_steps = 195
@@ -42,4 +42,7 @@ vis.online = false
 @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
 plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
+
+wf, md, set, floris, wind = get_parameters(vis)
+plotMeasurements(plt, wf, md, vis; separated=true)
 nothing
