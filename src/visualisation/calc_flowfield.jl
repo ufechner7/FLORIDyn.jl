@@ -193,17 +193,18 @@ wind_speed_field = mz[:, :, 3]
 function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
     size_mx = size(mx)
     mz = zeros(size_mx[1], size_mx[2], nM)
+    nth = nthreads()+1
     
     # Create thread-local buffers to avoid race conditions
-    thread_buffers = [deepcopy(wf) for _ in 1:nthreads()]
+    thread_buffers = [deepcopy(wf) for _ in 1:nth]
     
     # Pre-allocate arrays for each thread buffer
     original_nT = wf.nT
     
     # Pre-allocate computation buffers for each thread
-    thread_comp_buffers = Vector{@NamedTuple{dist_buffer::Vector{Float64}, sorted_indices_buffer::Vector{Int}}}(undef, nthreads())
+    thread_comp_buffers = Vector{@NamedTuple{dist_buffer::Vector{Float64}, sorted_indices_buffer::Vector{Int}}}(undef, nth)
     
-    for tid in 1:nthreads()
+    for tid in 1:nth
         GP = thread_buffers[tid]
         GP.nT = original_nT + 1  # Original turbines + 1 grid point
         
@@ -237,6 +238,7 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         )
     end
     
+    GC.enable(false)
     # Parallel loop using @threads
     @threads :static for iGP in 1:length(mx)
         # Get thread-local buffers
@@ -277,6 +279,7 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         # Thread-safe assignment using @views to avoid race conditions
         @views mz[rw, cl, 1:3] .= gridPointResult
     end
+    GC.enable(true)
     
     return mz
 end
