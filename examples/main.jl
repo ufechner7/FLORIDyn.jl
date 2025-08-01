@@ -9,6 +9,7 @@ using FLORIDyn, TerminalPager, ControlPlots
 
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
+PARALLEL = false
 
 # PLT options:
 # PLT=1: Velocity reduction plot (if not using online visualization)
@@ -26,6 +27,7 @@ function get_parameters(vis)
 
     # create settings struct
     set = Settings(wind, sim, con)
+    set.parallel = PARALLEL
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
@@ -38,6 +40,7 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
 # create settings struct
 set = Settings(wind, sim, con)
+set.parallel = PARALLEL
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
