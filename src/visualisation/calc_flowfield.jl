@@ -97,6 +97,7 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
     sorted_indices_buffer = zeros(Int, wf.nOP)
 
     # Single-threaded loop (can be parallelized with @threads or Distributed.@distributed)
+    GC.enable(false)  # Disable garbage collection for performance
     for iGP in 1:length(mx)
         xGP = mx[iGP]
         yGP = my[iGP]
@@ -122,6 +123,7 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         cl += 1
         mz[rw, cl, 1:3] = gridPointResult
     end
+    GC.enable(true)  # Re-enable garbage collection after processing
     
     return mz
 end
