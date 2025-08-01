@@ -170,9 +170,10 @@ For each grid point:
 # Performance Notes
 - Multi-threaded implementation using `OhMyThreads.jl` for efficient parallel processing
 - Uses dynamic task scheduling (`scheduler=:dynamic`) for optimal load balancing across CPU cores
-- Task-local memory allocation eliminates race conditions and reduces memory contention
+- **TaskLocalValue optimization**: Expensive allocations (deepcopy, array creation) moved outside the computation loop
+- Task-local storage prevents race conditions and eliminates repeated memory allocations per grid point
 - Each grid point requires a full wind farm simulation, so computation time scales with grid size
-- Scales well with the number of available CPU cores and provides better performance than `@threads`
+- Scales well with the number of available CPU cores and provides superior performance to `@threads`
 
 # Example
 ```julia
@@ -200,12 +201,13 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
     # Use OhMyThreads.tmap with dynamic scheduling for optimal load balancing
     original_nT = wf.nT
     
-    # Process all grid points in parallel using tmap
-    results = tmap(1:length(mx); scheduler=:dynamic) do iGP
-        # Create task-local wind farm copy (each task gets its own copy)
+    # Create TaskLocalValues for expensive allocations outside the computation loop
+    # This avoids repeated allocations and deepcopy operations per task
+    tlv_windfarm = OhMyThreads.TaskLocalValue{WindFarm}() do
+        # Create task-local wind farm copy once per task
         GP = deepcopy(wf)
         
-        # Setup grid point as virtual turbine
+        # Setup grid point as virtual turbine (structure setup)
         GP.nT = original_nT + 1
         
         # Pre-allocate dependency structure (task-local)
@@ -222,24 +224,44 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
         GP.D = vcat(wf.D, [0.0])  # Grid point has 0 diameter
         
-        # Pre-allocate interpolation buffers (task-local)
+        # Pre-allocate interpolation structures (task-local)
         GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
-        dist_buffer = zeros(wf.nOP)
-        sorted_indices_buffer = zeros(Int, wf.nOP)
+        
+        return GP
+    end
+    
+    # TaskLocalValue for computation buffers
+    tlv_buffers = OhMyThreads.TaskLocalValue{@NamedTuple{dist_buffer::Vector{Float64}, sorted_indices_buffer::Vector{Int}}}() do
+        (
+            dist_buffer = zeros(wf.nOP),
+            sorted_indices_buffer = zeros(Int, wf.nOP)
+        )
+    end
+    GC.enable(false)  # Disable garbage collection for performance
+    # Process all grid points in parallel using tmap with pre-allocated task-local storage
+    results = tmap(1:length(mx); scheduler=:dynamic) do iGP
+        # Get task-local pre-allocated structures (no allocation here!)
+        GP = tlv_windfarm[]
+        buffers = tlv_buffers[]
         
         # Get grid point coordinates
         xGP = mx[iGP]
         yGP = my[iGP]
         
-        # Update grid point position
-        GP.posBase[end, :] = [xGP, yGP, 0.0]
-        GP.posNac[end, :] = [0.0, 0.0, zh]
+        # Update grid point position (minimal operations)
+        GP.posBase[end, 1] = xGP
+        GP.posBase[end, 2] = yGP
+        GP.posBase[end, 3] = 0.0
         
-        # Reset grid point state
+        GP.posNac[end, 1] = 0.0
+        GP.posNac[end, 2] = 0.0
+        GP.posNac[end, 3] = zh
+        
+        # Reset grid point state (reuse existing array)
         GP.States_T[end, :] .= 0.0
         
-        # Recalculate interpolated OPs for updated geometry
-        interpolateOPs!(GP.intOPs, GP, dist_buffer, sorted_indices_buffer)
+        # Recalculate interpolated OPs for updated geometry (reuse buffers)
+        interpolateOPs!(GP.intOPs, GP, buffers.dist_buffer, buffers.sorted_indices_buffer)
         
         # Run simulation
         tmpM, _ = setUpTmpWFAndRun(set, GP, floris, wind)
@@ -253,7 +275,7 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         # Return result with indices for thread-safe assignment
         (rw, cl, gridPointResult)
     end
-    
+    GC.enable(true)  # Re-enable garbage collection after processing
     # Collect results into output array (serial section)
     for (rw, cl, result) in results
         mz[rw, cl, 1:3] = result
