@@ -12,7 +12,7 @@ if ! ("Timers" in globaldependencies()); Pkg.add("Timers"); end;
 if ! ("Revise" in globaldependencies()); Pkg.add("Revise"); end;
 if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
 
-# Run Julia with 8 threads and load Revise and FLORIdyn
+# Run Julia with 8 threads and load FLORIdyn
 # In addition, define the function menu()
 julia --project -t 8 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
 
