@@ -21,13 +21,13 @@ PARALLEL = true
 # PLT=7: Create videos from saved frames
 if !  @isdefined PLT; PLT=1; end
 
-function get_parameters(vis)
+function get_parameters(vis, parallel=PARALLEL)
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
     # create settings struct
     set = Settings(wind, sim, con)
-    set.parallel = PARALLEL
+    set.parallel = parallel
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
