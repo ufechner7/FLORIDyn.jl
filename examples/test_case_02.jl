@@ -11,7 +11,7 @@ THREADING = true
 if PARALLEL
     tic()
     include("../src/visualisation/remote_plotting.jl") 
-    init_plotting()  # This now returns the main process plt and creates plt on workers
+    init_plotting()
     toc()
 end
 
