@@ -11,7 +11,7 @@ using LaTeXStrings
 import DocStringExtensions
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
-using Statistics, StaticArrays, Pkg
+using Statistics, StaticArrays, Pkg, Distributed
 
 export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray
 
