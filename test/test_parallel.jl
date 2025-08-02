@@ -29,7 +29,7 @@ function get_parameters(vis, settings_file, parallel)
     return wf, md, set, floris, wind 
 end
 
-# @test FLORIDyn.nthreads() > 7
+@test FLORIDyn.nthreads() > 1
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
 vis.online = false
@@ -37,6 +37,8 @@ vis.unit_test = true
 for i in 1:8
     local wf, md, set, floris, wind, X, Y, Z
     wf, md, set, floris, wind = get_parameters(vis, settings_file, true)
+    set.threading = true
+    set.parallel = false
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     msr = mod(i - 1, 3) + 1  # Convert to 1-based indexing (1, 2, 3, 1, 2, 3)
     plotFlowField(plt, wf, X, Y, Z, vis; msr)

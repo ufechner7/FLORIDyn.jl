@@ -456,16 +456,16 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; 
     
     # Get data
     if set.threading
-        # Disable garbage collection before multithreading if plt is provided and not parallel
-        if plt !== nothing && ! set.parallel
-            plt.GC.enable(false)
+        # Disable garbage collection before multithreading if not parallel
+        if ! set.parallel
+            GC.enable(false)
         end
         try
             Z = getMeasurementsP(X, Y, nM, zh, wf, set, floris, wind)
         finally
-            # Re-enable garbage collection after multithreading if plt is provided and not parallel
-            if plt !== nothing  && ! set.parallel
-                plt.GC.enable(true)
+            # Re-enable garbage collection after multithreading if not parallel
+            if ! set.parallel
+                GC.enable(true)
             end
         end
     else
