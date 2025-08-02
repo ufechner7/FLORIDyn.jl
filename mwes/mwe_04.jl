@@ -3,7 +3,7 @@
 
 # Example of a simple Julia script to demonstrate the use of Distributed for plotting.
 
-using Distributed
+using Distributed, Timers
 
 # Only add a worker if we don't have any dedicated worker processes
 if nprocs() < 2  # nprocs() counts main + workers, so < 2 means no dedicated workers
@@ -14,8 +14,24 @@ else
     println("Workers: $(workers())")
 end
 
+tic()
 @everywhere using ControlPlots  # Ensure ControlPlots is available on all workers
+@everywhere using FLORIDyn      # Ensure FLORIDyn (including WindFarm) is available on all workers
 using ControlPlots
+using FLORIDyn
+toc()
+
+# Test that WindFarm is available on all workers
+println("Testing WindFarm availability on workers...")
+for worker_id in workers()
+    try
+        # Test if WindFarm type is available on the worker
+        result = @spawnat worker_id typeof(FLORIDyn.WindFarm)
+        println("Worker $worker_id: WindFarm type = ", fetch(result))
+    catch e
+        println("Worker $worker_id: ERROR - ", e)
+    end
+end
 
 X = 0:0.1:10
 Y = sin.(X)
