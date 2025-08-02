@@ -3,15 +3,17 @@
 
 using Distributed, Timers, ControlPlots, FLORIDyn
 
-tic()
-include("../src/visualisation/remote_plotting.jl") 
-init_plotting()  # This now returns the main process plt and creates plt on workers
-toc()
-
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=true, save=true, rel_v_min=20.0, up_int = 4)
-PARALLEL = false
-THREADING = false
+PARALLEL = true
+THREADING = true
+
+if PARALLEL
+    tic()
+    include("../src/visualisation/remote_plotting.jl") 
+    init_plotting()  # This now returns the main process plt and creates plt on workers
+    toc()
+end
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -20,6 +22,7 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 set = Settings(wind, sim, con, PARALLEL, THREADING)
 # prepare the simulation
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+sim.n_sim_steps = 50
 wf = initSimulation(wf, sim)
 
 @everywhere function plot_flow_field(wf, X, Y, Z, vis, t_rel; msr=1)
