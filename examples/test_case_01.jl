@@ -17,7 +17,7 @@ set = Settings(wind, sim, con, PARALLEL)
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 sim.n_sim_steps = 195
 
-# Run initial conditions until no more change happens (wrong comment in original code)
+# Run initial conditions
 wf = initSimulation(wf, sim)
 
 vis.online = false
