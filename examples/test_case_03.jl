@@ -35,6 +35,4 @@ end
 cleanup_video_folder()
 @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, plot_flow_field)
 
-# @time @spawnat 2 plot_flow_field(wf, X, Y, Z, vis; msr=3)
-
 nothing
