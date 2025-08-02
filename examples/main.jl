@@ -7,9 +7,20 @@ using Timers
 tic()
 using FLORIDyn, TerminalPager, ControlPlots, Distributed
 
+# PLT options:
+# PLT=1: Velocity reduction plot (if not using online visualization)
+# PLT=2: Added turbulence plot  
+# PLT=3: Wind speed plot
+# PLT=4: Measurements plot (separated subplots)
+# PLT=5: Measurements plot (combined)
+# PLT=6: Velocity reduction plot with online visualization
+# PLT=7: Create videos from saved frames
+if !  @isdefined PLT; PLT=1; end
+if !  @isdefined LAST_PLT; LAST_PLT=PLT; end
+
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
-PARALLEL = true
+PARALLEL = PLT == 6
 THREADING = true
 
 if PARALLEL
@@ -27,16 +38,6 @@ if PARALLEL
     end
     toc()
 end
-
-# PLT options:
-# PLT=1: Velocity reduction plot (if not using online visualization)
-# PLT=2: Added turbulence plot  
-# PLT=3: Wind speed plot
-# PLT=4: Measurements plot (separated subplots)
-# PLT=5: Measurements plot (combined)
-# PLT=6: Velocity reduction plot with online visualization
-# PLT=7: Create videos from saved frames
-if !  @isdefined PLT; PLT=1; end
 
 function get_parameters(vis, parallel=PARALLEL, threading=THREADING)
     # get the settings for the wind field, simulator and controller
@@ -67,6 +68,10 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 wf = initSimulation(wf, sim)
 toc()
 
+if LAST_PLT == PLT
+    plt.close("all")
+end
+
 if PLT == 1
     vis.online = false
     set.parallel = false  # Disable parallel plotting for this case
@@ -91,11 +96,13 @@ elseif PLT == 3
 elseif PLT == 4
     vis.online = false
     set.parallel = false  # Disable parallel plotting for this case
+    GC.gc()
     wf, md, set, floris, wind = get_parameters(vis)
     plotMeasurements(plt, wf, md, vis; separated=true)
 elseif PLT == 5
     vis.online = false
     set.parallel = false  # Disable parallel plotting for this case
+    GC.gc()
     wf, md, set, floris, wind = get_parameters(vis)
     plotMeasurements(plt, wf, md, vis; separated=false)
 elseif PLT == 6
@@ -125,4 +132,5 @@ elseif PLT == 7
         println("No 'video' directory found. Run simulation with vis.save=true to generate frames first.")
     end
 end
+LAST_PLT = PLT
 nothing
