@@ -1018,6 +1018,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
                 Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
                 if isnothing(pff)
                     plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel; msr=1)
+                    plt.pause(0.01)
                 else
                     # @info "time: $t_rel, plotting with pff"
                     @spawnat 2 pff(wf, X, Y, Z, vis, t_rel; msr=1)
