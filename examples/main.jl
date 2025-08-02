@@ -5,7 +5,7 @@
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
 tic()
-using FLORIDyn, TerminalPager, ControlPlots
+using FLORIDyn, TerminalPager, ControlPlots, Distributed
 
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
@@ -16,6 +16,15 @@ if PARALLEL
     tic()
     include("../src/visualisation/remote_plotting.jl") 
     init_plotting()  # This now returns the main process plt and creates plt on workers
+    @everywhere function plot_flow_field(wf, X, Y, Z, vis, t_rel; msr=1)
+        global plot_state
+        if abs(t_rel) < 1e-6
+            plot_state = nothing
+        end
+        local_plt = ControlPlots.plt
+        plot_state = plotFlowField(plot_state, local_plt, wf, X, Y, Z, vis, t_rel; msr=msr)
+        nothing
+    end
     toc()
 end
 
@@ -69,18 +78,21 @@ toc()
 if PLT == 1
     vis.online = false
     set.parallel = false  # Disable parallel plotting for this case
+    GC.gc()
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     @time plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
 elseif PLT == 2
     vis.online = false
     set.parallel = false  # Disable parallel plotting for this case
+    GC.gc()
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
 elseif PLT == 3
     vis.online = false
     set.parallel = false  # Disable parallel plotting for this case
+    GC.gc()
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
@@ -98,22 +110,12 @@ elseif PLT == 6
     vis.online = true
     set.parallel = true  # Enable parallel plotting for this case
     # Clean up any existing PNG files in video folder before starting
-    if isdir("video")
-        println("Cleaning up existing PNG files in video folder...")
-        video_files = readdir("video")
-        png_files = filter(f -> endswith(f, ".png"), video_files)
-        for file in png_files
-            try
-                rm(joinpath("video", file))
-            catch e
-                @warn "Failed to delete $file: $e"
-            end
-        end
-        if !isempty(png_files)
-            println("Deleted $(length(png_files)) PNG files")
-        end
+    cleanup_video_folder()
+    if PARALLEL
+        @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, plot_flow_field)
+    else
+        @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     end
-    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 elseif PLT == 7
     # Create videos from saved plot frames
     println("Creating videos from saved plot frames...")
