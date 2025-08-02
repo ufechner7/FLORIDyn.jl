@@ -163,8 +163,11 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             
             # Initialize empty containers for dynamic elements
             turbine_lines = []
-            op_scatter1 = nothing
-            op_scatter2 = nothing
+            
+            # Create initial scatter plots for operational points
+            op_scatter1 = plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=2, color="white", marker="o")
+            op_scatter2 = plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=6, color="white", marker="o")
+            
             title_obj = plt.title(title)
             plt.show(block=false)
             
@@ -174,20 +177,6 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         else
             # Subsequent calls - update existing plot
             plt.figure(state.figure_name)
-            
-            # Remove scatter plots (they need to be recreated with new data)
-            if state.op_scatter1 !== nothing
-                try
-                    state.op_scatter1.remove()
-                catch
-                end
-            end
-            if state.op_scatter2 !== nothing
-                try
-                    state.op_scatter2.remove()
-                catch
-                end
-            end
             
             # Update contour data
             for collection in state.contour_collection.collections
@@ -233,10 +222,24 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         end
         
         # Plot the OPs
-        # Plot all points with size 2 and white filled marker
-        state.op_scatter1 = plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=2, color="white", marker="o")
+        # Always remove old scatter plots and create new ones
+        if state.op_scatter1 !== nothing
+            try
+                state.op_scatter1.remove()
+            catch
+                # Scatter plot might already be removed
+            end
+        end
+        if state.op_scatter2 !== nothing
+            try
+                state.op_scatter2.remove()
+            catch
+                # Scatter plot might already be removed
+            end
+        end
         
-        # Plot every 10th point with size 6 and white filled marker
+        # Create scatter plots with current data
+        state.op_scatter1 = plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=2, color="white", marker="o")
         state.op_scatter2 = plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=6, color="white", marker="o")
         
         # Update title only (don't change layout)
@@ -275,7 +278,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         end
         
         if !use_unit_test
-            print(".")
+            # print(".")
         else
             # In unit test mode, pause to show the plot then close the figure
             plt.pause(1.0)
