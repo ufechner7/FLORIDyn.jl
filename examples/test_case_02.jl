@@ -28,16 +28,6 @@ vis.online = false
 @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
 
-# Create a plotting function that initializes its own plt if needed
-@everywhere function plot_on_worker_with_init(wf, X, Y, Z, vis; msr=3)
-    # Ensure plt exists on this worker, create if needed
-    if !(@isdefined plt)
-        plt = ControlPlots.plt
-    end
-    # Use the worker's own plt instance
-    return plotFlowField(plt, wf, X, Y, Z, vis; msr=msr)
-end
-
 # Alternative: Create a completely isolated plt instance for this specific task
 @everywhere function plot_with_local_plt(wf, X, Y, Z, vis; msr=3)
     # Create a fresh plt instance just for this task
