@@ -167,7 +167,7 @@ using FLORIDyn, Test
     end
     @testset "runFLORIS" begin
         set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), 
-                       Direction_All(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA())
+                       Direction_All(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false)
         LocationT = [600.0  2400.0  119.0]
         States_WF = [8.2     255.0    0.062  255.0]
         States_T  = [0.33      0.0    0.06]

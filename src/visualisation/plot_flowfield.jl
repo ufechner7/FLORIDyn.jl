@@ -99,7 +99,8 @@ end
 - This function requires a plotting package like ControlPlots.jl to be loaded and available as `plt`
 """
 function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t=nothing; msr=3)
-    # Use unit_test from vis if not explicitly overridden
+    # @info "plotFlowField called with msr=$msr, t=$(t === nothing ? "none" : t)"
+    # Use unit_test from vis
     use_unit_test = vis.unit_test
     
     # Extract the 2D slice for the specified measurement
@@ -162,39 +163,20 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             
             # Initialize empty containers for dynamic elements
             turbine_lines = []
-            op_scatter1 = nothing
-            op_scatter2 = nothing
+            
+            # Create initial scatter plots for operational points
+            op_scatter1 = plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=2, color="white", marker="o")
+            op_scatter2 = plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=6, color="white", marker="o")
+            
             title_obj = plt.title(title)
+            plt.show(block=false)
             
             # Create state object
             state = PlotState(fig, ax, cb, contour_collection, turbine_lines, op_scatter1, op_scatter2, 
-                             title_obj, figure_name, label, lev_min, lev_max, levels)
+                             title_obj, figure_name, label, lev_min, lev_max, levels)            
         else
             # Subsequent calls - update existing plot
             plt.figure(state.figure_name)
-            
-            # Clear previous dynamic elements
-            for line in state.turbine_lines
-                try
-                    line.remove()
-                catch
-                    # Line might already be removed
-                end
-            end
-            empty!(state.turbine_lines)
-            
-            if state.op_scatter1 !== nothing
-                try
-                    state.op_scatter1.remove()
-                catch
-                end
-            end
-            if state.op_scatter2 !== nothing
-                try
-                    state.op_scatter2.remove()
-                catch
-                end
-            end
             
             # Update contour data
             for collection in state.contour_collection.collections
@@ -226,17 +208,38 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             base_pos = wf.posBase[i_T, 1:2]  # (x,y)
             rot_pos .+= base_pos
 
-            # Plot turbine line and store reference
-            ax = plt.gca()
-            line = ax.plot(rot_pos[1, :], rot_pos[2, :], [20, 20], color="k", linewidth=3)[1]
-            push!(state.turbine_lines, line)
+            # Create or update turbine line
+            if length(state.turbine_lines) < i_T
+                # First call - create new line
+                ax = plt.gca()
+                line = ax.plot(rot_pos[1, :], rot_pos[2, :], [20, 20], color="k", linewidth=3)[1]
+                push!(state.turbine_lines, line)
+            else
+                # Subsequent calls - update existing line coordinates
+                line = state.turbine_lines[i_T]
+                line.set_data(rot_pos[1, :], rot_pos[2, :])
+            end
         end
         
         # Plot the OPs
-        # Plot all points with size 2 and white filled marker
-        state.op_scatter1 = plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=2, color="white", marker="o")
+        # Always remove old scatter plots and create new ones
+        if state.op_scatter1 !== nothing
+            try
+                state.op_scatter1.remove()
+            catch
+                # Scatter plot might already be removed
+            end
+        end
+        if state.op_scatter2 !== nothing
+            try
+                state.op_scatter2.remove()
+            catch
+                # Scatter plot might already be removed
+            end
+        end
         
-        # Plot every 10th point with size 6 and white filled marker
+        # Create scatter plots with current data
+        state.op_scatter1 = plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=2, color="white", marker="o")
         state.op_scatter2 = plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=6, color="white", marker="o")
         
         # Update title only (don't change layout)
@@ -267,7 +270,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
                 # Use bbox_inches='tight' with pad_inches for consistent sizing
                 plt.savefig(filename, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
                 if !use_unit_test
-                    println("Plot saved to: $filename")
+                    #println("Plot saved to: $filename")
                 end
             catch e
                 @warn "Failed to save plot: $e"
@@ -275,7 +278,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         end
         
         if !use_unit_test
-            print(".")
+            # print(".")
         else
             # In unit test mode, pause to show the plot then close the figure
             plt.pause(1.0)
@@ -474,4 +477,23 @@ function getLayout(nT::Int)
         return (rows, cols)
     end
 end
+
+function cleanup_video_folder()
+    # Clean up any existing PNG files in video folder before starting
+    if isdir("video")
+        println("Cleaning up existing PNG files in video folder...")
+        video_files = readdir("video")
+        png_files = filter(f -> endswith(f, ".png"), video_files)
+        for file in png_files
+            try
+                rm(joinpath("video", file))
+            catch e
+                @warn "Failed to delete $file: $e"
+            end
+        end
+        if !isempty(png_files)
+            println("Deleted $(length(png_files)) PNG files")
+        end
+    end
+end 
 

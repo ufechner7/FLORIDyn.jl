@@ -31,6 +31,8 @@ runFLORIDyn
 # Visualization
 ```@docs
 getMeasurements
+create_thread_buffers
+getMeasurementsP
 calcFlowField
 plotFlowField
 plotMeasurements

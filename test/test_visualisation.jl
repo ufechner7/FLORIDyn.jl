@@ -608,6 +608,8 @@ end
     end
 end
 else
-    @info "Please run 'include(\"test/test_visualisation_safe.jl\")' instead!"
+    # Running tests via Pkg.test (safest approach)
+    @eval Main using Pkg
+    Main.Pkg.test(test_args=["test_visualisation.jl"])
 end
 nothing
