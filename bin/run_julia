@@ -18,11 +18,10 @@ julia --project -t 8 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); inc
 
 # ON DESKTOP
 # 163s for 300 iterations with 8 threads with default GC on Ryzen 7 7850X 2.7x advantage
-# 240s with GC disabled and enabled
+# 277s with plt.GC(false) and plt.GC(true) around the multithreaded loop
 # 460s for 300 iterations with 1 thread on Ryzen 7 7850X
 # 1.18s single threaded
-# 0.41s multithreaded
-# 0.27s multithreaded with default GC
+# 0.51s multithreaded # was: 0.27
 
 # ON LAPTOP, performance mode
 # 309s on laptop multithreaded 2.1x advantage
