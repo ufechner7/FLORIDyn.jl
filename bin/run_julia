@@ -16,9 +16,10 @@ if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
 # In addition, define the function menu()
 julia --project -t 8 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
 
-# ON DESKTOP Ryzen 7 7850X
-# 91s for 300 iterations with threading=true and parallel=true enabled 4.8x advantage
-# 436s for 300 iterations with threading=false and parallel=false
+# ON DESKTOP
+# 163s for 300 iterations with 8 threads with GC always enabled on Ryzen 7 7850X 2.7x advantage
+# 277s with plt.GC(false) and plt.GC(true) around the multithreaded loop
+# 460s for 300 iterations with 1 thread on Ryzen 7 7850X
 # 1.18s single threaded
 # 0.51s multithreaded # was: 0.27
 
