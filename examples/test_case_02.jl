@@ -5,7 +5,7 @@ using Distributed, Timers, ControlPlots, FLORIDyn
 
 tic()
 include("../src/visualisation/remote_plotting.jl") 
-plt = init_plotting()  # This now returns the main process plt and creates plt on workers
+init_plotting()  # This now returns the main process plt and creates plt on workers
 toc()
 
 settings_file = "data/2021_9T_Data.yaml"
