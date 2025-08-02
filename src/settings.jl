@@ -337,7 +337,7 @@ function setup(filename)
 end
 
 """
-    Settings(wind::Wind, sim::Sim, con::Con)
+    Settings(wind::Wind, sim::Sim, con::Con, parallel=false, threading=false)
 
 Create and return a [`Settings`](@ref) object using the provided `wind` and `sim` parameters.
 
@@ -345,6 +345,8 @@ Create and return a [`Settings`](@ref) object using the provided `wind` and `sim
 - `wind::Wind`: An instance of the [`Wind`](@ref) struct containing wind-related parameters.
 - `sim::Sim`: An instance of the [`Sim`](@ref) struct containing the simulation parameters.
 - `con::Con`: An instance of the [`Con`](@ref) struct containing the controller parameters.
+- `parallel::Bool`:  Enable plotting in a separate process (default: `false`)
+- `threading::Bool`: Enable threading for parallel computation within a single process (default: `false`)
 
 # Returns
 - A `Settings` struct configured with the given wind and simulation parameters.
@@ -355,7 +357,7 @@ Create and return a [`Settings`](@ref) object using the provided `wind` and `sim
 - The `Settings` struct encapsulates the model settings for velocity, direction, 
   turbulence intensity, shear, and correction modes.
 """
-function Settings(wind::Wind, sim::Sim, con::Con, parallel=false)
+function Settings(wind::Wind, sim::Sim, con::Con, parallel=false, threading=false)
     vel_mode = str2type("Velocity_" * wind.input_vel)
     dir_mode = str2type("Direction_" * wind.input_dir)
     turb_mode = str2type("TI_" * wind.input_ti)
@@ -366,7 +368,7 @@ function Settings(wind::Wind, sim::Sim, con::Con, parallel=false)
     iterate_mode = str2type(sim.dyn.op_iteration)
     control_mode = str2type("Yaw_" * con.yaw)
     Settings(vel_mode, dir_mode, turb_mode, shear_mode, cor_dir_mode, cor_vel_mode, cor_turb_mode, 
-             iterate_mode, control_mode, parallel)
+             iterate_mode, control_mode, parallel, threading)
 end
 
 """

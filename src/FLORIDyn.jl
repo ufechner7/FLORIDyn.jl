@@ -89,6 +89,8 @@ A mutable struct that holds configuration parameters for the FLORIDyn simulation
 - `cor_turb_mode`
 - `iterate_mode`
 - `control_mode`
+- `parallel::Bool`:  Run plotting in a separate process.
+- `threading::Bool`: Enable threading for parallel computation within a single process
 """
 mutable struct Settings
     vel_mode::VelModel
@@ -101,6 +103,7 @@ mutable struct Settings
     iterate_mode
     control_mode
     parallel::Bool
+    threading::Bool
 end
 
 """
