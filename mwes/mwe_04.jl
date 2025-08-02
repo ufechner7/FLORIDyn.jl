@@ -17,6 +17,20 @@ end
 @everywhere using ControlPlots  # Ensure ControlPlots is available on all workers
 using ControlPlots
 
-@spawnat 2 display(plot(rand(3)))
+X = 0:0.1:10
+Y = sin.(X)
+
+REMOTE = false  # Set to true if you want to plot on a remote worker
+if REMOTE
+    # If REMOTE, plot on a specific worker (e.g., worker 2)
+    @time @spawnat 2 display(plot(X, Y, fig="Sine Function Plot", xlabel="X-axis", ylabel="Y-axis"))
+else
+    # If not REMOTE, just plot on the main process
+    @time display(plot(X, Y, fig="Sine Function Plot", xlabel="X-axis", ylabel="Y-axis"))
+end
+
+# Results
+# remote:   0.000199 seconds (185 allocations: 12.336 KiB)
+# main:     0.077712 seconds (365 allocations: 10.672 KiB)
 
 nothing
