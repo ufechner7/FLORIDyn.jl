@@ -12,6 +12,13 @@ vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
 PARALLEL = true
 THREADING = true
 
+if PARALLEL
+    tic()
+    include("../src/visualisation/remote_plotting.jl") 
+    init_plotting()  # This now returns the main process plt and creates plt on workers
+    toc()
+end
+
 # PLT options:
 # PLT=1: Velocity reduction plot (if not using online visualization)
 # PLT=2: Added turbulence plot  

@@ -10,7 +10,7 @@ toc()
 
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
-PARALLEL = true
+PARALLEL = false
 THREADING = true
 
 # get the settings for the wind field, simulator and controller
@@ -37,6 +37,10 @@ vis.online = false
 end
 
 # Use the version that creates its own plt instance
-# @time @spawnat 2 plot_with_local_plt(wf, X, Y, Z, vis; msr=3)
+if PARALLEL
+    @time @spawnat 2 plot_with_local_plt(wf, X, Y, Z, vis; msr=3)
+else
+    @time plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
+end
 
 nothing
