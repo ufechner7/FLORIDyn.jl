@@ -15,7 +15,7 @@ end
 
 function pltr(data)
     worker_id = workers()[1]
-    remotecall_fetch(identity_func, worker_id, data)
+    remote_do(identity_func, worker_id, data)
 end
 
 data = rand(UInt8, 1024^2)  # 1MB random data
