@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Example of a simple Julia script to demonstrate the use of DistributedNext for parallel processing
+# Example of a simple Julia script to demonstrate the use of Distributed for parallel processing
 # This script initializes a worker, defines a function, and runs it on the worker
 
 using Distributed
@@ -26,10 +26,12 @@ function pltr(data)
 end
 
 data = rand(UInt8, 1024^2)  # 1MB random data
-worker_id = workers()[1]  # Get the first available worker ID
+worker_id = workers()[1]    # Get the first available worker ID
 println("Using worker $worker_id")
 
 # Pre-compile by calling once
 pltr(data)
+
+# Measure the time taken to call the function on the worker, passing 1MB of random data
 @time pltr(data)
 nothing
