@@ -98,7 +98,7 @@ end
 - The `video/` directory is automatically created if it doesn't exist
 - This function requires a plotting package like ControlPlots.jl to be loaded and available as `plt`
 """
-function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t=nothing; msr=3)
+function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t=nothing; msr=3, parallel=true)
     # @info "plotFlowField called with msr=$msr, t=$(t === nothing ? "none" : t)"
     # Use unit_test from vis
     use_unit_test = vis.unit_test
@@ -270,15 +270,15 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
                 # Use bbox_inches='tight' with pad_inches for consistent sizing
                 plt.savefig(filename, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
                 if !use_unit_test
-                    #println("Plot saved to: $filename")
+                    # println("Plot saved to: $filename")
                 end
             catch e
                 @warn "Failed to save plot: $e"
             end
         end
         
-        if !use_unit_test
-            # print(".")
+        if !use_unit_test && !parallel
+            print(".")
         else
             # In unit test mode, pause to show the plot then close the figure
             plt.pause(1.0)

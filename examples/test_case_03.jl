@@ -3,15 +3,17 @@
 
 using Distributed, Timers, ControlPlots, FLORIDyn
 
-tic()
-include("../src/visualisation/remote_plotting.jl") 
-init_plotting()  # This now returns the main process plt and creates plt on workers
-toc()
-
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=true, save=true, rel_v_min=20.0, up_int = 4)
-PARALLEL = true
-THREADING = true
+PARALLEL = false
+THREADING = false
+
+if PARALLEL
+    tic()
+    include("../src/visualisation/remote_plotting.jl") 
+    init_plotting()  # This now returns the main process plt and creates plt on workers
+    toc()
+end
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -33,6 +35,10 @@ wf = initSimulation(wf, sim)
 end
 
 cleanup_video_folder()
-@time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, plot_flow_field)
+if PARALLEL
+    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, plot_flow_field)
+else
+    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+end
 
 nothing
