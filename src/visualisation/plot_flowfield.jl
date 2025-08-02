@@ -168,7 +168,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             
             # Create state object
             state = PlotState(fig, ax, cb, contour_collection, turbine_lines, op_scatter1, op_scatter2, 
-                             title_obj, figure_name, label, lev_min, lev_max, levels)
+                             title_obj, figure_name, label, lev_min, lev_max, levels)            
         else
             # Subsequent calls - update existing plot
             plt.figure(state.figure_name)
@@ -267,7 +267,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
                 # Use bbox_inches='tight' with pad_inches for consistent sizing
                 plt.savefig(filename, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
                 if !use_unit_test
-                    println("Plot saved to: $filename")
+                    #println("Plot saved to: $filename")
                 end
             catch e
                 @warn "Failed to save plot: $e"
@@ -297,6 +297,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             rethrow(e)
         end
     end
+    plt.show()
     return state
 end
 
