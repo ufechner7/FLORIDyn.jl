@@ -48,7 +48,7 @@ export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimul
 export runFLORIS, init_states, getUadv
 export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, interpolateOPs, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, getLayout, install_examples
-export createVideo, createAllVideos, natural_sort_key
+export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()

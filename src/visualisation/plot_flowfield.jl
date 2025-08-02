@@ -99,6 +99,7 @@ end
 - This function requires a plotting package like ControlPlots.jl to be loaded and available as `plt`
 """
 function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t=nothing; msr=3)
+    @info "plotFlowField called with msr=$msr, t=$(t === nothing ? "none" : t)"
     # Use unit_test from vis
     use_unit_test = vis.unit_test
     
@@ -165,6 +166,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             op_scatter1 = nothing
             op_scatter2 = nothing
             title_obj = plt.title(title)
+            plt.show(block=false)
             
             # Create state object
             state = PlotState(fig, ax, cb, contour_collection, turbine_lines, op_scatter1, op_scatter2, 
@@ -297,7 +299,6 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             rethrow(e)
         end
     end
-    plt.show()
     return state
 end
 
@@ -475,4 +476,23 @@ function getLayout(nT::Int)
         return (rows, cols)
     end
 end
+
+function cleanup_video_folder()
+    # Clean up any existing PNG files in video folder before starting
+    if isdir("video")
+        println("Cleaning up existing PNG files in video folder...")
+        video_files = readdir("video")
+        png_files = filter(f -> endswith(f, ".png"), video_files)
+        for file in png_files
+            try
+                rm(joinpath("video", file))
+            catch e
+                @warn "Failed to delete $file: $e"
+            end
+        end
+        if !isempty(png_files)
+            println("Deleted $(length(png_files)) PNG files")
+        end
+    end
+end 
 

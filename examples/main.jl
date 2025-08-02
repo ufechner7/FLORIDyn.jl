@@ -10,6 +10,7 @@ using FLORIDyn, TerminalPager, ControlPlots
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
 PARALLEL = true
+THREADING = true
 
 # PLT options:
 # PLT=1: Velocity reduction plot (if not using online visualization)
@@ -21,13 +22,14 @@ PARALLEL = true
 # PLT=7: Create videos from saved frames
 if !  @isdefined PLT; PLT=1; end
 
-function get_parameters(vis, parallel=PARALLEL)
+function get_parameters(vis, parallel=PARALLEL, threading=THREADING)
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
     # create settings struct
     set = Settings(wind, sim, con)
     set.parallel = parallel
+    set.threading = threading
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
@@ -41,6 +43,7 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 # create settings struct
 set = Settings(wind, sim, con)
 set.parallel = PARALLEL
+set.threading = THREADING
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
@@ -58,29 +61,35 @@ toc()
 
 if PLT == 1
     vis.online = false
+    set.parallel = false  # Disable parallel plotting for this case
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     @time plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
 elseif PLT == 2
     vis.online = false
+    set.parallel = false  # Disable parallel plotting for this case
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
 elseif PLT == 3
     vis.online = false
+    set.parallel = false  # Disable parallel plotting for this case
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
 elseif PLT == 4
     vis.online = false
+    set.parallel = false  # Disable parallel plotting for this case
     wf, md, set, floris, wind = get_parameters(vis)
     plotMeasurements(plt, wf, md, vis; separated=true)
 elseif PLT == 5
     vis.online = false
+    set.parallel = false  # Disable parallel plotting for this case
     wf, md, set, floris, wind = get_parameters(vis)
     plotMeasurements(plt, wf, md, vis; separated=false)
 elseif PLT == 6
     vis.online = true
+    set.parallel = true  # Enable parallel plotting for this case
     # Clean up any existing PNG files in video folder before starting
     if isdir("video")
         println("Cleaning up existing PNG files in video folder...")
