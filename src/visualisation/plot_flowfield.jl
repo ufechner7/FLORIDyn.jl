@@ -175,16 +175,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             # Subsequent calls - update existing plot
             plt.figure(state.figure_name)
             
-            # Clear previous dynamic elements
-            for line in state.turbine_lines
-                try
-                    line.remove()
-                catch
-                    # Line might already be removed
-                end
-            end
-            empty!(state.turbine_lines)
-            
+            # Remove scatter plots (they need to be recreated with new data)
             if state.op_scatter1 !== nothing
                 try
                     state.op_scatter1.remove()
@@ -228,10 +219,17 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             base_pos = wf.posBase[i_T, 1:2]  # (x,y)
             rot_pos .+= base_pos
 
-            # Plot turbine line and store reference
-            ax = plt.gca()
-            line = ax.plot(rot_pos[1, :], rot_pos[2, :], [20, 20], color="k", linewidth=3)[1]
-            push!(state.turbine_lines, line)
+            # Create or update turbine line
+            if length(state.turbine_lines) < i_T
+                # First call - create new line
+                ax = plt.gca()
+                line = ax.plot(rot_pos[1, :], rot_pos[2, :], [20, 20], color="k", linewidth=3)[1]
+                push!(state.turbine_lines, line)
+            else
+                # Subsequent calls - update existing line coordinates
+                line = state.turbine_lines[i_T]
+                line.set_data(rot_pos[1, :], rot_pos[2, :])
+            end
         end
         
         # Plot the OPs
