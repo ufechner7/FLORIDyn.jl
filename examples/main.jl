@@ -97,11 +97,7 @@ elseif PLT == 6
     vis.online = true
     # Clean up any existing PNG files in video folder before starting
     cleanup_video_folder()
-    if Threads.nthreads() > 1
-        @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, plot_flow_field)
-    else
-        @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    end
+    @time wf, md, mi = smart_runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 elseif PLT == 7
     # Create videos from saved plot frames
     println("Creating videos from saved plot frames...")
