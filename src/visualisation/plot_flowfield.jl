@@ -38,20 +38,25 @@ mutable struct PlotState
 end
 
 """
-    plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz; msr=3, unit_test=false)
+    plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t; msr=3)
 
 Plot a 2D contour of the flow field data with support for animation.
 
 # Arguments
 - `state::Union{Nothing, PlotState}`: Animation state object. Pass `nothing` for the first call, 
   then pass the returned state for subsequent calls to maintain the same figure and layout.
-- `plt`: Plotting package (e.g., ControlPlots)
+- `plt`: Plotting package (e.g., ControlPlots.plt)
 - `wf`: Wind farm object containing turbine data
 - `mx::Matrix`: X-coordinate grid
 - `my::Matrix`: Y-coordinate grid  
 - `mz::Array{Float64,3}`: 3D array of measurements with dimensions (rows, cols, nM)
+- `vis::Vis`: Visualization settings including save options and color scale parameters
+- `t`: Time value for display in the plot title or annotations
 - `msr::Int`: Which measurement to plot (1, 2, or 3). Default is 3.
-- `unit_test::Bool`: Whether to automatically close plots for testing. Default is false.
+   - `msr=1`: Velocity reduction [%]
+   - `msr=2`: Added turbulence [%]  
+   - `msr=3`: Effective wind speed [m/s]
+- `vis.unit_test::Bool`: Whether to automatically close plots for testing.
 
 # Returns
 - `state::PlotState`: Updated or newly created plot state for use in subsequent calls
@@ -73,25 +78,28 @@ using ControlPlots
 
 # Initialize state (first frame)
 state = nothing
+vis = Vis(online=true, save=true)  # Enable saving to video folder
 for t in time_steps
     Z, X, Y = calcFlowField(settings, wind_farm, wind, floris)
-    state = plotFlowField(state, plt, wind_farm, X, Y, Z; msr=1)
-    plt.pause(0.1)  # Small delay for animation
+    state = plotFlowField(state, plt, wind_farm, X, Y, Z, vis, t; msr=1)
+    plt.pause(0.01)  # Small delay for animation
 end
 ```
-
-# Measurement Types
-- `msr=1`: Velocity reduction [%]
-- `msr=2`: Added turbulence [%]  
-- `msr=3`: Effective wind speed [m/s]
 
 # Notes
 - The function automatically handles coordinate system transformations for turbine orientations
 - Operational points are displayed as white scatter points for reference
 - Color scales are kept consistent across animation frames when using the same measurement type
+- The time parameter `t` can be used for title updates or time annotations
+- When `vis.save=true`, plots are saved as PNG files to the `video/` directory
+- Saved filenames include measurement type and time information (e.g., `velocity_reduction_t0120s.png`)
+- The `video/` directory is automatically created if it doesn't exist
 - This function requires a plotting package like ControlPlots.jl to be loaded and available as `plt`
 """
-function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz; msr=3, unit_test=false)
+function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t=nothing; msr=3)
+    # Use unit_test from vis if not explicitly overridden
+    use_unit_test = vis.unit_test
+    
     # Extract the 2D slice for the specified measurement
     if msr > size(mz, 3)
         error("msr ($msr) exceeds number of measurements ($(size(mz, 3)))")
@@ -107,17 +115,27 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz; ms
             figure_name = "Velocity Reduction"
             label = "Relative Wind Speed [%]"
             mz_2d .*= 100
-            lev_min = min(vis.rel_v_min, minimum(mz_2d)); lev_max = maximum(mz_2d);
+            # Use fixed color scale for consistency across frames
+            lev_min = vis.rel_v_min; lev_max = vis.rel_v_max;
         elseif msr == 2
             figure_name = "Added Turbulence"
             label = "Added Turbulence [%]"
-            lev_min = 0.0; lev_max = maximum(mz_2d);
+            mz_2d .*= 100
+            # Use fixed upper limit for consistency
+            lev_min = 0.0; lev_max = vis.turb_max;
         elseif msr == 3
             figure_name = "Effective Wind Speed"
-            lev_min = 2.0; lev_max = 10.0;
-            label = L"Wind speed~[ms^{-1}]"
+            lev_min = vis.v_min; lev_max = vis.v_max;
+            label = "Wind speed [m/s]"
         end
         title = figure_name
+        
+        # Append time information to title if t is provided
+        if t !== nothing
+            time_str = string(round(Int, t))  # Convert to integer
+            time_str = lpad(time_str, 4, '0')  # Pad to 4 digits with leading zeros
+            title = title * ", t: " * time_str * " s"
+        end
         
         # Initialize or update plot state
         if state === nothing
@@ -130,6 +148,15 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz; ms
             contour_collection = plt.contourf(my, mx, mz_2d, n; levels, cmap="inferno")
             cb = plt.colorbar()
             cb.set_label(label, labelpad=3)
+            
+            # Set fixed axis limits and labels - do this only once
+            plt.xlim(minimum(mx), maximum(mx))
+            plt.ylim(minimum(my), maximum(my))
+            plt.xlabel("West-East [m]")
+            plt.ylabel("South-North [m]")
+            
+            # Apply tight_layout with custom padding for more top space
+            plt.tight_layout(pad=1.0, h_pad=0.3, w_pad=0.3, rect=[0, 0, 1, 0.97])
             
             # Initialize empty containers for dynamic elements
             turbine_lines = []
@@ -210,24 +237,51 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz; ms
         # Plot every 10th point with size 6 and white filled marker
         state.op_scatter2 = plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=6, color="white", marker="o")
         
-        plt.xlim(minimum(mx), maximum(mx))
-        plt.ylim(minimum(mx), maximum(mx))
+        # Update title only (don't change layout)
         state.title_obj.set_text(title)
-        plt.xlabel("West-East [m]")
-        plt.ylabel("South-North [m]")
-        plt.tight_layout()
         
         # Force display update for animation
         plt.draw()
         
-        if !unit_test
-            println("Contour plot updated successfully")
+        # Save plot to video folder if requested
+        if vis.save && !use_unit_test
+            # Ensure video directory exists
+            video_dir = "video"
+            if !isdir(video_dir)
+                mkpath(video_dir)
+            end
+            
+            # Generate filename with measurement type and time information
+            msr_name = msr == 1 ? "velocity_reduction" : msr == 2 ? "added_turbulence" : "wind_speed"
+            if t !== nothing
+                time_str = lpad(string(round(Int, t)), 4, '0')
+                filename = joinpath(video_dir, "$(msr_name)_t$(time_str)s.png")
+            else
+                filename = joinpath(video_dir, "$(msr_name).png")
+            end
+            
+            # Save the current figure
+            try
+                # Use bbox_inches='tight' with pad_inches for consistent sizing
+                plt.savefig(filename, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
+                if !use_unit_test
+                    println("Plot saved to: $filename")
+                end
+            catch e
+                @warn "Failed to save plot: $e"
+            end
         end
         
-        if unit_test
-            plt.pause(2)
-            plt.close(state.fig)
-            return nothing
+        if !use_unit_test
+            print(".")
+        else
+            # In unit test mode, pause to show the plot then close the figure
+            plt.pause(1.0)
+            try
+                plt.close(state.fig)
+            catch
+                # Figure might already be closed
+            end
         end
     catch e
         if isa(e, UndefVarError) && e.var == :plt
@@ -245,7 +299,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz; ms
 end
 
 """
-    plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
+    plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=3)
 
 Compatibility method for the original plotFlowField interface.
 
@@ -253,13 +307,15 @@ This method provides backward compatibility by calling the new state-based versi
 with `state=nothing`, effectively creating a single plot without animation support.
 
 # Arguments
-- `plt`: Plotting package (e.g., ControlPlots)
+- `plt`: Plotting package (e.g., ControlPlots.plt)
 - `wf`: Wind farm object containing turbine data
 - `mx::Matrix`: X-coordinate grid
 - `my::Matrix`: Y-coordinate grid  
 - `mz::Array{Float64,3}`: 3D array of measurements with dimensions (rows, cols, nM)
+- `vis::Vis`: Visualization settings including save options and color scale parameters
+- `t`: Time value for display in the plot title or annotations
 - `msr::Int`: Which measurement to plot (1, 2, or 3). Default is 3.
-- `unit_test::Bool`: Whether to automatically close plots for testing. Default is false.
+- `vis.unit_test::Bool`: Whether to automatically close plots for testing.
 
 # Returns
 - `nothing`: For compatibility with the original interface
@@ -268,13 +324,14 @@ with `state=nothing`, effectively creating a single plot without animation suppo
 This method is provided for backward compatibility. For animation support, 
 use the new interface with explicit state management.
 """
-function plotFlowField(plt, wf, mx, my, mz; msr=3, unit_test=false)
-    plotFlowField(nothing, plt, wf, mx, my, mz; msr=msr, unit_test=unit_test)
+function plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=3)
+    # Create default visualization settings for backward compatibility
+    plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr=msr)
     return nothing
 end
 
 """
-    plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false, unit_test=false) -> Nothing
+    plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false) -> Nothing
 
 Plot foreign reduction measurements from FLORIDyn simulation data.
 
@@ -284,8 +341,8 @@ Plot foreign reduction measurements from FLORIDyn simulation data.
 - `md::DataFrame`: Measurements DataFrame containing time series data with columns:
   - `Time`: Time series data [s]
   - `ForeignReduction`: Foreign reduction percentage data [%]
+- `vis::Vis`: Visualization settings including unit_test parameter
 - `separated::Bool`: Whether to use separated subplot layout (default: false)
-- `unit_test::Bool`: Whether to close plots automatically for testing (default: false)
 
 # Returns
 - `nothing`
@@ -304,17 +361,17 @@ This function creates time series plots of foreign reduction measurements from F
 using ControlPlots
 
 # Plot foreign reduction for all turbines in combined mode
-plotMeasurements(plt, wind_farm, measurements_df)
+plotMeasurements(plt, wind_farm, measurements_df, vis)
 
 # Plot foreign reduction with separated subplots
-plotMeasurements(plt, wind_farm, measurements_df; separated=true)
+plotMeasurements(plt, wind_farm, measurements_df, vis; separated=true)
 ```
 
 # See Also
 - [`plotFlowField`](@ref): For flow field visualization
 - [`getMeasurements`](@ref): For generating measurement data
 """
-function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false, unit_test=false)
+function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false)
     local fig
 
     # Subtract start time
@@ -371,8 +428,8 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame; separated=false, uni
         plt.ylabel("Foreign Reduction [%]")
         println("Foreign reduction line plot created successfully")
     end
-    if unit_test
-        plt.pause(2)
+    if vis.unit_test
+        plt.pause(1.0)
         plt.close(fig)
     end
         

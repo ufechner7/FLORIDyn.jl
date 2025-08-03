@@ -5,3 +5,4 @@ docs/build
 cspell.json
 coverage/lcov.info
 coverage/
+video/

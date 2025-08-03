@@ -242,18 +242,31 @@ live plotting and animation features.
 - `online::Bool`: Enable/disable online visualization during simulation. When `true`, 
                   live plots and animations are displayed during the simulation run.
                   When `false`, visualization is disabled for faster computation.
+- `save::Bool`: Enable/disable saving of plots to disk. When `true`, each plot is saved
+                after displaying it in the 'video' folder. When `false`, plots are only displayed.
 - `v_min::Float64`: Minimum velocity value for color scale in flow field visualizations.
                     Used to set consistent color scale limits across animation frames.
+- `v_max::Float64`: Maximum velocity value for color scale in effective wind speed visualizations (msr=3).
+                    Used to set consistent upper limits across animation frames.
 - `rel_v_min::Float64`: Minimum relative velocity value for velocity reduction visualizations.
-                        Controls the color scale for relative wind speed plots (msr=1).
+                        Controls the color scale for relative wind speed plots (msr=1). Range: [0, 100].
+- `rel_v_max::Float64`: Maximum relative velocity value for velocity reduction visualizations (msr=1).
+                        Controls the upper limit for relative wind speed plots. Range: [0, 100].
+- `turb_max::Float64`: Maximum turbulence value for added turbulence visualizations (msr=2).
+                       Controls the upper limit for turbulence plots.
+- `up_int::Int`: Update interval - controls how frequently visualization updates occur.
+                 Higher values result in less frequent updates for better performance.
 
 # Example
 ```julia
-# Enable online visualization with custom minimum values
-vis = Vis(online=true, v_min=2.0, rel_v_min=50.0)
+# Enable online visualization with plot saving and custom color scales
+vis = Vis(online=true, save=true, v_min=2.0, v_max=12.0, rel_v_min=20.0, rel_v_max=100.0, up_int=5)
+
+# Display only, no saving with default color scales
+vis = Vis(online=true, save=false, v_min=2.0, rel_v_min=20.0)
 
 # Disable online visualization for batch processing
-vis = Vis(online=false, v_min=0.0, rel_v_min=0.0)
+vis = Vis(online=false, save=false)
 ```
 
 # Notes
@@ -262,11 +275,20 @@ vis = Vis(online=false, v_min=0.0, rel_v_min=0.0)
 - When disabled, visualization functions are skipped to improve computational efficiency
 - `v_min` helps maintain consistent color scales for effective wind speed visualizations (msr=3)
 - `rel_v_min` helps maintain consistent color scales for velocity reduction visualizations (msr=1)
+- `up_int` can be used to reduce visualization frequency and improve simulation speed
+- `save=true` will create a 'video' folder if it doesn't exist and save each plot frame for animation creation
+- `unit_test=true` enables unit test mode for visualization functions (closes plots automatically, disables output)
 """
 @with_kw mutable struct Vis
     online::Bool
-    v_min::Float64 = 0
+    save::Bool = false  # save plots to video folder
+    v_min::Float64 = 2
+    v_max::Float64 = 10
     rel_v_min::Float64 = 20
+    rel_v_max::Float64 = 100
+    turb_max::Float64 = 35
+    up_int::Int = 1  # update interval
+    unit_test::Bool = false  # enable unit test mode for visualization functions
 end
 
 """

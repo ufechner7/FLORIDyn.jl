@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    angSOWFA2world(deg_SOWFA)
+    angSOWFA2world(deg_SOWFA) -> Float64
 
 Convert wind direction angle from SOWFA convention to world coordinate system.
 
@@ -14,7 +14,7 @@ angular reference system than the standard world coordinate system used in calcu
 - `deg_SOWFA::Real`: Wind direction angle in SOWFA convention [degrees]
 
 # Returns
-- `rad_World::Float64`: Wind direction angle in world coordinate system [radians]
+- `rad_World`: Wind direction angle in world coordinate system [radians]
 
 # Coordinate System Conversion
 The transformation follows the relationship:
@@ -59,7 +59,7 @@ world_angle = angSOWFA2world(0.0)   # Returns 4.712388... (270° in radians)
 end
 
 """
-    initSimulation(wf::Union{Nothing, WindFarm}, sim::Sim)
+    initSimulation(wf::Union{Nothing, WindFarm}, sim::Sim) -> Union{Nothing, WindFarm}
 
 Initialize or load a wind farm simulation state based on simulation settings.
 
@@ -121,7 +121,7 @@ function initSimulation(wf::Union{Nothing, WindFarm}, sim::Sim)
 end
 
 """
-    perturbationOfTheWF!(wf::WindFarm, wind::Wind)
+    perturbationOfTheWF!(wf::WindFarm, wind::Wind) -> Nothing
 
 Apply stochastic perturbations to the wind field states in-place.
 
@@ -194,7 +194,7 @@ where:
 end
 
 """
-    findTurbineGroups(wf::WindFarm, floridyn::FloriDyn)
+    findTurbineGroups(wf::WindFarm, floridyn::FloriDyn) -> Vector{Vector{Int64}}
 
 Determine wake interaction dependencies between turbines in a wind farm.
 
@@ -315,7 +315,7 @@ where:
 end
 
 """
-    interpolateOPs(wf::WindFarm)
+    interpolateOPs(wf::WindFarm) -> Vector{Matrix{Float64}}
 
 Compute interpolation weights and indices for operational points affecting each turbine.
 
@@ -429,7 +429,8 @@ function interpolateOPs(wf::WindFarm)
 end
 
 """
-    setUpTmpWFAndRun(set::Settings, wf::WindFarm, floris::Floris, wind::Wind)
+    setUpTmpWFAndRun(set::Settings, wf::WindFarm, 
+                     floris::Floris, wind::Wind) --> (Matrix, WindFarm)
 
 Execute FLORIS wake calculations for all turbines in a wind farm with wake interactions.
 
@@ -459,7 +460,7 @@ interaction patterns.
   - Column 1: Total velocity reduction factor (product of all wake effects)
   - Column 2: Combined added turbulence intensity from all upstream turbines
   - Column 3: Effective wind speed at turbine [m/s]
-- `wf`: Updated wind farm object with modified fields:
+- `wf::WindFarm`: Updated wind farm object with modified fields:
   - `wf.Weight`: Normalized interpolation weights for each turbine
   - `wf.red_arr`: Wake reduction matrix showing turbine-to-turbine wake effects
 
@@ -638,7 +639,7 @@ end
 
 """
     runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
-                vis::Vis, floridyn::FloriDyn, floris::Floris)
+                vis::Vis, floridyn::FloriDyn, floris::Floris) -> (WindFarm, DataFrame, Matrix)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
@@ -671,7 +672,8 @@ Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models,
 applying control strategies and updating turbine states over time.
 
 """
-function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, vis::Vis, floridyn::FloriDyn, floris::Floris)
+function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
+                          vis::Vis, floridyn::FloriDyn, floris::Floris)
     nT      = wf.nT
     sim_steps    = sim.n_sim_steps
     ma       = zeros(sim_steps * nT, 6)
@@ -721,8 +723,11 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
 
         # ========== Live Plotting ============
         if vis.online
-            Z, X, Y = calcFlowField(set, wf, wind, floris)
-            plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z; msr=1)
+            t_rel = sim_time-sim.start_time
+            if mod(t_rel, vis.up_int) == 0
+                Z, X, Y = calcFlowField(set, wf, wind, floris)
+                plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel; msr=1)
+            end
         end
 
         sim_time += sim.time_step
