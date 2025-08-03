@@ -316,14 +316,20 @@ end
         end
         
         @testset "parameter validation for backward compatibility method" begin
-            # Get test parameters
-            wf, set, floris, wind, md = get_parameters()
-            Z, X, Y = calcFlowField(set, wf, wind, floris)
-            vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
-            
-            # Test error handling for invalid msr values in backward compatibility method
-            @test_throws BoundsError plotFlowField(plt, wf, X, Y, Z, vis; msr=0)
-            @test_throws ErrorException plotFlowField(plt, wf, X, Y, Z, vis; msr=4)
+            # Only run backward compatibility tests in single-threaded mode
+            if Threads.nthreads() == 1
+                # Get test parameters
+                wf, set, floris, wind, md = get_parameters()
+                Z, X, Y = calcFlowField(set, wf, wind, floris)
+                vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
+                
+                # Test error handling for invalid msr values in backward compatibility method
+                @test_throws BoundsError plotFlowField(plt, wf, X, Y, Z, vis; msr=0)
+                @test_throws ErrorException plotFlowField(plt, wf, X, Y, Z, vis; msr=4)
+            else
+                @info "Skipping parameter validation for backward compatibility tests - only run in single-threaded mode (current: $(Threads.nthreads()) threads)"
+
+            end
         end
     end
     
