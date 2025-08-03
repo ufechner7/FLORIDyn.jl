@@ -20,8 +20,13 @@ if !  @isdefined LAST_PLT; LAST_PLT=PLT; end
 
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
-PARALLEL  = false
-THREADING = false
+if Threads.nthreads() > 1
+    THREADING = true
+    PARALLEL  = true
+else
+    THREADING = false
+    PARALLEL  = false
+end
 
 if PARALLEL
     tic()
