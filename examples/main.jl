@@ -5,7 +5,7 @@
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
 tic()
-using FLORIDyn, TerminalPager, Distributed
+using FLORIDyn, TerminalPager, Distributed, ControlPlots
 
 # PLT options:
 # PLT=1: Velocity reduction plot
@@ -21,18 +21,17 @@ if ! @isdefined LAST_PLT; LAST_PLT=Set(NEW_PLT); end
 
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
-if Threads.nthreads() > 1
-    THREADING = true
-    PARALLEL  = true
-else
-    THREADING = false
-    PARALLEL  = false
-end
 
-if PARALLEL
+# Automatic parallel/threading setup
+if Threads.nthreads() > 1
     tic()
     include("../src/visualisation/remote_plotting.jl") 
-    init_plotting()  # This now returns the main process plt and creates plt on workers
+    init_plotting()  # This sets up workers and remote plotting capabilities
+    @everywhere function plot_flow_field(wf, X, Y, Z, vis; msr=3)
+        # Create a fresh plt instance just for this task
+        local_plt = ControlPlots.plt
+        return plotFlowField(local_plt, wf, X, Y, Z, vis; msr=msr)
+    end    
     @everywhere function plot_flow_field(wf, X, Y, Z, vis, t_rel; msr=1)
         global plot_state
         if abs(t_rel) < 1e-6
@@ -42,34 +41,24 @@ if PARALLEL
         plot_state = plotFlowField(plot_state, local_plt, wf, X, Y, Z, vis, t_rel; msr=msr)
         nothing
     end
-    @everywhere function plot_flow_field(wf, X, Y, Z, vis; msr=3)
-        # Create a fresh plt instance just for this task
-        local_plt = ControlPlots.plt
-        return plotFlowField(local_plt, wf, X, Y, Z, vis; msr=msr)
-    end
     @everywhere function plot_measurements(wf, md, vis; separated)
         # Create a fresh plt instance just for this task
         local_plt = ControlPlots.plt
         return plotMeasurements(local_plt, wf, md, vis; separated=separated)
     end
     @everywhere function close_all()
-        # Create a fresh plt instance just for this task
         local_plt = ControlPlots.plt
         return local_plt.close("all")
     end
     toc()
-else
-    @eval using ControlPlots
 end
 
-function get_parameters(vis, parallel=PARALLEL, threading=THREADING)
+function get_parameters(vis)
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
-    # create settings struct
-    set = Settings(wind, sim, con)
-    set.parallel = parallel
-    set.threading = threading
+    # create settings struct with automatic parallel/threading detection
+    set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
@@ -80,10 +69,8 @@ end
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
-# create settings struct
-set = Settings(wind, sim, con)
-set.parallel = PARALLEL
-set.threading = THREADING
+# create settings struct with automatic parallel/threading detection
+set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
@@ -93,7 +80,7 @@ toc()
 
 if NEW_PLT in LAST_PLT
     # If the last plot was displayed before, close all plots
-    if set.parallel
+    if Threads.nthreads() > 1 && nprocs() > 1
         @spawnat 2 close_all()
     else
         plt.close("all")
@@ -105,55 +92,35 @@ if PLT == 1
     GC.gc()
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
-    if set.parallel
-        @time @spawnat 2 plot_flow_field(wf, X, Y, Z, vis; msr=1)
-    else
-        @time plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
-    end
+    @time smart_plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=plt)
 elseif PLT == 2
     vis.online = false
     GC.gc()
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
-    if set.parallel
-        @time @spawnat 2 plot_flow_field(wf, X, Y, Z, vis; msr=2)
-    else
-        @time plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
-    end
+    @time smart_plot_flow_field(wf, X, Y, Z, vis; msr=2, plt=plt)
 elseif PLT == 3
     vis.online = false
     GC.gc()
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
-        if set.parallel
-        @time @spawnat 2 plot_flow_field(wf, X, Y, Z, vis; msr=3)
-    else
-        @time plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
-    end
+    @time smart_plot_flow_field(wf, X, Y, Z, vis; msr=3, plt=plt)
 elseif PLT == 4
     vis.online = false
     GC.gc()
     wf, md, set, floris, wind = get_parameters(vis)
-    if set.parallel
-        @time @spawnat 2 plot_measurements(wf, md, vis; separated=true)
-    else
-        plotMeasurements(plt, wf, md, vis; separated=true)
-    end
+    @time smart_plot_measurements(wf, md, vis; separated=true, plt=plt)
 elseif PLT == 5
     vis.online = false
     GC.gc()
     wf, md, set, floris, wind = get_parameters(vis)
-    if set.parallel
-        @time @spawnat 2 plot_measurements(wf, md, vis; separated=false)
-    else
-        plotMeasurements(plt, wf, md, vis; separated=false)
-    end
+    @time smart_plot_measurements(wf, md, vis; separated=false, plt=plt)
 elseif PLT == 6
     GC.gc()
     vis.online = true
     # Clean up any existing PNG files in video folder before starting
     cleanup_video_folder()
-    if PARALLEL
+    if Threads.nthreads() > 1
         @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, plot_flow_field)
     else
         @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
