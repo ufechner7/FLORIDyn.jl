@@ -148,9 +148,10 @@ using FLORIDyn, Test, ControlPlots, Statistics
         wf, md, mi = smart_runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
         @test size(md) == (2709, 6) # from Matlab
         @test minimum(md.ForeignReduction) ≈ 72.57019949691814 # Matlab: 73.8438
-        @test mean(md.ForeignReduction)    ≈ 98.54434468415639 # Matlab: 98.2902
+        @test mean(md.ForeignReduction)    ≈ 98.54434468415639 # Matlab: 98.
+        
     end
-        @testset "runFLORIDyn - online" begin
+    @testset "runFLORIDyn - online" begin
         global md
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
@@ -163,9 +164,15 @@ using FLORIDyn, Test, ControlPlots, Statistics
         sim.n_sim_steps = 4
         @info "sim.n_sim_steps: $(sim.n_sim_steps)"
         wf, md, mi = smart_runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-        # @test size(md) == (2709, 6) # from Matlab
+        @test size(md) == (36, 6)
         # @test minimum(md.ForeignReduction) ≈ 72.57019949691814 # Matlab: 73.8438
-        # @test mean(md.ForeignReduction)    ≈ 98.54434468415639 # Matlab: 98.2902
+        # @test mean(md.ForeignReduction)    ≈ 98.54434468415639 # Matlab: 98.
+        sleep(1)
+        if Threads.nthreads() > 1 && nprocs() > 1
+            @spawnat 2 close_all()
+        else
+            plt.close("all")
+        end
     end
 end # testset floridyncl
 nothing
