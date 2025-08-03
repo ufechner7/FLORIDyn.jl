@@ -15,7 +15,7 @@ using REPL.TerminalMenus
 options = ["flow_field_vel_reduction        = PLT=1; include(\"main.jl\")",
            "flow_field_added_turbulence     = PLT=2; include(\"main.jl\")",
            "flow_field_eff_wind_speed       = PLT=3; include(\"main.jl\")",
-           "plot_measurements               = PLT=4; include(\"main.jl\")",
+           "plot_measurements_              = PLT=4; include(\"main.jl\")",
            "plot_measurements_lineplot      = PLT=5; include(\"main.jl\")",
            "flow_field_vel_reduction_online = PLT=6; include(\"main.jl\")",
            "create_video_from_saved_frames  = PLT=7; include(\"main.jl\")",
