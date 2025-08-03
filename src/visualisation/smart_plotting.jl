@@ -1,6 +1,11 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+if Threads.nthreads() > 1
+    include("remote_plotting.jl") 
+    init_plotting()  # This sets up workers and remote plotting capabilities   
+end
+
 """
     smart_plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=nothing)
 
@@ -58,3 +63,4 @@ function smart_plot_measurements(wf, md, vis; separated=true, plt=nothing)
         return plotMeasurements(plt, wf, md, vis; separated=separated)
     end
 end
+

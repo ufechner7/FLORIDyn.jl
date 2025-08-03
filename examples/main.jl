@@ -4,7 +4,6 @@
 # MainFLORIDyn Center-Line model
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
-tic()
 using FLORIDyn, TerminalPager, DistributedNext, ControlPlots
 
 # PLT options:
@@ -23,14 +22,9 @@ settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
 
 # Automatic parallel/threading setup
-if Threads.nthreads() > 1
-    tic()
-    include("../src/visualisation/remote_plotting.jl") 
-    init_plotting()  # This sets up workers and remote plotting capabilities   
-    toc()
-else
-    include("../src/visualisation/smart_plotting.jl")
-end
+tic()
+include("../src/visualisation/smart_plotting.jl")
+toc()
 
 function get_parameters(vis)
     # get the settings for the wind field, simulator and controller
@@ -55,6 +49,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 
 # Run initial conditions until no more change happens (wrong comment in original code)
 wf = initSimulation(wf, sim)
+@info "Initial conditions done, starting simulation..."
 toc()
 
 if NEW_PLT in LAST_PLT

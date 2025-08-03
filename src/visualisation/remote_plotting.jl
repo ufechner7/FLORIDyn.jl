@@ -44,4 +44,3 @@ function init_plotting()
     end
     nothing
 end
-include("smart_plotting.jl")

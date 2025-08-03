@@ -42,12 +42,7 @@ Random.randn(rng::FileRNG) = rand(rng)
 rng = FileRNG(randn_vec)
 FLORIDyn.set_rng(rng)
 
-if Threads.nthreads() > 1
-    include("../src/visualisation/remote_plotting.jl") 
-    init_plotting()  # This sets up workers and remote plotting capabilities   
-else
-    include("../src/visualisation/smart_plotting.jl")
-end
+include("../src/visualisation/smart_plotting.jl")
 
 # Define all available test files
 all_test_files = [
