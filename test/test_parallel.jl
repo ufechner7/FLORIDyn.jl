@@ -5,8 +5,8 @@ if !isdefined(Main, :Test)
     using Test
 end 
 
-if !isdefined(Main, :Distributed)
-    using Distributed
+if !isdefined(Main, :DistributedNext)
+    using DistributedNext
 end 
 
 if ! isinteractive()

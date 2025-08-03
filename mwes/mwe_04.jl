@@ -1,9 +1,9 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Example of a simple Julia script to demonstrate the use of Distributed for plotting.
+# Example of a simple Julia script to demonstrate the use of DistributedNext for plotting.
 
-using Distributed, Timers, ControlPlots, FLORIDyn
+using DistributedNext, Timers, ControlPlots, FLORIDyn
 
 tic()
 include("../src/visualisation/remote_plotting.jl") 

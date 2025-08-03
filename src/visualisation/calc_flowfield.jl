@@ -229,7 +229,7 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
     plot_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
     plot_OP_buffer = zeros(max_deps, 2)
 
-    # Single-threaded loop (can be parallelized with @threads or Distributed.@distributed)
+    # Single-threaded loop (can be parallelized with @threads or DistributedNext.@distributed)
     for iGP in 1:length(mx)
         xGP = mx[iGP]
         yGP = my[iGP]

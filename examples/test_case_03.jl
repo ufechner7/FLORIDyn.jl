@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using Distributed, Timers, ControlPlots, FLORIDyn
+using DistributedNext, Timers, ControlPlots, FLORIDyn
 
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=true, save=true, rel_v_min=20.0, up_int = 4)

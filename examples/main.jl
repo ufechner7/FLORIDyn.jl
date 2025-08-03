@@ -5,7 +5,7 @@
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
 tic()
-using FLORIDyn, TerminalPager, Distributed, ControlPlots
+using FLORIDyn, TerminalPager, DistributedNext, ControlPlots
 
 # PLT options:
 # PLT=1: Velocity reduction plot

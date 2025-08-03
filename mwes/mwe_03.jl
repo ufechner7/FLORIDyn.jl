@@ -1,10 +1,10 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Example of a simple Julia script to demonstrate the use of Distributed for parallel processing
+# Example of a simple Julia script to demonstrate the use of DistributedNext for parallel processing
 # This script initializes a worker, defines a function, and runs it on the worker
 
-using Distributed
+using DistributedNext
 
 # Only add a worker if we don't have any dedicated worker processes
 if nprocs() < 2  # nprocs() counts main + workers, so < 2 means no dedicated workers
