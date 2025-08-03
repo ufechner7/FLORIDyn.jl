@@ -19,12 +19,12 @@ if !isdefined(Main, :ControlPlots)
     @info "using ControlPlots"
 end
 
-function get_parameters(vis, settings_file, parallel)
+function get_parameters(vis, settings_file)
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
     # create settings struct with automatic parallel/threading detection
-    set = Settings(wind, sim, con, Threads.nthreads() > 1, parallel)
+    set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
@@ -39,7 +39,7 @@ end
     vis.unit_test = true
     for i in 1:8
         local wf, md, set, floris, wind, X, Y, Z
-        wf, md, set, floris, wind = get_parameters(vis, settings_file, true)
+        wf, md, set, floris, wind = get_parameters(vis, settings_file)
         @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
         msr = mod(i - 1, 3) + 1  # Convert to 1-based indexing (1, 2, 3, 1, 2, 3)
         smart_plot_flow_field(wf, X, Y, Z, vis; msr, plt=ControlPlots.plt)
