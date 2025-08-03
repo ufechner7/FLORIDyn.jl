@@ -31,8 +31,8 @@ vis.online = false
 @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
 
-# Alternative: Create a completely isolated plt instance for this specific task
-@everywhere function plot_with_local_plt(wf, X, Y, Z, vis; msr=3)
+# Create a completely isolated plt instance for this specific task
+@everywhere function plot_flow_field(wf, X, Y, Z, vis; msr=3)
     # Create a fresh plt instance just for this task
     local_plt = ControlPlots.plt
     return plotFlowField(local_plt, wf, X, Y, Z, vis; msr=msr)
@@ -40,7 +40,7 @@ end
 
 # Use the version that creates its own plt instance
 if PARALLEL
-    @time @spawnat 2 plot_with_local_plt(wf, X, Y, Z, vis; msr=1)
+    @time @spawnat 2 plot_flow_field(wf, X, Y, Z, vis; msr=1)
 else
     @time plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
 end
