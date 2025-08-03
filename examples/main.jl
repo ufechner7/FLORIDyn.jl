@@ -91,7 +91,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 wf = initSimulation(wf, sim)
 toc()
 
-if PLT in LAST_PLT
+if NEW_PLT in LAST_PLT
     # If the last plot was displayed before, close all plots
     if set.parallel
         @spawnat 2 close_all()
