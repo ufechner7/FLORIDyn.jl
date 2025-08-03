@@ -48,7 +48,7 @@ export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimul
 export runFLORIS, init_states, getUadv
 export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, interpolateOPs, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, getLayout, install_examples
-export smart_plot_measurements, smart_runFLORIDyn
+export smart_runFLORIDyn
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
 
 # global variables
@@ -252,65 +252,6 @@ include("visualisation/calc_flowfield.jl")
 include("visualisation/plot_flowfield.jl")
 include("visualisation/create_video.jl")
 
-# Smart plotting functions that dispatch based on threading/parallel mode
-"""
-    smart_plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=nothing)
-
-High-level plotting function that automatically dispatches to either parallel or 
-sequential plotting based on the number of available threads and processes.
-
-# Arguments
-- `wf`: WindFarm object
-- `X`, `Y`, `Z`: Flow field coordinate arrays
-- `vis`: Visualization settings
-- `msr`: Measurement type (1=velocity reduction, 2=turbulence, 3=wind speed)
-- `plt`: Matplotlib pyplot instance (only used in sequential mode)
-
-# Returns
-- Future object if using parallel execution, nothing otherwise
-"""
-function smart_plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=nothing)
-    if Threads.nthreads() > 1 && nprocs() > 1
-        # Use parallel plotting with remote worker
-        return @eval @spawnat 2 plot_flow_field($wf, $X, $Y, $Z, $vis; msr=$msr)
-    else
-        # Use sequential plotting
-        if plt === nothing
-            error("plt argument is required for sequential plotting when not using parallel mode")
-        end
-        return plotFlowField(plt, wf, X, Y, Z, vis; msr=msr)
-    end
-end
-
-"""
-    smart_plot_measurements(wf, md, vis; separated=true, plt=nothing)
-
-High-level measurements plotting function that automatically dispatches to either 
-parallel or sequential plotting based on the number of available threads and processes.
-
-# Arguments
-- `wf`: WindFarm object
-- `md`: Measurement data
-- `vis`: Visualization settings
-- `separated`: Whether to use separated subplots
-- `plt`: Matplotlib pyplot instance (only used in sequential mode)
-
-# Returns
-- Future object if using parallel execution, nothing otherwise
-"""
-function smart_plot_measurements(wf, md, vis; separated=true, plt=nothing)
-    if Threads.nthreads() > 1 && nprocs() > 1
-        # Use parallel plotting with remote worker
-        return @eval @spawnat 2 plot_measurements($wf, $md, $vis; separated=$separated)
-    else
-        # Use sequential plotting
-        if plt === nothing
-            error("plt argument is required for sequential plotting when not using parallel mode")
-        end
-        return plotMeasurements(plt, wf, md, vis; separated=separated)
-    end
-end
-
 """
     smart_runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 
@@ -318,7 +259,7 @@ Unified function that automatically handles both multi-threading and single-thre
 for running FLORIDyn simulations with appropriate plotting callbacks.
 
 # Arguments
-- `plt`: Matplotlib pyplot instance
+- `plt`: PyPlot.jl instance, usually provided by ControlPlots
 - `set`: Settings object
 - `wf`: WindFarm object
 - `wind`: Wind field object

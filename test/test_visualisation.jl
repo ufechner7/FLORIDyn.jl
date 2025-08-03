@@ -239,7 +239,7 @@ end
         vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
 
         @testset "basic functionality" begin
-            FLORIDyn.smart_plot_flow_field(wf, X, Y, Z, vis; plt=ControlPlots.plt)
+            smart_plot_flow_field(wf, X, Y, Z, vis; plt=ControlPlots.plt)
 
             # Test that outputs have the correct types
             @test isa(Z, Array{Float64,3})
@@ -299,7 +299,7 @@ end
             
             @testset "msr=1 (velocity reduction)" begin
                 # Test smart_plot_flow_field with msr=1
-                FLORIDyn.smart_plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=ControlPlots.plt)
+                smart_plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=ControlPlots.plt)
 
                 # Test that the function runs without error
                 @test true  # If we get here, the function didn't throw an error
@@ -315,7 +315,7 @@ end
             
             @testset "msr=2 (added turbulence)" begin
                 # Test smart_plot_flow_field with msr=2
-                FLORIDyn.smart_plot_flow_field(wf, X, Y, Z, vis; msr=2, plt=ControlPlots.plt)
+                smart_plot_flow_field(wf, X, Y, Z, vis; msr=2, plt=ControlPlots.plt)
 
                 # Test that the function runs without error
                 @test true  # If we get here, the function didn't throw an error
@@ -339,7 +339,7 @@ end
                     @test_throws ErrorException plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=4)
 
                     # Test that msr=3 (default) still works with smart function
-                    FLORIDyn.smart_plot_flow_field(wf, X, Y, Z, vis; msr=3, plt=ControlPlots.plt)
+                    smart_plot_flow_field(wf, X, Y, Z, vis; msr=3, plt=ControlPlots.plt)
                     @test true  # If we get here, the function didn't throw an error
                     
                     # Test that wind speed data (msr=3) is reasonable
