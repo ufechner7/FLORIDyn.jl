@@ -100,7 +100,7 @@ end
 """
 function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis::Vis, t=nothing; msr=3)
     # @info "plotFlowField called with msr=$msr, t=$(t === nothing ? "none" : t)"
-    @assert ! isnothing(plt) "plt is nothing line 103"
+    @assert ! isnothing(plt) "plt is nothing line 103 of plot_flowfield.jl"
     # Use unit_test from vis
     use_unit_test = vis.unit_test
     
@@ -415,7 +415,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
             plt.tight_layout()   
             fig.subplots_adjust(wspace=0.295)
         end
-        println("Foreign reduction plot created successfully")
+        # println("Foreign reduction plot created successfully")
     else
         fig = plt.figure(title*" - Line Plot")
         colors = plt.get_cmap("inferno")(range(0, 1, length=wf.nT))
@@ -432,13 +432,13 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
         plt.xlim(max(timeFDyn[1], 0), timeFDyn[end])
         plt.xlabel("Time [s]")
         plt.ylabel("Foreign Reduction [%]")
-        println("Foreign reduction line plot created successfully")
+        # println("Foreign reduction line plot created successfully")
     end
     if vis.unit_test
         plt.pause(1.0)
         plt.close(fig)
     end
-        
+    plt.pause(0.01)
     return nothing
 end
 

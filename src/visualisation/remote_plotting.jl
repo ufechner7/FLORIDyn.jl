@@ -8,7 +8,8 @@ function init_plotting()
         @time addprocs(1)
         @eval @everywhere using ControlPlots  # Ensure ControlPlots is available on all workers
         @eval @everywhere using FLORIDyn      # Ensure FLORIDyn (including WindFarm) is available on all workers
-        
+        @eval @everywhere using DataFrames    # Ensure DataFrames are available on all workers
+         
     else
         println("Already have $(nprocs()-1) dedicated worker(s), total processes: $(nprocs())")
         println("Workers: $(workers())")
