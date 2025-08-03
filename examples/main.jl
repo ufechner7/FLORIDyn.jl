@@ -16,7 +16,8 @@ using FLORIDyn, TerminalPager, Distributed
 # PLT=6: Velocity reduction plot with online visualization
 # PLT=7: Create videos from saved frames
 if !  @isdefined PLT; PLT=1; end
-if !  @isdefined LAST_PLT; LAST_PLT=PLT; end
+if PLT == 6; NEW_PLT = 1; else NEW_PLT = PLT; end
+if ! @isdefined LAST_PLT; LAST_PLT=Set(NEW_PLT); end
 
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
@@ -90,7 +91,8 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 wf = initSimulation(wf, sim)
 toc()
 
-if LAST_PLT == PLT || LAST_PLT == 1 && PLT == 6 || LAST_PLT == 6 && PLT == 1
+if PLT in LAST_PLT
+    # If the last plot was displayed before, close all plots
     if set.parallel
         @spawnat 2 close_all()
     else
@@ -173,5 +175,5 @@ elseif PLT == 7
         println("No 'video' directory found. Run simulation with vis.save=true to generate frames first.")
     end
 end
-LAST_PLT = PLT
+push!(LAST_PLT, NEW_PLT)
 nothing
