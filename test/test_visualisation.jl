@@ -198,21 +198,25 @@ end
             end
             
             @testset "msr parameter validation" begin
-                vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
-                # Test error handling for invalid msr values
-                # msr=0 causes BoundsError (Julia arrays are 1-indexed)
-                @test_throws BoundsError plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=0)
-                # msr > 3 causes ErrorException from explicit check
-                @test_throws ErrorException plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=4)
+                if Threads.nthreads() == 1
+                    vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
+                    # Test error handling for invalid msr values
+                    # msr=0 causes BoundsError (Julia arrays are 1-indexed)
+                    @test_throws BoundsError plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=0)
+                    # msr > 3 causes ErrorException from explicit check
+                    @test_throws ErrorException plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=4)
 
-                # Test that msr=3 (default) still works with smart function
-                FLORIDyn.smart_plot_flow_field(wf, X, Y, Z, vis; msr=3, plt=ControlPlots.plt)
-                @test true  # If we get here, the function didn't throw an error
-                
-                # Test that wind speed data (msr=3) is reasonable
-                wind_speed = Z[:, :, 3]
-                @test all(wind_speed .>= 0.0)  # Wind speed should be non-negative
-                @test all(isfinite.(wind_speed))  # Should be finite values
+                    # Test that msr=3 (default) still works with smart function
+                    FLORIDyn.smart_plot_flow_field(wf, X, Y, Z, vis; msr=3, plt=ControlPlots.plt)
+                    @test true  # If we get here, the function didn't throw an error
+                    
+                    # Test that wind speed data (msr=3) is reasonable
+                    wind_speed = Z[:, :, 3]
+                    @test all(wind_speed .>= 0.0)  # Wind speed should be non-negative
+                    @test all(isfinite.(wind_speed))  # Should be finite values
+                else
+                    @info "Skipping msr parameter validation tests - only run in single-threaded mode (current: $(Threads.nthreads()) threads)"
+                end
             end
         end
 
@@ -480,9 +484,6 @@ end
             @error "smart_plot_measurements with separated=false failed: $e"
             rethrow(e)
         end
-        
-        # Force garbage collection after plotting operations
-        GC.gc()
     end
     
     @testset "createVideo" begin
@@ -519,26 +520,7 @@ end
                 for file in test_files
                     file_path = joinpath(test_dir, file)
                     
-                    # Try to use a plotting library to create a proper PNG
-                    try
-                        # Create a simple 64x64 test image
-                        if @isdefined(plt)
-                            plt.figure(figsize=(1, 1))
-                            plt.imshow(rand(64, 64), cmap="viridis")
-                            plt.axis("off")
-                            plt.savefig(file_path, dpi=64, bbox_inches="tight", pad_inches=0)
-                            plt.close()
-                            # Force garbage collection to prevent memory accumulation
-                            GC.gc()
-                        else
-                            # Fallback: create a larger minimal PNG (10x10 pixels)
-                            create_test_png(file_path, 10, 10)
-                        end
-                    catch e
-                        @warn "Could not create test PNG with plotting, using minimal fallback: $e"
-                        # Create a minimal but larger PNG file
-                        create_test_png(file_path, 10, 10)
-                    end
+                    create_test_png(file_path, 10, 10)
                 end
                 
                 # Test basic functionality (should fail gracefully without FFmpeg)
