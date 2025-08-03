@@ -42,7 +42,7 @@ end
         wf, md, set, floris, wind = get_parameters(vis, settings_file, true)
         @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
         msr = mod(i - 1, 3) + 1  # Convert to 1-based indexing (1, 2, 3, 1, 2, 3)
-        FLORIDyn.smart_plot_flow_field(wf, X, Y, Z, vis; msr, plt=ControlPlots.plt)
+        smart_plot_flow_field(wf, X, Y, Z, vis; msr, plt=ControlPlots.plt)
         @test true
         GC.gc()  # Force garbage collection between iterations
     end
@@ -50,7 +50,7 @@ end
 @testset "parallel" begin
     # this is now done in runtests.jl
     # include("../src/visualisation/remote_plotting.jl") 
-    # init_plotting()
+    init_plotting()
     @test workers()[1] >= 2
 end
 else
