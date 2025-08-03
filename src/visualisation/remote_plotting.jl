@@ -24,6 +24,24 @@ function init_plotting()
         local_plt = ControlPlots.plt
         return plotFlowField(local_plt, wf, X, Y, Z, vis; msr=msr)
     end
+    @everywhere function plot_flow_field(wf, X, Y, Z, vis, t_rel; msr=1)
+        global plot_state
+        if abs(t_rel) < 1e-6
+            plot_state = nothing
+        end
+        local_plt = ControlPlots.plt
+        plot_state = plotFlowField(plot_state, local_plt, wf, X, Y, Z, vis, t_rel; msr=msr)
+        nothing
+    end
+    @everywhere function plot_measurements(wf, md, vis; separated)
+        # Create a fresh plt instance just for this task
+        local_plt = ControlPlots.plt
+        return plotMeasurements(local_plt, wf, md, vis; separated=separated)
+    end
+    @everywhere function close_all()
+        local_plt = ControlPlots.plt
+        return local_plt.close("all")
+    end
     nothing
 end
 

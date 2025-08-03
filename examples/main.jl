@@ -26,30 +26,7 @@ vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
 if Threads.nthreads() > 1
     tic()
     include("../src/visualisation/remote_plotting.jl") 
-    init_plotting()  # This sets up workers and remote plotting capabilities
-    @everywhere function plot_flow_field(wf, X, Y, Z, vis; msr=3)
-        # Create a fresh plt instance just for this task
-        local_plt = ControlPlots.plt
-        return plotFlowField(local_plt, wf, X, Y, Z, vis; msr=msr)
-    end    
-    @everywhere function plot_flow_field(wf, X, Y, Z, vis, t_rel; msr=1)
-        global plot_state
-        if abs(t_rel) < 1e-6
-            plot_state = nothing
-        end
-        local_plt = ControlPlots.plt
-        plot_state = plotFlowField(plot_state, local_plt, wf, X, Y, Z, vis, t_rel; msr=msr)
-        nothing
-    end
-    @everywhere function plot_measurements(wf, md, vis; separated)
-        # Create a fresh plt instance just for this task
-        local_plt = ControlPlots.plt
-        return plotMeasurements(local_plt, wf, md, vis; separated=separated)
-    end
-    @everywhere function close_all()
-        local_plt = ControlPlots.plt
-        return local_plt.close("all")
-    end
+    init_plotting()  # This sets up workers and remote plotting capabilities   
     toc()
 end
 
