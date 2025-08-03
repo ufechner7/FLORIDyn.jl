@@ -54,7 +54,6 @@ all_test_files = [
     "test_tit.jl",
     "test_vel.jl",
     "test_iterate.jl",
-    "test_parallel.jl",
     "test_floridyn_cl.jl",
     "test_floris.jl",
     "test_correction.jl",
@@ -64,6 +63,9 @@ all_test_files = [
     "test_copy_functions.jl",
     "aqua.jl"
 ]
+if Threads.nthreads() > 1
+    push!(all_test_files, "test_parallel.jl")
+end
 
 # Files that need error suppression
 suppress_error_files = [
