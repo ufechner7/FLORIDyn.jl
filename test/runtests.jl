@@ -45,6 +45,8 @@ FLORIDyn.set_rng(rng)
 if Threads.nthreads() > 1
     include("../src/visualisation/remote_plotting.jl") 
     init_plotting()  # This sets up workers and remote plotting capabilities   
+else
+    include("../src/visualisation/smart_plotting.jl")
 end
 
 # Define all available test files
