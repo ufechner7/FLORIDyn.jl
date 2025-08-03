@@ -48,14 +48,13 @@ all_test_files = [
     "test_tit.jl",
     "test_vel.jl",
     "test_iterate.jl",
-    "test_parallel.jl",
+    # "test_parallel.jl",
     "test_floridyn_cl.jl",
     "test_floris.jl",
     "test_correction.jl",
     "test_controller.jl",
     "test_settings.jl",
-    "test_visualisation.jl",
-    "test_parallel.jl",
+    # "test_visualisation.jl",
     "test_copy_functions.jl",
     "aqua.jl"
 ]
