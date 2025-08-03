@@ -12,7 +12,7 @@ Uses the standard test configuration to ensure physical validity.
 function create_test_setup()
     settings_file = "data/2021_9T_Data.yaml"
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
-    set = Settings(wind, sim, con)
+    set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     
     return wf, sim, floris, floridyn, set

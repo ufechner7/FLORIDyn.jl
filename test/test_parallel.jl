@@ -23,13 +23,12 @@ function get_parameters(vis, settings_file, parallel)
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
-    # create settings struct
-    set = Settings(wind, sim, con)
-    set.parallel = parallel
+    # create settings struct with automatic parallel/threading detection
+    set = Settings(wind, sim, con, Threads.nthreads() > 1, parallel)
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
-    wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    wf, md, mi = smart_runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     return wf, md, set, floris, wind 
 end
 @testset "multithreading" begin
@@ -40,12 +39,12 @@ end
     vis.unit_test = true
     for i in 1:8
         local wf, md, set, floris, wind, X, Y, Z
-        wf, md, set, floris, wind = get_parameters(vis, settings_file, true)
+        wf, md, set, floris, wind = get_parameters(vis, settings_file, false)
         set.threading = true
         set.parallel = false
         @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
         msr = mod(i - 1, 3) + 1  # Convert to 1-based indexing (1, 2, 3, 1, 2, 3)
-        plotFlowField(plt, wf, X, Y, Z, vis; msr)
+        FLORIDyn.smart_plot_flow_field(wf, X, Y, Z, vis; msr, plt=ControlPlots.plt)
         @test true
         GC.gc()  # Force garbage collection between iterations
     end

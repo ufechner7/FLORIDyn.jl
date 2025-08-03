@@ -20,15 +20,15 @@ function get_parameters()
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
-    # create settings struct
-    set = Settings(wind, sim, con)
+    # create settings struct with automatic parallel/threading detection
+    set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
     
     # Create visualization settings for testing
     vis = Vis(online=false, save=false, unit_test=true)
-    wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
+    wf, md, mi = smart_runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
     return wf, set, floris, wind, md
 end
 
@@ -107,7 +107,7 @@ end
         vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
 
         @testset "basic functionality" begin
-            plotFlowField(nothing, plt, wf, X, Y, Z, vis)
+            smart_plot_flow_field(wf, X, Y, Z, vis; plt=ControlPlots.plt)
 
             # Test that outputs have the correct types
             @test isa(Z, Array{Float64,3})
@@ -166,8 +166,8 @@ end
         @testset "msr parameter tests" begin
             
             @testset "msr=1 (velocity reduction)" begin
-                # Test plotFlowField with msr=1
-                plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=1)
+                # Test smart_plot_flow_field with msr=1
+                smart_plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=ControlPlots.plt)
 
                 # Test that the function runs without error
                 @test true  # If we get here, the function didn't throw an error
@@ -182,8 +182,8 @@ end
             end
             
             @testset "msr=2 (added turbulence)" begin
-                # Test plotFlowField with msr=2
-                plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=2)
+                # Test smart_plot_flow_field with msr=2
+                smart_plot_flow_field(wf, X, Y, Z, vis; msr=2, plt=ControlPlots.plt)
 
                 # Test that the function runs without error
                 @test true  # If we get here, the function didn't throw an error
@@ -205,8 +205,8 @@ end
                 # msr > 3 causes ErrorException from explicit check
                 @test_throws ErrorException plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=4)
 
-                # Test that msr=3 (default) still works
-                plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=3)
+                # Test that msr=3 (default) still works with smart function
+                smart_plot_flow_field(wf, X, Y, Z, vis; msr=3, plt=ControlPlots.plt)
                 @test true  # If we get here, the function didn't throw an error
                 
                 # Test that wind speed data (msr=3) is reasonable
@@ -450,18 +450,18 @@ end
         
         # Add try-catch to detect potential segfault locations
         try
-            plotMeasurements(plt, wf, md, vis; separated=true)
-            println("✓ plotMeasurements with separated=true completed successfully")
+            smart_plot_measurements(wf, md, vis; separated=true, plt=ControlPlots.plt)
+            println("✓ smart_plot_measurements with separated=true completed successfully")
         catch e
-            @error "plotMeasurements with separated=true failed: $e"
+            @error "smart_plot_measurements with separated=true failed: $e"
             rethrow(e)
         end
         
         try
-            plotMeasurements(plt, wf, md, vis)
-            println("✓ plotMeasurements with separated=false completed successfully")
+            smart_plot_measurements(wf, md, vis; plt=ControlPlots.plt)
+            println("✓ smart_plot_measurements with separated=false completed successfully")
         catch e
-            @error "plotMeasurements with separated=false failed: $e"
+            @error "smart_plot_measurements with separated=false failed: $e"
             rethrow(e)
         end
         
