@@ -270,14 +270,14 @@ vis = Vis(online=false, save=false)
 ```
 
 # Notes
-- Online visualization may significantly slow down simulation performance
-- Useful for debugging, monitoring simulation progress, or creating demonstrations
+- Online visualization significantly slows down simulation performance
+- Useful for debugging, monitoring simulation progress, or creating videos of the simulation
 - When disabled, visualization functions are skipped to improve computational efficiency
 - `v_min` helps maintain consistent color scales for effective wind speed visualizations (msr=3)
 - `rel_v_min` helps maintain consistent color scales for velocity reduction visualizations (msr=1)
 - `up_int` can be used to reduce visualization frequency and improve simulation speed
 - `save=true` will create a 'video' folder if it doesn't exist and save each plot frame for animation creation
-- `unit_test=true` enables unit test mode for visualization functions (closes plots automatically, disables output)
+- `unit_test=true` enables unit test mode for visualization functions (closes plots automatically after 1 second)
 """
 @with_kw mutable struct Vis
     online::Bool
