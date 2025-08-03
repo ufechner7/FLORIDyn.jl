@@ -48,7 +48,7 @@ export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimul
 export runFLORIS, init_states, getUadv
 export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, interpolateOPs, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, getLayout, install_examples
-export smart_plot_flow_field, smart_plot_measurements
+export smart_plot_flow_field, smart_plot_measurements, smart_runFLORIDyn
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
 
 # global variables
@@ -308,6 +308,45 @@ function smart_plot_measurements(wf, md, vis; separated=true, plt=nothing)
             error("plt argument is required for sequential plotting when not using parallel mode")
         end
         return plotMeasurements(plt, wf, md, vis; separated=separated)
+    end
+end
+
+"""
+    smart_runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+
+Unified function that automatically handles both multi-threading and single-threading modes
+for running FLORIDyn simulations with appropriate plotting callbacks.
+
+# Arguments
+- `plt`: Matplotlib pyplot instance
+- `set`: Settings object
+- `wf`: WindFarm object
+- `wind`: Wind field object
+- `sim`: Simulation object
+- `con`: Controller object
+- `vis`: Visualization settings
+- `floridyn`: FLORIDyn model object
+- `floris`: FLORIS model object
+
+# Returns
+- Tuple (wf, md, mi): WindFarm, measurement data, and model info
+"""
+function smart_runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    if Threads.nthreads() > 1 && nprocs() > 1
+        # Multi-threading mode: use remote plotting callback
+        # The plot_flow_field function should be defined via remote_plotting.jl
+        try
+            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, Main.plot_flow_field)
+        catch e
+            if isa(e, UndefVarError)
+                error("plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
+            else
+                rethrow(e)
+            end
+        end
+    else
+        # Single-threading mode: no plotting callback
+        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     end
 end
 

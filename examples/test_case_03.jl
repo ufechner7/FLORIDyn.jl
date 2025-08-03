@@ -26,11 +26,7 @@ sim.n_sim_steps = 50
 wf = initSimulation(wf, sim)
 
 cleanup_video_folder()
-# Automatic dispatch - uses remote plotting callback when parallel, direct when sequential
-if Threads.nthreads() > 1
-    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, plot_flow_field)
-else
-    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-end
+# Unified function automatically handles multi-threading vs single-threading
+@time wf, md, mi = smart_runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 
 nothing
