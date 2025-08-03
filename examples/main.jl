@@ -28,6 +28,8 @@ if Threads.nthreads() > 1
     include("../src/visualisation/remote_plotting.jl") 
     init_plotting()  # This sets up workers and remote plotting capabilities   
     toc()
+else
+    include("../src/visualisation/smart_plotting.jl")
 end
 
 function get_parameters(vis)
