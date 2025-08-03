@@ -277,7 +277,7 @@ end
 
     end
     
-    # @testset "plotFlowField - backward compatibility method" begin
+    @testset "plotFlowField - backward compatibility method" begin
     #     @testset "basic functionality without state parameter" begin
     #         # Get test parameters
     #         wf, set, floris, wind, md = get_parameters()
