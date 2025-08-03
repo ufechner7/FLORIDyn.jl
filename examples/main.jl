@@ -20,7 +20,7 @@ if !  @isdefined LAST_PLT; LAST_PLT=PLT; end
 
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
-PARALLEL = PLT in [1, 2, 3, 4, 6]
+PARALLEL  = true
 THREADING = true
 
 if PARALLEL
@@ -45,6 +45,11 @@ if PARALLEL
         # Create a fresh plt instance just for this task
         local_plt = ControlPlots.plt
         return plotMeasurements(local_plt, wf, md, vis; separated=separated)
+    end
+    @everywhere function close_all()
+        # Create a fresh plt instance just for this task
+        local_plt = ControlPlots.plt
+        return local_plt.close("all")
     end
     toc()
 end
@@ -80,7 +85,11 @@ wf = initSimulation(wf, sim)
 toc()
 
 if LAST_PLT == PLT
-    # plt.close("all")
+    if set.parallel
+        @spawnat 2 close_all()
+    else
+        plt.close("all")
+    end
 end
 
 if PLT == 1
@@ -124,10 +133,13 @@ elseif PLT == 4
     end
 elseif PLT == 5
     vis.online = false
-    set.parallel = false  # Disable parallel plotting for this case
     GC.gc()
     wf, md, set, floris, wind = get_parameters(vis)
-    plotMeasurements(plt, wf, md, vis; separated=false)
+    if set.parallel
+        @time @spawnat 2 plot_measurements(wf, md, vis; separated=false)
+    else
+        plotMeasurements(plt, wf, md, vis; separated=false)
+    end
 elseif PLT == 6
     plt=nothing
     GC.gc()
