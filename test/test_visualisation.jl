@@ -216,94 +216,104 @@ end
             end
         end
 
-        # @testset "plotFlowField with PlotState - two consecutive calls" begin
-        #     # Set up test data
-        #     state1 = nothing
-            
-        #     # First call with nothing state (should create new PlotState)
-        #     state1 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=3)
-            
-        #     # Test that state1 is a PlotState object
-        #     @test state1 isa FLORIDyn.PlotState
-            
-        #     # Test that PlotState has all required fields
-        #     @test hasfield(typeof(state1), :fig)
-        #     @test hasfield(typeof(state1), :ax)
-        #     @test hasfield(typeof(state1), :cb)
-        #     @test hasfield(typeof(state1), :contour_collection)
-        #     @test hasfield(typeof(state1), :turbine_lines)
-        #     @test hasfield(typeof(state1), :op_scatter1)
-        #     @test hasfield(typeof(state1), :op_scatter2)
-        #     @test hasfield(typeof(state1), :title_obj)
-        #     @test hasfield(typeof(state1), :figure_name)
-        #     @test hasfield(typeof(state1), :label)
-        #     @test hasfield(typeof(state1), :lev_min)
-        #     @test hasfield(typeof(state1), :lev_max)
-        #     @test hasfield(typeof(state1), :levels)
-            
-        #     # Test that fields have correct types
-        #     @test state1.figure_name isa String
-        #     @test state1.label isa String
-        #     @test state1.lev_min isa Float64
-        #     @test state1.lev_max isa Float64
-        #     @test state1.lev_min < state1.lev_max
-        #     @test state1.turbine_lines isa Vector
-            
-        #     # Test second call with existing state (should update same PlotState)
-        #     state2 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 12; msr=1)
-            
-        #     # Test that state2 is the same as state1 (same object, reused)
-        #     @test state2 isa FLORIDyn.PlotState
-            
-        #     # Close the plots after testing to avoid accumulation
-        #     try
-        #         ControlPlots.plt.close(state1.fig)
-        #     catch
-        #     end
-            
-        #     # Test error handling for invalid msr values
-        #     @test_throws ErrorException plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=99)
-            
-        #     # Test with msr=2 (added turbulence) - create new state for this test
-        #     state3 = @test_nowarn plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 24; msr=2)
-        #     @test state3 isa FLORIDyn.PlotState
-            
-        #     # Close the plot after testing
-        #     try
-        #         ControlPlots.plt.close(state3.fig)
-        #     catch
-        #     end
-        # end
+        # Only run PlotState tests in single-threaded mode to avoid threading issues
+        if Threads.nthreads() == 1
+            @testset "plotFlowField with PlotState - two consecutive calls" begin
+                # Set up test data
+                state1 = nothing
+                
+                # First call with nothing state (should create new PlotState)
+                state1 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=3)
+                
+                # Test that state1 is a PlotState object
+                @test state1 isa FLORIDyn.PlotState
+                
+                # Test that PlotState has all required fields
+                @test hasfield(typeof(state1), :fig)
+                @test hasfield(typeof(state1), :ax)
+                @test hasfield(typeof(state1), :cb)
+                @test hasfield(typeof(state1), :contour_collection)
+                @test hasfield(typeof(state1), :turbine_lines)
+                @test hasfield(typeof(state1), :op_scatter1)
+                @test hasfield(typeof(state1), :op_scatter2)
+                @test hasfield(typeof(state1), :title_obj)
+                @test hasfield(typeof(state1), :figure_name)
+                @test hasfield(typeof(state1), :label)
+                @test hasfield(typeof(state1), :lev_min)
+                @test hasfield(typeof(state1), :lev_max)
+                @test hasfield(typeof(state1), :levels)
+                
+                # Test that fields have correct types
+                @test state1.figure_name isa String
+                @test state1.label isa String
+                @test state1.lev_min isa Float64
+                @test state1.lev_max isa Float64
+                @test state1.lev_min < state1.lev_max
+                @test state1.turbine_lines isa Vector
+                
+                # Test second call with existing state (should update same PlotState)
+                state2 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 12; msr=1)
+                
+                # Test that state2 is the same as state1 (same object, reused)
+                @test state2 isa FLORIDyn.PlotState
+                
+                # Close the plots after testing to avoid accumulation
+                try
+                    ControlPlots.plt.close(state1.fig)
+                catch
+                end
+                
+                # Test error handling for invalid msr values
+                @test_throws ErrorException plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=99)
+                
+                # Test with msr=2 (added turbulence) - create new state for this test
+                state3 = @test_nowarn plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 24; msr=2)
+                @test state3 isa FLORIDyn.PlotState
+                
+                # Close the plot after testing
+                try
+                    ControlPlots.plt.close(state3.fig)
+                catch
+                end
+            end
+        else
+            @info "Skipping PlotState tests - only run in single-threaded mode (current: $(Threads.nthreads()) threads)"
+        end
 
     end
     
     @testset "plotFlowField - backward compatibility method" begin
-    #     @testset "basic functionality without state parameter" begin
-    #         # Get test parameters
-    #         wf, set, floris, wind, md = get_parameters()
-            
-    #         # Call the calcFlowField function
-    #         Z, X, Y = calcFlowField(set, wf, wind, floris)
-    #         vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
-            
-    #         # Test the second method without state parameter (backward compatibility)
-    #         vis.unit_test = true
-    #         result = plotFlowField(plt, wf, X, Y, Z, vis)
-            
-    #         # Test that the function runs without error and returns nothing
-    #         @test result === nothing
-            
-    #         # Test that the function is callable and accepts all expected parameters
-    #         result2 = plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
-    #         @test result2 === nothing
-            
-    #         result3 = plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
-    #         @test result3 === nothing
-            
-    #         # Test with time parameter
-    #         result4 = plotFlowField(plt, wf, X, Y, Z, vis, 120.0; msr=3)
-    #         @test result4 === nothing
-    #     end
+        # Only run backward compatibility tests in single-threaded mode
+        if Threads.nthreads() == 1
+            @testset "basic functionality without state parameter" begin
+                # Get test parameters
+                wf, set, floris, wind, md = get_parameters()
+                
+                # Call the calcFlowField function
+                Z, X, Y = calcFlowField(set, wf, wind, floris)
+                vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
+                
+                # Test the second method without state parameter (backward compatibility)
+                vis.unit_test = true
+                result = plotFlowField(plt, wf, X, Y, Z, vis)
+                
+                # Test that the function runs without error and returns nothing
+                @test result === nothing
+                
+                # Test that the function is callable and accepts all expected parameters
+                result2 = plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
+                @test result2 === nothing
+                
+                result3 = plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
+                @test result3 === nothing
+                
+                # Test with time parameter
+                result4 = plotFlowField(plt, wf, X, Y, Z, vis, 120.0; msr=3)
+                @test result4 === nothing
+            end
+        else
+            @info "Skipping backward compatibility tests - only run in single-threaded mode (current: $(Threads.nthreads()) threads)"
+        end
         
         @testset "parameter validation for backward compatibility method" begin
             # Get test parameters
