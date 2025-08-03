@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Start script for normal use of FLORIDyn
+# Start script for multithreaded, normal use of FLORIDyn
 
 # Install TerminalPager and Timers and Revise and ControlPlots globally, if not yet installed
 julia -e 'using Pkg;
@@ -22,7 +22,7 @@ julia --project -t 11 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); in
 # 1.18s single threaded
 # 0.24s multithreaded 
 
-# ON LAPTOP, performance mode on power
+# ON LAPTOP, Ryzen 7840U, performance mode on power
 # 115s on laptop multithreaded 4.0x advantage
 # 516s on laptop single threaded 
 # 1.51s single threaded
