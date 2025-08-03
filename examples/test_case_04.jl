@@ -17,6 +17,8 @@ else
     using ControlPlots
 end
 
+plt = nothing
+
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
