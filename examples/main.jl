@@ -68,34 +68,28 @@ end
 
 if PLT == 1
     vis.online = false
-    GC.gc()
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     @time smart_plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=plt)
 elseif PLT == 2
     vis.online = false
-    GC.gc()
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     @time smart_plot_flow_field(wf, X, Y, Z, vis; msr=2, plt=plt)
 elseif PLT == 3
     vis.online = false
-    GC.gc()
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     @time smart_plot_flow_field(wf, X, Y, Z, vis; msr=3, plt=plt)
 elseif PLT == 4
     vis.online = false
-    GC.gc()
     wf, md, set, floris, wind = get_parameters(vis)
     @time smart_plot_measurements(wf, md, vis; separated=true, plt=plt)
 elseif PLT == 5
     vis.online = false
-    GC.gc()
     wf, md, set, floris, wind = get_parameters(vis)
     @time smart_plot_measurements(wf, md, vis; separated=false, plt=plt)
 elseif PLT == 6
-    GC.gc()
     vis.online = true
     # Clean up any existing PNG files in video folder before starting
     cleanup_video_folder()
