@@ -8,10 +8,7 @@ settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
 
 # Automatic setup based on threading
-if Threads.nthreads() > 1
-    include("../src/visualisation/remote_plotting.jl") 
-    init_plotting()
-end
+include("../src/visualisation/smart_plotting.jl")
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
