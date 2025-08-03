@@ -53,6 +53,9 @@ Plot a 2D contour of the flow field data with support for animation.
 - `vis::Vis`: Visualization settings including save options and color scale parameters
 - `t`: Time value for display in the plot title or annotations
 - `msr::Int`: Which measurement to plot (1, 2, or 3). Default is 3.
+   - `msr=1`: Velocity reduction [%]
+   - `msr=2`: Added turbulence [%]  
+   - `msr=3`: Effective wind speed [m/s]
 - `vis.unit_test::Bool`: Whether to automatically close plots for testing.
 
 # Returns
@@ -82,11 +85,6 @@ for t in time_steps
     plt.pause(0.01)  # Small delay for animation
 end
 ```
-
-# Measurement Types
-- `msr=1`: Velocity reduction [%]
-- `msr=2`: Added turbulence [%]  
-- `msr=3`: Effective wind speed [m/s]
 
 # Notes
 - The function automatically handles coordinate system transformations for turbine orientations
