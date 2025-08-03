@@ -84,7 +84,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 wf = initSimulation(wf, sim)
 toc()
 
-if LAST_PLT == PLT
+if LAST_PLT == PLT || LAST_PLT == 1 && PLT == 6 || LAST_PLT == 6 && PLT == 1
     if set.parallel
         @spawnat 2 close_all()
     else
