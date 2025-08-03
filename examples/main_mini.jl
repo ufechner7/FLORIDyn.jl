@@ -21,6 +21,12 @@ if Threads.nthreads() > 1
     tic()
     include("../src/visualisation/remote_plotting.jl") 
     init_plotting()  # This sets up workers and remote plotting capabilities
+    # Create a completely isolated plt instance for this specific task
+    @everywhere function plot_flow_field(wf, X, Y, Z, vis; msr=3)
+        # Create a fresh plt instance just for this task
+        local_plt = ControlPlots.plt
+        return plotFlowField(local_plt, wf, X, Y, Z, vis; msr=msr)
+    end
     @everywhere function plot_flow_field(wf, X, Y, Z, vis, t_rel; msr=1)
         global plot_state
         if abs(t_rel) < 1e-6
