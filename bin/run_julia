@@ -20,7 +20,7 @@ julia --project -t 11 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); in
 # 82s for 300 iterations with threading=true and parallel=true enabled 5.3x advantage
 # 436s for 300 iterations with threading=false and parallel=false
 # 1.18s single threaded
-# 0.51s multithreaded # was: 0.27
+# 0.24s multithreaded 
 
 # ON LAPTOP, performance mode on power
 # 115s on laptop multithreaded 4.0x advantage
