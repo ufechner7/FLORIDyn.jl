@@ -98,8 +98,9 @@ end
 - The `video/` directory is automatically created if it doesn't exist
 - This function requires a plotting package like ControlPlots.jl to be loaded and available as `plt`
 """
-function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t=nothing; msr=3)
+function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis::Vis, t=nothing; msr=3)
     # @info "plotFlowField called with msr=$msr, t=$(t === nothing ? "none" : t)"
+    @assert ! isnothing(plt) "plt is nothing line 103"
     # Use unit_test from vis
     use_unit_test = vis.unit_test
     
