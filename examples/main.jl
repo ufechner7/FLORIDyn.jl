@@ -20,8 +20,8 @@ if !  @isdefined LAST_PLT; LAST_PLT=PLT; end
 
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
-PARALLEL  = true
-THREADING = true
+PARALLEL  = false
+THREADING = false
 
 if PARALLEL
     tic()
@@ -52,8 +52,9 @@ if PARALLEL
         return local_plt.close("all")
     end
     toc()
+else
+    @eval using ControlPlots
 end
-plt=nothing
 
 function get_parameters(vis, parallel=PARALLEL, threading=THREADING)
     # get the settings for the wind field, simulator and controller
@@ -141,10 +142,8 @@ elseif PLT == 5
         plotMeasurements(plt, wf, md, vis; separated=false)
     end
 elseif PLT == 6
-    plt=nothing
     GC.gc()
     vis.online = true
-    set.parallel = true  # Enable parallel plotting for this case
     # Clean up any existing PNG files in video folder before starting
     cleanup_video_folder()
     if PARALLEL

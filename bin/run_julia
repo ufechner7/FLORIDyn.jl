@@ -25,5 +25,5 @@ julia --project -t 11 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); in
 # ON LAPTOP, performance mode on power
 # 115s on laptop multithreaded 4.0x advantage
 # 516s on laptop single threaded 
-# 1.50s single threaded
+# 1.51s single threaded
 # 0.30s multithreaded
