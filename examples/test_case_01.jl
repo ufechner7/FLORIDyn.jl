@@ -2,17 +2,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Testcase for bug https://github.com/ufechner7/FLORIDyn.jl/issues/35
-using FLORIDyn, TerminalPager, ControlPlots
+using FLORIDyn, TerminalPager, ControlPlots, DistributedNext
 
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
-PARALLEL = false
+
+# Automatic parallel/threading setup
+include("../src/visualisation/smart_plotting.jl")
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
 # create settings struct
-set = Settings(wind, sim, con, PARALLEL)
+set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 sim.n_sim_steps = 195
@@ -22,8 +24,8 @@ wf = initSimulation(wf, sim)
 
 vis.online = false
 @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-@time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
-plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
+@time Z, X, Y    = calcFlowField(set, wf, wind, floris; plt)
 
-plotMeasurements(plt, wf, md, vis; separated=true)
+plot_flow_field(wf, X, Y, Z, vis; msr=1, plt)
+plot_measurements(wf, md, vis; separated=true, plt)
 nothing
