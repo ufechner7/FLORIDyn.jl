@@ -479,6 +479,42 @@ function getLayout(nT::Int)
     end
 end
 
+"""
+    cleanup_video_folder() -> Nothing
+
+Clean up existing PNG files in the video folder before creating new videos.
+
+# Description
+This function removes all PNG files from the "video" directory to ensure a clean slate 
+before generating new video frames. It is typically called before running simulations 
+that create video output to prevent mixing old frames with new ones.
+
+# Behavior
+- Checks if the "video" directory exists
+- Scans the directory for files with ".png" extension
+- Attempts to delete each PNG file found
+- Reports the number of files deleted
+- Issues warnings for any files that cannot be deleted
+
+# Returns
+- `Nothing`
+
+# Example
+```julia
+# Clean up before creating new video frames
+cleanup_video_folder()
+
+# Run simulation that generates PNG frames
+# ...
+
+# Create video from frames
+createVideo()
+```
+
+# See Also
+- [`createVideo`](@ref): Create MP4 video from PNG frames
+- [`createAllVideos`](@ref): Create videos for all measurement types
+"""
 function cleanup_video_folder()
     # Clean up any existing PNG files in video folder before starting
     if isdir("video")

@@ -42,3 +42,11 @@ plot_measurements
 close_all
 ```
 
+# Video Creation
+```@docs
+cleanup_video_folder
+createVideo
+createAllVideos
+natural_sort_key
+```
+
