@@ -15,6 +15,7 @@ The FLORIDyn.jl package is organized into several modules:
   - `visualisation/` - Plotting and helper functions
 - `test/` - Test suite
 - `examples/` - Example scripts
+- `examples_dev/` - Examples for developers
 - `docs/`  - Documentation source
 - `data/`  - Example data files and configuration settings
 - `video/` - PNG and MP4 output files
