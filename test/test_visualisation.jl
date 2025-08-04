@@ -28,7 +28,7 @@ function get_parameters()
     
     # Create visualization settings for testing
     vis = Vis(online=false, save=false, unit_test=true)
-    wf, md, mi = smart_runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
+    wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
     return wf, set, floris, wind, md
 end
 

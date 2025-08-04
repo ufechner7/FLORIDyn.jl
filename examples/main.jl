@@ -53,7 +53,7 @@ wf = initSimulation(wf, sim)
 toc()
 
 if NEW_PLT in LAST_PLT
-    # If the last plot was displayed before, close all plots
+    # If the new plot was displayed before, close all plots
     close_all()
 end
 
@@ -84,7 +84,7 @@ elseif PLT == 6
     vis.online = true
     # Clean up any existing PNG files in video folder before starting
     cleanup_video_folder()
-    @time wf, md, mi = smart_runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 elseif PLT == 7
     # Create videos from saved plot frames
     println("Creating videos from saved plot frames...")

@@ -48,7 +48,7 @@ export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimul
 export runFLORIS, init_states, getUadv
 export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, interpolateOPs, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, getLayout, install_examples
-export smart_runFLORIDyn
+export run_floridyn
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
 
 # global variables
@@ -253,7 +253,7 @@ include("visualisation/plot_flowfield.jl")
 include("visualisation/create_video.jl")
 
 """
-    smart_runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 
 Unified function that automatically handles both multi-threading and single-threading modes
 for running FLORIDyn simulations with appropriate plotting callbacks.
@@ -272,7 +272,7 @@ for running FLORIDyn simulations with appropriate plotting callbacks.
 # Returns
 - Tuple (wf, md, mi): WindFarm, measurement data, and model info
 """
-function smart_runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Multi-threading mode: use remote plotting callback
         # The rmt_plot_flow_field function should be defined via remote_plotting.jl

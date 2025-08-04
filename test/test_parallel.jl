@@ -28,7 +28,7 @@ function get_parameters(vis, settings_file)
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
-    wf, md, mi = smart_runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     return wf, md, set, floris, wind 
 end
 @testset "multithreading" begin

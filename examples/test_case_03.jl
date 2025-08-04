@@ -22,6 +22,6 @@ wf = initSimulation(wf, sim)
 
 cleanup_video_folder()
 # Unified function automatically handles multi-threading vs single-threading
-@time wf, md, mi = smart_runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+@time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 
 nothing
