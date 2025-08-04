@@ -7,6 +7,7 @@ using LinearAlgebra
 using MAT
 using Random
 using Suppressor
+using DistributedNext
 
 if basename(pwd()) == "test"
     cd("..")
@@ -41,6 +42,8 @@ Random.randn(rng::FileRNG) = rand(rng)
 rng = FileRNG(randn_vec)
 FLORIDyn.set_rng(rng)
 
+include("../src/visualisation/smart_plotting.jl")
+
 # Define all available test files
 all_test_files = [
     "test_dir.jl",
@@ -57,6 +60,9 @@ all_test_files = [
     "test_copy_functions.jl",
     "aqua.jl"
 ]
+if Threads.nthreads() > 1
+    push!(all_test_files, "test_parallel.jl")
+end
 
 # Files that need error suppression
 suppress_error_files = [

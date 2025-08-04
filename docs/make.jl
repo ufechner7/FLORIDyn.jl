@@ -39,4 +39,5 @@ makedocs(;
 deploydocs(;
     repo="github.com/ufechner7/FLORIDyn.jl",
     devbranch="main",
+    push_preview=true,
 )

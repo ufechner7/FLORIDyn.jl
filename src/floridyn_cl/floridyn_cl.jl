@@ -429,6 +429,116 @@ function interpolateOPs(wf::WindFarm)
 end
 
 """
+    interpolateOPs!(intOPs::Vector{Matrix{Float64}}, wf::WindFarm, 
+                   dist_buffer::Vector{Float64}, sorted_indices_buffer::Vector{Int})
+
+Non-allocating version of interpolateOPs that uses pre-allocated buffers.
+
+This function performs the same interpolation calculations as interpolateOPs but avoids 
+memory allocations by reusing pre-allocated buffer arrays. This is critical for performance 
+when called repeatedly in loops, such as in flow field calculations.
+
+# Arguments
+- `intOPs::Vector{Matrix{Float64}}`: Pre-allocated vector of matrices to store interpolation results
+- `wf::WindFarm`: Wind farm object containing turbine positions and operational point data
+- `dist_buffer::Vector{Float64}`: Buffer for distance calculations (length ≥ wf.nOP)
+- `sorted_indices_buffer::Vector{Int}`: Buffer for sorting indices (length ≥ wf.nOP)
+
+# Returns
+- `intOPs::Vector{Matrix{Float64}}`: Results filled in-place
+
+# Performance Notes
+- All temporary arrays are reused from pre-allocated buffers
+- No memory allocations occur during execution
+- Suitable for use in hot loops and parallel contexts
+
+# Example
+```julia
+# Pre-allocate buffers
+intOPs = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
+dist_buffer = zeros(wf.nOP)
+sorted_indices_buffer = zeros(Int, wf.nOP)
+
+# Non-allocating interpolation
+interpolateOPs!(intOPs, wf, dist_buffer, sorted_indices_buffer)
+```
+"""
+function interpolateOPs!(intOPs::Vector{Matrix{Float64}}, wf::WindFarm, 
+                        dist_buffer::Vector{Float64}, sorted_indices_buffer::Vector{Int})
+    @assert length(wf.dep) > 0 "No dependencies found! Ensure `findTurbineGroups` was called first."
+
+    for iT in 1:wf.nT  # For every turbine
+        for iiT in 1:length(wf.dep[iT])  # for every influencing turbine
+            iiaT = wf.dep[iT][iiT]       # actual turbine index
+
+            # Compute distances from OPs of turbine iiaT to current turbine
+            start_idx = wf.StartI[iiaT]
+            turb_pos_x = wf.posBase[iT, 1]
+            turb_pos_y = wf.posBase[iT, 2]
+
+            # Compute Euclidean distances to the turbine position (non-allocating)
+            @views dist = dist_buffer[1:wf.nOP]
+            for i in 1:wf.nOP
+                op_idx = start_idx + i - 1
+                dx = wf.States_OP[op_idx, 1] - turb_pos_x
+                dy = wf.States_OP[op_idx, 2] - turb_pos_y
+                dist[i] = sqrt(dx * dx + dy * dy)
+            end
+
+            # Sort indices by distance (reuse buffer)
+            @views sorted_indices = sorted_indices_buffer[1:wf.nOP]
+            for i in 1:wf.nOP
+                sorted_indices[i] = i
+            end
+            sort!(sorted_indices, by=i -> dist[i])
+
+            if sorted_indices[1] == 1
+                # Closest is first OP (unlikely)
+                intOPs[iT][iiT, 1] = wf.StartI[iiaT]
+                intOPs[iT][iiT, 2] = 1.0
+                intOPs[iT][iiT, 3] = wf.StartI[iiaT] + 1
+                intOPs[iT][iiT, 4] = 0.0
+            elseif sorted_indices[1] == wf.nOP
+                # Closest is last OP (possible)
+                intOPs[iT][iiT, 1] = wf.StartI[iiaT] + wf.nOP - 2
+                intOPs[iT][iiT, 2] = 0.0
+                intOPs[iT][iiT, 3] = wf.StartI[iiaT] + wf.nOP - 1
+                intOPs[iT][iiT, 4] = 1.0
+            else
+                # Use two closest OPs for interpolation
+                indOP1 = wf.StartI[iiaT] - 1 + sorted_indices[1]
+                indOP2 = wf.StartI[iiaT] - 1 + sorted_indices[2]
+
+                a_x = wf.States_OP[indOP1, 1]
+                a_y = wf.States_OP[indOP1, 2]
+                b_x = wf.States_OP[indOP2, 1]
+                b_y = wf.States_OP[indOP2, 2]
+                c_x = wf.posBase[iT, 1]
+                c_y = wf.posBase[iT, 2]
+
+                ab_x = b_x - a_x
+                ab_y = b_y - a_y
+                ac_x = c_x - a_x
+                ac_y = c_y - a_y
+                
+                d = (ab_x * ac_x + ab_y * ac_y) / (ab_x * ab_x + ab_y * ab_y)
+                d = clamp(d, 0.0, 1.0)
+
+                r1 = 1.0 - d
+                r2 = d
+
+                intOPs[iT][iiT, 1] = indOP1
+                intOPs[iT][iiT, 2] = r1
+                intOPs[iT][iiT, 3] = indOP2
+                intOPs[iT][iiT, 4] = r2
+            end
+        end
+    end
+
+    return intOPs
+end
+
+"""
     setUpTmpWFAndRun(set::Settings, wf::WindFarm, 
                      floris::Floris, wind::Wind) --> (Matrix, WindFarm)
 
@@ -636,10 +746,190 @@ The function supports optional wind field interpolation via coefficient matrices
     return M, wf
 end
 
+"""
+    setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Settings, floris::Floris, wind::Wind,
+                      iTWFState_buffer::Vector{Float64}, tmp_Tpos_buffer::Matrix{Float64}, 
+                      tmp_WF_buffer::Matrix{Float64}, tmp_Tst_buffer::Matrix{Float64},
+                      dists_buffer::Vector{Float64}, plot_WF_buffer::Matrix{Float64}, 
+                      plot_OP_buffer::Matrix{Float64}) -> (Matrix{Float64}, WindFarm)
+
+Non-allocating version of [`setUpTmpWFAndRun`](@ref) that uses pre-allocated buffers.
+
+This function performs the same calculations as `setUpTmpWFAndRun` but avoids memory allocations
+by reusing provided buffer arrays. This is particularly important for parallel execution and
+performance-critical loops where garbage collection overhead needs to be minimized.
+
+# Arguments
+- `M_buffer::Matrix{Float64}`: Pre-allocated buffer for results matrix (size: nT × 3)
+- `wf::WindFarm`: Wind farm object containing turbine data
+- `set::Settings`: Settings object containing simulation parameters
+- `floris::Floris`: FLORIS model parameters for wake calculations
+- `wind::Wind`: Wind field configuration
+- `iTWFState_buffer::Vector{Float64}`: Buffer for turbine wind field state
+- `tmp_Tpos_buffer::Matrix{Float64}`: Buffer for temporary turbine positions
+- `tmp_WF_buffer::Matrix{Float64}`: Buffer for temporary wind field states
+- `tmp_Tst_buffer::Matrix{Float64}`: Buffer for temporary turbine states
+- `dists_buffer::Vector{Float64}`: Buffer for distance calculations
+- `plot_WF_buffer::Matrix{Float64}`: Buffer for plotting wind field data
+- `plot_OP_buffer::Matrix{Float64}`: Buffer for plotting operating point data
+
+# Returns
+- `M::Matrix{Float64}`: Same as the input `M_buffer`, filled with results
+- `wf::WindFarm`: Modified wind farm object with updated internal state
+
+# Performance Notes
+- Uses in-place operations to minimize memory allocations
+- Buffers must be pre-sized correctly for the specific wind farm configuration
+- Thread-safe when each thread uses its own set of buffers
+"""
+function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Settings, floris::Floris, wind::Wind,
+                           iTWFState_buffer::Vector{Float64}, tmp_Tpos_buffer::Matrix{Float64}, 
+                           tmp_WF_buffer::Matrix{Float64}, tmp_Tst_buffer::Matrix{Float64},
+                           dists_buffer::Vector{Float64}, plot_WF_buffer::Matrix{Float64}, 
+                           plot_OP_buffer::Matrix{Float64})
+    # Reuse the provided M_buffer instead of allocating new
+    M_buffer .= 0.0  # Clear the buffer
+    wf.Weight = Vector{Vector{Float64}}(undef,wf.nT)
+    wf.red_arr = ones(wf.nT,wf.nT)
+
+    for iT in 1:wf.nT
+        # Reuse iTWFState_buffer instead of allocating
+        iTWFState_buffer .= wf.States_WF[wf.StartI[iT], :]
+
+        if hasfield(typeof(wf), :C_Vel)
+            iTWFState_buffer[1] = dot(wf.C_Vel[iT, :],wf.States_WF[:, 1])
+        end
+
+        if hasfield(typeof(wf), :C_Dir)
+            iTWFState_buffer[2] = dot(wf.C_Dir[iT, :],wf.States_WF[:, 2])
+        end
+
+        if isempty(wf.dep[iT])
+            # Single turbine case
+            T_red_arr, _, _ = runFLORIS(
+                set,
+                (wf.posBase[iT,:] +wf.posNac[iT,:])',
+                iTWFState_buffer',
+               wf.States_T[wf.StartI[iT], :]',
+               wf.D[iT],
+                floris,
+                wind.shear
+            )
+            M_buffer[iT, :] = [T_red_arr, 0, T_red_arr * wf.States_WF[wf.StartI[iT], 1]]
+            wf.red_arr[iT, iT] = T_red_arr
+            continue
+        end
+
+        # Multi-turbine setup using pre-allocated buffers
+        tmp_nT = length(wf.dep[iT]) + 1
+
+        # Reuse buffers instead of repeat operations
+        for row in 1:tmp_nT
+            tmp_Tpos_buffer[row, :] = wf.posBase[iT,:]' + wf.posNac[iT,:]'
+            tmp_WF_buffer[row, :] = iTWFState_buffer'
+            tmp_Tst_buffer[row, :] = (wf.States_T[wf.StartI[iT], :])'
+        end
+
+        tmp_D = if wf.D[end] > 0
+            vcat(wf.D[wf.dep[iT]],wf.D[iT])
+        else
+           wf.D
+        end
+
+        for iiT in 1:(tmp_nT - 1)
+            OP1_i = Int(wf.intOPs[iT][iiT, 1])  # Index OP 1
+            OP1_r = wf.intOPs[iT][iiT, 2]       # Ratio OP 1
+            OP2_i = Int(wf.intOPs[iT][iiT, 3])  # Index OP 2
+            OP2_r = wf.intOPs[iT][iiT, 4]       # Ratio OP 2
+
+            OPi_l = OP1_r * wf.States_OP[OP1_i, :] + OP2_r * wf.States_OP[OP2_i, :]
+            tmp_Tpos_buffer[iiT, :] = OPi_l[1:3]
+            tmp_Tst_buffer[iiT, :] = OP1_r *wf.States_T[OP1_i, :] + OP2_r *wf.States_T[OP2_i, :]
+            tmp_WF_buffer[iiT, :]  = OP1_r *wf.States_WF[OP1_i, :] + OP2_r *wf.States_WF[OP2_i, :]
+
+            si = wf.StartI[wf.dep[iT][iiT]]
+
+            if hasfield(typeof(wf), :C_Vel)
+                C_weights = wf.C_Vel[iT, si:(si + wf.nOP - 1)]
+                C_weights ./= sum(C_weights)
+                tmp_WF_buffer[iiT, 1] = dot(C_weights, wf.States_WF[si:si + wf.nOP - 1, 1])
+            end
+            if hasfield(typeof(wf), :C_Dir)
+                C_weights = wf.C_Dir[iT, si:(si + wf.nOP - 1)]
+                C_weights ./= sum(C_weights)
+                tmp_WF_buffer[iiT, 2] = dot(C_weights, wf.States_WF[si:si + wf.nOP - 1, 2])
+            end
+
+            tmp_phi = size(tmp_WF_buffer, 2) == 4 ? angSOWFA2world(tmp_WF_buffer[iiT, 4]) : angSOWFA2world(tmp_WF_buffer[iiT, 2])
+
+            tmp_Tpos_buffer[iiT, 1] -= cos(tmp_phi) * OPi_l[4] - sin(tmp_phi) * OPi_l[5]
+            tmp_Tpos_buffer[iiT, 2] -= sin(tmp_phi) * OPi_l[4] + cos(tmp_phi) * OPi_l[5]
+            tmp_Tpos_buffer[iiT, 3] -= OPi_l[6]
+        end
+
+        # Run FLORIS using the buffer views
+        tmp_Tpos_view = @view tmp_Tpos_buffer[1:tmp_nT, :]
+        tmp_WF_view = @view tmp_WF_buffer[1:tmp_nT, :]
+        tmp_Tst_view = @view tmp_Tst_buffer[1:tmp_nT, :]
+        T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, wind.shear)
+
+        T_red = prod(T_red_arr)
+        wf.red_arr[iT, vcat(wf.dep[iT], iT)] = T_red_arr
+        T_addedTI = sqrt(sum(T_aTI_arr .^ 2))
+        wf.Weight[iT] = T_weight
+
+        if wf.D[end] <= 0
+            # Reuse buffers for distance and plotting calculations
+            dists_view = @view dists_buffer[1:(tmp_nT - 1)]
+            plot_WF_view = @view plot_WF_buffer[1:(tmp_nT - 1), :]
+            plot_OP_view = @view plot_OP_buffer[1:(tmp_nT - 1), :]
+            
+            dists_view .= 0.0
+            plot_WF_view .= 0.0
+            plot_OP_view .= 0.0
+            
+            for iiT in 1:(tmp_nT - 1)
+                OP1_i_f, OP1_r, OP2_i_f, OP2_r = wf.intOPs[iT][iiT, :]
+                OP1_i = Int(round(OP1_i_f))
+                OP2_i = Int(round(OP2_i_f))
+                OPi_l = OP1_r * wf.States_OP[OP1_i, :] + OP2_r * wf.States_OP[OP2_i, :]
+                plot_OP_view[iiT, :] = OPi_l[1:2]
+                plot_WF_view[iiT, :] = OP1_r * wf.States_WF[OP1_i, :] + OP2_r * wf.States_WF[OP2_i, :]
+                dists_view[iiT] = norm(OPi_l[1:2] .- wf.posBase[iT,1:2])
+            end
+
+            I = sortperm(dists_view)
+            if length(I) == 1
+                Ufree = plot_WF_view[I[1], 1]
+                T_Ueff = T_red * Ufree
+            else
+                a = plot_OP_view[I[1], :]'
+                b = plot_OP_view[I[2], :]'
+                c =wf.posBase[iT, 1:2]'
+                d = clamp((dot(b - a, c - a)) / dot(b - a, b - a), 0.0, 1.0)
+                r1, r2 = 1.0 - d, d
+                Ufree = r1 * plot_WF_view[I[1], 1] + r2 * plot_WF_view[I[2], 1]
+                T_Ueff = T_red * Ufree
+            end
+        end
+
+        M_buffer[iT, :] = [T_red, T_addedTI, T_Ueff]
+
+        wS = sum(wf.Weight[iT])
+        if wS > 0
+           wf.Weight[iT] =wf.Weight[iT] ./ wS
+        else
+           wf.Weight[iT] .= 0.0
+        end
+    end
+
+    return M_buffer, wf
+end
+
 
 """
-    runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
-                vis::Vis, floridyn::FloriDyn, floris::Floris) -> (WindFarm, DataFrame, Matrix)
+    runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, vis::Vis,
+                floridyn::FloriDyn, floris::Floris, pff=nothing) -> (WindFarm, DataFrame, Matrix)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
@@ -653,6 +943,11 @@ Main entry point for the FLORIDyn closed-loop simulation.
 - `vis::Vis`: Visualization settings controlling online plotting and animation. See: [`Vis`](@ref)
 - `floridyn::FloriDyn`: Parameters specific to the FLORIDyn model. See: [`FloriDyn`](@ref)
 - `floris::Floris`: Parameters specific to the FLORIS model. See: [`Floris`](@ref)
+- `pff`: Optional remote plotting function for intermediate simulation results. When provided, this function 
+  is called remotely (using `@spawnat 2`) to plot flow field visualization on a separate worker process.
+  The function should accept parameters `(wf, X, Y, Z, vis, t_rel; msr=1)` where `wf` is the wind farm state,
+  `X`, `Y`, `Z` are flow field coordinates and velocities, `vis` contains visualization settings, and `t_rel` 
+  is the relative simulation time. Defaults to `nothing` for local plotting.
 
 # Returns
 A tuple `(wf, md, mi)` containing:
@@ -673,7 +968,7 @@ applying control strategies and updating turbine states over time.
 
 """
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
-                          vis::Vis, floridyn::FloriDyn, floris::Floris)
+                          vis::Vis, floridyn::FloriDyn, floris::Floris, pff=nothing)
     nT      = wf.nT
     sim_steps    = sim.n_sim_steps
     ma       = zeros(sim_steps * nT, 6)
@@ -725,8 +1020,14 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         if vis.online
             t_rel = sim_time-sim.start_time
             if mod(t_rel, vis.up_int) == 0
-                Z, X, Y = calcFlowField(set, wf, wind, floris)
-                plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel; msr=1)
+                Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+                if isnothing(pff)
+                    plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel; msr=1)
+                    plt.pause(0.01)
+                else
+                    # @info "time: $t_rel, plotting with pff"
+                    @spawnat 2 pff(wf, X, Y, Z, vis, t_rel; msr=1)
+                end
             end
         end
 

@@ -4,14 +4,10 @@
 # MainFLORIDyn Center-Line model
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
-tic()
-using FLORIDyn, TerminalPager, ControlPlots
-
-settings_file = "data/2021_9T_Data.yaml"
-vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
+using FLORIDyn, TerminalPager, DistributedNext, ControlPlots
 
 # PLT options:
-# PLT=1: Velocity reduction plot (if not using online visualization)
+# PLT=1: Velocity reduction plot
 # PLT=2: Added turbulence plot  
 # PLT=3: Wind speed plot
 # PLT=4: Measurements plot (separated subplots)
@@ -19,82 +15,76 @@ vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
 # PLT=6: Velocity reduction plot with online visualization
 # PLT=7: Create videos from saved frames
 if !  @isdefined PLT; PLT=1; end
+if PLT == 6; NEW_PLT = 1; else NEW_PLT = PLT; end
+if ! @isdefined LAST_PLT; LAST_PLT=Set(NEW_PLT); end
+
+settings_file = "data/2021_9T_Data.yaml"
+vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
+
+# Automatic parallel/threading setup
+tic()
+include("../src/visualisation/smart_plotting.jl")
+toc()
 
 function get_parameters(vis)
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
-    # create settings struct
-    set = Settings(wind, sim, con)
+    # create settings struct with automatic parallel/threading detection
+    set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
-    wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
+    wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
     return wf, md, set, floris, wind 
 end
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
-# create settings struct
-set = Settings(wind, sim, con)
+# create settings struct with automatic parallel/threading detection
+set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
 # Run initial conditions until no more change happens (wrong comment in original code)
 wf = initSimulation(wf, sim)
-
+@info "Initial conditions done, starting simulation..."
 toc()
-# 0.115 s on Desktop, 0.39 s with MATLAB
-# 0.115 seconds (891.24 k allocations: 368.147 MiB, 10.18% gc time)
-# 0.110 seconds (883.14 k allocations: 272.819 MiB, 9.62% gc time) iterateOPs! allocation free
-# 0.081 seconds (723.31 k allocations: 168.226 MiB, 8.10% gc time) findTurbineGroups allocation free
 
-# @info "Type 'md |> pager' to see the results of the simulation."
-# @info "Type 'q' to exit the pager."
+if NEW_PLT in LAST_PLT
+    # If the new plot was displayed before, close all plots
+    close_all(plt)
+end
 
 if PLT == 1
     vis.online = false
-    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    @time Z, X, Y = calcFlowField(set, wf, wind, floris)
-    plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
+    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+    @time plot_flow_field(wf, X, Y, Z, vis; msr=1, plt)
 elseif PLT == 2
     vis.online = false
-    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    @time Z, X, Y = calcFlowField(set, wf, wind, floris)
-    plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
+    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+    @time plot_flow_field(wf, X, Y, Z, vis; msr=2, plt)
 elseif PLT == 3
     vis.online = false
-    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    @time Z, X, Y = calcFlowField(set, wf, wind, floris)
-    plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
+    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+    @time plot_flow_field(wf, X, Y, Z, vis; msr=3, plt)
 elseif PLT == 4
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    plotMeasurements(plt, wf, md, vis; separated=true)
+    @time plot_measurements(wf, md, vis; separated=true, plt)
 elseif PLT == 5
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    plotMeasurements(plt, wf, md, vis; separated=false)
+    @time plot_measurements(wf, md, vis; separated=false, plt)
 elseif PLT == 6
     vis.online = true
     # Clean up any existing PNG files in video folder before starting
-    if isdir("video")
-        println("Cleaning up existing PNG files in video folder...")
-        video_files = readdir("video")
-        png_files = filter(f -> endswith(f, ".png"), video_files)
-        for file in png_files
-            try
-                rm(joinpath("video", file))
-            catch e
-                @warn "Failed to delete $file: $e"
-            end
-        end
-        if !isempty(png_files)
-            println("Deleted $(length(png_files)) PNG files")
-        end
-    end
-    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    cleanup_video_folder()
+    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 elseif PLT == 7
     # Create videos from saved plot frames
     println("Creating videos from saved plot frames...")
@@ -112,4 +102,5 @@ elseif PLT == 7
         println("No 'video' directory found. Run simulation with vis.save=true to generate frames first.")
     end
 end
+push!(LAST_PLT, NEW_PLT)
 nothing

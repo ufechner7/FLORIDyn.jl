@@ -225,3 +225,4 @@ import FLORIDyn: getYaw
         @test length(result_subset) == 5
     end
 end
+nothing

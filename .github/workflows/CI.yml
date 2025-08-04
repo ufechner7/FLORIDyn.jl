@@ -20,7 +20,7 @@ jobs:
         run: |
           docker run --rm --volume ${{ github.workspace }}:/data fsfe/reuse lint
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }}
+    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - threads:${{ matrix.threads }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     permissions: # needed to allow julia-actions/cache to proactively delete old caches that it has created
@@ -32,11 +32,13 @@ jobs:
         version:
           - '1.11'
           - '1.10'
-          - 'pre'
         os:
           - ubuntu-latest
         arch:
           - x64
+        threads:
+          - '1'
+          - 'auto'
     steps:
       - name: Install matplotlib
         run: if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get install -y python3-matplotlib; fi
@@ -53,6 +55,8 @@ jobs:
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
+        env:
+          JULIA_NUM_THREADS: ${{ matrix.threads }}
       - uses: julia-actions/julia-processcoverage@v1
       - uses: codecov/codecov-action@v5
         with:
@@ -61,11 +65,32 @@ jobs:
     name: Documentation
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    permissions:
+      actions: write
+      contents: read
+      statuses: write
+      pull-requests: write
     steps:
+      - name: Install matplotlib
+        run: sudo apt-get install -y python3-matplotlib
+      - name: Set up FFmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        with:
+          architecture: x64
       - uses: actions/checkout@v4
       - uses: julia-actions/setup-julia@v2
+      - name: Build PyCall
+        run: julia --project=docs/ -e 'ENV["PYTHON"]=""; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); Pkg.build("PyCall")'
+        shell: bash
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
+      - name: Build documentation
+        run: |
+          julia --project=docs/ -e '
+            using Pkg
+            Pkg.develop(PackageSpec(path=pwd()))
+            Pkg.instantiate()'
+          julia --project=docs/ docs/make.jl
       - uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

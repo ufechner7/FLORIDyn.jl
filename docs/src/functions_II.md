@@ -26,13 +26,27 @@ interpolateOPs
 iterateOPs!
 angSOWFA2world
 runFLORIDyn
+run_floridyn
 ```
 
 # Visualization
 ```@docs
 getMeasurements
+create_thread_buffers
+getMeasurementsP
 calcFlowField
 plotFlowField
+plot_flow_field
 plotMeasurements
+plot_measurements
+close_all
+```
+
+# Video Creation
+```@docs
+cleanup_video_folder
+createVideo
+createAllVideos
+natural_sort_key
 ```
 

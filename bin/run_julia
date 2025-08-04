@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Start script for normal use of FLORIDyn
+# Start script for multithreaded, normal use of FLORIDyn
 
 # Install TerminalPager and Timers and Revise and ControlPlots globally, if not yet installed
 julia -e 'using Pkg;
@@ -12,8 +12,18 @@ if ! ("Timers" in globaldependencies()); Pkg.add("Timers"); end;
 if ! ("Revise" in globaldependencies()); Pkg.add("Revise"); end;
 if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
 
-# Run Julia (with single threaded garbage collector) and load Revise and FLORIdyn
+# Run Julia with 8 threads and load FLORIdyn
 # In addition, define the function menu()
-julia --project --gcthreads=1,0 -i -e 'using Revise; using FLORIDyn; function menu(); include("examples/menu.jl"); end'
+julia --project -t 11 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
 
-# 448s for 300 iterations with 1 thread
+# ON DESKTOP Ryzen 7 7850X
+# 82s for 300 iterations with threading=true and parallel=true enabled 5.3x advantage
+# 436s for 300 iterations with threading=false and parallel=false
+# 1.18s single threaded
+# 0.24s multithreaded 
+
+# ON LAPTOP, Ryzen 7840U, performance mode on power
+# 115s on laptop multithreaded 4.0x advantage
+# 516s on laptop single threaded 
+# 1.51s single threaded
+# 0.30s multithreaded

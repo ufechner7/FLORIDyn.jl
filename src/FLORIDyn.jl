@@ -6,14 +6,12 @@ $(DocStringExtensions.README)
 """
 module FLORIDyn
 
-# using ControlPlots
-
 using PrecompileTools: @setup_workload, @compile_workload
 using LaTeXStrings
 import DocStringExtensions
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
-using Statistics, StaticArrays, Pkg
+using Statistics, StaticArrays, Pkg, DistributedNext
 
 export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray
 
@@ -48,9 +46,10 @@ export getYaw
 export discretizeRotor, calcCt, States
 export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimulation
 export runFLORIS, init_states, getUadv
-export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, interpolateOPs, perturbationOfTheWF!, findTurbineGroups
-export getMeasurements, calcFlowField, plotFlowField, plotMeasurements, getLayout, install_examples
-export createVideo, createAllVideos, natural_sort_key
+export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, interpolateOPs, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
+export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, getLayout, install_examples
+export run_floridyn, plot_flow_field, plot_measurements, close_all
+export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
@@ -91,6 +90,8 @@ A mutable struct that holds configuration parameters for the FLORIDyn simulation
 - `cor_turb_mode`
 - `iterate_mode`
 - `control_mode`
+- `parallel::Bool`:  Run plotting in a separate process.
+- `threading::Bool`: Enable threading for parallel computation within a single process
 """
 mutable struct Settings
     vel_mode::VelModel
@@ -102,6 +103,8 @@ mutable struct Settings
     cor_turb_mode
     iterate_mode
     control_mode
+    parallel::Bool
+    threading::Bool
 end
 
 """
@@ -248,6 +251,47 @@ include("controller/controller.jl")
 include("visualisation/calc_flowfield.jl")
 include("visualisation/plot_flowfield.jl")
 include("visualisation/create_video.jl")
+include("visualisation/smart_plotting_ii.jl")
+
+"""
+    run_floridyn(plt, set, wf, wind, sim, con, vis, 
+                 floridyn, floris) -> (WindFarm, DataFrame, Matrix)
+
+Unified function that automatically handles both multi-threading and single-threading modes
+for running FLORIDyn simulations with appropriate plotting callbacks.
+
+# Arguments
+- `plt`: PyPlot instance, usually provided by ControlPlots
+- `set`: Settings object
+- `wf`: WindFarm object
+- `wind`: Wind field object
+- `sim`: Simulation object
+- `con`: Controller object
+- `vis`: Visualization settings
+- `floridyn`: FLORIDyn model object
+- `floris`: FLORIS model object
+
+# Returns
+- Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
+"""
+function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    if Threads.nthreads() > 1 && nprocs() > 1
+        # Multi-threading mode: use remote plotting callback
+        # The rmt_plot_flow_field function should be defined via remote_plotting.jl
+        try
+            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, Main.rmt_plot_flow_field)
+        catch e
+            if isa(e, UndefVarError)
+                error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
+            else
+                rethrow(e)
+            end
+        end
+    else
+        # Single-threading mode: no plotting callback
+        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    end
+end
 
 """
     copy_model_settings()
