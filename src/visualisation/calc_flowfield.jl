@@ -328,7 +328,7 @@ wind_speed_field = mz[:, :, 3]
 function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
     size_mx = size(mx)
     mz = zeros(size_mx[1], size_mx[2], nM)
-    nth = nthreads()+1
+    nth = nthreads()
     
     # Create thread-local buffers using the new function
     buffers = create_thread_buffers(wf, nth)
