@@ -31,6 +31,7 @@ makedocs(;
         "High-Level Functions" => "functions_II.md",
         "Settings" => "settings.md",
         "Video Creation" => "video_creation.md", 
+        "User Guide" => "user_guide.md",
         "Developer notes" => "developer.md",
         "FAQ" => "faq.md"
     ],
