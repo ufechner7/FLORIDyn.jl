@@ -27,19 +27,9 @@ for time in sim.start_time:sim.time_step:sim.end_time
     
     # Calculate wind speed at current time
     # Use the wind velocity function with the current time
-    try
-        # Try to get time-varying wind speed using the velocity model
-        wind_speed_vec = getWindSpeedT(set.vel_mode, wind.vel, [1], time)
-        wind_speed = wind_speed_vec[1]  # Extract first value since we requested turbine 1
-    catch e
-        @warn "Failed to get time-varying wind speed: $e"
-        # Fallback to constant wind speed
-        if hasfield(typeof(wind.vel), :Data)
-            wind_speed = wind.vel.Data
-        else
-            wind_speed = wind.vel  # For constant velocity
-        end
-    end
+    # Try to get time-varying wind speed using the velocity model
+    wind_speed_vec = getWindSpeedT(set.vel_mode, wind.vel, [1], time)
+    wind_speed = wind_speed_vec[1]  # Extract first value since we requested turbine 1
     
     # Store the data
     push!(times, rel_time)
