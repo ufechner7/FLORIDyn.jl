@@ -7,7 +7,7 @@ if Threads.nthreads() > 1
 end
 
 """
-    smart_plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=nothing)
+    plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=nothing)
 
 High-level plotting function that automatically dispatches to either parallel or 
 sequential plotting based on the number of available threads and processes.
@@ -17,15 +17,15 @@ sequential plotting based on the number of available threads and processes.
 - `X`, `Y`, `Z`: Flow field coordinate arrays
 - `vis`: Visualization settings
 - `msr`: Measurement type (1=velocity reduction, 2=turbulence, 3=wind speed)
-- `plt`: Matplotlib pyplot instance (only used in sequential mode)
+- `plt`: Matplotlib PyPlot instance (only used in sequential mode)
 
 # Returns
 - Future object if using parallel execution, nothing otherwise
 """
-function smart_plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=nothing)
+function plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=nothing)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Use parallel plotting with remote worker
-        return @spawnat 2 plot_flow_field(wf, X, Y, Z, vis; msr=msr)
+        return @spawnat 2 rmt_plot_flow_field(wf, X, Y, Z, vis; msr=msr)
     else
         # Use sequential plotting
         if plt === nothing

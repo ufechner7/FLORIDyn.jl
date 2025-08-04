@@ -275,12 +275,12 @@ for running FLORIDyn simulations with appropriate plotting callbacks.
 function smart_runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Multi-threading mode: use remote plotting callback
-        # The plot_flow_field function should be defined via remote_plotting.jl
+        # The rmt_plot_flow_field function should be defined via remote_plotting.jl
         try
-            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, Main.plot_flow_field)
+            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, Main.rmt_plot_flow_field)
         catch e
             if isa(e, UndefVarError)
-                error("plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
+                error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
             else
                 rethrow(e)
             end

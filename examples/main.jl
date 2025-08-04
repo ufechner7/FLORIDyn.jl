@@ -65,17 +65,17 @@ if PLT == 1
     vis.online = false
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
-    @time smart_plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=plt)
+    @time plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=plt)
 elseif PLT == 2
     vis.online = false
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
-    @time smart_plot_flow_field(wf, X, Y, Z, vis; msr=2, plt=plt)
+    @time plot_flow_field(wf, X, Y, Z, vis; msr=2, plt=plt)
 elseif PLT == 3
     vis.online = false
     @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
-    @time smart_plot_flow_field(wf, X, Y, Z, vis; msr=3, plt=plt)
+    @time plot_flow_field(wf, X, Y, Z, vis; msr=3, plt=plt)
 elseif PLT == 4
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)

@@ -10,12 +10,12 @@ function init_plotting()
         @eval @everywhere using FLORIDyn      # Ensure FLORIDyn (including WindFarm) is available on all workers
         
         # Create a completely isolated plt instance for this specific task
-        @everywhere function plot_flow_field(wf, X, Y, Z, vis; msr=3)
+        @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis; msr=3)
             # Create a fresh plt instance just for this task
             local_plt = ControlPlots.plt
             return plotFlowField(local_plt, wf, X, Y, Z, vis; msr=msr)
         end
-        @everywhere function plot_flow_field(wf, X, Y, Z, vis, t_rel; msr=1)
+        @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis, t_rel; msr=1)
             global plot_state
             if abs(t_rel) < 1e-6
                 plot_state = nothing
