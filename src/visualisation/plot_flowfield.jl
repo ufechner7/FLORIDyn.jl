@@ -99,7 +99,7 @@ end
 - This function requires a plotting package like ControlPlots.jl to be loaded and available as `plt`
 """
 function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis::Vis, t=nothing; msr=3)
-    @assert ! isnothing(plt) "plt is nothing line 103 of plot_flowfield.jl"
+    @assert ! isnothing(plt) "plt is nothing line 102 of plot_flowfield.jl"
     # Use unit_test from vis
     use_unit_test = vis.unit_test
     
