@@ -1,6 +1,9 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+# Status:
+# Works fine for one wind turbine, not clear why it doesn't work for a vector of wind turbines.
+
 using ControlPlots, FLORIDyn
 
 settings_file = "data/2021_9T_Data.yaml"
@@ -18,31 +21,28 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 
 # Arrays to store time series data
 times = Float64[]
-wind_speeds = Float64[]
-wind_directions = Float64[]
+wind_directions = Vector{Float64}[]
+turbines=[1]
 
 for time in sim.start_time:sim.time_step:sim.end_time
-    local wind_speed, wind_direction
+    local wind_direction
     rel_time = time - sim.start_time
-    
-    # Calculate wind speed at current time
-    # Use the wind velocity function with the current time
-    # Try to get time-varying wind speed using the velocity model
-    wind_speed_vec = getWindSpeedT(set.vel_mode, wind.vel, [1], time)
-    wind_speed = wind_speed_vec[1]  # Extract first value since we requested turbine 1
     
     # Calculate wind direction at current time
     # Try to get time-varying wind direction using the direction model
-    wind_dir_vec = getWindDirT(set.dir_mode, wind.dir, [1], time)
-    wind_direction = wind_dir_vec[1]  # Extract first value since we requested turbine 1
+    wind_dir_vec = getWindDirT(set.dir_mode, wind.dir, turbines, time)
+    wind_direction = wind_dir_vec  # Extract first value since we requested turbine 1
     
     # Store the data
     push!(times, rel_time)
-    push!(wind_speeds, wind_speed)
     push!(wind_directions, wind_direction)
 end
 
-p = plot(times, wind_directions)
+# Convert vector of vectors to matrix for easier plotting
+wind_dir_matrix = hcat(wind_directions...)  # Transpose to get time × turbines
+wind_dir_matrix = wind_dir_matrix'  # Now it's time × turbines
+
+p = plot(times, wind_dir_matrix[:, 1]; fig="Wind Direction", xlabel="rel_time [s]", ylabel="wind_dir [°]")
 display(p)
 
 nothing
