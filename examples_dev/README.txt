@@ -1,4 +1,4 @@
-The folder mwes, short for for "minimal working examples" is not intended for users, but
+The folder examples_dev contains "minimal working examples" is not intended for users, but
 only for developers.
 
 It provides short code snippets that:
