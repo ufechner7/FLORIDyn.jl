@@ -928,8 +928,8 @@ end
 
 
 """
-    runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
-                vis::Vis, floridyn::FloriDyn, floris::Floris, pff=nothing) -> (WindFarm, DataFrame, Matrix)
+    runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, vis::Vis,
+                floridyn::FloriDyn, floris::Floris, pff=nothing) -> (WindFarm, DataFrame, Matrix)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
