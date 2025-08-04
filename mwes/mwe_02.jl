@@ -1,7 +1,9 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# check if the function getMeasurementsP is type stable
+# Check if the function getMeasurementsP is type stable.
+# The output must NOT contain any RED variables.
+# For performance reasons, the function should be type stable.
 
 using FLORIDyn
 
