@@ -32,7 +32,7 @@ function get_parameters(vis, settings_file)
     return wf, md, set, floris, wind 
 end
 @testset "multithreading" begin
-    @test FLORIDyn.nthreads() > 1
+    @test Threads.nthreads() > 1
     settings_file = "data/2021_9T_Data.yaml"
     vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
     vis.online = false
