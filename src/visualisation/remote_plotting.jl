@@ -8,7 +8,6 @@ function init_plotting()
         @time addprocs(1)
         @eval @everywhere using ControlPlots  # Ensure ControlPlots is available on all workers
         @eval @everywhere using FLORIDyn      # Ensure FLORIDyn (including WindFarm) is available on all workers
-        @eval @everywhere using DataFrames    # Ensure DataFrames are available on all workers
         
         # Create a completely isolated plt instance for this specific task
         @everywhere function plot_flow_field(wf, X, Y, Z, vis; msr=3)
