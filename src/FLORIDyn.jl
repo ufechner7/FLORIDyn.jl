@@ -253,13 +253,14 @@ include("visualisation/plot_flowfield.jl")
 include("visualisation/create_video.jl")
 
 """
-    run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    run_floridyn(plt, set, wf, wind, sim, con, vis, 
+                 floridyn, floris) -> (WindFarm, DataFrame, Matrix)
 
 Unified function that automatically handles both multi-threading and single-threading modes
 for running FLORIDyn simulations with appropriate plotting callbacks.
 
 # Arguments
-- `plt`: PyPlot.jl instance, usually provided by ControlPlots
+- `plt`: PyPlot instance, usually provided by ControlPlots
 - `set`: Settings object
 - `wf`: WindFarm object
 - `wind`: Wind field object
@@ -270,7 +271,7 @@ for running FLORIDyn simulations with appropriate plotting callbacks.
 - `floris`: FLORIS model object
 
 # Returns
-- Tuple (wf, md, mi): WindFarm, measurement data, and model info
+- Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
 """
 function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     if Threads.nthreads() > 1 && nprocs() > 1
