@@ -6,8 +6,7 @@ using DistributedNext, Timers, ControlPlots, FLORIDyn
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=true, save=true, rel_v_min=20.0, up_int = 4)
 
-# Automatic parallel/threading setup
-include("../src/visualisation/smart_plotting.jl")
+@assert Threads.nthreads() == 1 "This script is written for single threaded operation."
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -33,21 +32,9 @@ for time in sim.start_time:sim.time_step:sim.end_time
     wind_speed = wind_speed_vec[1]  # Extract first value since we requested turbine 1
     
     # Calculate wind direction at current time
-    try
-        # Try to get time-varying wind direction using the direction model
-        wind_dir_vec = getWindDirT(set.dir_mode, wind.dir, [1], time)
-        wind_direction = wind_dir_vec[1]  # Extract first value since we requested turbine 1
-    catch e
-        @warn "Failed to get time-varying wind direction: $e"
-        # Fallback to constant wind direction or initial value
-        if hasfield(typeof(wind.dir), :Data)
-            wind_direction = wind.dir.Data[1, 2]  # First direction value from data
-        elseif hasfield(typeof(wind.dir), :Init)
-            wind_direction = wind.dir.Init[1]  # Initial direction for turbine 1
-        else
-            wind_direction = 0.0  # Default fallback
-        end
-    end
+    # Try to get time-varying wind direction using the direction model
+    wind_dir_vec = getWindDirT(set.dir_mode, wind.dir, [1], time)
+    wind_direction = wind_dir_vec[1]  # Extract first value since we requested turbine 1
     
     # Store the data
     push!(times, rel_time)
