@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Status:
-# Works fine for one wind turbine, not clear why it doesn't work for a vector of wind turbines.
+# Works fine for one to nine wind turbines, not clear how to plot more wind turbines.
 
 using ControlPlots, FLORIDyn
 
