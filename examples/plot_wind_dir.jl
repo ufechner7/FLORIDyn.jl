@@ -20,9 +20,10 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 # Arrays to store time series data
 times = Float64[]
 wind_speeds = Float64[]
+wind_directions = Float64[]
 
 for time in sim.start_time:sim.time_step:sim.end_time
-    local wind_speed
+    local wind_speed, wind_direction
     rel_time = time - sim.start_time
     
     # Calculate wind speed at current time
@@ -31,12 +32,30 @@ for time in sim.start_time:sim.time_step:sim.end_time
     wind_speed_vec = getWindSpeedT(set.vel_mode, wind.vel, [1], time)
     wind_speed = wind_speed_vec[1]  # Extract first value since we requested turbine 1
     
+    # Calculate wind direction at current time
+    try
+        # Try to get time-varying wind direction using the direction model
+        wind_dir_vec = getWindDirT(set.dir_mode, wind.dir, [1], time)
+        wind_direction = wind_dir_vec[1]  # Extract first value since we requested turbine 1
+    catch e
+        @warn "Failed to get time-varying wind direction: $e"
+        # Fallback to constant wind direction or initial value
+        if hasfield(typeof(wind.dir), :Data)
+            wind_direction = wind.dir.Data[1, 2]  # First direction value from data
+        elseif hasfield(typeof(wind.dir), :Init)
+            wind_direction = wind.dir.Init[1]  # Initial direction for turbine 1
+        else
+            wind_direction = 0.0  # Default fallback
+        end
+    end
+    
     # Store the data
     push!(times, rel_time)
     push!(wind_speeds, wind_speed)
-    
-    println("Time: $(rel_time)s, Wind Speed: $(round(wind_speed, digits=2)) m/s")
+    push!(wind_directions, wind_direction)
 end
-# plot(times, wind_speeds)
+
+p = plot(times, wind_directions)
+display(p)
 
 nothing
