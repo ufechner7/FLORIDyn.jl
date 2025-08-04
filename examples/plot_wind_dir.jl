@@ -22,7 +22,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 # Arrays to store time series data
 times = Float64[]
 wind_directions = Vector{Float64}[]
-turbines=[1,2]
+turbines = 1:min(9, wf.nT)  # Use actual number of turbines, max 9
 
 for time in sim.start_time:sim.time_step:sim.end_time
     local wind_direction
@@ -31,7 +31,7 @@ for time in sim.start_time:sim.time_step:sim.end_time
     # Calculate wind direction at current time
     # Try to get time-varying wind direction using the direction model
     wind_dir_vec = getWindDirT(set.dir_mode, wind.dir, turbines, time)
-    wind_direction = wind_dir_vec  # Extract first value since we requested turbine 1
+    wind_direction = wind_dir_vec  # Vector for all requested turbines
     
     # Store the data
     push!(times, rel_time)
@@ -42,7 +42,13 @@ end
 wind_dir_matrix = hcat(wind_directions...)  # Transpose to get time × turbines
 wind_dir_matrix = wind_dir_matrix'  # Now it's time × turbines
 
-p = plotx(times, wind_dir_matrix[:, 1], wind_dir_matrix[:, 2]; fig="Wind Direction", xlabel="rel_time [s]", ylabels=["dir_t1 [°]", "dir_t2 [°]"])
+# Create dynamic plot arguments based on number of turbines
+n_turbines = length(turbines)
+plot_data = [wind_dir_matrix[:, i] for i in 1:n_turbines]
+turbine_labels = ["dir_t$i [°]" for i in turbines]
+
+# Plot with dynamic number of turbines
+p = plotx(times, plot_data...; fig="Wind Direction", xlabel="rel_time [s]", ylabels=turbine_labels, ysize = 10)
 display(p)
 
 nothing
