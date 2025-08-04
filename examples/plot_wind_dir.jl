@@ -22,7 +22,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 # Arrays to store time series data
 times = Float64[]
 wind_directions = Vector{Float64}[]
-turbines=[1]
+turbines=[1,2]
 
 for time in sim.start_time:sim.time_step:sim.end_time
     local wind_direction
@@ -42,7 +42,7 @@ end
 wind_dir_matrix = hcat(wind_directions...)  # Transpose to get time × turbines
 wind_dir_matrix = wind_dir_matrix'  # Now it's time × turbines
 
-p = plot(times, wind_dir_matrix[:, 1]; fig="Wind Direction", xlabel="rel_time [s]", ylabel="wind_dir [°]")
+p = plot(times, wind_dir_matrix[:, 2]; fig="Wind Direction", xlabel="rel_time [s]", ylabel="wind_dir [°]")
 display(p)
 
 nothing
