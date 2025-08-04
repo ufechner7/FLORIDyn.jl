@@ -430,7 +430,6 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
         plt.xlim(max(timeFDyn[1], 0), timeFDyn[end])
         plt.xlabel("Time [s]")
         plt.ylabel("Foreign Reduction [%]")
-        # println("Foreign reduction line plot created successfully")
     end
     if vis.unit_test
         plt.pause(1.0)
