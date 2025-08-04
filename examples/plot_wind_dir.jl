@@ -17,4 +17,9 @@ set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
+for time in sim.start_time:sim.time_step:sim.end_time
+    rel_time = time - sim.start_time
+    @info rel_time
+end
+
 nothing
