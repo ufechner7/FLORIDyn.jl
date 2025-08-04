@@ -64,6 +64,22 @@ function plot_measurements(wf, md, vis; separated=true, plt=nothing)
     end
 end
 
+"""
+    close_all(plt)
+
+Close all matplotlib figure windows.
+
+This function automatically dispatches to either parallel or sequential plotting
+based on the number of available threads and processes.
+
+# Arguments
+- `plt`: Matplotlib PyPlot instance (only used in sequential mode)
+
+# Description
+When running with multiple threads and processes, it uses remote plotting 
+capabilities to close all figures on the remote worker. Otherwise, it directly
+calls `plt.close("all")` to close all figures in the current process.
+"""
 function close_all(plt)
     if Threads.nthreads() > 1 && nprocs() > 1
         @spawnat 2 Main.rmt_close_all()

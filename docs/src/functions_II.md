@@ -36,6 +36,9 @@ create_thread_buffers
 getMeasurementsP
 calcFlowField
 plotFlowField
+plot_flow_field
 plotMeasurements
+plot_measurements
+close_all
 ```
 
