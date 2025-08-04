@@ -29,7 +29,7 @@ function init_plotting()
             local_plt = ControlPlots.plt
             return plotMeasurements(local_plt, wf, md, vis; separated=separated)
         end
-        @everywhere function close_all()
+        @everywhere function rmt_close_all()
             local_plt = ControlPlots.plt
             return local_plt.close("all")
         end         

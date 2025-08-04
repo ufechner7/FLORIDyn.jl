@@ -169,7 +169,7 @@ using FLORIDyn, Test, ControlPlots, Statistics
         # @test mean(md.ForeignReduction)    ≈ 98.54434468415639 # Matlab: 98.
         sleep(1)
         if Threads.nthreads() > 1 && nprocs() > 1
-            @spawnat 2 close_all()
+            @spawnat 2 rmt_close_all()
         else
             plt.close("all")
         end

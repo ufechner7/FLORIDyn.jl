@@ -54,11 +54,7 @@ toc()
 
 if NEW_PLT in LAST_PLT
     # If the last plot was displayed before, close all plots
-    if Threads.nthreads() > 1 && nprocs() > 1
-        @spawnat 2 close_all()
-    else
-        plt.close("all")
-    end
+    close_all()
 end
 
 if PLT == 1
