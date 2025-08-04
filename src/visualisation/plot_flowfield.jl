@@ -412,7 +412,6 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
             plt.tight_layout()   
             fig.subplots_adjust(wspace=0.295)
         end
-        # println("Foreign reduction plot created successfully")
     else
         fig = plt.figure(title*" - Line Plot")
         colors = plt.get_cmap("inferno")(range(0, 1, length=wf.nT))
