@@ -24,7 +24,7 @@ function init_plotting()
             plot_state = plotFlowField(plot_state, local_plt, wf, X, Y, Z, vis, t_rel; msr=msr)
             nothing
         end
-        @everywhere function plot_measurements(wf, md, vis; separated)
+        @everywhere function rmt_plot_measurements(wf, md, vis; separated)
             # Create a fresh plt instance just for this task
             local_plt = ControlPlots.plt
             return plotMeasurements(local_plt, wf, md, vis; separated=separated)

@@ -21,6 +21,6 @@ wf = initSimulation(wf, sim)
 wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
 
 # Use smart plotting function for automatic dispatch
-@time smart_plot_measurements(wf, md, vis; separated=true, plt=plt)
+@time plot_measurements(wf, md, vis; separated=true, plt=plt)
 
 nothing

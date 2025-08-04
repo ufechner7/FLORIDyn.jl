@@ -79,11 +79,11 @@ elseif PLT == 3
 elseif PLT == 4
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    @time smart_plot_measurements(wf, md, vis; separated=true, plt=plt)
+    @time plot_measurements(wf, md, vis; separated=true, plt=plt)
 elseif PLT == 5
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    @time smart_plot_measurements(wf, md, vis; separated=false, plt=plt)
+    @time plot_measurements(wf, md, vis; separated=false, plt=plt)
 elseif PLT == 6
     vis.online = true
     # Clean up any existing PNG files in video folder before starting

@@ -36,7 +36,7 @@ function smart_plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=nothing)
 end
 
 """
-    smart_plot_measurements(wf, md, vis; separated=true, plt=nothing)
+    plot_measurements(wf, md, vis; separated=true, plt=nothing)
 
 High-level measurements plotting function that automatically dispatches to either 
 parallel or sequential plotting based on the number of available threads and processes.
@@ -46,15 +46,15 @@ parallel or sequential plotting based on the number of available threads and pro
 - `md`: Measurement data
 - `vis`: Visualization settings
 - `separated`: Whether to use separated subplots
-- `plt`: Matplotlib pyplot instance (only used in sequential mode)
+- `plt`: Matplotlib PyPlot instance (only used in sequential mode)
 
 # Returns
 - Future object if using parallel execution, nothing otherwise
 """
-function smart_plot_measurements(wf, md, vis; separated=true, plt=nothing)
+function plot_measurements(wf, md, vis; separated=true, plt=nothing)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Use parallel plotting with remote worker
-        return @spawnat 2 plot_measurements(wf, md, vis; separated=separated)
+        return @spawnat 2 rmt_plot_measurements(wf, md, vis; separated=separated)
     else
         # Use sequential plotting
         if plt === nothing

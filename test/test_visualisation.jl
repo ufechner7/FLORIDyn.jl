@@ -602,18 +602,18 @@ end
         
         # Add try-catch to detect potential segfault locations
         try
-            smart_plot_measurements(wf, md, vis; separated=true, plt=ControlPlots.plt)
-            println("✓ smart_plot_measurements with separated=true completed successfully")
+            plot_measurements(wf, md, vis; separated=true, plt=ControlPlots.plt)
+            println("✓ plot_measurements with separated=true completed successfully")
         catch e
-            @error "smart_plot_measurements with separated=true failed: $e"
+            @error "plot_measurements with separated=true failed: $e"
             rethrow(e)
         end
         
         try
-            smart_plot_measurements(wf, md, vis; plt=ControlPlots.plt)
-            println("✓ smart_plot_measurements with separated=false completed successfully")
+            plot_measurements(wf, md, vis; plt=ControlPlots.plt)
+            println("✓ plot_measurements with separated=false completed successfully")
         catch e
-            @error "smart_plot_measurements with separated=false failed: $e"
+            @error "plot_measurements with separated=false failed: $e"
             rethrow(e)
         end
     end
