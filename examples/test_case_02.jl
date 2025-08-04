@@ -23,7 +23,7 @@ sim.n_sim_steps = 195
 wf = initSimulation(wf, sim)
 
 vis.online = false
-@time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+@time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
 
 # Single line plotting - automatically dispatches based on available resources

@@ -31,7 +31,7 @@ wf = initSimulation(wf, sim)
 toc()
 
 vis.online = false
-@time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+@time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
 @time plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=plt)
 nothing

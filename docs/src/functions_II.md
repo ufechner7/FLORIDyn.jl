@@ -26,6 +26,7 @@ interpolateOPs
 iterateOPs!
 angSOWFA2world
 runFLORIDyn
+run_floridyn
 ```
 
 # Visualization

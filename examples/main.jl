@@ -35,7 +35,7 @@ function get_parameters(vis)
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
-    wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
+    wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
     return wf, md, set, floris, wind 
 end
 
@@ -59,17 +59,17 @@ end
 
 if PLT == 1
     vis.online = false
-    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     @time plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=plt)
 elseif PLT == 2
     vis.online = false
-    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     @time plot_flow_field(wf, X, Y, Z, vis; msr=2, plt=plt)
 elseif PLT == 3
     vis.online = false
-    @time wf, md, mi = runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
     @time plot_flow_field(wf, X, Y, Z, vis; msr=3, plt=plt)
 elseif PLT == 4
