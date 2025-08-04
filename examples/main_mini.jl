@@ -4,7 +4,7 @@
 # MainFLORIDyn Center-Line model
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 
-# Minimal example
+# Minimal example of how to run a simulation using FLORIDyn.jl
 using Timers
 tic()
 using FLORIDyn, TerminalPager, DistributedNext, ControlPlots
