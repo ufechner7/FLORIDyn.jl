@@ -48,7 +48,7 @@ export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimul
 export runFLORIS, init_states, getUadv
 export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, interpolateOPs, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, getLayout, install_examples
-export run_floridyn
+export run_floridyn, close_all
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
 
 # global variables
@@ -251,6 +251,7 @@ include("controller/controller.jl")
 include("visualisation/calc_flowfield.jl")
 include("visualisation/plot_flowfield.jl")
 include("visualisation/create_video.jl")
+include("visualisation/smart_plotting_ii.jl")
 
 """
     run_floridyn(plt, set, wf, wind, sim, con, vis, 

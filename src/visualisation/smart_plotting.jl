@@ -63,11 +63,3 @@ function plot_measurements(wf, md, vis; separated=true, plt=nothing)
         return plotMeasurements(plt, wf, md, vis; separated=separated)
     end
 end
-
-function close_all()
-    if Threads.nthreads() > 1 && nprocs() > 1
-        @spawnat 2 rmt_close_all()
-    else
-        plt.close("all")
-    end
-end

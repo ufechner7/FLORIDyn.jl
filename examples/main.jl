@@ -54,7 +54,7 @@ toc()
 
 if NEW_PLT in LAST_PLT
     # If the new plot was displayed before, close all plots
-    close_all()
+    close_all(plt)
 end
 
 if PLT == 1
