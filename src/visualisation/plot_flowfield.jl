@@ -277,7 +277,6 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         end
         
         if !use_unit_test
-            # print(".")
         else
             # In unit test mode, pause to show the plot then close the figure
             plt.pause(1.0)
