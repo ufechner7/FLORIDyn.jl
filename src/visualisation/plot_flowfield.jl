@@ -343,11 +343,11 @@ Plot foreign reduction measurements from FLORIDyn simulation data.
 
 # Arguments
 - `plt`: Plotting package (e.g., ControlPlots)
-- `wf::WindFarm`: Wind farm object with field `nT` (number of turbines)
+- `wf::WindFarm`: Wind farm object with field `nT` (number of turbines). See [`WindFarm`](@ref)
 - `md::DataFrame`: Measurements DataFrame containing time series data with columns:
   - `Time`: Time series data [s]
   - `ForeignReduction`: Foreign reduction percentage data [%]
-- `vis::Vis`: Visualization settings including unit_test parameter
+- `vis::Vis`: Visualization settings including unit_test parameter. See [`Vis`](@ref)
 - `separated::Bool`: Whether to use separated subplot layout (default: false)
 
 # Returns
