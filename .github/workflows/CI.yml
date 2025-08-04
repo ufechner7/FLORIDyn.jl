@@ -89,21 +89,8 @@ jobs:
           julia --project=docs/ -e '
             using Pkg
             Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()
-            using Documenter, FLORIDyn
-            makedocs(
-              sitename="FLORIDyn.jl",
-              pages=[
-                "Home" => "index.md",
-                "Settings" => "settings.md",
-                "Types" => "types.md",
-                "Functions" => "functions.md",
-              ],
-              checkdocs=:exports,
-              format=Documenter.HTML(
-                prettyurls=get(ENV, "CI", "false") == "true"
-              )
-            )'
+            Pkg.instantiate()'
+          julia --project=docs/ docs/make.jl
       - uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
