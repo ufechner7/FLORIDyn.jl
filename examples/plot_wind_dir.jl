@@ -42,7 +42,7 @@ end
 wind_dir_matrix = hcat(wind_directions...)  # Transpose to get time × turbines
 wind_dir_matrix = wind_dir_matrix'  # Now it's time × turbines
 
-p = plot(times, wind_dir_matrix[:, 1], wind_dir_matrix[:, 2]; fig="Wind Direction", xlabel="rel_time [s]", ylabels=["dir_t1 [°]", "dir_t2 [°]"])
+p = plotx(times, wind_dir_matrix[:, 1], wind_dir_matrix[:, 2]; fig="Wind Direction", xlabel="rel_time [s]", ylabels=["dir_t1 [°]", "dir_t2 [°]"])
 display(p)
 
 nothing
