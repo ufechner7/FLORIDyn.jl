@@ -333,7 +333,6 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
     # Create thread-local buffers using the new function
     buffers = create_thread_buffers(wf, nth)
     
-    # GC.enable(false)
     # Parallel loop using @threads
     @threads :static for iGP in 1:length(mx)
         # Get thread-local buffers
