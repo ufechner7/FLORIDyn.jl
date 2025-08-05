@@ -2,8 +2,8 @@
 
 This page contains information for users of FLORIDyn.jl.
 
-## Installation
-Currently, installation using git is recommended. Later this year, installation as a Julia package will be better tested once the issue [Create a package extension for plotting](https://github.com/ufechner7/FLORIDyn.jl/issues/39) is resolved.
+## Installation of FLORIDyn
+How to install FLORIDyn is explained in the section [Installation](@ref).
 
 ## Launching Julia
 ### Launching Julia in the global environment
