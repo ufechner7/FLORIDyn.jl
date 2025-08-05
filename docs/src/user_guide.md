@@ -66,9 +66,23 @@ Info Packages marked with ⌅ have new versions available but compatibility cons
 ```
 
 #### The advanced way
-It is faster and gives better results if you start Julia using a script. Currently, three scripts are provided:
+It is faster and gives better results if you start Julia using a script. Currently, two user scripts are provided:
 - The script `./bin/run_julia` checks for missing dependencies and starts Julia with 11 threads. Adapt the script such that this number matches the number of fast cores of your CPU.
 - The script `./bin/run_julia2` checks for missing dependencies and starts Julia with one thread.
+
+To make these scripts easier to use, you can create bash aliases. Add the following lines to your `~/.bashrc` file:
+
+```bash
+alias jl='./bin/run_julia'
+alias jl2='./bin/run_julia2'
+```
+
+After adding these aliases, reload your bash configuration:
+```bash
+source ~/.bashrc
+```
+
+Now you can launch Julia with multithreading by simply typing `jl` or with single threading by typing `jl2`.
 
 
 ## Multithreading
