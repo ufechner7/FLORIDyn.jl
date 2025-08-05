@@ -9,7 +9,8 @@ using ControlPlots, FLORIDyn
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=true, save=true, rel_v_min=20.0, up_int = 4)
 
-@assert Threads.nthreads() == 1 "This script is written for single threaded operation."
+@assert Threads.nthreads() == 1 "This script is written for single threaded operation.
+                                  Quit Julia and start it with 'jl2'."
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
