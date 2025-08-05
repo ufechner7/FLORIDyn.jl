@@ -72,7 +72,7 @@ if MULTI
         end
         
         # Collect lines for this subplot
-        local lines_in_subplot = []
+        local lines_in_subplot = Vector{Vector{Float64}}()
         local labels_in_subplot = Vector{String}()
         
         for line in 1:lines
