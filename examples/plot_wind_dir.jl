@@ -49,7 +49,8 @@ plot_data = [wind_dir_matrix[:, i] for i in 1:n_turbines]
 turbine_labels = ["dir_t$i [°]" for i in turbines]
 
 # Plot with dynamic number of turbines
-p = plotx(times, plot_data...; fig="Wind Direction", xlabel="rel_time [s]", ylabels=turbine_labels, ysize = 10)
+p = plotx(times, plot_data...; fig="Wind Direction", xlabel="rel_time [s]", 
+          ylabels=turbine_labels, ysize = 10, bottom=0.02)
 display(p)
 
 nothing
