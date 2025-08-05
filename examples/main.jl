@@ -23,7 +23,7 @@ vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
 
 # Automatic parallel/threading setup
 tic()
-include("../src/visualisation/smart_plotting.jl")
+include("../src/visualisation/remote_plotting.jl")
 toc()
 
 function get_parameters(vis)
