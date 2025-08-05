@@ -104,8 +104,45 @@ Now you can launch Julia with multithreading by simply typing `jl` or with singl
 
 
 ## Multithreading
+Modern CPUs can have many cores. Threading is one way to make to split calculations such that the are calculated
+in parallel on multiple cores. In Julia, the `@threads` macro can be used in front of a for loop to do calculations
+in parallel. This only works if the iterations are independent of each other, it will not work if iteration `n+1`
+depends on results calculated by iteration `n`. Threads - in contrast to processes - share the same memory. If the
+input data is immutable and accessed in a read only way, the threads can use the same input data. Each thread needs
+his own buffer for mutable data. If each thread writes to a unique, non-overlapping portion of an output array, 
+this operation is thread-safe and does not require locks or other synchronization mechanisms.
+
+If the functions that are executed in parallel allocate memory, then the pressure on the garbage collector increases
+with the number of threads. This creates a practical limit for the number of threads that can be used in one process,
+unless the parallel code is allocation free.
+
+In this simulation software, currently only the function [getMeasurementsP](@ref) uses multithreading. It can increase 
+the performance of the simulation with flow field calculation by a factor of four to five.
 
 ## Multitasking
+Running a simulation with online visualization is problematic, because firstly updating the GUI costs time, 
+and secondly the currently used visualization library is not thread safe. Therefore we use a second process for
+visualization. The second process is started at the beginning, which increases the time-to-first-plot by about
+five seconds. The line ` @spawnat 2 Main.rmt_plot_flow_field(wf, X, Y, Z, vis; msr=msr)` calls the remote plotting
+function on the second process and transfers the required data. This is safe and very fast.
 
 ## Running the examples
 
+To run the examples, launch Julia with one of the start scripts and then type `menu()`. You should see:
+```
+julia> menu()
+
+Choose function to execute or `q` to quit: 
+ > flow_field_vel_reduction        = PLT=1; include("main.jl")
+   flow_field_added_turbulence     = PLT=2; include("main.jl")
+   flow_field_eff_wind_speed       = PLT=3; include("main.jl")
+   plot_measurements_              = PLT=4; include("main.jl")
+   plot_measurements_lineplot      = PLT=5; include("main.jl")
+   flow_field_vel_reduction_online = PLT=6; include("main.jl")
+   create_video_from_saved_frames  = PLT=7; include("main.jl")
+   play_videos                     = include("play_video.jl")
+   open_documentation()
+   quit
+```
+or similar. You can execute any of the examples by selecting one of them with the cursor keys and then press 
+<ENTER>.
