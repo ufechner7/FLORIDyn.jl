@@ -6,6 +6,18 @@
 
 using ControlPlots, FLORIDyn
 
+# Dialog to set MULTI variable
+println("Plot wind direction for multiple turbines in one sub-plot?")
+print("Enter 'y' for multiple turbines, 'n' for single turbine [y/N]: ")
+response = readline()
+MULTI = lowercase(strip(response)) in ["y", "yes", "true", "1"]
+
+if MULTI
+    println("Multi-turbine mode selected (up to 9 turbines)")
+else
+    println("Single turbine mode selected")
+end
+
 settings_file = "data/2021_9T_Data.yaml"
 vis = Vis(online=true, save=true, rel_v_min=20.0, up_int = 4)
 
@@ -23,7 +35,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 # Arrays to store time series data
 times = Float64[]
 wind_directions = Vector{Float64}[]
-turbines = 1:min(9, wf.nT)  # Use actual number of turbines, max 9
+turbines = 1:min(9, wf.nT)
 
 for time in sim.start_time:sim.time_step:sim.end_time
     local wind_direction
