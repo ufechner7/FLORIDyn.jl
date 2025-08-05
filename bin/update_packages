@@ -10,5 +10,5 @@ fi
 
 export JULIA_PKG_SERVER_REGISTRY_PREFERENCE=eager
 
-julia -e 'using Pkg; Pkg.update'
-julia --project -e 'using Pkg; Pkg.update'
+julia -e 'using Pkg; Pkg.update()'
+julia --project -e 'using Pkg; Pkg.update()'
