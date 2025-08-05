@@ -103,7 +103,7 @@ Now you can launch Julia with multithreading by simply typing `jl` or with singl
 
 
 ## Multithreading
-Modern CPUs can have many cores. Threading is one way to make to split calculations such that the are calculated
+Modern CPUs can have many cores. Threading is one way to split calculations so that they are calculated
 in parallel on multiple cores. In Julia, the `@threads` macro can be used in front of a for loop to do calculations
 in parallel. This only works if the iterations are independent of each other, it will not work if iteration `n+1`
 depends on results calculated by iteration `n`. Threads - in contrast to processes - share the same memory. If the
