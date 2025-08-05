@@ -57,18 +57,56 @@ wind_dir_matrix = wind_dir_matrix'  # Now it's time × turbines
 
 # Create dynamic plot arguments based on number of turbines
 n_turbines = length(turbines)
-plot_data = [wind_dir_matrix[:, i] for i in 1:n_turbines]
-turbine_labels = ["dir_t$i [°]" for i in turbines]
 
 if MULTI
     rows, lines = get_layout(wf.nT)
+    
+    # Group turbines into subplots based on layout
+    plot_data = []
+    turbine_labels = []
+    subplot_labels = []
+    
+    local turbine_idx = 1
+    for row in 1:rows
+        if turbine_idx > n_turbines
+            break
+        end
+        
+        # Collect lines for this subplot
+        local lines_in_subplot = []
+        local labels_in_subplot = []
+        
+        for line in 1:lines
+            if turbine_idx <= n_turbines
+                push!(lines_in_subplot, wind_dir_matrix[:, turbine_idx])
+                push!(labels_in_subplot, "T$(turbines[turbine_idx])")
+                turbine_idx += 1
+            end
+        end
+        
+        # Add subplot data
+        if length(lines_in_subplot) == 1
+            push!(plot_data, lines_in_subplot[1])
+        else
+            push!(plot_data, lines_in_subplot)
+        end
+        
+        push!(turbine_labels, "Wind Direction [°]")
+        push!(subplot_labels, labels_in_subplot)
+    end
+    
+    # Plot with multiple lines per subplot
+    p = plotx(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
+              fig="Wind Direction", xlabel="rel_time [s]", ysize = 10)
 else
-    rows, lines = wf.nT, 1
+    # Single turbine mode
+    plot_data = [wind_dir_matrix[:, 1]]
+    turbine_labels = ["Wind Direction [°]"]
+    
+    p = plotx(times, plot_data...; fig="Wind Direction", xlabel="rel_time [s]", 
+              ylabels=turbine_labels, ysize = 10)
 end
 
-# Plot with dynamic number of turbines
-p = plotx(times, plot_data...; fig="Wind Direction", xlabel="rel_time [s]", 
-          ylabels=turbine_labels, ysize = 10, bottom=0.02)
 display(p)
 
 nothing
