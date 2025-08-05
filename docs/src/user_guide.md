@@ -146,3 +146,12 @@ Choose function to execute or `q` to quit:
 ```
 or similar. You can execute any of the examples by selecting one of them with the cursor keys and then press 
 <ENTER>.
+
+## Running a custom simulation
+To run your own simulation you need to follow these steps:
+1. Create a copy of an existing YAML file in the data folder. Give it a good name.
+2. Modify the custom YAML file according to your needs, following the comments in the YAML file.
+3. Create a subfolder with the name of the custom YAML file and copy all required CSV files.
+4. Update/ generate the CSV files according to your needs.
+5. Copy the script `main_mini.jl` and adapt it according to your needs.
+6. Run your new script using the command `include("examples/<my_script.jl>")`
