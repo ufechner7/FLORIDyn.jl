@@ -108,7 +108,7 @@ in parallel on multiple cores. In Julia, the `@threads` macro can be used in fro
 in parallel. This only works if the iterations are independent of each other, it will not work if iteration `n+1`
 depends on results calculated by iteration `n`. Threads - in contrast to processes - share the same memory. If the
 input data is immutable and accessed in a read only way, the threads can use the same input data. Each thread needs
-his own buffer for mutable data. If each thread writes to a unique, non-overlapping portion of an output array, 
+its own buffer for mutable data. If each thread writes to a unique, non-overlapping portion of an output array, 
 this operation is thread-safe and does not require locks or other synchronization mechanisms.
 
 If the functions that are executed in parallel allocate memory, then the pressure on the garbage collector increases
