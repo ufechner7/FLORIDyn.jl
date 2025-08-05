@@ -7,7 +7,7 @@
 using ControlPlots, FLORIDyn
 
 # Dialog to set MULTI variable
-println("Plot wind direction for multiple turbines in one sub-plot?")
+println("\033[1mPlot wind direction for multiple turbines?\033[0m")
 print("Enter 'y' for multiple turbines, 'n' for single turbine [y/N]: ")
 response = readline()
 MULTI = lowercase(strip(response)) in ["y", "yes", "true", "1"]
@@ -15,7 +15,7 @@ MULTI = lowercase(strip(response)) in ["y", "yes", "true", "1"]
 if MULTI
     println("Multi-turbine mode selected (up to 9 turbines)")
 else
-    println("Single turbine mode selected")
+    println("Single turbine mode selected.")
 end
 
 settings_file = "data/2021_9T_Data.yaml"
