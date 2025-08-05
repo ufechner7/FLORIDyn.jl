@@ -74,7 +74,7 @@ if MULTI
         
         # Collect lines for this subplot
         local lines_in_subplot = []
-        local labels_in_subplot = []
+        local labels_in_subplot = Vector{String}()
         
         for line in 1:lines
             if turbine_idx <= n_turbines
