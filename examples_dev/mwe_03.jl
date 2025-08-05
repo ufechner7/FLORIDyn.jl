@@ -6,7 +6,7 @@
 using DistributedNext, Timers, ControlPlots, FLORIDyn
 
 tic()
-include("../src/visualisation/remote_plotting.jl") 
+include("../examples/remote_plotting.jl") 
 init_plotting()
 toc()
 
