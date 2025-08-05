@@ -37,6 +37,39 @@ Status `~/.julia/environments/v1.11/Project.toml`
 If there are unused packages in your global environment, then remove them by typing `rm <PACKAGE_NAME>`, if packages are outdated update them with `up`. You can leave the package manager mode by typing `<BACK>` and quit Julia by typing `<CTRL>+<D>`.
 
 ### Launching Julia in the local environment
+#### The standard way
+Launch a terminal in the correct folder, and then type `julia --project`. If you now enter the package manager mode with `]`, you should see:
+```
+(FLORIDyn) pkg> st
+Project FLORIDyn v0.1.0
+Status `~/repos/FLORIDyn.jl/Project.toml`
+  [336ed68f] CSV v0.10.15
+  [a93c6f00] DataFrames v1.7.0
+  [8bb1440f] DelimitedFiles v1.9.1
+  [fab6aee4] DistributedNext v1.1.0
+  [ffbed154] DocStringExtensions v0.9.5
+  [a98d9a8b] Interpolations v0.16.1
+  [033835bb] JLD2 v0.5.15
+  [b964fa9f] LaTeXStrings v1.4.0
+  [d96e819e] Parameters v0.12.3
+⌅ [aea7be01] PrecompileTools v1.2.1
+  [90137ffa] StaticArrays v1.9.14
+  [10745b16] Statistics v1.11.1
+  [7c3b921d] StructMapping v0.2.3
+  [ddb6d928] YAML v0.4.14
+  [37e2e46d] LinearAlgebra v1.11.0
+  [56ddb016] Logging v1.11.0
+  [44cfe95a] Pkg v1.11.0
+  [de0858da] Printf v1.11.0
+  [9a3f8284] Random v1.11.0
+Info Packages marked with ⌅ have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated`
+```
+
+#### The advanced way
+It is faster and gives better results if you start Julia using a script. Currently, three scripts are provided:
+- The script `./bin/run_julia` checks for missing dependencies and starts Julia with 11 threads. Adapt the script such that this number matches the number of fast cores of your CPU.
+- The script `./bin/run_julia2` checks for missing dependencies and starts Julia with one thread.
+
 
 ## Multithreading
 
