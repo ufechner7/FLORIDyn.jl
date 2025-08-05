@@ -42,7 +42,7 @@ Random.randn(rng::FileRNG) = rand(rng)
 rng = FileRNG(randn_vec)
 FLORIDyn.set_rng(rng)
 
-include("../src/visualisation/smart_plotting.jl")
+include("../src/visualisation/remote_plotting.jl")
 
 # Define all available test files
 all_test_files = [

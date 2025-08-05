@@ -251,7 +251,7 @@ include("controller/controller.jl")
 include("visualisation/calc_flowfield.jl")
 include("visualisation/plot_flowfield.jl")
 include("visualisation/create_video.jl")
-include("visualisation/smart_plotting_ii.jl")
+include("visualisation/smart_plotting.jl")
 
 """
     run_floridyn(plt, set, wf, wind, sim, con, vis, 
