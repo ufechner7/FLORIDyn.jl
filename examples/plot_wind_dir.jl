@@ -13,9 +13,9 @@ response = readline()
 MULTI = lowercase(strip(response)) in ["y", "yes", "true", "1"]
 
 if MULTI
-    println("Multi-turbine mode selected (up to 9 turbines)")
+    println("Multi-turbine mode selected, up to 81 turbines.")
 else
-    println("Single turbine mode selected.")
+    println("Single turbine per subplot selected, up to 9 turbines.")
 end
 
 settings_file = "data/2021_9T_Data.yaml"
