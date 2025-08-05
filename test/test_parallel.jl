@@ -48,8 +48,6 @@ end
     end
 end
 @testset "parallel" begin
-    # this is now done in runtests.jl
-    # include("../src/visualisation/remote_plotting.jl") 
     init_plotting()
     @test workers()[1] >= 2
 end
