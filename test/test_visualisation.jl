@@ -470,69 +470,69 @@ end
         end
     end
     
-    @testset "getLayout" begin
+    @testset "get_layout" begin
         @testset "function exists and is callable" begin
             # Test that the function exists and has the right signature
-            @test isa(getLayout, Function)
+            @test isa(get_layout, Function)
             
             # Test that we can get method information
-            methods_list = methods(getLayout)
+            methods_list = methods(get_layout)
             @test length(methods_list) >= 1
             
             # Check that the function is exported
-            @test :getLayout in names(FLORIDyn)
+            @test :get_layout in names(FLORIDyn)
         end
         
         @testset "edge cases" begin
             # Test edge cases
-            @test getLayout(0) == (1, 1)
-            @test getLayout(-1) == (1, 1)
-            @test getLayout(-10) == (1, 1)
+            @test get_layout(0) == (1, 1)
+            @test get_layout(-1) == (1, 1)
+            @test get_layout(-10) == (1, 1)
         end
         
         @testset "small numbers" begin
             # Test specific small values
-            @test getLayout(1) == (1, 1)
-            @test getLayout(2) == (2, 2)
-            @test getLayout(3) == (2, 2)
-            @test getLayout(4) == (2, 2)
+            @test get_layout(1) == (1, 1)
+            @test get_layout(2) == (2, 2)
+            @test get_layout(3) == (2, 2)
+            @test get_layout(4) == (2, 2)
         end
         
         @testset "medium numbers" begin
             # Test medium values
-            @test getLayout(5) == (2, 3)
-            @test getLayout(6) == (2, 3)
-            @test getLayout(7) == (3, 3)
-            @test getLayout(8) == (3, 3)
-            @test getLayout(9) == (3, 3)
-            @test getLayout(10) == (3, 4)
-            @test getLayout(11) == (3, 4)
-            @test getLayout(12) == (3, 4)
+            @test get_layout(5) == (2, 3)
+            @test get_layout(6) == (2, 3)
+            @test get_layout(7) == (3, 3)
+            @test get_layout(8) == (3, 3)
+            @test get_layout(9) == (3, 3)
+            @test get_layout(10) == (3, 4)
+            @test get_layout(11) == (3, 4)
+            @test get_layout(12) == (3, 4)
         end
         
         @testset "larger numbers" begin
             # Test larger values
-            @test getLayout(13) == (4, 4)
-            @test getLayout(14) == (4, 4)
-            @test getLayout(15) == (4, 4)
-            @test getLayout(16) == (4, 4)
+            @test get_layout(13) == (4, 4)
+            @test get_layout(14) == (4, 4)
+            @test get_layout(15) == (4, 4)
+            @test get_layout(16) == (4, 4)
         end
         
         @testset "large numbers - general formula" begin
             # Test the general formula for large numbers
             # For nT > 16: cols = ceil(sqrt(nT)), rows = ceil(nT/cols)
-            @test getLayout(17) == (4, 5)  # cols=ceil(sqrt(17))=5, rows=ceil(17/5)=4
-            @test getLayout(20) == (4, 5)  # cols=ceil(sqrt(20))=5, rows=ceil(20/5)=4
-            @test getLayout(25) == (5, 5)  # cols=ceil(sqrt(25))=5, rows=ceil(25/5)=5
-            @test getLayout(30) == (5, 6)  # cols=ceil(sqrt(30))=6, rows=ceil(30/6)=5
-            @test getLayout(50) == (7, 8)  # cols=ceil(sqrt(50))=8, rows=ceil(50/8)=7
-            @test getLayout(100) == (10, 10)  # cols=ceil(sqrt(100))=10, rows=ceil(100/10)=10
+            @test get_layout(17) == (4, 5)  # cols=ceil(sqrt(17))=5, rows=ceil(17/5)=4
+            @test get_layout(20) == (4, 5)  # cols=ceil(sqrt(20))=5, rows=ceil(20/5)=4
+            @test get_layout(25) == (5, 5)  # cols=ceil(sqrt(25))=5, rows=ceil(25/5)=5
+            @test get_layout(30) == (5, 6)  # cols=ceil(sqrt(30))=6, rows=ceil(30/6)=5
+            @test get_layout(50) == (7, 8)  # cols=ceil(sqrt(50))=8, rows=ceil(50/8)=7
+            @test get_layout(100) == (10, 10)  # cols=ceil(sqrt(100))=10, rows=ceil(100/10)=10
         end
         
         @testset "layout properties" begin
             # Test that layouts can accommodate the required number of plots
             for nT in 1:50
-                rows, cols = getLayout(nT)
+                rows, cols = get_layout(nT)
                 
                 # Basic sanity checks
                 @test rows >= 1
@@ -557,7 +557,7 @@ end
             test_cases = [17, 20, 25, 30, 50, 100]
             
             for nT in test_cases
-                rows, cols = getLayout(nT)
+                rows, cols = get_layout(nT)
                 
                 # Should be roughly square (aspect ratio not too extreme)
                 aspect_ratio = max(rows, cols) / min(rows, cols)
@@ -576,15 +576,15 @@ end
         @testset "consistency checks" begin
             # Test that the function is deterministic
             for nT in [1, 5, 10, 25, 50]
-                result1 = getLayout(nT)
-                result2 = getLayout(nT)
+                result1 = get_layout(nT)
+                result2 = get_layout(nT)
                 @test result1 == result2
             end
             
             # Test that increasing nT doesn't decrease the layout size inappropriately
             prev_area = 0
             for nT in 1:20
-                rows, cols = getLayout(nT)
+                rows, cols = get_layout(nT)
                 area = rows * cols
                 
                 # Area should generally increase or stay the same

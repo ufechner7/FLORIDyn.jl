@@ -35,7 +35,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 # Arrays to store time series data
 times = Float64[]
 wind_directions = Vector{Float64}[]
-turbines = 1:min(9, wf.nT)
+turbines = 1:wf.nT
 
 for time in sim.start_time:sim.time_step:sim.end_time
     local wind_direction
@@ -59,6 +59,12 @@ wind_dir_matrix = wind_dir_matrix'  # Now it's time × turbines
 n_turbines = length(turbines)
 plot_data = [wind_dir_matrix[:, i] for i in 1:n_turbines]
 turbine_labels = ["dir_t$i [°]" for i in turbines]
+
+if MULTI
+    rows, lines = get_layout(wf.nT)
+else
+    rows, lines = wf.nT, 1
+end
 
 # Plot with dynamic number of turbines
 p = plotx(times, plot_data...; fig="Wind Direction", xlabel="rel_time [s]", 
