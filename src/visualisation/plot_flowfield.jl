@@ -383,7 +383,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
     
     # Foreign Reduction plotting
     if separated
-        lay = getLayout(wf.nT)
+        lay = get_layout(wf.nT)
         
         # Calculate y-axis limits
         foreign_red_data = md[!, "ForeignReduction"]
@@ -436,7 +436,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
 end
 
 """
-    getLayout(nT::Int) -> Tuple{Int, Int}
+    get_layout(nT::Int) -> (Int, Int)
 
 Calculate optimal subplot layout (rows, columns) for a given number of turbines.
 
@@ -449,7 +449,7 @@ Calculate optimal subplot layout (rows, columns) for a given number of turbines.
 # Description
 Determines the most square-like arrangement of subplots to accommodate `nT` plots.
 """
-function getLayout(nT::Int)
+function get_layout(nT::Int)
     if nT <= 0
         return (1, 1)
     elseif nT == 1

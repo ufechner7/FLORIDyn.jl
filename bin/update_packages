@@ -1,0 +1,14 @@
+#!/bin/bash -eu
+# Copyright (c) 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
+# This script updates all packages in the global and local environment.
+
+if [[ $(basename $(pwd)) == "bin" ]]; then
+    cd ..
+fi
+
+export JULIA_PKG_SERVER_REGISTRY_PREFERENCE=eager
+
+julia -e 'using Pkg; Pkg.update()'
+julia --project -e 'using Pkg; Pkg.update()'
