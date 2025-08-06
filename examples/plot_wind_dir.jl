@@ -52,7 +52,7 @@ end
 
 # Convert vector of vectors to matrix for easier plotting
 wind_dir_matrix = hcat(wind_directions...)  # Transpose to get time × turbines
-wind_dir_matrix = wind_dir_matrix'  # Now it's time × turbines
+wind_dir_matrix = wind_dir_matrix'          # Now it's time × turbines
 
 # Create dynamic plot arguments based on number of turbines
 n_turbines = length(turbines)
