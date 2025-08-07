@@ -50,5 +50,50 @@ using FLORIDyn, Test
             @test length(data.D) == 0
         end
     end
+
+    @testset "Vis constructor from YAML" begin
+        # Test loading Vis from YAML file
+        @testset "Load from vis_default.yaml" begin
+            vis_file = joinpath(dirname(pathof(FLORIDyn)), "..", "data", "vis_default.yaml")
+            vis = Vis(vis_file)
+            
+            # Test that all fields are loaded correctly
+            @test vis.online == false
+            @test vis.save == true
+            @test vis.print_filenames == false
+            @test vis.video_folder == "video"
+            @test vis.output_folder == "out"
+            @test vis.v_min ≈ 2.0
+            @test vis.v_max ≈ 10.0
+            @test vis.rel_v_min ≈ 20.0
+            @test vis.rel_v_max ≈ 100.0
+            @test vis.turb_max ≈ 35.0
+            @test vis.up_int == 1
+            @test vis.unit_test == false
+        end
+
+        # Test computed properties
+        @testset "Computed properties" begin
+            vis_file = joinpath(dirname(pathof(FLORIDyn)), "..", "data", "vis_default.yaml")
+            vis = Vis(vis_file)
+            
+            # Test video_path property
+            video_path = vis.video_path
+            @test isa(video_path, String)
+            @test endswith(video_path, "video")
+            @test isdir(video_path)  # Should be created automatically
+            
+            # Test output_path property  
+            output_path = vis.output_path
+            @test isa(output_path, String)
+            @test endswith(output_path, "out")
+            @test isdir(output_path)  # Should be created automatically
+        end
+
+        # Test error handling for non-existent file
+        @testset "Non-existent file error" begin
+            @test_throws SystemError Vis("nonexistent_file.yaml")
+        end
+    end
 end
 nothing
