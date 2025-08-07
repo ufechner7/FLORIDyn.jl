@@ -19,7 +19,9 @@ if PLT == 6; NEW_PLT = 1; else NEW_PLT = PLT; end
 if ! @isdefined LAST_PLT; LAST_PLT=Set(NEW_PLT); end
 
 settings_file = "data/2021_9T_Data.yaml"
-vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4)
+vis_file      = "data/vis_default.yaml"
+
+vis = Vis(vis_file)
 
 # Automatic parallel/threading setup
 tic()

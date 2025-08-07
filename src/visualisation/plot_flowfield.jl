@@ -248,19 +248,19 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         
         # Save plot to video folder if requested
         if vis.save && !use_unit_test
-            # Ensure video directory exists
-            video_dir = "video"
-            if !isdir(video_dir)
-                mkpath(video_dir)
+            if vis.online
+                directory = vis.video_path
+            else
+                directory = vis.output_path
             end
             
             # Generate filename with measurement type and time information
             msr_name = msr == 1 ? "velocity_reduction" : msr == 2 ? "added_turbulence" : "wind_speed"
             if t !== nothing
                 time_str = lpad(string(round(Int, t)), 4, '0')
-                filename = joinpath(video_dir, "$(msr_name)_t$(time_str)s.png")
+                filename = joinpath(directory, "$(msr_name)_t$(time_str)s.png")
             else
-                filename = joinpath(video_dir, "$(msr_name).png")
+                filename = joinpath(directory, "$(msr_name).png")
             end
             
             # Save the current figure

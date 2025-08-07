@@ -1,6 +1,6 @@
 vis:
   online: false # Enable/disable online visualization during simulation
-  save: false   # Enable/disable saving of plots to disk
+  save: true    # Enable/disable saving of plots to disk
   video_folder: "video" # Relative video folder path 
   output_folder: "out"  # Relative output folder path  
   v_min:  2.0   # Minimum velocity for color scale in flow field visualizations [m/s] 
@@ -14,9 +14,5 @@ vis:
   # Maximum turbulence value for added turbulence visualizations (msr=2)
   # Controls the upper limit for turbulence plots
   turb_max: 35.0
-  # Update interval - controls how frequently visualization updates occur
-  # Higher values result in less frequent updates for better performance
-  up_int: 1
-  # Enable unit test mode for visualization functions
-  # When true, closes plots automatically after 1 second
-  unit_test: false
+  up_int: 1 # Update interval - how frequently visualization updates occur        [s]
+  unit_test: false # When true, closes plots automatically after 1 second

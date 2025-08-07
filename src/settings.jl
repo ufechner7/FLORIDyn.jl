@@ -296,7 +296,7 @@ end
 # Constructor for Vis struct from YAML file
 function Vis(filename::String)
     data = YAML.load_file(filename)
-    return convertdict(Vis, data)
+    return convertdict(Vis, data["vis"])
 end
 
 # Add computed properties for video_path and output_path
