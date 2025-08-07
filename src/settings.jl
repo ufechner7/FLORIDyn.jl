@@ -282,6 +282,7 @@ vis = Vis(online=false, save=false)
 @with_kw mutable struct Vis
     online::Bool
     save::Bool = false     # save plots to video folder
+    print_filenames::Bool = false
     video_folder::String = "video" # relative video folder path
     output_folder::String = "out"   # relative output folder path
     v_min::Float64 = 2
