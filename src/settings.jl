@@ -293,6 +293,24 @@ vis = Vis(online=false, save=false)
     unit_test::Bool = false  # enable unit test mode for visualization functions
 end
 
+# Constructor for Vis struct from YAML file
+function Vis(filename::String)
+    data = YAML.load_file(filename)
+    return Vis(;
+        online = data["online"],
+        save = data["save"], 
+        video_folder = data["video_folder"],
+        output_folder = data["output_folder"],
+        v_min = data["v_min"],
+        v_max = data["v_max"],
+        rel_v_min = data["rel_v_min"],
+        rel_v_max = data["rel_v_max"],
+        turb_max = data["turb_max"],
+        up_int = data["up_int"],
+        unit_test = data["unit_test"]
+    )
+end
+
 # Add computed properties for video_path and output_path
 function Base.getproperty(vis::Vis, name::Symbol)
     if name === :video_path
