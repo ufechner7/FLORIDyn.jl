@@ -291,8 +291,25 @@ vis = Vis(online=false, save=false)
     turb_max::Float64 = 35
     up_int::Int = 1  # update interval
     unit_test::Bool = false  # enable unit test mode for visualization functions
-    video_path::String = isdelftblue() ? joinpath(homedir(), "scratch", video_folder) : joinpath(pwd(), video_folder)
-    output_path::String = isdelftblue() ? joinpath(homedir(), "scratch", output_folder) : joinpath(pwd(), output_folder)
+end
+
+# Add computed properties for video_path and output_path
+function Base.getproperty(vis::Vis, name::Symbol)
+    if name === :video_path
+        path = isdelftblue() ? joinpath(homedir(), "scratch", vis.video_folder) : joinpath(pwd(), vis.video_folder)
+        if !isdir(path)
+            mkpath(path)
+        end
+        return path
+    elseif name === :output_path
+        path = isdelftblue() ? joinpath(homedir(), "scratch", vis.output_folder) : joinpath(pwd(), vis.output_folder)
+        if !isdir(path)
+            mkpath(path)
+        end
+        return path
+    else
+        return getfield(vis, name)
+    end
 end
 
 """
