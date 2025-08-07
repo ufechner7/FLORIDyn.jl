@@ -97,6 +97,26 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
         plt.xlabel("Time [s]")
         plt.ylabel("Foreign Reduction [%]")
     end
+    # plt.show(fig)
+    # Save plot to video or output folder if requested
+    if vis.save && !vis.unit_test
+        directory = vis.output_path
+        
+        # Generate filename with measurement type and time information
+        msr = 1
+        msr_name = msr == 1 ? "msr_velocity_reduction" : msr == 2 ? "msr_added_turbulence" : "msr_wind_speed"
+        filename = joinpath(directory, "$(msr_name).png")
+        
+        # Save the current figure
+        try
+            plt.savefig(filename, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
+            if !use_unit_test
+            end
+        catch e
+            @warn "Failed to save plot: $e"
+        end
+    end
+
     if vis.unit_test
         plt.pause(1.0)
         plt.close(fig)
