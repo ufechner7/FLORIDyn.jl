@@ -246,7 +246,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         # Force display update for animation
         plt.draw()
         
-        # Save plot to video folder if requested
+        # Save plot to video or output folder if requested
         if vis.save && !use_unit_test
             if vis.online
                 directory = vis.video_path
