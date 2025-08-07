@@ -491,3 +491,8 @@ function condenseSOWFAYaw(YawData::Array{wf,2}) where wf
     # Select the important rows
     return YawData[ind_important, :]
 end
+
+function isdelftblue()
+    path = expanduser("~/scratch")
+    ispath(path)
+end
