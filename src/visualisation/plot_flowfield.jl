@@ -267,7 +267,8 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             try
                 # Use bbox_inches='tight' with pad_inches for consistent sizing
                 plt.savefig(filename, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
-                if !use_unit_test
+                if !vis.unit_test && vis.print_filenames
+                    @info "Saving $filename"
                 end
             catch e
                 @warn "Failed to save plot: $e"

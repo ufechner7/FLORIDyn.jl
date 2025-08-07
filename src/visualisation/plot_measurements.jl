@@ -110,7 +110,8 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
         # Save the current figure
         try
             plt.savefig(filename, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
-            if !vis.unit_test
+            if !vis.unit_test && vis.print_filenames
+                @info "Saving $filename"
             end
         catch e
             @warn "Failed to save plot: $e"
