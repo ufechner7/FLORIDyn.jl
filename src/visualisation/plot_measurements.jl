@@ -103,8 +103,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
         directory = vis.output_path
         
         # Generate filename with measurement type and time information
-        msr = 1
-        msr_name = msr == 1 ? "msr_velocity_reduction" : msr == 2 ? "msr_added_turbulence" : "msr_wind_speed"
+        msr_name = "msr_velocity_reduction" 
         filename = joinpath(directory, "$(msr_name).png")
         
         # Save the current figure
