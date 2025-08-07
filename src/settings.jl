@@ -281,7 +281,9 @@ vis = Vis(online=false, save=false)
 """
 @with_kw mutable struct Vis
     online::Bool
-    save::Bool = false  # save plots to video folder
+    save::Bool = false     # save plots to video folder
+    video_folder::String = "video" # relative video folder path
+    output_folder::String = "out"   # relative output folder path
     v_min::Float64 = 2
     v_max::Float64 = 10
     rel_v_min::Float64 = 20
@@ -289,6 +291,8 @@ vis = Vis(online=false, save=false)
     turb_max::Float64 = 35
     up_int::Int = 1  # update interval
     unit_test::Bool = false  # enable unit test mode for visualization functions
+    video_path::String = isdelftblue() ? joinpath(homedir(), "scratch", video_folder) : joinpath(pwd(), video_folder)
+    output_path::String = isdelftblue() ? joinpath(homedir(), "scratch", output_folder) : joinpath(pwd(), output_folder)
 end
 
 """
