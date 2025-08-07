@@ -539,6 +539,33 @@ function condenseSOWFAYaw(YawData::Array{wf,2}) where wf
     return YawData[ind_important, :]
 end
 
+"""
+    isdelftblue() -> Bool
+
+Check if the current environment is the Delft Blue supercomputer.
+
+This function determines whether the code is running on the Delft Blue supercomputer
+by checking for the existence of the `~/scratch` directory, which is a characteristic
+feature of the Delft Blue file system.
+
+# Returns
+- `Bool`: `true` if running on Delft Blue (i.e., `~/scratch` directory exists), 
+          `false` otherwise.
+
+# Usage
+This function is used throughout FLORIDyn.jl to automatically adapt file paths and 
+directory structures based on the computing environment. On Delft Blue, files are
+typically stored in the scratch directory for better performance.
+
+# Example
+```julia
+if isdelftblue()
+    data_path = joinpath(homedir(), "scratch", "data")
+else
+    data_path = joinpath(pwd(), "data")
+end
+```
+"""
 function isdelftblue()
     path = expanduser("~/scratch")
     ispath(path)
