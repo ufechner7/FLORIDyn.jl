@@ -323,20 +323,13 @@ For all other properties, it returns the field value as usual.
 function Base.getproperty(vis::Vis, name::Symbol)
     if name === :video_path
         path = isdelftblue() ? joinpath(homedir(), "scratch", vis.video_folder) : joinpath(pwd(), vis.video_folder)
-        if !isdir(path)
-            mkpath(path)
-        end
-        return path
+        return mkpath(path)
     elseif name === :output_path
         path = isdelftblue() ? joinpath(homedir(), "scratch", vis.output_folder) : joinpath(pwd(), vis.output_folder)
-        if !isdir(path)
-            mkpath(path)
-        mkpath(path)
-        return path
+        return mkpath(path)
     elseif name === :output_path
         path = isdelftblue() ? joinpath(homedir(), "scratch", vis.output_folder) : joinpath(pwd(), vis.output_folder)
-        mkpath(path)
-        return path
+        return mkpath(path)
     else
         return getfield(vis, name)
     end
