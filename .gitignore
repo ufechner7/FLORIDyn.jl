@@ -6,3 +6,4 @@ cspell.json
 coverage/lcov.info
 coverage/
 video/
+out/
