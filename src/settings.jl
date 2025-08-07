@@ -553,16 +553,16 @@ feature of the Delft Blue file system.
           `false` otherwise.
 
 # Usage
-This function is used throughout FLORIDyn.jl to automatically adapt file paths and 
-directory structures based on the computing environment. On Delft Blue, files are
-typically stored in the scratch directory for better performance.
+This function is used throughout FLORIDyn.jl to automatically adapt file paths 
+to the computing environment. On Delft Blue, output files are stored in the 
+scratch directory, which can be accessed remotely and offers lots of space.
 
 # Example
 ```julia
 if isdelftblue()
-    data_path = joinpath(homedir(), "scratch", "data")
+    output_path = joinpath(homedir(), "scratch", "out")
 else
-    data_path = joinpath(pwd(), "data")
+    output_path = joinpath(pwd(), "out")
 end
 ```
 """

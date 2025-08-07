@@ -33,3 +33,7 @@ correctTI!
 ```@docs
 getYaw
 ```
+# Helper functions
+```@docs
+isdelftblue
+```
