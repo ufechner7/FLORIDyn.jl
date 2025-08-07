@@ -14,4 +14,4 @@ if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
 
 # Run Julia with 1 threads and load FLORIdyn
 # In addition, define the function menu()
-julia --project -t 1 --gcthreads=1,0 -i -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
+julia --project -t 1 --gcthreads=1,0 -i -e 'using Revise; using FLORIDyn; function menu(); include("examples/menu.jl"); end'

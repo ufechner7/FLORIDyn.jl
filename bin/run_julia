@@ -14,7 +14,7 @@ if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
 
 # Run Julia with 8 threads and load FLORIdyn
 # In addition, define the function menu()
-julia --project -t 11 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
+julia --project -t 11 --gcthreads=4,1 -i -e 'using Revise; using FLORIDyn; function menu(); include("examples/menu.jl"); end'
 
 # ON DESKTOP Ryzen 7 7850X
 # 82s for 300 iterations with threading=true and parallel=true enabled 5.3x advantage
