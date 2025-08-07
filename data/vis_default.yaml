@@ -1,7 +1,7 @@
 vis:
   online: false # Enable/disable online visualization during simulation
   save: true    # Enable/disable saving of plots to disk
-  print_filenames: false
+  print_filenames: false # If true, print the names of the saved files
   video_folder: "video" # Relative video folder path 
   output_folder: "out"  # Relative output folder path  
   v_min:  2.0   # Minimum velocity for color scale in flow field visualizations [m/s] 
