@@ -91,7 +91,7 @@ elseif PLT == 7
     # Create videos from saved plot frames
     println("Creating videos from saved plot frames...")
     if isdir("video")
-        video_paths = createAllVideos(fps=4, delete_frames=false)
+        video_paths = createAllVideos(fps=4, delete_frames=false, output_dir=vis.output_path)
         if !isempty(video_paths)
             println("Videos created successfully!")
             for path in video_paths
