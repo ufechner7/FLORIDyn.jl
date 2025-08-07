@@ -301,6 +301,25 @@ function Vis(filename::String)
 end
 
 # Add computed properties for video_path and output_path
+"""
+    Base.getproperty(vis::Vis, name::Symbol)
+
+Provides computed properties `video_path` and `output_path` for the `Vis` struct, which resolve the full paths for video and output folders, respectively.
+
+If the requested property is `:video_path` or `:output_path`, this method constructs the corresponding path based on the current environment (using either the user's home directory or the current working directory) and ensures that the directory exists by creating it if necessary.
+
+For all other properties, it returns the field value as usual.
+
+# Side Effects
+- Accessing `video_path` or `output_path` will automatically create the corresponding directory if it does not exist.
+
+# Arguments
+- `vis::Vis`: Visualization settings struct.
+- `name::Symbol`: The property name to access.
+
+# Returns
+- The value of the requested property, or the computed path for `video_path`/`output_path`.
+"""
 function Base.getproperty(vis::Vis, name::Symbol)
     if name === :video_path
         path = isdelftblue() ? joinpath(homedir(), "scratch", vis.video_folder) : joinpath(pwd(), vis.video_folder)
