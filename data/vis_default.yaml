@@ -10,8 +10,11 @@ vis:
     - "flow_field_eff_wind_speed"   # Flow field effective wind speed
   measurements: # List of measurement visualizations to be created
     - "measurements_vel_reduction"    # Measurement relative wind speed
+      - separated = true
     - "measurements_added_turbulence" # Measurement added turbulence
+      - separated = false
     - "measurements_eff_wind_speed"   # Measurement effective wind speed
+      - separated = false
   v_min:  2.0   # Minimum velocity for color scale in flow field visualizations [m/s] 
   v_max: 10.0   # Maximum velocity for color scale in flow field visualizations [m/s]
   # Minimum relative velocity value for velocity reduction visualizations (msr=1)
