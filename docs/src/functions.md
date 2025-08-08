@@ -35,5 +35,9 @@ getYaw
 ```
 # Helper functions
 ```@docs
+now_microseconds
+now_nanoseconds
+precise_now
+unique_name
 isdelftblue
 ```

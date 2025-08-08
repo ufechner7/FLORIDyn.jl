@@ -99,8 +99,8 @@ julia> unique_name()
 - Used to create separate output directories for each run
 
 # See Also
-- `now_microseconds`: The underlying timestamp function used
-- `Vis`: Visualization settings that may use unique names for output directories
+- [`now_microseconds`](@ref): The underlying timestamp function used
+- [`Vis`](@ref): Visualization settings that may use unique names for output directories
 """
 function unique_name()
     return "floridyn_run_" * now_microseconds()
