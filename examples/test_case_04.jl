@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 using DistributedNext, Timers, ControlPlots, FLORIDyn
+# Simplified test case plotting the measurements
 
 settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"

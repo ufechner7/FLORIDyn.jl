@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Simplified test case demonstrating automatic parallel/sequential dispatch
+# Simplified test case plotting the flow field
 using DistributedNext, Timers, ControlPlots, FLORIDyn
 
 settings_file = "data/2021_9T_Data.yaml"
