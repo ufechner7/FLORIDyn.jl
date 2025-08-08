@@ -52,6 +52,11 @@ parallel or sequential plotting based on the number of available threads and pro
 - [`plotMeasurements`](@ref): The underlying plotting function used in sequential mode
 """
 function plot_measurements(wf, md, vis; separated=true, msr=1, plt=nothing)
+    # Validate msr parameter
+    if !(msr in [1, 2, 3])
+        throw(ArgumentError("Invalid msr value: $msr. Must be 1 (velocity reduction), 2 (added turbulence), or 3 (effective wind speed)."))
+    end
+    
     if Threads.nthreads() > 1 && nprocs() > 1
         # Use parallel plotting with remote worker
         @spawnat 2 Main.rmt_plot_measurements(wf, md, vis; separated=separated, msr=msr)
