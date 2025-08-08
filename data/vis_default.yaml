@@ -6,8 +6,8 @@ vis:
   output_folder: "out"  # Relative output folder path  
   flow_fields: # List of flow field visualizations to be created
     - name: "flow_field_vel_reduction"    # Flow field relative wind speed
-      online: true
-      create_video: true
+      online: false
+      create_video: false
     - name: "flow_field_added_turbulence" # Flow field added turbulence
       online: false
       create_video: false

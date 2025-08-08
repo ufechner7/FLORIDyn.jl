@@ -81,6 +81,12 @@ for flow_field in vis.flow_fields
         @time plot_flow_field(wf, X, Y, Z, vis; msr, plt)
     end
 end
+for measurement in vis.measurements
+    global wf, md
+    vis.online = false
+    @info "Plotting measurements: $(measurement.name)"
+    # @time plot_measurements(wf, md, vis; separated=measurement.separated, plt)
+end   
 
 
 # if PLT == 1
