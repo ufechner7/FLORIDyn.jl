@@ -23,7 +23,9 @@ using Dates
         # Test that the timestamp is reasonable (within a few seconds of now)
         # Parse the timestamp to check it's close to current time
         timestamp_part = split(result, ".")[1]  # Get the part before microseconds
-        parsed_time = DateTime(timestamp_part, "yyyy-mm-ddTHH-MM-SS")
+        # Convert hyphens to colons in time portion for DateTime parsing
+        datetime_str = replace(timestamp_part, r"T(\d{2})-(\d{2})-(\d{2})" => s"T\1:\2:\3")
+        parsed_time = DateTime(datetime_str, "yyyy-mm-ddTHH:MM:SS")
         current_time = now()
         time_diff = abs(Dates.value(current_time - parsed_time)) / 1000.0  # Convert to seconds
         @test time_diff < 5.0  # Should be within 5 seconds
@@ -50,7 +52,9 @@ using Dates
         
         # Test that the timestamp is reasonable (within a few seconds of now)
         timestamp_part = split(result, ".")[1]  # Get the part before nanoseconds
-        parsed_time = DateTime(timestamp_part, "yyyy-mm-ddTHH-MM-SS")
+        # Convert hyphens to colons in time portion for DateTime parsing
+        datetime_str = replace(timestamp_part, r"T(\d{2})-(\d{2})-(\d{2})" => s"T\1:\2:\3")
+        parsed_time = DateTime(datetime_str, "yyyy-mm-ddTHH:MM:SS")
         current_time = now()
         time_diff = abs(Dates.value(current_time - parsed_time)) / 1000.0  # Convert to seconds
         @test time_diff < 5.0  # Should be within 5 seconds
@@ -106,7 +110,9 @@ using Dates
         # Test that the timestamp part is reasonable
         timestamp_part = result[15:end]  # Remove "floridyn_run_" prefix
         timestamp_base = split(timestamp_part, ".")[1]
-        parsed_time = DateTime(timestamp_base, "yyyy-mm-ddTHH-MM-SS")
+        # Convert hyphens to colons in time portion for DateTime parsing
+        datetime_str = replace(timestamp_base, r"T(\d{2})-(\d{2})-(\d{2})" => s"T\1:\2:\3")
+        parsed_time = DateTime(datetime_str, "yyyy-mm-ddTHH:MM:SS")
         current_time = now()
         time_diff = abs(Dates.value(current_time - parsed_time)) / 1000.0
         @test time_diff < 5.0  # Should be within 5 seconds
@@ -143,12 +149,18 @@ using Dates
         precise_base = split(precise_result, ".")[1]
         unique_base = split(unique_result[15:end], ".")[1]  # Remove prefix
         
+        # Convert hyphens to colons in time portions for DateTime parsing
+        micro_datetime = replace(micro_base, r"T(\d{2})-(\d{2})-(\d{2})" => s"T\1:\2:\3")
+        nano_datetime = replace(nano_base, r"T(\d{2})-(\d{2})-(\d{2})" => s"T\1:\2:\3")
+        precise_datetime = replace(precise_base, r"T(\d{2})-(\d{2})-(\d{2})" => s"T\1:\2:\3")
+        unique_datetime = replace(unique_base, r"T(\d{2})-(\d{2})-(\d{2})" => s"T\1:\2:\3")
+        
         # All base timestamps should be very similar (within same second)
         # Parse them to compare
-        micro_time = DateTime(micro_base, "yyyy-mm-ddTHH-MM-SS")
-        nano_time = DateTime(nano_base, "yyyy-mm-ddTHH-MM-SS")
-        precise_time = DateTime(precise_base, "yyyy-mm-ddTHH-MM-SS")
-        unique_time = DateTime(unique_base, "yyyy-mm-ddTHH-MM-SS")
+        micro_time = DateTime(micro_datetime, "yyyy-mm-ddTHH:MM:SS")
+        nano_time = DateTime(nano_datetime, "yyyy-mm-ddTHH:MM:SS")
+        precise_time = DateTime(precise_datetime, "yyyy-mm-ddTHH:MM:SS")
+        unique_time = DateTime(unique_datetime, "yyyy-mm-ddTHH:MM:SS")
         
         # All should be within the same second (allowing for execution time)
         @test abs(Dates.value(micro_time - nano_time)) < 2000  # Within 2 seconds
