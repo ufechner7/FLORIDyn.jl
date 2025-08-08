@@ -236,28 +236,58 @@ end
 A mutable struct for visualization settings in wind farm simulations.
 
 This struct controls visualization options during simulation runtime, particularly for
-live plotting and animation features.
+live plotting and animation features. It provides both stored fields and computed 
+properties for flexible path management.
 
 # Fields
 - `online::Bool`: Enable/disable online visualization during simulation. When `true`, 
                   live plots and animations are displayed during the simulation run.
                   When `false`, visualization is disabled for faster computation.
-- `save::Bool`: Enable/disable saving of plots to disk. When `true`, each plot is saved
-                after displaying it in the 'video' folder. When `false`, plots are only displayed.
-- `v_min::Float64`: Minimum velocity value for color scale in flow field visualizations.
-                    Used to set consistent color scale limits across animation frames.
-- `v_max::Float64`: Maximum velocity value for color scale in effective wind speed visualizations (msr=3).
-                    Used to set consistent upper limits across animation frames.
-- `rel_v_min::Float64`: Minimum relative velocity value for velocity reduction visualizations.
-                        Controls the color scale for relative wind speed plots (msr=1). Range: [0, 100].
-- `rel_v_max::Float64`: Maximum relative velocity value for velocity reduction visualizations (msr=1).
-                        Controls the upper limit for relative wind speed plots. Range: [0, 100].
+- `save::Bool`: Enable/disable saving of plots to disk. When `true`, plots are saved
+                to disk in PNG format. When `false`, plots are only displayed (default: `false`).
+- `print_filenames::Bool`: Enable/disable printing of saved filenames to console. 
+                          When `true`, filenames of saved plots are printed (default: `false`).
+- `video_folder::String`: Relative path for the video output directory. Used when `online=true`
+                         and `save=true` (default: `"video"`).
+- `output_folder::String`: Relative path for the output directory. Used when `online=false`
+                          and `save=true` (default: `"out"`).
+- `v_min::Float64`: Minimum velocity value for color scale in effective wind speed 
+                   visualizations (msr=3). Used to set consistent color scale limits 
+                   across animation frames (default: `2.0`).
+- `v_max::Float64`: Maximum velocity value for color scale in effective wind speed 
+                   visualizations (msr=3). Used to set consistent upper limits across 
+                   animation frames (default: `10.0`).
+- `rel_v_min::Float64`: Minimum relative velocity value for velocity reduction 
+                       visualizations (msr=1). Controls the color scale for relative 
+                       wind speed plots. Range: \\[0, 100\\] (default: `20.0`).
+- `rel_v_max::Float64`: Maximum relative velocity value for velocity reduction 
+                       visualizations (msr=1). Controls the upper limit for relative 
+                       wind speed plots. Range: \\[0, 100\\] (default: `100.0`).
 - `turb_max::Float64`: Maximum turbulence value for added turbulence visualizations (msr=2).
-                       Controls the upper limit for turbulence plots.
+                      Controls the upper limit for turbulence plots (default: `35.0`).
 - `up_int::Int`: Update interval - controls how frequently visualization updates occur.
-                 Higher values result in less frequent updates for better performance.
+                Higher values result in less frequent updates for better performance (default: `1`).
+- `unit_test::Bool`: Enable unit test mode for visualization functions. When `true`, 
+                    plots are automatically closed after 1 second for testing purposes (default: `false`).
 
-# Example
+# Computed Properties
+- `video_path::String`: Full absolute path to the video directory. Automatically creates the 
+                       directory if it doesn't exist. Path is environment-dependent: 
+                       `~/scratch/video_folder` on Delft Blue, `pwd()/video_folder` elsewhere.
+- `output_path::String`: Full absolute path to the output directory. Automatically creates the 
+                        directory if it doesn't exist. Path is environment-dependent:
+                        `~/scratch/output_folder` on Delft Blue, `pwd()/output_folder` elsewhere.
+
+# Constructors
+```julia
+# Default constructor with keyword arguments
+vis = Vis(online=true, save=true, v_min=2.0, v_max=12.0)
+
+# Constructor from YAML file
+vis = Vis("path/to/config.yaml")  # Loads from data["vis"] section
+```
+
+# Examples
 ```julia
 # Enable online visualization with plot saving and custom color scales
 vis = Vis(online=true, save=true, v_min=2.0, v_max=12.0, rel_v_min=20.0, rel_v_max=100.0, up_int=5)
@@ -267,23 +297,44 @@ vis = Vis(online=true, save=false, v_min=2.0, rel_v_min=20.0)
 
 # Disable online visualization for batch processing
 vis = Vis(online=false, save=false)
+
+# Load from YAML configuration
+vis = Vis("data/vis_default.yaml")
+
+# Access computed properties (creates directories automatically)
+println("Saving plots to: ", vis.video_path)  # When online=true
+println("Output directory: ", vis.output_path) # When online=false
 ```
 
-# Notes
+# File Saving Behavior
+When `save=true`, plots are saved as PNG files with descriptive names:
+- `velocity_reduction.png` - for velocity reduction plots (msr=1)
+- `added_turbulence.png` - for turbulence intensity plots (msr=2)  
+- `wind_speed.png` - for effective wind speed plots (msr=3)
+- Time-stamped versions: `velocity_reduction_t0120s.png` when time parameter is provided
+
+Save location depends on the `online` setting:
+- `online=true`: Files saved to `video_path` (typically for animations)
+- `online=false`: Files saved to `output_path` (typically for final results)
+
+# Performance Notes
 - Online visualization significantly slows down simulation performance
 - Useful for debugging, monitoring simulation progress, or creating videos of the simulation
 - When disabled, visualization functions are skipped to improve computational efficiency
-- `v_min` helps maintain consistent color scales for effective wind speed visualizations (msr=3)
-- `rel_v_min` helps maintain consistent color scales for velocity reduction visualizations (msr=1)
 - `up_int` can be used to reduce visualization frequency and improve simulation speed
-- `save=true` will create a 'video' folder if it doesn't exist and save each plot frame for animation creation
-- `unit_test=true` enables unit test mode for visualization functions (closes plots automatically after 1 second)
+- Directory creation is automatic but occurs only when computed properties are accessed
+
+# Environment Adaptation
+The struct automatically adapts to different computing environments:
+- **Delft Blue supercomputer**: Uses `~/scratch/` directory for ample storage space
+- **Local systems**: Uses current working directory (`pwd()`)
+- Detection is automatic via the [`isdelftblue()`](@ref) function
 """
 @with_kw mutable struct Vis
     online::Bool
-    save::Bool = false     # save plots to video folder
-    print_filenames::Bool = false
-    video_folder::String = "video" # relative video folder path
+    save::Bool = false              # save plots to video folder
+    print_filenames::Bool = false   # if true, print the names of the saved files
+    video_folder::String = "video"  # relative video folder path
     output_folder::String = "out"   # relative output folder path
     v_min::Float64 = 2
     v_max::Float64 = 10
