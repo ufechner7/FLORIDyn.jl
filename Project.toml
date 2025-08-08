@@ -6,6 +6,7 @@ version = "0.1.0"
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 DistributedNext = "fab6aee4-877b-4bac-a744-3eca44acbb6f"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"

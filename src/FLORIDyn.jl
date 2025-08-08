@@ -11,7 +11,7 @@ using LaTeXStrings
 import DocStringExtensions
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
-using Statistics, StaticArrays, Pkg, DistributedNext
+using Statistics, StaticArrays, Pkg, DistributedNext, Dates
 
 export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray
 
@@ -50,6 +50,7 @@ export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, i
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
 export run_floridyn, plot_flow_field, plot_measurements, close_all
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
+export now_microseconds, now_nanoseconds, precise_now
 export isdelftblue, Measurement, parse_measurements, get_parsed_measurements
 export FlowField, parse_flow_fields, get_parsed_flow_fields
 
@@ -255,6 +256,7 @@ include("visualisation/calc_flowfield.jl")
 include("visualisation/plot_flowfield.jl")
 include("visualisation/plot_measurements.jl")
 include("visualisation/create_video.jl")
+include("visualisation/high_res_time.jl")
 include("visualisation/smart_plotting.jl")
 
 """
