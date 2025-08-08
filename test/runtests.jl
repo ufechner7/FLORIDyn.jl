@@ -56,6 +56,7 @@ all_test_files = [
     "test_correction.jl",
     "test_controller.jl",
     "test_settings.jl",
+    "test_high_res_time.jl",
     "test_visualisation.jl",
     "test_copy_functions.jl",
     "aqua.jl"
