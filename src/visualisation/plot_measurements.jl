@@ -11,7 +11,7 @@ Plot foreign reduction measurements from FLORIDyn simulation data.
 - `wf::WindFarm`: Wind farm object with field `nT` (number of turbines). See [`WindFarm`](@ref)
 - `md::DataFrame`: Measurements DataFrame containing time series data with columns:
   - `Time`: Time series data [s]
-  - `ForeignReduction`: Foreign reduction percentage data [%]
+  - `ForeignReduction`: Foreign reduction percentage data \\[%\\]
 - `vis::Vis`: Visualization settings including unit_test parameter. See [`Vis`](@ref)
 - `separated::Bool`: Whether to use separated subplot layout (default: false)
 - `msr::Int`: Measurement type to plot (1=velocity reduction, 2=added turbulence, 3=effective wind speed). Default is 1.
@@ -26,8 +26,8 @@ This function creates time series plots of foreign reduction measurements from F
 3. Different measurement types based on the `msr` parameter
 
 # Measurement Types
-- `msr=1`: Velocity reduction [%] (default)
-- `msr=2`: Added turbulence [%] 
+- `msr=1`: Velocity reduction \\[%\\] (default)
+- `msr=2`: Added turbulence \\[%\\] 
 - `msr=3`: Effective wind speed [m/s]
 
 # Plotting Modes
@@ -59,12 +59,12 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
     if msr == 1
         data_column = "ForeignReduction"
         title = "Velocity Reduction"
-        ylabel = "Velocity Reduction [%]"
+        ylabel = "Velocity Reduction \\[%\\]"
         msr_name = "msr_velocity_reduction"
     elseif msr == 2
         data_column = "AddedTurbulence" 
         title = "Added Turbulence"
-        ylabel = "Added Turbulence [%]"
+        ylabel = "Added Turbulence \\[%\\]"
         msr_name = "msr_added_turbulence"
     elseif msr == 3
         data_column = "EffWindSpeed"

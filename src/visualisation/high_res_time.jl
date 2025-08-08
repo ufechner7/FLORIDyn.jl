@@ -8,7 +8,7 @@
     now_microseconds()::String
 
 Returns current timestamp as a string with microsecond resolution.
-Format: "YYYY-mm-ddTHH-MM-SS.μμμμμμ"
+Format: "YYYY-mm-ddTHH-MM-SS.uuuuuu"
 
 # Examples
 ```julia
@@ -26,7 +26,7 @@ function now_microseconds()::String
     # Extract microseconds from nanoseconds
     # time_ns() gives nanoseconds since Unix epoch
     # We want the fractional second part in microseconds
-    microseconds = div(ns_time % 1_000_000_000, 1000)
+    microseconds = div(mod(ns_time, 1_000_000_000), 1000)
     
     # Format the base datetime
     base_str = Dates.format(now_time, "yyyy-mm-ddTHH-MM-SS")
@@ -55,7 +55,7 @@ function now_nanoseconds()::String
     now_time = now()
     
     # Extract nanoseconds from the fractional second part
-    nanoseconds = ns_time % 1_000_000_000
+    nanoseconds = mod(ns_time, 1_000_000_000)
     
     # Format the base datetime
     base_str = Dates.format(now_time, "yyyy-mm-ddTHH-MM-SS")
@@ -81,7 +81,7 @@ with a high-resolution timestamp. The timestamp includes microsecond precision t
 uniqueness even when multiple simulations are started in quick succession.
 
 # Returns
-- `String`: A unique directory name in the format "floridyn_run_YYYY-mm-ddTHH-MM-SS.μμμμμμ"
+- `String`: A unique directory name in the format "floridyn_run_YYYY-mm-ddTHH-MM-SS.uuuuuu"
 
 # Examples
 ```julia
@@ -99,8 +99,8 @@ julia> unique_name()
 - Used to create separate output directories for each run
 
 # See Also
-- [`now_microseconds`](@ref): The underlying timestamp function used
-- [`Vis`](@ref): Visualization settings that may use unique names for output directories
+- `now_microseconds`: The underlying timestamp function used
+- `Vis`: Visualization settings that may use unique names for output directories
 """
 function unique_name()
     return "floridyn_run_" * now_microseconds()
