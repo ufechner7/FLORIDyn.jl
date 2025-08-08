@@ -48,6 +48,7 @@ close_all(plt)
 
 # Process flow fields
 for flow_field in vis.flow_fields
+    global wf
     @info "Calculating flow field: $(flow_field.name)"
     Z, X, Y = calcFlowField(set, wf, wind, floris)
     @info "Plotting flow field: $(flow_field.name)"
@@ -60,7 +61,14 @@ for flow_field in vis.flow_fields
     else
         msr = 1  # default to velocity reduction
     end
-    plot_flow_field(wf, X, Y, Z, vis; msr, plt)
+    if flow_field.online
+        cleanup_video_folder()
+        vis.online = true
+        wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    else
+        vis.online = false
+        @time plot_flow_field(wf, X, Y, Z, vis; msr, plt)
+    end
 end
 
 # if PLT == 1
