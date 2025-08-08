@@ -22,13 +22,13 @@ if Threads.nthreads() > 1
                     plot_state = nothing
                 end
                 local_plt = ControlPlots.plt
-                plot_state = plotFlowField(plot_state, local_plt, wf, X, Y, Z, vis, t_rel; msr=msr)
+                plot_state = plotFlowField(plot_state, local_plt, wf, X, Y, Z, vis, t_rel; msr)
                 nothing
             end
-            @everywhere function rmt_plot_measurements(wf, md, vis; separated)
+            @everywhere function rmt_plot_measurements(wf, md, vis; separated, msr=1)
                 # Create a fresh plt instance just for this task
                 local_plt = ControlPlots.plt
-                return plotMeasurements(local_plt, wf, md, vis; separated=separated)
+                return plotMeasurements(local_plt, wf, md, vis; separated=separated, msr)
             end
             @everywhere function rmt_close_all()
                 local_plt = ControlPlots.plt

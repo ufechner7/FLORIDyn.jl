@@ -32,7 +32,7 @@ function plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=nothing)
 end
 
 """
-    plot_measurements(wf, md, vis; separated=true, plt=nothing) -> Nothing
+    plot_measurements(wf, md, vis; separated=true, msr=1, plt=nothing) -> Nothing
 
 High-level measurements plotting function that automatically dispatches to either 
 parallel or sequential plotting based on the number of available threads and processes.
@@ -42,6 +42,7 @@ parallel or sequential plotting based on the number of available threads and pro
 - `md`: Measurement data
 - `vis`: Visualization settings
 - `separated`: Whether to use separated subplots
+- `msr`: Measurement type (1=velocity reduction, 2=added turbulence, 3=effective wind speed)
 - `plt`: Matplotlib PyPlot instance (only used in sequential mode)
 
 # Returns
@@ -50,16 +51,16 @@ parallel or sequential plotting based on the number of available threads and pro
 # See Also
 - [`plotMeasurements`](@ref): The underlying plotting function used in sequential mode
 """
-function plot_measurements(wf, md, vis; separated=true, plt=nothing)
+function plot_measurements(wf, md, vis; separated=true, msr=1, plt=nothing)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Use parallel plotting with remote worker
-        @spawnat 2 Main.rmt_plot_measurements(wf, md, vis; separated=separated)
+        @spawnat 2 Main.rmt_plot_measurements(wf, md, vis; separated=separated, msr=msr)
     else
         # Use sequential plotting
         if plt === nothing
             error("plt argument is required for sequential plotting")
         end
-        plotMeasurements(plt, wf, md, vis; separated=separated)        
+        plotMeasurements(plt, wf, md, vis; separated=separated, msr=msr)        
     end
     nothing
 end

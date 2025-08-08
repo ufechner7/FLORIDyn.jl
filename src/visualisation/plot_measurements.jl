@@ -2,18 +2,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false) -> Nothing
+    plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=1) -> Nothing
 
 Plot foreign reduction measurements from FLORIDyn simulation data.
 
 # Arguments
-- `plt`: Plotting package (e.g., ControlPlots)
+- `plt`: Plotting package (e.g., PyPlot, which is exported from ControlPlots)
 - `wf::WindFarm`: Wind farm object with field `nT` (number of turbines). See [`WindFarm`](@ref)
 - `md::DataFrame`: Measurements DataFrame containing time series data with columns:
   - `Time`: Time series data [s]
   - `ForeignReduction`: Foreign reduction percentage data [%]
 - `vis::Vis`: Visualization settings including unit_test parameter. See [`Vis`](@ref)
 - `separated::Bool`: Whether to use separated subplot layout (default: false)
+- `msr::Int`: Measurement type to plot (1=velocity reduction, 2=added turbulence, 3=effective wind speed). Default is 1.
 
 # Returns
 - `nothing`
@@ -22,6 +23,12 @@ Plot foreign reduction measurements from FLORIDyn simulation data.
 This function creates time series plots of foreign reduction measurements from FLORIDyn simulations. It handles:
 1. Time normalization by subtracting the start time
 2. Foreign reduction plots in either separated (subplot) or combined layout
+3. Different measurement types based on the `msr` parameter
+
+# Measurement Types
+- `msr=1`: Velocity reduction [%] (default)
+- `msr=2`: Added turbulence [%] 
+- `msr=3`: Effective wind speed [m/s]
 
 # Plotting Modes
 - **Separated mode** (`separated=true`): Creates individual subplots for each turbine
@@ -31,33 +38,57 @@ This function creates time series plots of foreign reduction measurements from F
 ```julia
 using ControlPlots
 
-# Plot foreign reduction for all turbines in combined mode
-plotMeasurements(plt, wind_farm, measurements_df, vis)
+# Plot velocity reduction for all turbines in combined mode
+plotMeasurements(plt, wind_farm, measurements_df, vis; msr=1)
 
-# Plot foreign reduction with separated subplots
-plotMeasurements(plt, wind_farm, measurements_df, vis; separated=true)
+# Plot added turbulence with separated subplots
+plotMeasurements(plt, wind_farm, measurements_df, vis; separated=true, msr=2)
 ```
 
 # See Also
 - [`plotFlowField`](@ref): For flow field visualization
 - [`getMeasurements`](@ref): For generating measurement data
 """
-function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false)
+function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=1)
     local fig
 
     # Subtract start time
     timeFDyn = md.Time .- md.Time[1]
 
-    title="Foreign Reduction"
-    size = 1
+    # Determine measurement type based on msr parameter
+    if msr == 1
+        data_column = "ForeignReduction"
+        title = "Velocity Reduction"
+        ylabel = "Velocity Reduction [%]"
+        msr_name = "msr_velocity_reduction"
+    elseif msr == 2
+        data_column = "AddedTurbulence" 
+        title = "Added Turbulence"
+        ylabel = "Added Turbulence [%]"
+        msr_name = "msr_added_turbulence"
+    elseif msr == 3
+        data_column = "EffWindSpeed"
+        title = "Effective Wind Speed"
+        ylabel = "Effective Wind Speed [m/s]"
+        msr_name = "msr_eff_wind_speed"
+    else
+        error("Invalid msr value: $msr. Must be 1 (velocity reduction), 2 (added turbulence), or 3 (effective wind speed).")
+    end
     
-    # Foreign Reduction plotting
+    # Check if the required column exists in the DataFrame
+    if !(data_column in names(md))
+        error("Column '$data_column' not found in measurement data. Available columns: $(names(md))")
+    end
+    
+    size = 1
+    measurement_data = md[!, data_column]
+    
+    # Measurement plotting
     if separated
         lay = get_layout(wf.nT)
         
         # Calculate y-axis limits
-        foreign_red_data = md[!, "ForeignReduction"]
-        y_lim = [minimum(foreign_red_data), maximum(foreign_red_data)]
+        y_lim = [minimum(measurement_data), maximum(measurement_data)]
         y_range = y_lim[2] - y_lim[1]
         y_lim = y_lim .+ [-0.1, 0.1] * max(y_range, 0.5)
         
@@ -68,7 +99,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
             plt.subplot(lay[1], lay[2], iT)
             plt.plot(
                 timeFDyn[iT:wf.nT:end],
-                foreign_red_data[iT:wf.nT:end],
+                measurement_data[iT:wf.nT:end],
                 linewidth=2, color=c
             )
             plt.grid(true)
@@ -76,7 +107,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
             plt.xlim(max(timeFDyn[1], 0), timeFDyn[end])
             plt.ylim(y_lim...)
             plt.xlabel("Time [s]")
-            plt.ylabel("Foreign Reduction [%]")
+            plt.ylabel(ylabel)
             plt.tight_layout()   
             fig.subplots_adjust(wspace=0.295)
         end
@@ -87,15 +118,15 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
         for iT in 1:wf.nT
             plt.plot(
                 timeFDyn[iT:wf.nT:end],
-                md.ForeignReduction[iT:wf.nT:end],
+                measurement_data[iT:wf.nT:end],
                 linewidth=2, color=colors[iT, :]
             )
         end
         plt.grid(true)
-        plt.title("Foreign Reduction [%]")
+        plt.title(ylabel)
         plt.xlim(max(timeFDyn[1], 0), timeFDyn[end])
         plt.xlabel("Time [s]")
-        plt.ylabel("Foreign Reduction [%]")
+        plt.ylabel(ylabel)
     end
     # plt.show(fig)
     # Save plot to video or output folder if requested
@@ -103,7 +134,6 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
         directory = vis.output_path
         
         # Generate filename with measurement type and time information
-        msr_name = "msr_velocity_reduction" 
         filename = joinpath(directory, "$(msr_name).png")
         
         # Save the current figure
