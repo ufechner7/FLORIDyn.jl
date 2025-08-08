@@ -4,6 +4,14 @@ vis:
   print_filenames: false # If true, print the names of the saved files
   video_folder: "video" # Relative video folder path 
   output_folder: "out"  # Relative output folder path  
+  flow_fields: # List of flow field visualizations to be created
+    - "flow_field_vel_reduction"    # Flow field relative wind speed
+    - "flow_field_added_turbulence" # Flow field added turbulence
+    - "flow_field_eff_wind_speed"   # Flow field effective wind speed
+  measurements: # List of measurement visualizations to be created
+    - "measurements_vel_reduction"    # Measurement relative wind speed
+    - "measurements_added_turbulence" # Measurement added turbulence
+    - "measurements_eff_wind_speed"   # Measurement effective wind speed
   v_min:  2.0   # Minimum velocity for color scale in flow field visualizations [m/s] 
   v_max: 10.0   # Maximum velocity for color scale in flow field visualizations [m/s]
   # Minimum relative velocity value for velocity reduction visualizations (msr=1)
