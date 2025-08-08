@@ -95,7 +95,16 @@ if length(vis.measurements) > 0 && ! FLORIDYN_EXECUTED
 end
 for measurement in vis.measurements
     @info "Plotting measurements: $(measurement.name)"
-    @time plot_measurements(wf, md, vis; separated=measurement.separated, plt)
+    if measurement.name == "msr_vel_reduction"
+        msr = 1
+    elseif measurement.name == "msr_added_turbulence"
+        msr = 2
+    elseif measurement.name == "msr_eff_wind_speed"
+        msr = 3
+    else
+        msr = 1  # default to velocity reduction
+    end
+    @time plot_measurements(wf, md, vis; separated=measurement.separated, msr, plt)
 end   
 
 
