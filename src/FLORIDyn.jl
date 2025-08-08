@@ -50,7 +50,7 @@ export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, i
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
 export run_floridyn, plot_flow_field, plot_measurements, close_all
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
-export isdelftblue
+export isdelftblue, Measurement, parse_measurements, get_parsed_measurements
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
@@ -249,6 +249,7 @@ include("floridyn_cl/prepare_simulation.jl")
 include("floridyn_cl/iterate.jl")
 
 include("controller/controller.jl")
+include("visualisation/structs_measurements.jl")
 include("visualisation/calc_flowfield.jl")
 include("visualisation/plot_flowfield.jl")
 include("visualisation/plot_measurements.jl")

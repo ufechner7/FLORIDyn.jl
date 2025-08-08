@@ -251,6 +251,9 @@ properties for flexible path management.
                          and `save=true` (default: `"video"`).
 - `output_folder::String`: Relative path for the output directory. Used when `online=false`
                           and `save=true` (default: `"out"`).
+- `flow_fields::Vector{String}`: List of flow field visualizations to be created. Contains
+                                names like "flow_field_vel_reduction", "flow_field_added_turbulence",
+                                and "flow_field_eff_wind_speed" (default: `String[]`).
 - `v_min::Float64`: Minimum velocity value for color scale in effective wind speed 
                    visualizations (msr=3). Used to set consistent color scale limits 
                    across animation frames (default: `2.0`).
@@ -295,6 +298,10 @@ vis = Vis(online=true, save=true, v_min=2.0, v_max=12.0, rel_v_min=20.0, rel_v_m
 # Display only, no saving with default color scales
 vis = Vis(online=true, save=false, v_min=2.0, rel_v_min=20.0)
 
+# Specify flow field visualizations to create
+flow_fields = ["flow_field_vel_reduction", "flow_field_added_turbulence", "flow_field_eff_wind_speed"]
+vis = Vis(online=true, save=true, flow_fields=flow_fields)
+
 # Disable online visualization for batch processing
 vis = Vis(online=false, save=false)
 
@@ -336,6 +343,8 @@ The struct automatically adapts to different computing environments:
     print_filenames::Bool = false   # if true, print the names of the saved files
     video_folder::String = "video"  # relative video folder path
     output_folder::String = "out"   # relative output folder path
+    flow_fields::Vector{String} = String[]  # list of flow field visualizations to create
+    measurements::Vector{Any} = []  # list of measurement visualizations to create (parsed from YAML)
     v_min::Float64 = 2
     v_max::Float64 = 10
     rel_v_min::Float64 = 20
@@ -348,7 +357,49 @@ end
 # Constructor for Vis struct from YAML file
 function Vis(filename::String)
     data = YAML.load_file(filename)
-    return convertdict(Vis, data["vis"])
+    vis_data = data["vis"]
+    
+    # Extract measurements separately and convert to Vector{Any} to avoid recursion
+    measurements_raw = get(vis_data, "measurements", [])
+    
+    # Remove measurements from vis_data to avoid conflicts during convertdict
+    vis_data_cleaned = copy(vis_data)
+    delete!(vis_data_cleaned, "measurements")
+    
+    # Create Vis struct using convertdict for other fields
+    vis = convertdict(Vis, vis_data_cleaned)
+    
+    # Manually set the measurements field
+    vis.measurements = measurements_raw
+    
+    return vis
+end
+
+"""
+    get_parsed_measurements(vis::Vis) -> Vector{Measurement}
+
+Convert the raw measurements data in a Vis struct to parsed Measurement structs.
+
+This convenience function takes the raw YAML measurements data stored in `vis.measurements`
+and converts it to a vector of properly typed Measurement structs using the parse_measurements function.
+
+# Arguments
+- `vis::Vis`: Visualization settings struct containing raw measurements data
+
+# Returns
+- `Vector{Measurement}`: Array of parsed Measurement structs
+
+# Example
+```julia
+vis = Vis("data/vis_default.yaml")
+measurements = get_parsed_measurements(vis)
+for m in measurements
+    println("\$(m.name): separated=\$(m.separated)")
+end
+```
+"""
+function get_parsed_measurements(vis::Vis)
+    return parse_measurements(vis.measurements)
 end
 
 # Add computed properties for video_path and output_path
