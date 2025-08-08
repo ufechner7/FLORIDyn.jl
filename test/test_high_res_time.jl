@@ -27,7 +27,9 @@ using Dates
         datetime_str = replace(timestamp_part, r"T(\d{2})-(\d{2})-(\d{2})" => s"T\1:\2:\3")
         parsed_time = DateTime(datetime_str, "yyyy-mm-ddTHH:MM:SS")
         current_time = now()
-        time_diff = abs(Dates.value(current_time - parsed_time)) / 1000.0  # Convert to seconds
+        # Calculate time difference in seconds using Millisecond conversion
+        time_diff_ms = abs(Millisecond(current_time - parsed_time).value)
+        time_diff = time_diff_ms / 1000.0  # Convert to seconds
         @test time_diff < 5.0  # Should be within 5 seconds
         
         # Test that microseconds part has exactly 6 digits
@@ -56,7 +58,9 @@ using Dates
         datetime_str = replace(timestamp_part, r"T(\d{2})-(\d{2})-(\d{2})" => s"T\1:\2:\3")
         parsed_time = DateTime(datetime_str, "yyyy-mm-ddTHH:MM:SS")
         current_time = now()
-        time_diff = abs(Dates.value(current_time - parsed_time)) / 1000.0  # Convert to seconds
+        # Calculate time difference in seconds using Millisecond conversion
+        time_diff_ms = abs(Millisecond(current_time - parsed_time).value)
+        time_diff = time_diff_ms / 1000.0  # Convert to seconds
         @test time_diff < 5.0  # Should be within 5 seconds
         
         # Test that nanoseconds part has exactly 9 digits
@@ -108,13 +112,15 @@ using Dates
         @test length(names) == 10  # All names should be unique
         
         # Test that the timestamp part is reasonable
-        timestamp_part = result[15:end]  # Remove "floridyn_run_" prefix
+        timestamp_part = result[14:end]  # Remove "floridyn_run_" prefix (13 chars + 1)
         timestamp_base = split(timestamp_part, ".")[1]
         # Convert hyphens to colons in time portion for DateTime parsing
         datetime_str = replace(timestamp_base, r"T(\d{2})-(\d{2})-(\d{2})" => s"T\1:\2:\3")
         parsed_time = DateTime(datetime_str, "yyyy-mm-ddTHH:MM:SS")
         current_time = now()
-        time_diff = abs(Dates.value(current_time - parsed_time)) / 1000.0
+        # Calculate time difference in seconds using Millisecond conversion
+        time_diff_ms = abs(Millisecond(current_time - parsed_time).value)
+        time_diff = time_diff_ms / 1000.0  # Convert to seconds
         @test time_diff < 5.0  # Should be within 5 seconds
         
         # Test that names are suitable as directory names (no invalid characters)
@@ -147,7 +153,7 @@ using Dates
         micro_base = split(micro_result, ".")[1]
         nano_base = split(nano_result, ".")[1]
         precise_base = split(precise_result, ".")[1]
-        unique_base = split(unique_result[15:end], ".")[1]  # Remove prefix
+        unique_base = split(unique_result[14:end], ".")[1]  # Remove prefix (13 chars + 1)
         
         # Convert hyphens to colons in time portions for DateTime parsing
         micro_datetime = replace(micro_base, r"T(\d{2})-(\d{2})-(\d{2})" => s"T\1:\2:\3")
@@ -163,9 +169,12 @@ using Dates
         unique_time = DateTime(unique_datetime, "yyyy-mm-ddTHH:MM:SS")
         
         # All should be within the same second (allowing for execution time)
-        @test abs(Dates.value(micro_time - nano_time)) < 2000  # Within 2 seconds
-        @test abs(Dates.value(precise_time - micro_time)) < 2000
-        @test abs(Dates.value(unique_time - micro_time)) < 2000
+        micro_ms = abs(Millisecond(micro_time - nano_time).value)
+        precise_ms = abs(Millisecond(precise_time - micro_time).value) 
+        unique_ms = abs(Millisecond(unique_time - micro_time).value)
+        @test micro_ms < 2000  # Within 2 seconds (2000 milliseconds)
+        @test precise_ms < 2000
+        @test unique_ms < 2000
     end
     
     @testset "Edge cases and robustness" begin
