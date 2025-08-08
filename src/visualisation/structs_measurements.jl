@@ -4,6 +4,41 @@
 using Parameters
 
 """
+    FlowField
+
+Structure representing a single flow field visualization configuration.
+
+This struct defines the configuration for individual flow field visualizations in wind farm simulations,
+including the flow field type and whether it should be enabled for online visualization.
+
+# Fields
+- `name::String`: The name/identifier of the flow field type (e.g., "flow_field_vel_reduction",
+  "flow_field_added_turbulence", "flow_field_eff_wind_speed")
+- `online::Bool`: Whether the flow field should be displayed during online visualization (true) 
+  or only saved offline (false). Default is false for offline-only processing.
+
+# Examples
+```julia
+# Velocity reduction flow field with online display
+vel_field = FlowField("flow_field_vel_reduction", true)
+
+# Turbulence flow field with offline-only processing  
+turb_field = FlowField("flow_field_added_turbulence", false)
+```
+
+# See Also
+- [`parse_flow_fields`](@ref): Function to convert YAML flow field configurations to FlowField arrays
+- [`plotFlowField`](@ref): Function that uses these configurations for visualization
+"""
+@with_kw struct FlowField
+    name::String = ""
+    online::Bool = false
+end
+
+# Custom constructor for single string argument
+FlowField(name::String) = FlowField(name, false)
+
+"""
     Measurement
 
 Structure representing a single measurement visualization configuration.
@@ -165,5 +200,115 @@ function parse_measurements(vis_data::Dict)
         return parse_measurements(vis_data["measurements"])
     else
         return Measurement[]
+    end
+end
+
+"""
+    parse_flow_fields(flow_fields_yaml::Vector) -> Vector{FlowField}
+
+Convert YAML flow field configurations into an array of FlowField structs.
+
+This function parses the flow_fields section from a YAML visualization configuration and converts
+it into a structured array of FlowField objects. It handles both simple string entries and
+complex dictionary entries with name and online flag specifications.
+
+# Arguments
+- `flow_fields_yaml::Vector`: Vector containing flow field configurations from YAML.
+  Each element can be either:
+  - A simple string (flow field name)
+  - A dictionary with "name" and "online" keys
+
+# Returns
+- `Vector{FlowField}`: Array of FlowField structs with parsed configurations
+
+# YAML Format Support
+The function supports multiple YAML formats:
+
+## Simple Format (online=false by default)
+```yaml
+flow_fields:
+  - "flow_field_vel_reduction"
+  - "flow_field_added_turbulence" 
+```
+
+## Extended Format (with online flag)
+```yaml
+flow_fields:
+  - name: "flow_field_vel_reduction"
+    online: true
+  - name: "flow_field_added_turbulence"
+    online: false
+```
+
+## Mixed Format
+```yaml
+flow_fields:
+  - "flow_field_vel_reduction"  # Simple string, online=false
+  - name: "flow_field_added_turbulence"  # Dictionary format
+    online: true
+```
+
+# Examples
+```julia
+# Parse from YAML data
+yaml_flow_fields = [
+    "flow_field_vel_reduction",
+    Dict("name" => "flow_field_added_turbulence", "online" => true)
+]
+
+flow_fields = parse_flow_fields(yaml_flow_fields)
+```
+
+# See Also
+- [`FlowField`](@ref): The struct type created by this function
+- [`parse_measurements`](@ref): Similar function for measurement configurations
+"""
+function parse_flow_fields(flow_fields_yaml::Vector)
+    flow_fields = FlowField[]
+    
+    for item in flow_fields_yaml
+        if isa(item, String)
+            # Simple string format - use default online=false
+            push!(flow_fields, FlowField(item, false))
+        elseif isa(item, Dict)
+            # Dictionary format with name and online keys
+            name = get(item, "name", "")
+            online = get(item, "online", false)
+            
+            if !isempty(name)
+                push!(flow_fields, FlowField(name, online))
+            end
+        end
+    end
+    
+    return flow_fields
+end
+
+"""
+    parse_flow_fields(vis_data::Dict) -> Vector{FlowField}
+
+Parse flow fields from a complete visualization configuration dictionary.
+
+This is a convenience method that extracts the flow_fields section from a full
+visualization configuration dictionary and converts it to FlowField structs.
+
+# Arguments
+- `vis_data::Dict`: Complete visualization configuration dictionary (e.g., from YAML.load_file)
+
+# Returns
+- `Vector{FlowField}`: Array of parsed FlowField structs
+
+# Example
+```julia
+using YAML
+vis_data = YAML.load_file("vis_default.yaml")
+flow_fields = parse_flow_fields(vis_data["vis"])
+```
+"""
+function parse_flow_fields(vis_data::Dict)
+    if haskey(vis_data, "flow_fields")
+        return parse_flow_fields(vis_data["flow_fields"])
+    else
+        return FlowField[]
     end
 end

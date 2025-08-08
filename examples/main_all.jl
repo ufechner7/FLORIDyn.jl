@@ -46,16 +46,19 @@ toc()
 
 close_all(plt)
 
+# Process flow fields
 for flow_field in vis.flow_fields
-    @info "Calculating flow field: $flow_field"
-    Z, X, Y = calcFlowField(set, wf, wind, floris; plt=flow_field)
-    @info "Plotting flow field: $flow_field"
-    if flow_field == "flow_field_vel_reduction"
+    @info "Calculating flow field: $(flow_field.name)"
+    Z, X, Y = calcFlowField(set, wf, wind, floris)
+    @info "Plotting flow field: $(flow_field.name)"
+    if flow_field.name == "flow_field_vel_reduction"
         msr = 1
-    elseif flow_field == "flow_field_added_turbulence"
+    elseif flow_field.name == "flow_field_added_turbulence"
         msr = 2
-    elseif flow_field == "flow_field_eff_wind_speed"
+    elseif flow_field.name == "flow_field_eff_wind_speed"
         msr = 3
+    else
+        msr = 1  # default to velocity reduction
     end
     plot_flow_field(wf, X, Y, Z, vis; msr, plt)
 end

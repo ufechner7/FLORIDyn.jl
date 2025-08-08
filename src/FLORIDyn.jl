@@ -51,6 +51,7 @@ export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeas
 export run_floridyn, plot_flow_field, plot_measurements, close_all
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
 export isdelftblue, Measurement, parse_measurements, get_parsed_measurements
+export FlowField, parse_flow_fields, get_parsed_flow_fields
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()

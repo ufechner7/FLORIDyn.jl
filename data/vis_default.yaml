@@ -5,7 +5,7 @@ vis:
   video_folder: "video" # Relative video folder path 
   output_folder: "out"  # Relative output folder path  
   flow_fields: # List of flow field visualizations to be created
-    - name = "flow_field_vel_reduction"    # Flow field relative wind speed
+    - name: "flow_field_vel_reduction"    # Flow field relative wind speed
       online: true
     - name: "flow_field_added_turbulence" # Flow field added turbulence
       online: false
