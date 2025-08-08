@@ -46,6 +46,20 @@ toc()
 
 close_all(plt)
 
+for flow_field in vis.flow_fields
+    @info "Calculating flow field: $flow_field"
+    Z, X, Y = calcFlowField(set, wf, wind, floris; plt=flow_field)
+    @info "Plotting flow field: $flow_field"
+    if flow_field == "flow_field_vel_reduction"
+        msr = 1
+    elseif flow_field == "flow_field_added_turbulence"
+        msr = 2
+    elseif flow_field == "flow_field_eff_wind_speed"
+        msr = 3
+    end
+    plot_flow_field(wf, X, Y, Z, vis; msr, plt)
+end
+
 # if PLT == 1
 #     vis.online = false
 #     @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
