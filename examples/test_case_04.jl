@@ -1,8 +1,8 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+# Simplified test case plotting for the measurements
 using DistributedNext, Timers, ControlPlots, FLORIDyn
-# Simplified test case plotting the measurements
 
 settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"
