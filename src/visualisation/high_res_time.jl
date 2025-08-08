@@ -1,7 +1,8 @@
+# Copyright (c) 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
 # High-resolution timestamp functions for FLORIDyn.jl
 # Functions to get current time with microsecond and nanosecond resolution
-
-# Note: Dates is a standard library, so it should be available
 
 """
     now_microseconds()::String
@@ -70,6 +71,37 @@ Alias for now_microseconds() - returns current timestamp with microsecond resolu
 """
 precise_now() = now_microseconds()
 
+"""
+    unique_name()::String
+
+Creates a unique directory name for storing simulation results.
+
+This function generates a unique directory name by combining the prefix "floridyn_run_"
+with a high-resolution timestamp. The timestamp includes microsecond precision to ensure
+uniqueness even when multiple simulations are started in quick succession.
+
+# Returns
+- `String`: A unique directory name in the format "floridyn_run_YYYY-mm-ddTHH-MM-SS.μμμμμμ"
+
+# Examples
+```julia
+julia> unique_name()
+"floridyn_run_2025-08-08T16-58-55.494911"
+
+julia> unique_name()
+"floridyn_run_2025-08-08T16-58-55.495123"
+```
+
+# Notes
+- The generated name is suitable for use as a directory name on all operating systems
+- Uses hyphens instead of colons in the time portion for filesystem compatibility
+- Microsecond precision ensures uniqueness for rapid successive calls
+- Used to create separate output directories for each run
+
+# See Also
+- [`now_microseconds`](@ref): The underlying timestamp function used
+- [`Vis`](@ref): Visualization settings that may use unique names for output directories
+"""
 function unique_name()
     return "floridyn_run_" * now_microseconds()
 end
