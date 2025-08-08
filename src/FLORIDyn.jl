@@ -50,7 +50,8 @@ export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, i
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
 export run_floridyn, plot_flow_field, plot_measurements, close_all
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
-export isdelftblue
+export isdelftblue, Measurement, parse_measurements, get_parsed_measurements
+export FlowField, parse_flow_fields, get_parsed_flow_fields
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
@@ -229,6 +230,7 @@ A mutable struct representing a wind farm. Fields can be specified using keyword
     Names_OP::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the operating points
 end
 
+include("visualisation/structs_measurements.jl")
 include("settings.jl")
 
 # functions for calculating the wind field

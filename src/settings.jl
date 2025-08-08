@@ -251,6 +251,9 @@ properties for flexible path management.
                          and `save=true` (default: `"video"`).
 - `output_folder::String`: Relative path for the output directory. Used when `online=false`
                           and `save=true` (default: `"out"`).
+- `flow_fields::Vector{String}`: List of flow field visualizations to be created. Contains
+                                names like "flow_field_vel_reduction", "flow_field_added_turbulence",
+                                and "flow_field_eff_wind_speed" (default: `String[]`).
 - `v_min::Float64`: Minimum velocity value for color scale in effective wind speed 
                    visualizations (msr=3). Used to set consistent color scale limits 
                    across animation frames (default: `2.0`).
@@ -295,6 +298,10 @@ vis = Vis(online=true, save=true, v_min=2.0, v_max=12.0, rel_v_min=20.0, rel_v_m
 # Display only, no saving with default color scales
 vis = Vis(online=true, save=false, v_min=2.0, rel_v_min=20.0)
 
+# Specify flow field visualizations to create
+flow_fields = ["flow_field_vel_reduction", "flow_field_added_turbulence", "flow_field_eff_wind_speed"]
+vis = Vis(online=true, save=true, flow_fields=flow_fields)
+
 # Disable online visualization for batch processing
 vis = Vis(online=false, save=false)
 
@@ -336,6 +343,8 @@ The struct automatically adapts to different computing environments:
     print_filenames::Bool = false   # if true, print the names of the saved files
     video_folder::String = "video"  # relative video folder path
     output_folder::String = "out"   # relative output folder path
+    flow_fields::Vector{FlowField} = FlowField[]  # list of flow field visualizations to create
+    measurements::Vector{Measurement} = Measurement[]  # list of measurement visualizations to create (parsed from YAML)
     v_min::Float64 = 2
     v_max::Float64 = 10
     rel_v_min::Float64 = 20
@@ -348,7 +357,79 @@ end
 # Constructor for Vis struct from YAML file
 function Vis(filename::String)
     data = YAML.load_file(filename)
-    return convertdict(Vis, data["vis"])
+    vis_data = data["vis"]
+    
+    # Extract flow_fields and measurements separately to avoid recursion
+    flow_fields_raw = get(vis_data, "flow_fields", [])
+    measurements_raw = get(vis_data, "measurements", [])
+    
+    # Remove flow_fields and measurements from vis_data to avoid conflicts during convertdict
+    vis_data_cleaned = copy(vis_data)
+    delete!(vis_data_cleaned, "flow_fields")
+    delete!(vis_data_cleaned, "measurements")
+    
+    # Create Vis struct using convertdict for other fields
+    vis = convertdict(Vis, vis_data_cleaned)
+    
+    # Manually set the flow_fields and measurements fields
+    vis.flow_fields = parse_flow_fields(flow_fields_raw)
+    vis.measurements = parse_measurements(measurements_raw)
+    
+    return vis
+end
+
+"""
+    get_parsed_measurements(vis::Vis) -> Vector{Measurement}
+
+Convert the raw measurements data in a Vis struct to parsed Measurement structs.
+
+This convenience function takes the raw YAML measurements data stored in `vis.measurements`
+and converts it to a vector of properly typed Measurement structs using the parse_measurements function.
+
+# Arguments
+- `vis::Vis`: Visualization settings struct containing raw measurements data
+
+# Returns
+- `Vector{Measurement}`: Array of parsed Measurement structs
+
+# Example
+```julia
+vis = Vis("data/vis_default.yaml")
+measurements = get_parsed_measurements(vis)
+for m in measurements
+    println("\$(m.name): separated=\$(m.separated)")
+end
+```
+"""
+function get_parsed_measurements(vis::Vis)
+    return vis.measurements
+end
+
+"""
+    get_parsed_flow_fields(vis::Vis) -> Vector{FlowField}
+
+Get the flow fields from a Vis struct as FlowField structs.
+
+This convenience function returns the flow_fields stored in `vis.flow_fields` which
+are already parsed as FlowField structs during construction from YAML.
+
+# Arguments
+- `vis::Vis`: Visualization settings struct containing flow field data
+
+# Returns
+- `Vector{FlowField}`: Array of FlowField structs
+
+# Example
+```julia
+vis = Vis("data/vis_default.yaml")
+flow_fields = get_parsed_flow_fields(vis)
+for ff in flow_fields
+    println("\$(ff.name): online=\$(ff.online)")
+end
+```
+"""
+function get_parsed_flow_fields(vis::Vis)
+    return vis.flow_fields
 end
 
 # Add computed properties for video_path and output_path
