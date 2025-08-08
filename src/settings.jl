@@ -378,9 +378,6 @@ function Base.getproperty(vis::Vis, name::Symbol)
     elseif name === :output_path
         path = isdelftblue() ? joinpath(homedir(), "scratch", vis.output_folder) : joinpath(pwd(), vis.output_folder)
         return mkpath(path)
-    elseif name === :output_path
-        path = isdelftblue() ? joinpath(homedir(), "scratch", vis.output_folder) : joinpath(pwd(), vis.output_folder)
-        return mkpath(path)
     else
         return getfield(vis, name)
     end
