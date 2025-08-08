@@ -251,6 +251,7 @@ include("floridyn_cl/iterate.jl")
 include("controller/controller.jl")
 include("visualisation/calc_flowfield.jl")
 include("visualisation/plot_flowfield.jl")
+include("visualisation/plot_measurements.jl")
 include("visualisation/create_video.jl")
 include("visualisation/smart_plotting.jl")
 

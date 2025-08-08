@@ -468,6 +468,100 @@ end
 
             end
         end
+        
+        @testset "file saving functionality with vis.save=true" begin
+            # Only run file saving tests in single-threaded mode
+            if Threads.nthreads() == 1
+                # Get test parameters
+                wf, set, floris, wind, md = get_parameters()
+                Z, X, Y = calcFlowField(set, wf, wind, floris)
+                
+                # Test with vis.save=true and vis.unit_test=false to enable file saving
+                # Use a unique test output folder to avoid conflicts
+                test_output_folder = tempname()
+                vis = Vis(online=false, save=true, output_folder=test_output_folder, 
+                         rel_v_min=20.0, up_int=4, unit_test=false, print_filenames=false)
+                
+                # Ensure output directory doesn't exist before test
+                output_path = vis.output_path
+                @test isdir(output_path)  # Should be created by accessing the property
+                
+                # Test file saving for different measurement types
+                @testset "save files for different msr values" begin
+                    # Test msr=1 (velocity reduction)
+                    result1 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
+                    @test result1 === nothing
+                    velocity_file = joinpath(output_path, "velocity_reduction.png")
+                    @test isfile(velocity_file)
+                    
+                    # Test msr=2 (added turbulence)  
+                    result2 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
+                    @test result2 === nothing
+                    turbulence_file = joinpath(output_path, "added_turbulence.png")
+                    @test isfile(turbulence_file)
+                    
+                    # Test msr=3 (wind speed)
+                    result3 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
+                    @test result3 === nothing
+                    wind_speed_file = joinpath(output_path, "wind_speed.png")
+                    @test isfile(wind_speed_file)
+                end
+                
+                @testset "save files with time parameter" begin
+                    # Test file saving with time parameter
+                    result_t = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis, 120.0; msr=1)
+                    @test result_t === nothing
+                    time_file = joinpath(output_path, "velocity_reduction_t0120s.png")
+                    @test isfile(time_file)
+                    
+                    # Test with different time value
+                    result_t2 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis, 45.7; msr=2)
+                    @test result_t2 === nothing
+                    time_file2 = joinpath(output_path, "added_turbulence_t0046s.png")  # Should round to nearest int
+                    @test isfile(time_file2)
+                end
+                
+                @testset "online vs offline saving behavior" begin
+                    # Test vis.online=true - should save to video_path
+                    test_video_folder = "test_video_$(rand(10000:99999))"
+                    vis_online = Vis(online=true, save=true, video_folder=test_video_folder,
+                                   rel_v_min=20.0, unit_test=false, print_filenames=false)
+                    
+                    video_path = vis_online.video_path
+                    @test isdir(video_path)
+                    
+                    result_online = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis_online; msr=1)
+                    @test result_online === nothing
+                    online_file = joinpath(video_path, "velocity_reduction.png")
+                    @test isfile(online_file)
+                    
+                    # Clean up video directory
+                    try
+                        rm(video_path, recursive=true)
+                    catch
+                    end
+                end
+                
+                @testset "file properties verification" begin
+                    # Verify that saved files have reasonable properties
+                    velocity_file = joinpath(output_path, "velocity_reduction.png")
+                    if isfile(velocity_file)
+                        file_size = filesize(velocity_file)
+                        @test file_size > 1000  # File should be at least 1KB (reasonable for a plot)
+                        @test file_size < 1_000_000  # But not unreasonably large (< 1MB)
+                    end
+                end
+                
+                # Clean up test output directory
+                try
+                    rm(output_path, recursive=true)
+                catch e
+                    @warn "Could not clean up test directory: $e"
+                end
+            else
+                @info "Skipping file saving tests - only run in single-threaded mode (current: $(Threads.nthreads()) threads)"
+            end
+        end
     end
     
     @testset "get_layout" begin
