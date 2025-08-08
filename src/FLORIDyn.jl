@@ -229,6 +229,7 @@ A mutable struct representing a wind farm. Fields can be specified using keyword
     Names_OP::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the operating points
 end
 
+include("visualisation/structs_measurements.jl")
 include("settings.jl")
 
 # functions for calculating the wind field
@@ -249,7 +250,6 @@ include("floridyn_cl/prepare_simulation.jl")
 include("floridyn_cl/iterate.jl")
 
 include("controller/controller.jl")
-include("visualisation/structs_measurements.jl")
 include("visualisation/calc_flowfield.jl")
 include("visualisation/plot_flowfield.jl")
 include("visualisation/plot_measurements.jl")

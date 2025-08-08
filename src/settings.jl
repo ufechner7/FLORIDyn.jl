@@ -344,7 +344,7 @@ The struct automatically adapts to different computing environments:
     video_folder::String = "video"  # relative video folder path
     output_folder::String = "out"   # relative output folder path
     flow_fields::Vector{String} = String[]  # list of flow field visualizations to create
-    measurements::Vector{Any} = []  # list of measurement visualizations to create (parsed from YAML)
+    measurements::Vector{Measurement} = Measurement[]  # list of measurement visualizations to create (parsed from YAML)
     v_min::Float64 = 2
     v_max::Float64 = 10
     rel_v_min::Float64 = 20
@@ -370,7 +370,7 @@ function Vis(filename::String)
     vis = convertdict(Vis, vis_data_cleaned)
     
     # Manually set the measurements field
-    vis.measurements = measurements_raw
+    vis.measurements = parse_measurements(measurements_raw)
     
     return vis
 end
