@@ -18,6 +18,8 @@ tic()
 include("remote_plotting.jl")
 toc()
 
+FLORIDYN_EXECUTED = false
+
 function get_parameters(vis)
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -47,8 +49,11 @@ toc()
 close_all(plt)
 
 # Process flow fields
+if length(vis.flow_fields) == 0
+    @info "Skipping flow field visualisation."
+end
 for flow_field in vis.flow_fields
-    global wf
+    global wf, md, mi, FLORIDYN_EXECUTED
     Z, X, Y = calcFlowField(set, wf, wind, floris)
     if flow_field.name == "flow_field_vel_reduction"
         msr = 1
@@ -64,6 +69,8 @@ for flow_field in vis.flow_fields
         vis.online = true
         @info "Starting simulation with online visualisation for flow field $(flow_field.name) ..."
         wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+        FLORIDYN_EXECUTED = true
+
         if flow_field.create_video
             @info "Creating video for flow field $(flow_field.name) ..."
             video_paths = redirect_stdout(devnull) do
@@ -81,11 +88,14 @@ for flow_field in vis.flow_fields
         @time plot_flow_field(wf, X, Y, Z, vis; msr, plt)
     end
 end
-for measurement in vis.measurements
-    global wf, md
+if length(vis.measurements) > 0 && ! FLORIDYN_EXECUTED
+    global wf, md, mi
     vis.online = false
+    wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)    
+end
+for measurement in vis.measurements
     @info "Plotting measurements: $(measurement.name)"
-    # @time plot_measurements(wf, md, vis; separated=measurement.separated, plt)
+    @time plot_measurements(wf, md, vis; separated=measurement.separated, plt)
 end   
 
 
