@@ -3,9 +3,11 @@ CurrentModule = FLORIDyn
 ```
 # Simulation settings
 ## Introduction
-The settings are defined in a `.yaml` file in the folder `data`. The function [`setup`](@ref) converts them into three settings structs, containing strings and numbers. The constructor [`Settings`](@ref) creates a struct of marker types from these settings structs. 
+The settings are defined in two `.yaml` files in the folder `data`, one to define the simulation and one to define the visualization. The function [`setup`](@ref) converts the first one  into three settings structs, containing strings and numbers. The constructor [`Settings`](@ref) creates a struct of marker types from these settings structs. 
 
-For each of these yaml files there must be a folder with the same name (without the `.yaml` extension) in the data directory. In this folder the required `.csv` files must be stored.
+For each of the simulation yaml files there must be a folder with the same name (without the `.yaml` extension) in the data directory. In this folder the required `.csv` files must be stored.
+
+The constructor `Vis(filename)` creates a visualisation settings struct from the visualisation yaml file.
 
 ```yaml
 # FLORIDyn project configuration
@@ -156,18 +158,15 @@ turbines:
 
 ```
 
-# Types created from the yaml file
+# Types created from the yaml files
 ```@docs
 Sim
 Wind
 Con
+Vis
 Floris
 FloriDyn
 TurbineArray
-```
-# Types created manually
-```@docs
-Vis
 ```
 
 # Settings
