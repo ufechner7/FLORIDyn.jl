@@ -478,7 +478,7 @@ end
                 
                 # Test with vis.save=true and vis.unit_test=false to enable file saving
                 # Use a unique test output folder to avoid conflicts
-                test_output_folder = "test_output_$(rand(10000:99999))"
+                test_output_folder = tempname()
                 vis = Vis(online=false, save=true, output_folder=test_output_folder, 
                          rel_v_min=20.0, up_int=4, unit_test=false, print_filenames=false)
                 
