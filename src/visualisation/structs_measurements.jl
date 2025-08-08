@@ -9,21 +9,26 @@ using Parameters
 Structure representing a single flow field visualization configuration.
 
 This struct defines the configuration for individual flow field visualizations in wind farm simulations,
-including the flow field type and whether it should be enabled for online visualization.
+including the flow field type, online visualization settings, and video creation options.
 
 # Fields
 - `name::String`: The name/identifier of the flow field type (e.g., "flow_field_vel_reduction",
   "flow_field_added_turbulence", "flow_field_eff_wind_speed")
 - `online::Bool`: Whether the flow field should be displayed during online visualization (true) 
   or only saved offline (false). Default is false for offline-only processing.
+- `create_video::Bool`: Whether to create a video from the flow field frames (true) or not (false).
+  Default is false for no video creation.
 
 # Examples
 ```julia
-# Velocity reduction flow field with online display
-vel_field = FlowField("flow_field_vel_reduction", true)
+# Velocity reduction flow field with online display and video creation
+vel_field = FlowField("flow_field_vel_reduction", true, true)
 
-# Turbulence flow field with offline-only processing  
-turb_field = FlowField("flow_field_added_turbulence", false)
+# Turbulence flow field with offline-only processing, no video
+turb_field = FlowField("flow_field_added_turbulence", false, false)
+
+# Using keyword arguments
+eff_field = FlowField(name="flow_field_eff_wind_speed", online=false, create_video=true)
 ```
 
 # See Also
@@ -33,10 +38,12 @@ turb_field = FlowField("flow_field_added_turbulence", false)
 @with_kw struct FlowField
     name::String = ""
     online::Bool = false
+    create_video::Bool = false
 end
 
-# Custom constructor for single string argument
-FlowField(name::String) = FlowField(name, false)
+# Custom constructors for backward compatibility
+FlowField(name::String) = FlowField(name, false, false)
+FlowField(name::String, online::Bool) = FlowField(name, online, false)
 
 """
     Measurement
@@ -210,13 +217,13 @@ Convert YAML flow field configurations into an array of FlowField structs.
 
 This function parses the flow_fields section from a YAML visualization configuration and converts
 it into a structured array of FlowField objects. It handles both simple string entries and
-complex dictionary entries with name and online flag specifications.
+complex dictionary entries with name, online, and create_video flag specifications.
 
 # Arguments
 - `flow_fields_yaml::Vector`: Vector containing flow field configurations from YAML.
   Each element can be either:
   - A simple string (flow field name)
-  - A dictionary with "name" and "online" keys
+  - A dictionary with "name", "online", and "create_video" keys
 
 # Returns
 - `Vector{FlowField}`: Array of FlowField structs with parsed configurations
@@ -224,28 +231,31 @@ complex dictionary entries with name and online flag specifications.
 # YAML Format Support
 The function supports multiple YAML formats:
 
-## Simple Format (online=false by default)
+## Simple Format (online=false, create_video=false by default)
 ```yaml
 flow_fields:
   - "flow_field_vel_reduction"
   - "flow_field_added_turbulence" 
 ```
 
-## Extended Format (with online flag)
+## Extended Format (with online and create_video flags)
 ```yaml
 flow_fields:
   - name: "flow_field_vel_reduction"
     online: true
+    create_video: true
   - name: "flow_field_added_turbulence"
     online: false
+    create_video: false
 ```
 
 ## Mixed Format
 ```yaml
 flow_fields:
-  - "flow_field_vel_reduction"  # Simple string, online=false
+  - "flow_field_vel_reduction"  # Simple string, defaults applied
   - name: "flow_field_added_turbulence"  # Dictionary format
     online: true
+    create_video: false
 ```
 
 # Examples
@@ -253,7 +263,7 @@ flow_fields:
 # Parse from YAML data
 yaml_flow_fields = [
     "flow_field_vel_reduction",
-    Dict("name" => "flow_field_added_turbulence", "online" => true)
+    Dict("name" => "flow_field_added_turbulence", "online" => true, "create_video" => false)
 ]
 
 flow_fields = parse_flow_fields(yaml_flow_fields)
@@ -268,15 +278,16 @@ function parse_flow_fields(flow_fields_yaml::Vector)
     
     for item in flow_fields_yaml
         if isa(item, String)
-            # Simple string format - use default online=false
-            push!(flow_fields, FlowField(item, false))
+            # Simple string format - use defaults online=false, create_video=false
+            push!(flow_fields, FlowField(item, false, false))
         elseif isa(item, Dict)
-            # Dictionary format with name and online keys
+            # Dictionary format with name, online, and create_video keys
             name = get(item, "name", "")
             online = get(item, "online", false)
+            create_video = get(item, "create_video", false)
             
             if !isempty(name)
-                push!(flow_fields, FlowField(name, online))
+                push!(flow_fields, FlowField(name, online, create_video))
             end
         end
     end
