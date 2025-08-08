@@ -182,35 +182,6 @@ function parse_measurements(measurements_yaml::Vector)
 end
 
 """
-    parse_measurements(vis_data::Dict) -> Vector{Measurement}
-
-Parse measurements from a complete visualization configuration dictionary.
-
-This is a convenience method that extracts the measurements section from a full
-visualization configuration dictionary and converts it to Measurement structs.
-
-# Arguments
-- `vis_data::Dict`: Complete visualization configuration dictionary (e.g., from YAML.load_file)
-
-# Returns
-- `Vector{Measurement}`: Array of parsed Measurement structs
-
-# Example
-```julia
-using YAML
-vis_data = YAML.load_file("vis_default.yaml")
-measurements = parse_measurements(vis_data["vis"])
-```
-"""
-function parse_measurements(vis_data::Dict)
-    if haskey(vis_data, "measurements")
-        return parse_measurements(vis_data["measurements"])
-    else
-        return Measurement[]
-    end
-end
-
-"""
     parse_flow_fields(flow_fields_yaml::Vector) -> Vector{FlowField}
 
 Convert YAML flow field configurations into an array of FlowField structs.
@@ -295,31 +266,3 @@ function parse_flow_fields(flow_fields_yaml::Vector)
     return flow_fields
 end
 
-"""
-    parse_flow_fields(vis_data::Dict) -> Vector{FlowField}
-
-Parse flow fields from a complete visualization configuration dictionary.
-
-This is a convenience method that extracts the flow_fields section from a full
-visualization configuration dictionary and converts it to FlowField structs.
-
-# Arguments
-- `vis_data::Dict`: Complete visualization configuration dictionary (e.g., from YAML.load_file)
-
-# Returns
-- `Vector{FlowField}`: Array of parsed FlowField structs
-
-# Example
-```julia
-using YAML
-vis_data = YAML.load_file("vis_default.yaml")
-flow_fields = parse_flow_fields(vis_data["vis"])
-```
-"""
-function parse_flow_fields(vis_data::Dict)
-    if haskey(vis_data, "flow_fields")
-        return parse_flow_fields(vis_data["flow_fields"])
-    else
-        return FlowField[]
-    end
-end
