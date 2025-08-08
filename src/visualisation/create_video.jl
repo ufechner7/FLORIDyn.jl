@@ -55,19 +55,16 @@ function createVideo(prefix::String; video_dir="video", output_dir="video", fps=
     
     # Find all PNG files starting with the prefix
     all_files = readdir(video_dir)
-    matching_files = filter(f -> startswith(f, prefix) && endswith(f, ".png"), all_files)
-    
+    matching_files = filter(f -> startswith(f, prefix) && endswith(f, ".png"), all_files)    
+   
+    # Check if any matching files were found
     if isempty(matching_files)
-        @warn "No PNG files found with prefix '$prefix' in directory '$video_dir'"
+        @debug "No PNG files found with prefix '$prefix' in directory '$video_dir'. Skipping video creation."
         return ""
     end
-    
+   
     # Sort files naturally (handles numeric sequences correctly)
     sorted_files = sort(matching_files, by=natural_sort_key)
-    
-    println("Found $(length(sorted_files)) files with prefix '$prefix'")
-    println("First file: $(sorted_files[1])")
-    println("Last file: $(sorted_files[end])")
     
     # Create output directory if it doesn't exist
     if !isdir(output_dir)
@@ -84,8 +81,6 @@ function createVideo(prefix::String; video_dir="video", output_dir="video", fps=
     try
         # Use a simpler approach: create symbolic links or copy files to a temporary numbered sequence
         # This is more reliable than complex concat approaches
-        
-        println("Creating temporary numbered sequence...")
         temp_dir = "temp_video_frames"
         
         # Create temporary directory
@@ -106,39 +101,51 @@ function createVideo(prefix::String; video_dir="video", output_dir="video", fps=
         # Add scale filter to ensure dimensions are divisible by 2
         ffmpeg_cmd = `ffmpeg -y -framerate $fps -i $input_pattern -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -c:v libx264 -preset medium -crf 23 -pix_fmt yuv420p -movflags +faststart $output_path`
         
-        println("Creating video with FFmpeg...")
-        println("Command: $ffmpeg_cmd")
-        
-        # Run FFmpeg
+        # Run FFmpeg (suppress output)
+        ffmpeg_succeeded = false
         try
-            run(ffmpeg_cmd)
-            println("✓ Video created successfully: $output_path")
-            
-            # Delete PNG files if requested
-            if delete_frames
-                println("Deleting source PNG files...")
-                for file in sorted_files
-                    file_path = joinpath(video_dir, file)
-                    try
-                        rm(file_path)
-                    catch e
-                        @warn "Failed to delete file $file_path: $e"
-                    end
-                end
-                println("✓ Source files deleted")
-            end
-            
-            return output_path
-            
+            run(pipeline(ffmpeg_cmd, stdout=devnull, stderr=devnull))
+            ffmpeg_succeeded = true
         catch e
-            if isa(e, ProcessFailedException)
-                @error "FFmpeg failed to create video. Make sure FFmpeg is installed and available in PATH."
-                @error "Error details: $e"
+            # Give ffmpeg a moment to finish writing the file
+            sleep(1)
+            
+            # Check if the video file was actually created despite the error
+            if isfile(output_path) && filesize(output_path) > 1000  # At least 1KB indicates a real video
+                @debug "FFmpeg reported an error but video file was created successfully at $output_path (size: $(filesize(output_path)) bytes)"
+                ffmpeg_succeeded = true
             else
-                @error "Unexpected error running FFmpeg: $e"
+                @debug "File check: exists=$(isfile(output_path)), size=$(isfile(output_path) ? filesize(output_path) : 0)"
+                if isa(e, ProcessFailedException)
+                    @error "FFmpeg failed to create video. Make sure FFmpeg is installed and available in PATH."
+                    @error "Error details: $e"
+                else
+                    @error "Unexpected error running FFmpeg: $e"
+                end
+                return ""
             end
+        end
+        
+        # If we got here, ffmpeg succeeded (either normally or the file was created despite errors)
+        if !ffmpeg_succeeded
             return ""
         end
+        
+        # Delete PNG files if requested
+        if delete_frames
+            println("Deleting source PNG files...")
+            for file in sorted_files
+                file_path = joinpath(video_dir, file)
+                try
+                    rm(file_path)
+                catch e
+                    @warn "Failed to delete file $file_path: $e"
+                end
+            end
+            println("✓ Source files deleted")
+        end
+        
+        return output_path
         
     catch e
         @error "Error creating video: $e"

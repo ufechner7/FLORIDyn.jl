@@ -49,9 +49,7 @@ close_all(plt)
 # Process flow fields
 for flow_field in vis.flow_fields
     global wf
-    @info "Calculating flow field: $(flow_field.name)"
     Z, X, Y = calcFlowField(set, wf, wind, floris)
-    @info "Plotting flow field: $(flow_field.name)"
     if flow_field.name == "flow_field_vel_reduction"
         msr = 1
     elseif flow_field.name == "flow_field_added_turbulence"
@@ -64,12 +62,26 @@ for flow_field in vis.flow_fields
     if flow_field.online
         cleanup_video_folder()
         vis.online = true
+        @info "Starting simulation with online visualisation for flow field $(flow_field.name) ..."
         wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+        if flow_field.create_video
+            @info "Creating video for flow field $(flow_field.name) ..."
+            video_paths = redirect_stdout(devnull) do
+                createAllVideos(fps=4, delete_frames=false, output_dir=vis.output_path)
+            end
+            if !isempty(video_paths)
+                @info "Video created successfully: $(video_paths[1])"
+            else
+                @warn "No video created."
+            end
+        end
     else
         vis.online = false
+        @info "Plotting flow field: $(flow_field.name)"
         @time plot_flow_field(wf, X, Y, Z, vis; msr, plt)
     end
 end
+
 
 # if PLT == 1
 #     vis.online = false
