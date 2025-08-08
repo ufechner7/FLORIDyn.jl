@@ -378,60 +378,6 @@ function Vis(filename::String)
     return vis
 end
 
-"""
-    get_parsed_measurements(vis::Vis) -> Vector{Measurement}
-
-Convert the raw measurements data in a Vis struct to parsed Measurement structs.
-
-This convenience function takes the raw YAML measurements data stored in `vis.measurements`
-and converts it to a vector of properly typed Measurement structs using the parse_measurements function.
-
-# Arguments
-- `vis::Vis`: Visualization settings struct containing raw measurements data
-
-# Returns
-- `Vector{Measurement}`: Array of parsed Measurement structs
-
-# Example
-```julia
-vis = Vis("data/vis_default.yaml")
-measurements = get_parsed_measurements(vis)
-for m in measurements
-    println("\$(m.name): separated=\$(m.separated)")
-end
-```
-"""
-function get_parsed_measurements(vis::Vis)
-    return vis.measurements
-end
-
-"""
-    get_parsed_flow_fields(vis::Vis) -> Vector{FlowField}
-
-Get the flow fields from a Vis struct as FlowField structs.
-
-This convenience function returns the flow_fields stored in `vis.flow_fields` which
-are already parsed as FlowField structs during construction from YAML.
-
-# Arguments
-- `vis::Vis`: Visualization settings struct containing flow field data
-
-# Returns
-- `Vector{FlowField}`: Array of FlowField structs
-
-# Example
-```julia
-vis = Vis("data/vis_default.yaml")
-flow_fields = get_parsed_flow_fields(vis)
-for ff in flow_fields
-    println("\$(ff.name): online=\$(ff.online)")
-end
-```
-"""
-function get_parsed_flow_fields(vis::Vis)
-    return vis.flow_fields
-end
-
 # Add computed properties for video_path and output_path
 """
     Base.getproperty(vis::Vis, name::Symbol)
