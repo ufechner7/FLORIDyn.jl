@@ -7,7 +7,7 @@
     now_microseconds()::String
 
 Returns current timestamp as a string with microsecond resolution.
-Format: "YYYY-mm-ddTHH:MM:SS.μμμμμμ"
+Format: "YYYY-mm-ddTHH-MM-SS.μμμμμμ"
 
 # Examples
 ```julia
@@ -28,7 +28,7 @@ function now_microseconds()::String
     microseconds = div(ns_time % 1_000_000_000, 1000)
     
     # Format the base datetime
-    base_str = Dates.format(now_time, "yyyy-mm-ddTHH:MM:SS")
+    base_str = Dates.format(now_time, "yyyy-mm-ddTHH-MM-SS")
     
     # Add microseconds (6 digits with leading zeros)
     return string(base_str, ".", lpad(microseconds, 6, '0'))
@@ -38,12 +38,12 @@ end
     now_nanoseconds()::String
 
 Returns current timestamp as a string with nanosecond resolution.
-Format: "YYYY-mm-ddTHH:MM:SS.nnnnnnnnn"
+Format: "YYYY-mm-ddTHH-MM-SS.nnnnnnnnn"
 
 # Examples
 ```julia
 julia> now_nanoseconds()
-"2025-08-08T16:58:55.494911123"
+"2025-08-08T16-58-55.494911123"
 ```
 """
 function now_nanoseconds()::String
@@ -57,8 +57,8 @@ function now_nanoseconds()::String
     nanoseconds = ns_time % 1_000_000_000
     
     # Format the base datetime
-    base_str = Dates.format(now_time, "yyyy-mm-ddTHH:MM:SS")
-    
+    base_str = Dates.format(now_time, "yyyy-mm-ddTHH-MM-SS")
+
     # Add nanoseconds (9 digits with leading zeros)
     return string(base_str, ".", lpad(nanoseconds, 9, '0'))
 end
@@ -70,5 +70,6 @@ Alias for now_microseconds() - returns current timestamp with microsecond resolu
 """
 precise_now() = now_microseconds()
 
-# Export the functions if this file is included in a module
-# export now_microseconds, now_nanoseconds, precise_now
+function unique_name()
+    return "floridyn_run_" * now_microseconds()
+end
