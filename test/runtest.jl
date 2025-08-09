@@ -22,6 +22,16 @@ if basename(pwd()) == "test"
     cd("..")
 end
 
+# Files that need error suppression
+suppress_error_files = [
+    "test_dir.jl",
+    "test_shear.jl",
+    "test_tit.jl", 
+    "test_vel.jl",
+    "test_iterate.jl",
+    "test_floridyn_cl.jl"
+]
+
 function get_test_files()
     """Get all test_*.jl files from the test directory"""
     test_dir = @__DIR__
@@ -84,21 +94,22 @@ end
 
 function run_file(filepath::String, description::String)
     """Run a specific test file"""
-    println("\n" * "="^60)
+    println("\n" * "="^66)
     println("Running: $description")
     println("File: $filepath")
-    println("="^60)
+    println("="^66); println()
     
     # Store initial worker count
     initial_procs = nprocs()
     
-    # Activate the project environment from the parent directory (project root)
-    # Pkg.activate(dirname(@__DIR__))
-    
     # Run the file
     success = false
-    try
-        include(filepath)
+    try   
+        if basename(filepath) in suppress_error_files
+            @suppress_err include(filepath)
+        else
+            include(filepath)
+        end
         println("\n✅ $description completed successfully!")
         success = true
     catch e
