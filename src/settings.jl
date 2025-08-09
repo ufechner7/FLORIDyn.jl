@@ -374,6 +374,7 @@ The struct automatically adapts to different computing environments:
     save::Bool = false                # save plots to video folder
     save_results::Bool = false        # save simulation results as .jld2 files
     print_filenames::Bool = false     # if true, print the names of the saved files
+    unique_folder::String = ""        # this will be set when starting the simulation
     video_folder::String = "video"    # relative video folder path
     output_folder::String = "out"     # relative output folder path
     unique_output_folder::Bool = true # if true, for each simulation run a new folder is created 
@@ -434,10 +435,10 @@ For all other properties, it returns the field value as usual.
 """
 function Base.getproperty(vis::Vis, name::Symbol)
     if name === :video_path
-        path = isdelftblue() ? joinpath(homedir(), "scratch", vis.video_folder) : joinpath(pwd(), vis.video_folder)
+        path = isdelftblue() ? joinpath(homedir(), "scratch", vis.unique_folder, vis.video_folder) : joinpath(pwd(), vis.video_folder, vis.unique_folder, )
         return mkpath(path)
     elseif name === :output_path
-        path = isdelftblue() ? joinpath(homedir(), "scratch", vis.output_folder) : joinpath(pwd(), vis.output_folder)
+        path = isdelftblue() ? joinpath(homedir(), "scratch", vis.unique_folder, vis.output_folder) : joinpath(pwd(), vis.output_folder, vis.unique_folder, )
         return mkpath(path)
     else
         return getfield(vis, name)

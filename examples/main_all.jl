@@ -33,6 +33,11 @@ wf = initSimulation(wf, sim)
 toc()
 
 close_all(plt)
+if vis.unique_output_folder
+    vis.unique_folder = unique_name()
+else
+    vis.unique_folder = ""
+end
 
 # Process flow fields
 if length(vis.flow_fields) == 0
@@ -109,17 +114,7 @@ end
 if vis.save_results
     # Save simulation results as .jld2 files
     @info "Saving simulation results..."
-    
-    # Create results filename with timestamp for uniqueness
-    if vis.unique_output_folder
-        timestamp = replace(now_microseconds(), ":" => "-")
-        results_filename = joinpath(vis.output_path, "results_$(timestamp).jld2")
-    else
-        results_filename = joinpath(vis.output_path, "results.jld2")
-    end
-    
-    # Ensure output directory exists
-    mkpath(dirname(results_filename))
+    results_filename = joinpath(vis.output_path, "results.jld2")
     
     try
         # Save the main simulation variables
