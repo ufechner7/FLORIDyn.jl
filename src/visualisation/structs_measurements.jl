@@ -201,7 +201,7 @@ end
 
 Convert YAML flow field configurations into an array of FlowField structs.
 
-This function parses the flow_fields section from a YAML visualization configuration and converts
+This function parses the `flow_fields` section from a YAML visualization configuration and converts
 it into a structured array of FlowField objects. It handles both simple string entries and
 complex dictionary entries with name, online, `create_video`, and skip flag specifications.
 
