@@ -8,6 +8,19 @@ or groups of tests from the test/ directory.
 """
 
 using Pkg
+if ! ("Suppressor" ∈ keys(Pkg.project().dependencies))
+    using TestEnv; TestEnv.activate()
+end
+using FLORIDyn
+using Test
+using LinearAlgebra
+using Random
+using Suppressor
+using DistributedNext
+
+if basename(pwd()) == "test"
+    cd("..")
+end
 
 function get_test_files()
     """Get all test_*.jl files from the test directory"""

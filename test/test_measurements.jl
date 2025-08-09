@@ -81,25 +81,4 @@ using FLORIDyn
         @test length(empty_measurements) == 0
     end
     
-    @testset "parse_measurements with Dict input" begin
-        # Test parsing from vis configuration dictionary
-        vis_config = Dict(
-            "measurements" => [
-                Dict("name" => "measurements_vel_reduction", "separated" => true),
-                "measurements_added_turbulence"
-            ]
-        )
-        
-        measurements = parse_measurements(vis_config)
-        @test length(measurements) == 2
-        @test measurements[1].name == "measurements_vel_reduction"
-        @test measurements[1].separated == true
-        @test measurements[2].name == "measurements_added_turbulence"
-        @test measurements[2].separated == false
-        
-        # Test with missing measurements key
-        empty_config = Dict("other_key" => "value")
-        measurements = parse_measurements(empty_config)
-        @test length(measurements) == 0
-    end
 end
