@@ -50,7 +50,7 @@ export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, i
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
 export run_floridyn, plot_flow_field, plot_measurements, close_all
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
-export now_microseconds, now_nanoseconds, precise_now, unique_name
+export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_results
 export isdelftblue, Measurement, parse_measurements
 export FlowField, parse_flow_fields
 

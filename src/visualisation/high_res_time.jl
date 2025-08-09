@@ -105,3 +105,171 @@ julia> unique_name()
 function unique_name()
     return "floridyn_run_" * now_microseconds()
 end
+
+"""
+    delete_results(n::Int; directory::String = pwd(), dry_run::Bool = false)
+
+Delete the last (newest) n folders starting with "floridyn_run" from the specified directory.
+
+This function helps manage disk space by removing recent simulation run directories. It sorts
+directories by modification time and removes the newest ones first, preserving older
+simulation results that may be more established or important.
+
+# Arguments
+- `n::Int`: Number of folders to delete (must be positive)
+- `directory::String`: Directory to search in (default: current working directory)  
+- `dry_run::Bool`: If `true`, only shows what would be deleted without actually deleting (default: `false`)
+
+# Returns
+- `Vector{String}`: List of directories that were deleted (or would be deleted in dry_run mode)
+
+# Examples
+```julia
+# Delete the 3 newest floridyn_run folders in current directory
+deleted = delete_results(3)
+
+# Preview what would be deleted without actually deleting
+delete_results(5, dry_run=true)
+
+# Clean up from specific directory
+delete_results(2, directory="/path/to/output")
+
+# Clean up from output directory
+delete_results(10, directory="out")
+```
+
+# Safety Features
+- Only deletes directories that start with "floridyn_run"
+- Sorts by modification time (newest deleted first)
+- Validates that directories exist before attempting deletion
+- Provides dry_run mode for safe preview
+- Informative logging of actions taken
+
+# Error Handling
+- Returns empty list if no matching directories found
+- Skips directories that cannot be deleted due to permissions
+- Continues processing even if individual deletions fail
+
+# Notes
+- Preserves the oldest simulation results
+- Useful for removing failed or incomplete recent runs
+- Can be run periodically to manage disk space
+- Works with directories created by [`unique_name()`](@ref)
+
+# See Also
+- [`unique_name`](@ref): Function that creates floridyn_run directories
+- [`find_floridyn_runs`](@ref): Function to list existing floridyn_run directories
+"""
+function delete_results(n::Int, vis; dry_run::Bool = false)
+    # Validate input
+    vis.unique_folder = ""
+    directory = dirname(vis.output_path)
+    if n <= 0
+        @warn "Number of folders to delete must be positive. Got: $n"
+        return String[]
+    end
+    
+    if !isdir(directory)
+        @error "Directory does not exist: $directory"
+        return String[]
+    end
+    
+    # Find all floridyn_run directories
+    floridyn_dirs = find_floridyn_runs(directory)
+    
+    if isempty(floridyn_dirs)
+        @info "No floridyn_run directories found in: $directory"
+        return String[]
+    end
+    
+    # Sort by modification time (newest first for deletion)
+    sorted_dirs = sort(floridyn_dirs, by=d -> mtime(d), rev=true)
+    
+    # Determine how many to actually delete
+    n_to_delete = min(n, length(sorted_dirs))
+    dirs_to_delete = sorted_dirs[1:n_to_delete]
+    
+    if dry_run
+        @info "DRY RUN - Would delete $n_to_delete newest floridyn_run directories:"
+        for (i, dir) in enumerate(dirs_to_delete)
+            dir_name = basename(dir)
+            mod_time = Dates.unix2datetime(mtime(dir))
+            @info "  $(i). $dir_name (modified: $mod_time)"
+        end
+        return dirs_to_delete
+    end
+    
+    # Actually delete the directories
+    deleted_dirs = String[]
+    
+    @info "Deleting $n_to_delete newest floridyn_run directories from: $directory"
+    
+    for (i, dir) in enumerate(dirs_to_delete)
+        dir_name = basename(dir)
+        try
+            rm(dir, recursive=true)
+            push!(deleted_dirs, dir)
+            @info "  $(i)/$n_to_delete Deleted: $dir_name"
+        catch e
+            @error "Failed to delete $dir_name: $e"
+        end
+    end
+    
+    remaining_count = length(floridyn_dirs) - length(deleted_dirs)
+    @info "Cleanup complete. Deleted $(length(deleted_dirs)) directories, $remaining_count remaining."
+    
+    return deleted_dirs
+end
+
+"""
+    find_floridyn_runs(directory::String = pwd())
+
+Find all directories starting with "floridyn_run" in the specified directory.
+
+# Arguments  
+- `directory::String`: Directory to search in (default: current working directory)
+
+# Returns
+- `Vector{String}`: List of full paths to floridyn_run directories, sorted by name
+
+# Examples
+```julia
+# Find floridyn_run directories in current directory
+dirs = find_floridyn_runs()
+
+# Find in specific directory
+dirs = find_floridyn_runs("out")
+
+# Count how many exist
+count = length(find_floridyn_runs())
+```
+
+# See Also
+- [`delete_results`](@ref): Function that uses this to find directories to delete
+- [`unique_name`](@ref): Function that creates these directories
+"""
+function find_floridyn_runs(directory::String = pwd())
+    if !isdir(directory)
+        @warn "Directory does not exist: $directory"
+        return String[]
+    end
+    
+    try
+        # Get all items in directory
+        all_items = readdir(directory)
+        
+        # Filter for directories starting with "floridyn_run"
+        floridyn_dirs = filter(all_items) do item
+            full_path = joinpath(directory, item)
+            return isdir(full_path) && startswith(item, "floridyn_run")
+        end
+        
+        # Convert to full paths and sort
+        full_paths = [joinpath(directory, dir) for dir in floridyn_dirs]
+        return sort(full_paths)
+        
+    catch e
+        @error "Error reading directory $directory: $e"
+        return String[]
+    end
+end

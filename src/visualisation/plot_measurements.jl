@@ -134,7 +134,11 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
         directory = vis.output_path
         
         # Generate filename with measurement type and time information
-        filename = joinpath(directory, "$(msr_name).png")
+        if separated
+            filename = joinpath(directory, "$(msr_name).png")
+        else
+            filename = joinpath(directory, "$(msr_name)-lineplot.png")
+        end
         
         # Save the current figure
         try
