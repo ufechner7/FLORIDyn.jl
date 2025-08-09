@@ -198,4 +198,241 @@ using Dates
         @test length(unique(results)) == 20
         @test all(r -> occursin(r"^floridyn_run_\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d{6}$", r), results)
     end
+    
+    @testset "delete_results function" begin
+        @testset "Input validation" begin
+            # Create a test Vis object
+            vis = Vis(online=false, output_folder="test_validation")
+            vis.unique_folder = ""  # Empty for these tests
+            
+            # Test with non-positive n
+            @test_logs (:warn, r"Number of folders to delete must be positive") begin
+                result = delete_results(vis, 0)
+                @test isempty(result)
+            end
+            
+            @test_logs (:warn, r"Number of folders to delete must be positive") begin
+                result = delete_results(vis, -1)
+                @test isempty(result)
+            end
+            
+            # Clean up
+            rm(joinpath(pwd(), "test_validation"), recursive=true, force=true)
+        end
+        
+        @testset "Empty directory behavior" begin
+            # Create a test Vis object
+            vis = Vis(online=false, output_folder="test_empty")
+            vis.unique_folder = ""  # Empty for these tests
+            
+            # Test with empty directory (no floridyn_run folders)
+            @test_logs (:info, r"No floridyn_run directories found") begin
+                result = delete_results(vis, 1)
+                @test isempty(result)
+            end
+            
+            # Test dry run with empty directory
+            @test_logs (:info, r"No floridyn_run directories found") begin
+                result = delete_results(vis, 1, dry_run=true)
+                @test isempty(result)
+            end
+            
+            # Clean up
+            rm(joinpath(pwd(), "test_empty"), recursive=true, force=true)
+        end
+
+        @testset "Single folder operations" begin
+            # Create a test Vis object
+            vis = Vis(online=false, output_folder="test_single")
+            vis.unique_folder = ""  # Empty for these tests
+            output_dir = vis.output_path  # This creates the directory structure
+            
+            test_folder = joinpath(output_dir, "floridyn_run_2025-01-01T12-00-00.123456")
+            mkdir(test_folder)
+            
+            # Create a dummy file inside to make it non-empty
+            touch(joinpath(test_folder, "test_file.txt"))
+            
+            # Test dry run - should find the folder but not delete it
+            @test_logs (:info, r"DRY RUN") match_mode=:any begin
+                result = delete_results(vis, 1, dry_run=true)
+                @test length(result) == 1
+                @test basename(result[1]) == "floridyn_run_2025-01-01T12-00-00.123456"
+                @test isdir(test_folder)  # Should still exist
+            end
+            
+            # Test actual deletion
+            @test_logs (:info, r"Deleting") match_mode=:any begin
+                result = delete_results(vis, 1)
+                @test length(result) == 1
+                @test basename(result[1]) == "floridyn_run_2025-01-01T12-00-00.123456"
+                @test !isdir(test_folder)  # Should be deleted
+            end
+            
+            # Test vis.unique_folder is cleared
+            @test vis.unique_folder == ""
+            
+            # Clean up
+            rm(joinpath(pwd(), "test_single"), recursive=true, force=true)
+        end
+            
+        @testset "Multiple folder operations" begin
+            # Create a test Vis object 
+            vis = Vis(online=false, output_folder="test_multiple")
+            vis.unique_folder = ""  # Empty for these tests
+            output_dir = vis.output_path
+            
+            # Create multiple test directories with different timestamps
+            test_folders = [
+                "floridyn_run_2025-01-01T10-00-00.111111",  # Oldest
+                "floridyn_run_2025-01-01T11-00-00.222222",  # Middle
+                "floridyn_run_2025-01-01T12-00-00.333333",  # Newest
+            ]
+            
+            folder_paths = String[]
+            for folder_name in test_folders
+                folder_path = joinpath(output_dir, folder_name)
+                mkdir(folder_path)
+                touch(joinpath(folder_path, "test_file.txt"))
+                push!(folder_paths, folder_path)
+                # Small delay to ensure different modification times
+                sleep(0.01)
+            end
+            
+            # Test dry run for deleting 2 newest
+            @test_logs (:info, r"DRY RUN") match_mode=:any begin
+                result = delete_results(vis, 2, dry_run=true)
+                @test length(result) == 2
+                # Should return newest first
+                @test basename(result[1]) == "floridyn_run_2025-01-01T12-00-00.333333"
+                @test basename(result[2]) == "floridyn_run_2025-01-01T11-00-00.222222"
+                # All folders should still exist
+                @test all(isdir, folder_paths)
+            end
+            
+            # Test actual deletion of 2 newest
+            @test_logs (:info, r"Deleting") match_mode=:any begin
+                result = delete_results(vis, 2)
+                @test length(result) == 2
+                # Should delete newest first
+                @test basename(result[1]) == "floridyn_run_2025-01-01T12-00-00.333333"
+                @test basename(result[2]) == "floridyn_run_2025-01-01T11-00-00.222222"
+                
+                # Check which folders remain
+                @test !isdir(folder_paths[3])  # Newest deleted
+                @test !isdir(folder_paths[2])  # Middle deleted
+                @test isdir(folder_paths[1])   # Oldest preserved
+            end
+            
+            # Clean up
+            rm(joinpath(pwd(), "test_multiple"), recursive=true, force=true)
+        end
+        
+        @testset "Boundary conditions" begin
+            # Create a test Vis object
+            vis = Vis(online=false, output_folder="test_boundary")
+            vis.unique_folder = ""  # Empty for these tests
+            output_dir = vis.output_path
+            
+            # Create 3 test directories
+            test_folders = [
+                "floridyn_run_2025-01-01T10-00-00.111111",
+                "floridyn_run_2025-01-01T11-00-00.222222", 
+                "floridyn_run_2025-01-01T12-00-00.333333",
+            ]
+            
+            folder_paths = String[]
+            for folder_name in test_folders
+                folder_path = joinpath(output_dir, folder_name)
+                mkdir(folder_path)
+                push!(folder_paths, folder_path)
+                sleep(0.01)
+            end
+            
+            # Test requesting more folders than available
+            @test_logs (:info, r"Deleting") match_mode=:any begin
+                result = delete_results(vis, 10)  # Request 10, only 3 available
+                @test length(result) == 3  # Should only delete what's available
+                @test all(!isdir, folder_paths)  # All should be deleted
+            end
+            
+            # Clean up
+            rm(joinpath(pwd(), "test_boundary"), recursive=true, force=true)
+        end
+        
+        @testset "Error handling" begin
+            # Create a test Vis object
+            vis = Vis(online=false, output_folder="test_error")
+            vis.unique_folder = ""  # Empty for these tests
+            output_dir = vis.output_path
+            
+            # Create a test directory
+            test_folder = joinpath(output_dir, "floridyn_run_2025-01-01T12-00-00.123456")
+            mkdir(test_folder)
+            
+            # Test deletion - should handle errors gracefully
+            # Note: This might succeed on some systems, so we mainly test it doesn't crash
+            result = delete_results(vis, 1)
+            @test isa(result, Vector{String})  # Should return a vector
+            
+            # Clean up
+            rm(joinpath(pwd(), "test_error"), recursive=true, force=true)
+        end
+        
+        @testset "Integration with find_floridyn_runs" begin
+            # Create a test Vis object
+            vis = Vis(online=false, output_folder="test_integration")
+            vis.unique_folder = ""  # Empty for these tests
+            output_dir = vis.output_path
+            
+            # Create mixed directories (some floridyn_run, some not)
+            mixed_dirs = [
+                "floridyn_run_2025-01-01T10-00-00.111111",
+                "other_folder", 
+                "floridyn_run_2025-01-01T11-00-00.222222",
+                "not_floridyn_folder",
+                "floridyn_run_2025-01-01T12-00-00.333333"
+            ]
+            
+            for dir_name in mixed_dirs
+                mkdir(joinpath(output_dir, dir_name))
+                sleep(0.01)
+            end
+            
+            # Should only find and delete floridyn_run directories
+            result = delete_results(vis, 10)
+            @test length(result) == 3  # Only the 3 floridyn_run directories
+            
+            # Check that non-floridyn directories are preserved
+            @test isdir(joinpath(output_dir, "other_folder"))
+            @test isdir(joinpath(output_dir, "not_floridyn_folder"))
+            
+            # Check that floridyn_run directories are deleted
+            @test !isdir(joinpath(output_dir, "floridyn_run_2025-01-01T10-00-00.111111"))
+            @test !isdir(joinpath(output_dir, "floridyn_run_2025-01-01T11-00-00.222222"))
+            @test !isdir(joinpath(output_dir, "floridyn_run_2025-01-01T12-00-00.333333"))
+            
+            # Clean up
+            rm(joinpath(pwd(), "test_integration"), recursive=true, force=true)
+        end
+        
+        @testset "Default parameter behavior" begin
+            # Create a test Vis object
+            vis = Vis(online=false, output_folder="test_default")
+            vis.unique_folder = ""  # Empty for these tests
+            output_dir = vis.output_path
+            
+            # Test default n=1
+            test_folder = joinpath(output_dir, "floridyn_run_2025-01-01T12-00-00.123456")
+            mkdir(test_folder)
+            
+            # Test that calling without explicit n deletes 1 folder
+            result = delete_results(vis)  # Uses default n=1
+            @test length(result) == 1
+            @test !isdir(test_folder)
+            
+            # Clean up
+            rm(joinpath(pwd(), "test_default"), recursive=true, force=true)
+        end
+    end
 end
