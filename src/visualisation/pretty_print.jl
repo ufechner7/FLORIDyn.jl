@@ -14,16 +14,19 @@ Pretty-print a WindFarm struct with formatted output showing key information abo
 julia> show(stdout, wf)
 WindFarm:
   Turbines:       9
-  Operating Points: 3456
+  Operating Points: 200
   Layout:         3×3 grid (estimated)
   State Names:    a, yaw, TI
   Diameters:      126.0 m (uniform)
   Dependencies:   Calculated for 9 turbines
   
   State Dimensions:
-    Wind Farm:    345 states
-    Turbines:     27 states  
-    Op. Points:   3456 states
+    Wind Field:    7200 states
+    Turbines:      5400 states
+    Op. Points:   10800 states
+  State Names:
+    WF: wind_vel, wind_dir, TI0, OP_ori
+    OP: x0, y0, z0, x1, y1, z1
 ```
 """
 function Base.show(io::IO, wf::WindFarm)
@@ -45,17 +48,7 @@ function Base.show(io::IO, wf::WindFarm)
             println(io, "  Layout Size:    $(round(x_range, digits=1))m × $(round(y_range, digits=1))m")
         end
     end
-    
-    # State names (show first few if many)
-    if !isempty(wf.Names_T)
-        if length(wf.Names_T) <= 5
-            names_str = join(wf.Names_T, ", ")
-        else
-            names_str = join(wf.Names_T[1:3], ", ") * ", ..., " * wf.Names_T[end]
-        end
-        println(io, "  State Names:    $names_str")
-    end
-    
+      
     # Diameters information
     if !isempty(wf.D)
         if all(d -> d ≈ wf.D[1], wf.D)
@@ -77,13 +70,13 @@ function Base.show(io::IO, wf::WindFarm)
     println(io, "")
     println(io, "  State Dimensions:")
     if !isempty(wf.States_WF)
-        println(io, "    Wind Field:    $(length(wf.States_WF)) states")
+        println(io, "    Wind Field:    $(size(wf.States_WF)[1]) x $(size(wf.States_WF)[2]) states")
     end
     if !isempty(wf.States_T)
-        println(io, "    Turbines:      $(length(wf.States_T)) states")
+        println(io, "    Turbines:      $(size(wf.States_T)[1]) x $(size(wf.States_T)[2]) states")
     end
     if !isempty(wf.States_OP)
-        println(io, "    Op. Points:   $(length(wf.States_OP)) states")
+        println(io, "    Op. Points:    $(size(wf.States_OP)[1]) x $(size(wf.States_OP)[2]) states")
     end
     
     # Additional information for very detailed view
@@ -96,6 +89,14 @@ function Base.show(io::IO, wf::WindFarm)
             else
                 println(io, "    WF: $(join(wf.Names_WF[1:5], ", "))... (+$(length(wf.Names_WF)-5) more)")
             end
+        end
+        if !isempty(wf.Names_T)
+            if length(wf.Names_T) <= 5
+                names_str = join(wf.Names_T, ", ")
+            else
+                names_str = join(wf.Names_T[1:3], ", ") * ", ..., " * wf.Names_T[end]
+            end
+            println(io, "     T: $names_str")
         end
         if !isempty(wf.Names_OP)
             if length(wf.Names_OP) <= 10
