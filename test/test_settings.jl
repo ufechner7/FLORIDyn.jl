@@ -202,6 +202,115 @@ using FLORIDyn, Test
         @testset "Non-existent file error" begin
             @test_throws SystemError Vis("nonexistent_file.yaml")
         end
+        
+        # Test parsing YAML file with flow_fields and measurements
+        @testset "YAML parsing with flow_fields and measurements" begin
+            # Create a temporary YAML file with flow_fields and measurements
+            test_yaml_content = """
+vis:
+  online: true
+  save: false
+  print_filenames: true
+  video_folder: "test_video"
+  output_folder: "test_output"
+  flow_fields:
+    - name: "flow_field_vel_reduction"
+      online: false
+      create_video: true
+    - name: "flow_field_added_turbulence" 
+      online: true
+      create_video: false
+    - name: "flow_field_eff_wind_speed"
+      online: false
+      create_video: true
+  measurements:
+    - name: "msr_vel_reduction"
+      separated: true
+    - name: "msr_added_turbulence"
+      separated: false
+    - name: "msr_eff_wind_speed" 
+      separated: true
+  v_min: 3.0
+  v_max: 12.0
+  rel_v_min: 25.0
+  rel_v_max: 95.0
+  turb_max: 40.0
+  up_int: 2
+  unit_test: true
+"""
+            
+            # Write temporary YAML file
+            test_yaml_file = "test_vis_complex.yaml"
+            try
+                write(test_yaml_file, test_yaml_content)
+                
+                # Parse the YAML file
+                vis = Vis(test_yaml_file)
+                
+                # Test basic fields
+                @test vis.online == true
+                @test vis.save == false
+                @test vis.print_filenames == true
+                @test vis.video_folder == "test_video"
+                @test vis.output_folder == "test_output"
+                @test vis.v_min ≈ 3.0
+                @test vis.v_max ≈ 12.0
+                @test vis.rel_v_min ≈ 25.0
+                @test vis.rel_v_max ≈ 95.0
+                @test vis.turb_max ≈ 40.0
+                @test vis.up_int == 2
+                @test vis.unit_test == true
+                
+                # Test flow_fields parsing - these are parsed into FlowField structs
+                flow_fields = vis.flow_fields
+                @test isa(flow_fields, Vector{FLORIDyn.FlowField})
+                @test length(flow_fields) == 3
+                
+                # Check first flow field entry
+                @test flow_fields[1].name == "flow_field_vel_reduction"
+                @test flow_fields[1].online == false
+                @test flow_fields[1].create_video == true
+                
+                # Check second flow field entry
+                @test flow_fields[2].name == "flow_field_added_turbulence"
+                @test flow_fields[2].online == true
+                @test flow_fields[2].create_video == false
+                
+                # Check third flow field entry
+                @test flow_fields[3].name == "flow_field_eff_wind_speed"
+                @test flow_fields[3].online == false
+                @test flow_fields[3].create_video == true
+                
+                # Test measurements parsing - these are parsed into Measurement structs
+                measurements = vis.measurements
+                @test isa(measurements, Vector{FLORIDyn.Measurement})
+                @test length(measurements) == 3
+                
+                # Check measurement entries
+                @test measurements[1].name == "msr_vel_reduction"
+                @test measurements[1].separated == true
+                
+                @test measurements[2].name == "msr_added_turbulence"
+                @test measurements[2].separated == false
+                
+                @test measurements[3].name == "msr_eff_wind_speed"
+                @test measurements[3].separated == true
+                
+                # Clean up test directories that may have been created
+                try
+                    rm(vis.video_path, recursive=true, force=true)
+                    rm(vis.output_path, recursive=true, force=true)
+                catch
+                    # Ignore cleanup errors
+                end
+                
+            finally
+                # Clean up test file
+                if isfile(test_yaml_file)
+                    rm(test_yaml_file)
+                end
+            end
+        end
     end
 end
 nothing

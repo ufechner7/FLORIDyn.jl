@@ -258,9 +258,9 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             msr_name = msr == 1 ? "velocity_reduction" : msr == 2 ? "added_turbulence" : "wind_speed"
             if t !== nothing
                 time_str = lpad(string(round(Int, t)), 4, '0')
-                filename = joinpath(directory, "$(msr_name)_t$(time_str)s.png")
+                filename = joinpath(directory, "ff_$(msr_name)_t$(time_str)s.png")
             else
-                filename = joinpath(directory, "$(msr_name).png")
+                filename = joinpath(directory, "ff_$(msr_name).png")
             end
             
             # Save the current figure

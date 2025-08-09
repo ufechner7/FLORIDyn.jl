@@ -11,7 +11,7 @@ using LaTeXStrings
 import DocStringExtensions
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
-using Statistics, StaticArrays, Pkg, DistributedNext
+using Statistics, StaticArrays, Pkg, DistributedNext, Dates
 
 export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray
 
@@ -50,7 +50,9 @@ export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, i
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
 export run_floridyn, plot_flow_field, plot_measurements, close_all
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
-export isdelftblue
+export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_results
+export isdelftblue, Measurement, parse_measurements
+export FlowField, parse_flow_fields
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
@@ -192,23 +194,39 @@ end
 
 A mutable struct representing a wind farm. Fields can be specified using keyword arguments.
 
+This struct supports convenient DataFrame access through property syntax:
+- `wf.turbines`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with turbine state data (columns: turbine state names)
+- `wf.windfield`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with wind field data (columns: wind field variables)  
+- `wf.ops`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with operating point data (columns: operating point variables)
+
 # Fields
-- nT::Int64: Number of turbines
-- nOP::Int64: Number of operating points
-- States_WF::Matrix{Float64}: States of the wind farm
-- States_OP::Matrix{Float64}: States of the operating points
-- States_T::Matrix{Float64}: States of the turbines
-- posBase::Matrix{Float64}: Base positions of the turbines
-- posNac::Matrix{Float64}: Positions of the nacelles
-- D::Vector{Float64}: Diameters of the turbines
-- StartI::Matrix{Int}: Start indices for each turbine
-- intOPs::Vector{Matrix{Float64}}: Interpolated operating points
-- Weight::Vector{Vector{Float64}}: Weights for the operating points
-- dep::Vector{Vector{Int}}: Dependencies between turbines
-- red_arr::Matrix{Float64}: Reduced array for each turbine
-- Names_T::Vector{String}: Names of the states of the turbines
-- Names_WF::Vector{String}: Names of the states of the wind farm
-- Names_OP::Vector{String}: Names of coordinates the operating points   
+- `nT::Int64`: Number of turbines
+- `nOP::Int64`: Number of operating points
+- `States_WF::Matrix{Float64}`: States of the wind farm (states × wind field variables)
+- `States_OP::Matrix{Float64}`: States of the operating points (states × operating point variables)
+- `States_T::Matrix{Float64}`: States of the turbines (states × turbines variables)
+- `posBase::Matrix{Float64}`: Base positions of the turbines (2 × nT matrix: [x-coords; y-coords])
+- `posNac::Matrix{Float64}`: Positions of the nacelles
+- `D::Vector{Float64}`: Diameters of the turbines
+- `StartI::Matrix{Int}`: Start indices for each turbine
+- `intOPs::Vector{Matrix{Float64}}`: Interpolated operating points
+- `Weight::Vector{Vector{Float64}}`: Weights for the operating points
+- `dep::Vector{Vector{Int}}`: Dependencies between turbines
+- `red_arr::Matrix{Float64}`: Reduced array for each turbine
+- `Names_T::Vector{String}`: Names of the turbine state variables
+- `Names_WF::Vector{String}`: Names of the wind field variables
+- `Names_OP::Vector{String}`: Names of the operating point variables
+
+# Examples
+```julia
+# Create a wind farm
+wf = WindFarm(nT=3, nOP=100, ...)
+
+# Access data as DataFrames
+turbine_data = wf.turbines      # DataFrame with turbine states
+windfield_data = wf.windfield   # DataFrame with wind field states
+ops_data = wf.ops               # DataFrame with operating point states
+```
 """
 @kwdef mutable struct WindFarm
     nT::Int64 = 0                                               # Number of turbines
@@ -229,6 +247,7 @@ A mutable struct representing a wind farm. Fields can be specified using keyword
     Names_OP::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the operating points
 end
 
+include("visualisation/structs_measurements.jl")
 include("settings.jl")
 
 # functions for calculating the wind field
@@ -253,6 +272,8 @@ include("visualisation/calc_flowfield.jl")
 include("visualisation/plot_flowfield.jl")
 include("visualisation/plot_measurements.jl")
 include("visualisation/create_video.jl")
+include("visualisation/high_res_time.jl")
+include("visualisation/pretty_print.jl")
 include("visualisation/smart_plotting.jl")
 
 """
