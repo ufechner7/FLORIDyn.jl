@@ -271,7 +271,7 @@ println("Created videos: ", video_paths)
 """
 function createAllVideos(; video_dir="video", output_dir="video", fps=2, delete_frames=false)
     # Common measurement type prefixes
-    prefixes = ["velocity_reduction", "added_turbulence", "wind_speed"]
+    prefixes = ["ff_velocity_reduction", "ff_added_turbulence", "ff_wind_speed"]
     created_videos = String[]
     
     println("Searching for videos to create...")
