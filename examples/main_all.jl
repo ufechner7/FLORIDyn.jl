@@ -118,5 +118,6 @@ for measurement in vis.measurements
     end
     plot_measurements(wf, md, vis; separated=measurement.separated, msr, plt)
 end   
+toc()
 
 nothing
