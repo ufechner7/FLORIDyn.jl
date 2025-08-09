@@ -184,8 +184,10 @@ function main()
             
         elseif choice == special_start
             # Run all tests
-            filepath = joinpath(@__DIR__, "runtests.jl")
-            run_file(filepath, "All Tests")
+            @info "Running all tests..."
+            @eval Main using Pkg
+            Main.Pkg.activate(dirname(@__DIR__))
+            Main.Pkg.test()
             
         elseif choice == special_start + 1
             # Run Aqua.jl
