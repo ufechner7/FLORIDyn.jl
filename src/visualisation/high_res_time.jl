@@ -81,7 +81,7 @@ with a high-resolution timestamp. The timestamp includes microsecond precision t
 uniqueness even when multiple simulations are started in quick succession.
 
 # Returns
-- `String`: A unique directory name in the format "floridyn_run_YYYY-mm-ddTHH-MM-SS.uuuuuu"
+- `String`: A unique directory name in the format `"floridyn_run_YYYY-mm-ddTHH-MM-SS.uuuuuu"`
 
 # Examples
 ```julia
