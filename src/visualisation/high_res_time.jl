@@ -107,17 +107,18 @@ function unique_name()
 end
 
 """
-    delete_results(n::Int; directory::String = pwd(), dry_run::Bool = false)
+    delete_results(vis::Vis, n::Int=1; dry_run::Bool = false)
 
-Delete the last (newest) n folders starting with "floridyn_run" from the specified directory.
+Delete the last (newest) n folders starting with "floridyn_run" from the output directory.
 
 This function helps manage disk space by removing recent simulation run directories. It sorts
 directories by modification time and removes the newest ones first, preserving older
-simulation results that may be more established or important.
+simulation results that may be more established or important. The function operates on the
+parent directory of the visualization output path.
 
 # Arguments
-- `n::Int`: Number of folders to delete (must be positive)
-- `directory::String`: Directory to search in (default: current working directory)  
+- `vis::Vis`: Visualization settings object containing output path information
+- `n::Int`: Number of folders to delete (must be positive, default: 1)
 - `dry_run::Bool`: If `true`, only shows what would be deleted without actually deleting (default: `false`)
 
 # Returns
@@ -125,45 +126,45 @@ simulation results that may be more established or important.
 
 # Examples
 ```julia
-# Delete the 3 newest floridyn_run folders in current directory
-deleted = delete_results(3)
+# Create visualization settings
+vis = Vis("data/vis_default.yaml")
+
+# Delete the newest floridyn_run folder from vis.output_path directory
+deleted = delete_results(vis)
+
+# Delete the 3 newest floridyn_run folders
+deleted = delete_results(vis, 3)
 
 # Preview what would be deleted without actually deleting
-delete_results(5, dry_run=true)
-
-# Clean up from specific directory
-delete_results(2, directory="/path/to/output")
-
-# Clean up from output directory
-delete_results(10, directory="out")
+delete_results(vis, 5, dry_run=true)
 ```
 
-# Safety Features
+# Behavior
+- Automatically determines the directory to search from `dirname(vis.output_path)`
+- Sets `vis.unique_folder = ""` as part of the cleanup process
 - Only deletes directories that start with "floridyn_run"
 - Sorts by modification time (newest deleted first)
-- Validates that directories exist before attempting deletion
-- Provides dry_run mode for safe preview
-- Informative logging of actions taken
 
 # Error Handling
 - Returns empty list if no matching directories found
 - Skips directories that cannot be deleted due to permissions
-- Continues processing even if individual deletions fail
+- Validates positive number of folders to delete
 
 # Notes
 - Preserves the oldest simulation results
-- Useful for removing failed or incomplete recent runs
-- Can be run periodically to manage disk space
+- Useful for removing failed or incomplete recent runs, or test runs
 - Works with directories created by [`unique_name()`](@ref)
+- Integrates with the [`Vis`](@ref) settings system
 
 # See Also
+- [`Vis`](@ref): Visualization settings struct
 - [`unique_name`](@ref): Function that creates floridyn_run directories
 - [`find_floridyn_runs`](@ref): Function to list existing floridyn_run directories
 """
-function delete_results(n::Int, vis; dry_run::Bool = false)
+function delete_results(vis::Vis, n::Int=1; dry_run::Bool = false)
     # Validate input
     vis.unique_folder = ""
-    directory = dirname(vis.output_path)
+    directory = vis.output_path
     if n <= 0
         @warn "Number of folders to delete must be positive. Got: $n"
         return String[]
