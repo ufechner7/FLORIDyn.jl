@@ -1,4 +1,5 @@
-#!/usr/bin/env julia
+# Copyright (c) 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
 
 """
 Interactive test runner for FLORIDyn.jl
