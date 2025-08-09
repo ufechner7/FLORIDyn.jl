@@ -277,7 +277,7 @@ function createAllVideos(; video_dir="video", output_dir="video", fps=2, delete_
     println("Searching for videos to create...")
     
     for prefix in prefixes
-        video_path = createVideo(prefix; video_dir=video_dir, output_dir=output_dir, fps=fps, delete_frames=delete_frames)
+        video_path = createVideo(prefix; video_dir, output_dir, fps, delete_frames)
         if !isempty(video_path)
             push!(created_videos, video_path)
         end

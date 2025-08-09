@@ -8,8 +8,8 @@ vis:
   unique_output_folder: true  
   flow_fields:           # List of flow field visualizations to be created
     - name: "flow_field_vel_reduction"    # Flow field relative wind speed
-      online: false
-      create_video: false
+      online: true
+      create_video: true
       skip: false
     - name: "flow_field_added_turbulence" # Flow field added turbulence
       online: false

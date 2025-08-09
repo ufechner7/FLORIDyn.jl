@@ -72,7 +72,7 @@ for flow_field in vis.flow_fields
         if flow_field.create_video
             @info "Creating video for flow field $(flow_field.name) ..."
             video_paths = redirect_stdout(devnull) do
-                createAllVideos(fps=4, delete_frames=false, output_dir=vis.output_path)
+                createAllVideos(fps=4, delete_frames=false, video_dir=vis.video_path, output_dir=vis.output_path)
             end
             if !isempty(video_paths)
                 @info "Video created successfully: $(video_paths[1])"
