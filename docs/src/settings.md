@@ -9,6 +9,8 @@ For each of the simulation yaml files there must be a folder with the same name 
 
 The constructor `Vis(filename)` creates a visualisation settings struct from the visualisation yaml file.
 
+## The file 2021\_9T\_Data.yaml
+This is the main input configuration file.
 ```yaml
 # FLORIDyn project configuration
 #
@@ -158,7 +160,67 @@ turbines:
 
 ```
 
-# Types created from the yaml files
+## The file vis_default.yaml
+This is the default file, used to configure the simulation output.
+All plots listed in the sections `flow_fields` and `measurements` are created in the output folder
+when running the script `main_all.jl`.
+
+```yaml
+vis:
+  online: false          # Enable/disable online visualization during simulation
+  save: true             # Enable/disable saving of plots to disk
+  print_filenames: false # If true, print the names of the saved files
+  video_folder: "video"  # Relative video folder path 
+  output_folder: "out"   # Relative output folder path
+  unique_output_folder: true  
+  flow_fields:           # List of flow field visualizations to be created
+    - name: "flow_field_vel_reduction"    # Flow field relative wind speed
+      online: false
+      create_video: false
+      skip: true
+    - name: "flow_field_added_turbulence" # Flow field added turbulence
+      online: false
+      create_video: false
+      skip: true
+    - name: "flow_field_eff_wind_speed"   # Flow field effective wind speed
+      online: false
+      create_video: false
+      skip: true
+  measurements:          # List of measurement plots to be created
+    - name: "msr_vel_reduction"     # Measurement relative wind speed
+      separated: true
+      skip: true
+    - name: "msr_vel_reduction"     # Measurement relative wind speed
+      separated: false
+      skip: true
+    - name: "msr_added_turbulence"  # Measurement added turbulence
+      separated: false
+      skip: true
+    - name: "msr_added_turbulence"  # Measurement added turbulence
+      separated: true
+      skip: true
+    - name: "msr_eff_wind_speed"    # Measurement effective wind speed
+      separated: false
+      skip: false
+    - name: "msr_eff_wind_speed"    # Measurement effective wind speed
+      separated: true
+      skip: false
+  v_min:  2.0   # Minimum velocity for color scale in flow field visualizations [m/s] 
+  v_max: 10.0   # Maximum velocity for color scale in flow field visualizations [m/s]
+  # Minimum relative velocity value for velocity reduction visualizations (msr=1)
+  # Controls the color scale for relative wind speed plots. Range: 0 .. 100 %
+  rel_v_min:  20.0 # Unit: [%]
+  # Maximum relative velocity value for velocity reduction visualizations (msr=1)
+  # Controls the upper limit for relative wind speed plots. Range: 0 .. 100 %
+  rel_v_max: 100.0 # Unit: [%]
+  # Maximum turbulence value for added turbulence visualizations (msr=2)
+  # Controls the upper limit for turbulence plots
+  turb_max: 35.0   # Turbulence intensity, Unit: [%]
+  up_int: 1        # Update interval - how frequently visualization updates occur  [s]
+  unit_test: false # When true, closes plots automatically after 1 second
+```
+
+## Types created from the yaml files
 ```@docs
 Sim
 Wind
@@ -171,7 +233,9 @@ FlowField
 Measurement
 ```
 
-# Settings
+## Settings
+The Settings struct and functions related to examples and settings.
+
 ```@docs
 install_examples
 copy_examples
