@@ -13,7 +13,7 @@ Format: "YYYY-mm-ddTHH-MM-SS.uuuuuu"
 # Examples
 ```julia
 julia> now_microseconds()
-"2025-08-08T16:58:55.494911"
+"2025-08-08T16-58-55.494911"
 ```
 """
 function now_microseconds()::String
