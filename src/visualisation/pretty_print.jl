@@ -218,14 +218,46 @@ function windfield(wf::WindFarm)
     return df
 end
 
+function ops(wf::WindFarm)
+    # Check if we have operating points data
+    if isempty(wf.States_OP) || isempty(wf.Names_OP)
+        throw(ArgumentError("WindFarm must have non-empty States_OP and Names_OP to create DataFrame"))
+    end
+    
+    # Check dimensions match - States_OP should be a column vector or matrix with as many rows as operating points
+    # and Names_OP should match the number of columns if States_OP has multiple columns
+    if ndims(wf.States_OP) == 2 && size(wf.States_OP, 2) != length(wf.Names_OP)
+        throw(DimensionMismatch("Number of operating point variables in States_OP ($(size(wf.States_OP, 2))) must match length of Names_OP ($(length(wf.Names_OP)))"))
+    elseif ndims(wf.States_OP) == 1 && length(wf.Names_OP) != 1
+        throw(DimensionMismatch("States_OP is a vector but Names_OP has $(length(wf.Names_OP)) elements, expected 1"))
+    end
+    
+    # Create DataFrame with operating point names as columns
+    df = DataFrame()
+    
+    # Handle both vector and matrix cases
+    if ndims(wf.States_OP) == 1 || size(wf.States_OP, 2) == 1
+        # Single column case
+        df[!, Symbol(wf.Names_OP[1])] = vec(wf.States_OP)
+    else
+        # Multiple columns case
+        for (i, op_name) in enumerate(wf.Names_OP)
+            df[!, Symbol(op_name)] = wf.States_OP[:, i]
+        end
+    end
+    
+    return df
+end
+
 """
     Base.getproperty(wf::WindFarm, name::Symbol)
 
-Custom property accessor for WindFarm that provides special properties like `turbines` and `windfield`.
+Custom property accessor for WindFarm that provides special properties like `turbines`, `windfield`, and `ops`.
 
 # Special Properties
 - `wf.turbines`: Returns a DataFrame with turbine names as columns and turbine states as data
 - `wf.windfield`: Returns a DataFrame with wind field state names as columns and wind field data as data
+- `wf.ops`: Returns a DataFrame with operating point names as columns and operating point data as data
 
 # Example
 ```julia
@@ -247,6 +279,15 @@ julia> wf.windfield
     1 │      8.2     195.0    0.062    195.0
     2 │      8.2     195.0    0.062    195.0
   ⋮  │      ⋮          ⋮        ⋮       ⋮ 
+
+julia> wf.ops
+8760×3 DataFrame
+  Row │ U        Dir      TI      
+      │ Float64  Float64  Float64 
+──────┼──────────────────────────
+    1 │     8.5     180.0    0.08
+    2 │     9.2     185.5    0.09
+  ⋮  │     ⋮         ⋮        ⋮
 ```
 """
 function Base.getproperty(wf::WindFarm, name::Symbol)
@@ -254,6 +295,8 @@ function Base.getproperty(wf::WindFarm, name::Symbol)
         return turbines(wf)
     elseif name === :windfield
         return windfield(wf)
+    elseif name === :ops
+        return ops(wf)
     else
         # Fall back to default behavior for all other properties
         return getfield(wf, name)
