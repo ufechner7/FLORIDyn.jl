@@ -102,11 +102,11 @@ end
 for measurement in vis.measurements
     # Skip this measurement if skip flag is set
     if measurement.skip
-        @info "Skipping measurement: $(measurement.name)"
+        @info "Skipping measurement: $(measurement.name), separated: $(measurement.separated)"
         continue
     end
     
-    @info "Plotting measurements: $(measurement.name)"
+    @info "Plotting measurement: $(measurement.name), separated: $(measurement.separated)"
     if measurement.name == "msr_vel_reduction"
         msr = 1
     elseif measurement.name == "msr_added_turbulence"
