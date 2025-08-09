@@ -1,10 +1,11 @@
 vis:
   online: false          # Enable/disable online visualization during simulation
   save: true             # Enable/disable saving of plots to disk
+  save_results: true     # Enable/disable saving of simulation results as .jld2 files
   print_filenames: false # If true, print the names of the saved files
   video_folder: "video"  # Relative video folder path 
   output_folder: "out"   # Relative output folder path
-  unique_output_folder: true  
+  unique_output_folder: false  
   flow_fields:           # List of flow field visualizations to be created
     - name: "flow_field_vel_reduction"    # Flow field relative wind speed
       online: false

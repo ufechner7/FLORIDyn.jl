@@ -7,7 +7,7 @@
 # Run all visualisations that are defined in vis_default.yaml
 using Timers
 tic()
-using FLORIDyn, TerminalPager, DistributedNext, ControlPlots
+using FLORIDyn, TerminalPager, DistributedNext, ControlPlots, JLD2
 
 settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"
@@ -104,7 +104,32 @@ for measurement in vis.measurements
         msr = 1  # default to velocity reduction
     end
     plot_measurements(wf, md, vis; separated=measurement.separated, msr, plt)
-end   
+end
+
+if vis.save_results
+    # Save simulation results as .jld2 files
+    @info "Saving simulation results..."
+    
+    # Create results filename with timestamp for uniqueness
+    if vis.unique_output_folder
+        timestamp = replace(now_microseconds(), ":" => "-")
+        results_filename = joinpath(vis.output_path, "results_$(timestamp).jld2")
+    else
+        results_filename = joinpath(vis.output_path, "results.jld2")
+    end
+    
+    # Ensure output directory exists
+    mkpath(dirname(results_filename))
+    
+    try
+        # Save the main simulation variables
+        jldsave(results_filename; wf, md, mi)
+        @info "Simulation results saved to: $(results_filename)"
+    catch e
+        @error "Failed to save simulation results: $e"
+    end
+end
+
 toc()
 
 nothing

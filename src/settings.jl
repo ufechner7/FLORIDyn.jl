@@ -372,6 +372,7 @@ The struct automatically adapts to different computing environments:
 @with_kw mutable struct Vis
     online::Bool
     save::Bool = false                # save plots to video folder
+    save_results::Bool = false        # save simulation results as .jld2 files
     print_filenames::Bool = false     # if true, print the names of the saved files
     video_folder::String = "video"    # relative video folder path
     output_folder::String = "out"     # relative output folder path

@@ -257,6 +257,7 @@ include("visualisation/plot_flowfield.jl")
 include("visualisation/plot_measurements.jl")
 include("visualisation/create_video.jl")
 include("visualisation/high_res_time.jl")
+include("visualisation/pretty_print.jl")
 include("visualisation/smart_plotting.jl")
 
 """
