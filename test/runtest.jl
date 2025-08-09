@@ -8,7 +8,7 @@ or groups of tests from the test/ directory.
 """
 
 using Pkg
-if ! ("Suppressor" ∈ keys(Pkg.project().dependencies))
+if ! ("Aqua" ∈ keys(Pkg.project().dependencies))
     using TestEnv; TestEnv.activate()
 end
 using FLORIDyn
@@ -89,19 +89,54 @@ function run_file(filepath::String, description::String)
     println("File: $filepath")
     println("="^60)
     
+    # Store initial worker count
+    initial_procs = nprocs()
+    
     # Activate the project environment from the parent directory (project root)
-    Pkg.activate(dirname(@__DIR__))
+    # Pkg.activate(dirname(@__DIR__))
     
     # Run the file
+    success = false
     try
         include(filepath)
         println("\n✅ $description completed successfully!")
+        success = true
     catch e
         println("\n❌ $description failed with error:")
         println(e)
-        return false
+        success = false
     end
-    return true
+    
+    # Cleanup any workers that were created during test execution
+    if nprocs() > initial_procs
+        println("\nCleaning up $(nprocs() - initial_procs) worker process(es) created during test...")
+        try
+            # Try to interrupt any running tasks on workers first
+            for w in workers()
+                if w > initial_procs  # Only interrupt newly created workers
+                    try
+                        interrupt(w)
+                    catch
+                        # Worker might already be dead
+                    end
+                end
+            end
+            
+            # Brief pause to let interrupts take effect
+            sleep(0.1)
+            
+            # Remove only the newly created workers
+            new_workers = filter(w -> w > initial_procs, workers())
+            if !isempty(new_workers)
+                rmprocs(new_workers; waitfor=0.0)
+            end
+            println("Worker cleanup completed.")
+        catch e
+            println("Worker cleanup encountered issues (this is usually harmless): $e")
+        end
+    end
+    
+    return success
 end
 
 function main()
@@ -130,6 +165,13 @@ function main()
             file = test_files[choice]
             test_name = replace(file, "test_" => "", ".jl" => "")
             filepath = joinpath(@__DIR__, file)
+            if choice in [11, 18]
+                  Pkg.activate(dirname(@__DIR__))
+            elseif choice == 26
+                if ! ("Aqua" ∈ keys(Pkg.project().dependencies))
+                    TestEnv.activate()
+                end
+            end
             run_file(filepath, "Test: $test_name")
             
         elseif choice >= total_tests + 1 && choice <= total_tests + total_bench
@@ -148,6 +190,7 @@ function main()
         elseif choice == special_start + 1
             # Run Aqua.jl
             filepath = joinpath(@__DIR__, "aqua.jl")
+            println(pwd())
             run_file(filepath, "Aqua.jl Quality Checks")
             
         elseif choice == special_start + 2
