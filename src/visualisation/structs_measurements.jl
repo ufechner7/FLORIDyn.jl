@@ -9,7 +9,7 @@ using Parameters
 Structure representing a single flow field visualization configuration.
 
 This struct defines the configuration for individual flow field visualizations in wind farm simulations,
-including the flow field type, online visualization settings, and video creation options.
+including the flow field type, online visualization settings, video creation options, and skip control.
 
 # Fields
 - `name::String`: The name/identifier of the flow field type (e.g., "flow_field_vel_reduction",
@@ -18,6 +18,8 @@ including the flow field type, online visualization settings, and video creation
   or only saved offline (false). Default is false for offline-only processing.
 - `create_video::Bool`: Whether to create a video from the flow field frames (true) or not (false).
   Default is false for no video creation.
+- `skip::Bool`: Whether to skip processing of this flow field entirely (true) or process normally (false).
+  Default is false for normal processing. When true, the flow field will be ignored completely.
 
 # Examples
 ```julia
@@ -27,8 +29,11 @@ vel_field = FlowField("flow_field_vel_reduction", true, true)
 # Turbulence flow field with offline-only processing, no video
 turb_field = FlowField("flow_field_added_turbulence", false, false)
 
+# Flow field that should be skipped entirely
+skipped_field = FlowField("flow_field_eff_wind_speed", false, false, true)
+
 # Using keyword arguments
-eff_field = FlowField(name="flow_field_eff_wind_speed", online=false, create_video=true)
+eff_field = FlowField(name="flow_field_eff_wind_speed", online=false, create_video=true, skip=false)
 ```
 
 # See Also
@@ -39,11 +44,13 @@ eff_field = FlowField(name="flow_field_eff_wind_speed", online=false, create_vid
     name::String = ""
     online::Bool = false
     create_video::Bool = false
+    skip::Bool = false
 end
 
 # Custom constructors for backward compatibility
-FlowField(name::String) = FlowField(name, false, false)
-FlowField(name::String, online::Bool) = FlowField(name, online, false)
+FlowField(name::String) = FlowField(name, false, false, false)
+FlowField(name::String, online::Bool) = FlowField(name, online, false, false)
+FlowField(name::String, online::Bool, create_video::Bool) = FlowField(name, online, create_video, false)
 
 """
     Measurement
@@ -51,13 +58,15 @@ FlowField(name::String, online::Bool) = FlowField(name, online, false)
 Structure representing a single measurement visualization configuration.
 
 This struct defines the configuration for individual measurement visualizations in wind farm simulations,
-including the measurement type and whether it should be displayed in separated plots.
+including the measurement type, whether it should be displayed in separated plots, and skip control.
 
 # Fields
 - `name::String`: The name/identifier of the measurement type (e.g., "measurements_vel_reduction",
   "measurements_added_turbulence", "measurements_eff_wind_speed")
 - `separated::Bool`: Whether the measurement should be plotted in separate individual plots (true) 
   or combined in a single plot (false). Default is false for combined plotting.
+- `skip::Bool`: Whether to skip processing of this measurement entirely (true) or process normally (false).
+  Default is false for normal processing. When true, the measurement will be ignored completely.
 
 # Examples
 ```julia
@@ -66,6 +75,12 @@ vel_measurement = Measurement("measurements_vel_reduction", true)
 
 # Turbulence measurement with combined plots  
 turb_measurement = Measurement("measurements_added_turbulence", false)
+
+# Measurement that should be skipped entirely
+skipped_measurement = Measurement("measurements_eff_wind_speed", false, true)
+
+# Using keyword arguments
+eff_measurement = Measurement(name="measurements_eff_wind_speed", separated=false, skip=false)
 ```
 
 # See Also
@@ -75,10 +90,12 @@ turb_measurement = Measurement("measurements_added_turbulence", false)
 @with_kw struct Measurement
     name::String = ""
     separated::Bool = false
+    skip::Bool = false
 end
 
-# Custom constructor for single string argument
-Measurement(name::String) = Measurement(name, false)
+# Custom constructors for backward compatibility
+Measurement(name::String) = Measurement(name, false, false)
+Measurement(name::String, separated::Bool) = Measurement(name, separated, false)
 
 """
     parse_measurements(measurements_yaml::Vector) -> Vector{Measurement}
@@ -87,13 +104,13 @@ Convert YAML measurement configurations into an array of Measurement structs.
 
 This function parses the measurement section from a YAML visualization configuration and converts
 it into a structured array of Measurement objects. It handles both simple string entries and
-complex dictionary entries with name and separated flag specifications.
+complex dictionary entries with name, separated, and skip flag specifications.
 
 # Arguments
 - `measurements_yaml::Vector`: Vector containing measurement configurations from YAML.
   Each element can be either:
   - A simple string (measurement name)
-  - A dictionary with "name" and "separated" keys
+  - A dictionary with "name", "separated", and "skip" keys
 
 # Returns
 - `Vector{Measurement}`: Array of Measurement structs with parsed configurations
@@ -101,38 +118,41 @@ complex dictionary entries with name and separated flag specifications.
 # YAML Format Support
 The function supports multiple YAML formats:
 
-## Simple Format (separated=false by default)
+## Simple Format (separated=false, skip=false by default)
 ```yaml
 measurements:
   - "measurements_vel_reduction"
   - "measurements_added_turbulence" 
 ```
 
-## Extended Format (with separated flag)
+## Extended Format (with separated and skip flags)
 ```yaml
 measurements:
   - name: "measurements_vel_reduction"
     separated: true
+    skip: false
   - name: "measurements_added_turbulence"
     separated: false
+    skip: true
 ```
 
 ## Mixed Format
 ```yaml
 measurements:
-  - "measurements_vel_reduction"  # Simple string, separated=false
+  - "measurements_vel_reduction"  # Simple string, defaults applied
   - name: "measurements_added_turbulence"  # Dictionary format
     separated: true
+    skip: false
 ```
 
 # Algorithm
 1. **Iterate** through each measurement entry in the YAML vector
 2. **Check type**: Determine if entry is string or dictionary
-3. **Extract values**: Get name and separated flag based on format
+3. **Extract values**: Get name, separated, and skip flags based on format
 4. **Create struct**: Construct Measurement struct with parsed values
 
 # Error Handling
-- Handles missing separated flags by defaulting to false
+- Handles missing separated and skip flags by defaulting to false
 - Processes mixed simple/complex YAML structures gracefully
 - Validates measurement name extraction
 
@@ -141,12 +161,12 @@ measurements:
 # Parse from YAML data
 yaml_measurements = [
     "measurements_vel_reduction",
-    Dict("name" => "measurements_added_turbulence", "separated" => true)
+    Dict("name" => "measurements_added_turbulence", "separated" => true, "skip" => false)
 ]
 
 measurements = parse_measurements(yaml_measurements)
-# Returns: [Measurement("measurements_vel_reduction", false), 
-#          Measurement("measurements_added_turbulence", true)]
+# Returns: [Measurement("measurements_vel_reduction", false, false), 
+#          Measurement("measurements_added_turbulence", true, false)]
 ```
 
 # Integration
@@ -165,15 +185,16 @@ function parse_measurements(measurements_yaml::Vector)
     
     for item in measurements_yaml
         if isa(item, String)
-            # Simple string format - use default separated=false
-            push!(measurements, Measurement(item, false))
+            # Simple string format - use defaults separated=false, skip=false
+            push!(measurements, Measurement(item, false, false))
         elseif isa(item, Dict)
-            # Dictionary format with name and separated keys
+            # Dictionary format with name, separated, and skip keys
             name = get(item, "name", "")
             separated = get(item, "separated", false)
+            skip = get(item, "skip", false)
             
             if !isempty(name)
-                push!(measurements, Measurement(name, separated))
+                push!(measurements, Measurement(name, separated, skip))
             end
         end
     end
@@ -188,13 +209,13 @@ Convert YAML flow field configurations into an array of FlowField structs.
 
 This function parses the flow_fields section from a YAML visualization configuration and converts
 it into a structured array of FlowField objects. It handles both simple string entries and
-complex dictionary entries with name, online, and create_video flag specifications.
+complex dictionary entries with name, online, create_video, and skip flag specifications.
 
 # Arguments
 - `flow_fields_yaml::Vector`: Vector containing flow field configurations from YAML.
   Each element can be either:
   - A simple string (flow field name)
-  - A dictionary with "name", "online", and "create_video" keys
+  - A dictionary with "name", "online", "create_video", and "skip" keys
 
 # Returns
 - `Vector{FlowField}`: Array of FlowField structs with parsed configurations
@@ -202,22 +223,24 @@ complex dictionary entries with name, online, and create_video flag specificatio
 # YAML Format Support
 The function supports multiple YAML formats:
 
-## Simple Format (online=false, create_video=false by default)
+## Simple Format (online=false, create_video=false, skip=false by default)
 ```yaml
 flow_fields:
   - "flow_field_vel_reduction"
   - "flow_field_added_turbulence" 
 ```
 
-## Extended Format (with online and create_video flags)
+## Extended Format (with online, create_video, and skip flags)
 ```yaml
 flow_fields:
   - name: "flow_field_vel_reduction"
     online: true
     create_video: true
+    skip: false
   - name: "flow_field_added_turbulence"
     online: false
     create_video: false
+    skip: true
 ```
 
 ## Mixed Format
@@ -227,6 +250,7 @@ flow_fields:
   - name: "flow_field_added_turbulence"  # Dictionary format
     online: true
     create_video: false
+    skip: false
 ```
 
 # Examples
@@ -234,7 +258,7 @@ flow_fields:
 # Parse from YAML data
 yaml_flow_fields = [
     "flow_field_vel_reduction",
-    Dict("name" => "flow_field_added_turbulence", "online" => true, "create_video" => false)
+    Dict("name" => "flow_field_added_turbulence", "online" => true, "create_video" => false, "skip" => true)
 ]
 
 flow_fields = parse_flow_fields(yaml_flow_fields)
@@ -249,16 +273,17 @@ function parse_flow_fields(flow_fields_yaml::Vector)
     
     for item in flow_fields_yaml
         if isa(item, String)
-            # Simple string format - use defaults online=false, create_video=false
-            push!(flow_fields, FlowField(item, false, false))
+            # Simple string format - use defaults online=false, create_video=false, skip=false
+            push!(flow_fields, FlowField(item, false, false, false))
         elseif isa(item, Dict)
-            # Dictionary format with name, online, and create_video keys
+            # Dictionary format with name, online, create_video, and skip keys
             name = get(item, "name", "")
             online = get(item, "online", false)
             create_video = get(item, "create_video", false)
+            skip = get(item, "skip", false)
             
             if !isempty(name)
-                push!(flow_fields, FlowField(name, online, create_video))
+                push!(flow_fields, FlowField(name, online, create_video, skip))
             end
         end
     end

@@ -5,25 +5,32 @@ vis:
   video_folder: "video" # Relative video folder path 
   output_folder: "out"  # Relative output folder path
   unique_output_folder: true  
-  # flow_fields: # List of flow field visualizations to be created
-  #   - name: "flow_field_vel_reduction"    # Flow field relative wind speed
-  #     online: false
-  #     create_video: false
-  #   - name: "flow_field_added_turbulence" # Flow field added turbulence
-  #     online: false
-  #     create_video: false
-  #   - name: "flow_field_eff_wind_speed"   # Flow field effective wind speed
-  #     online: false
-  #     create_video: false
+  flow_fields: # List of flow field visualizations to be created
+    - name: "flow_field_vel_reduction"    # Flow field relative wind speed
+      online: false
+      create_video: false
+      skip: true
+    - name: "flow_field_added_turbulence" # Flow field added turbulence
+      online: false
+      create_video: false
+      skip: true
+    - name: "flow_field_eff_wind_speed"   # Flow field effective wind speed
+      online: false
+      create_video: false
+      skip: true
   measurements: # List of measurement plots to be created
     - name: "msr_vel_reduction"     # Measurement relative wind speed
       separated: true
+      skip: true
     - name: "msr_vel_reduction"     # Measurement relative wind speed
       separated: false
+      skip: true
     - name: "msr_added_turbulence"  # Measurement added turbulence
       separated: false
+      skip: true
     - name: "msr_added_turbulence"  # Measurement added turbulence
       separated: true
+      skip: true
     - name: "msr_eff_wind_speed"    # Measurement effective wind speed
       separated: false
     - name: "msr_eff_wind_speed"    # Measurement effective wind speed
