@@ -19,19 +19,6 @@ include("remote_plotting.jl")
 
 FLORIDYN_EXECUTED = false
 
-function get_parameters(vis)
-    # get the settings for the wind field, simulator and controller
-    wind, sim, con, floris, floridyn, ta = setup(settings_file)
-
-    # create settings struct with automatic parallel/threading detection
-    set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
-
-    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
-    wf = initSimulation(wf, sim)
-    wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
-    return wf, md, set, floris, wind 
-end
-
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
