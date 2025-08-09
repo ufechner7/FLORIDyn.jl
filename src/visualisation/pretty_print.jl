@@ -196,13 +196,36 @@ function turbines(wf::WindFarm)
     return df
 end
 
+function windfield(wf::WindFarm)
+    # Check if we have wind field data
+    if isempty(wf.States_WF) || isempty(wf.Names_WF)
+        throw(ArgumentError("WindFarm must have non-empty States_WF and Names_WF to create DataFrame"))
+    end
+    
+    # Check dimensions match - States_WF should have as many rows as Names_WF has elements
+    if size(wf.States_WF, 2) != length(wf.Names_WF)
+        throw(DimensionMismatch("Number of wind field states in States_WF ($(size(wf.States_WF, 1))) must match length of Names_WF ($(length(wf.Names_WF)))"))
+    end
+    
+    # Create DataFrame with wind field state names as columns
+    df = DataFrame()
+    
+    # Add each wind field state as a column
+    for (i, wf_name) in enumerate(wf.Names_WF)
+        df[!, Symbol(wf_name)] = wf.States_WF[:, i]
+    end
+    
+    return df
+end
+
 """
     Base.getproperty(wf::WindFarm, name::Symbol)
 
-Custom property accessor for WindFarm that provides special properties like `turbines`.
+Custom property accessor for WindFarm that provides special properties like `turbines` and `windfield`.
 
 # Special Properties
-- `wf.turbines`: Returns a DataFrame with state names as columns and states as data
+- `wf.turbines`: Returns a DataFrame with turbine names as columns and turbine states as data
+- `wf.windfield`: Returns a DataFrame with wind field state names as columns and wind field data as data
 
 # Example
 ```julia
@@ -214,12 +237,23 @@ julia> wf.turbines
     1 │    0.33      0.0  0.101532
     2 │    0.33      0.0  0.101532
     3 │    0.33      0.0  0.101532
-  ⋮  │    ⋮        ⋮        ⋮        ⋮
+  ⋮  │    ⋮        ⋮        ⋮ 
+
+julia> wf.windfield
+1800×4 DataFrame
+  Row │ wind_vel  wind_dir  TI0      OP_ori  
+      │ Float64   Float64   Float64  Float64 
+──────┼──────────────────────────────────────
+    1 │      8.2     195.0    0.062    195.0
+    2 │      8.2     195.0    0.062    195.0
+  ⋮  │      ⋮          ⋮        ⋮       ⋮ 
 ```
 """
 function Base.getproperty(wf::WindFarm, name::Symbol)
     if name === :turbines
         return turbines(wf)
+    elseif name === :windfield
+        return windfield(wf)
     else
         # Fall back to default behavior for all other properties
         return getfield(wf, name)
