@@ -167,6 +167,8 @@ Vis
 Floris
 FloriDyn
 TurbineArray
+FlowField
+Measurement
 ```
 
 # Settings
@@ -180,4 +182,6 @@ setup
 Settings
 Settings(wind::Wind, sim::Sim, con::Con)
 getTurbineData
+parse_measurements
+parse_flow_fields
 ```

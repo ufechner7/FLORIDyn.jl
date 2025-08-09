@@ -251,9 +251,14 @@ properties for flexible path management.
                          and `save=true` (default: `"video"`).
 - `output_folder::String`: Relative path for the output directory. Used when `online=false`
                           and `save=true` (default: `"out"`).
-- `flow_fields::Vector{String}`: List of flow field visualizations to be created. Contains
-                                names like "flow_field_vel_reduction", "flow_field_added_turbulence",
-                                and "flow_field_eff_wind_speed" (default: `String[]`).
+- `unique_output_folder::Bool`: If `true`, a unique timestamped folder is created for each simulation run.
+                              If `false`, files are saved directly to the output folder (default: `true`).
+- `flow_fields::Vector{FlowField}`: List of flow field visualizations to be created. Each [`FlowField`](@ref) 
+                                   contains configuration for name, online display, video creation, and skip control.
+                                   See [`FlowField`](@ref) for details (default: `FlowField[]`).
+- `measurements::Vector{Measurement}`: List of measurement visualizations to be created. Each [`Measurement`](@ref) 
+                                      contains configuration for name, separated plotting, and skip control.
+                                      See [`Measurement`](@ref) for details (default: `Measurement[]`).
 - `v_min::Float64`: Minimum velocity value for color scale in effective wind speed 
                    visualizations (msr=3). Used to set consistent color scale limits 
                    across animation frames (default: `2.0`).
@@ -298,19 +303,39 @@ vis = Vis(online=true, save=true, v_min=2.0, v_max=12.0, rel_v_min=20.0, rel_v_m
 # Display only, no saving with default color scales
 vis = Vis(online=true, save=false, v_min=2.0, rel_v_min=20.0)
 
-# Specify flow field visualizations to create
-flow_fields = ["flow_field_vel_reduction", "flow_field_added_turbulence", "flow_field_eff_wind_speed"]
-vis = Vis(online=true, save=true, flow_fields=flow_fields)
+# Specify flow field and measurement visualizations to create
+flow_fields = [FlowField("flow_field_vel_reduction", true, true), FlowField("flow_field_added_turbulence", false, false)]
+measurements = [Measurement("msr_vel_reduction", true), Measurement("msr_added_turbulence", false)]
+vis = Vis(online=true, save=true, flow_fields=flow_fields, measurements=measurements)
 
 # Disable online visualization for batch processing
 vis = Vis(online=false, save=false)
 
-# Load from YAML configuration
+# Load from YAML configuration (automatically parses flow_fields and measurements)
 vis = Vis("data/vis_default.yaml")
 
 # Access computed properties (creates directories automatically)
 println("Saving plots to: ", vis.video_path)  # When online=true
 println("Output directory: ", vis.output_path) # When online=false
+```
+
+# YAML Configuration Format
+When loading from YAML files, the flow_fields and measurements are automatically parsed:
+```yaml
+vis:
+  online: true
+  save: true
+  flow_fields:
+    - name: "flow_field_vel_reduction"
+      online: true
+      create_video: true
+      skip: false
+    - "flow_field_added_turbulence"  # Simple format, defaults applied
+  measurements:
+    - name: "msr_vel_reduction" 
+      separated: true
+      skip: false
+    - "msr_added_turbulence"  # Simple format, defaults applied
 ```
 
 # File Saving Behavior
@@ -330,12 +355,19 @@ Save location depends on the `online` setting:
 - When disabled, visualization functions are skipped to improve computational efficiency
 - `up_int` can be used to reduce visualization frequency and improve simulation speed
 - Directory creation is automatic but occurs only when computed properties are accessed
+- Flow fields and measurements with `skip=true` are ignored completely for optimal performance
 
 # Environment Adaptation
 The struct automatically adapts to different computing environments:
 - **Delft Blue supercomputer**: Uses `~/scratch/` directory for ample storage space
 - **Local systems**: Uses current working directory (`pwd()`)
 - Detection is automatic via the [`isdelftblue()`](@ref) function
+
+# See Also
+- [`FlowField`](@ref): Configuration struct for flow field visualizations
+- [`Measurement`](@ref): Configuration struct for measurement visualizations
+- [`parse_flow_fields`](@ref): Function to convert YAML flow field configurations
+- [`parse_measurements`](@ref): Function to convert YAML measurement configurations
 """
 @with_kw mutable struct Vis
     online::Bool

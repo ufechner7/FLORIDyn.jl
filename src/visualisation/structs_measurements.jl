@@ -8,12 +8,12 @@ using Parameters
 
 Structure representing a single flow field visualization configuration.
 
-This struct defines the configuration for individual flow field visualizations in wind farm simulations,
+This struct defines the configuration for individual flow field visualizations,
 including the flow field type, online visualization settings, video creation options, and skip control.
 
 # Fields
-- `name::String`: The name/identifier of the flow field type (e.g., "flow_field_vel_reduction",
-  "flow_field_added_turbulence", "flow_field_eff_wind_speed")
+- `name::String`: The name/identifier of the flow field type (e.g., `"flow_field_vel_reduction"`,
+  `"flow_field_added_turbulence"`, `"flow_field_eff_wind_speed"`)
 - `online::Bool`: Whether the flow field should be displayed during online visualization (true) 
   or only saved offline (false). Default is false for offline-only processing.
 - `create_video::Bool`: Whether to create a video from the flow field frames (true) or not (false).
@@ -57,12 +57,12 @@ FlowField(name::String, online::Bool, create_video::Bool) = FlowField(name, onli
 
 Structure representing a single measurement visualization configuration.
 
-This struct defines the configuration for individual measurement visualizations in wind farm simulations,
+This struct defines the configuration for individual measurement visualizations,
 including the measurement type, whether it should be displayed in separated plots, and skip control.
 
 # Fields
-- `name::String`: The name/identifier of the measurement type (e.g., "measurements_vel_reduction",
-  "measurements_added_turbulence", "measurements_eff_wind_speed")
+- `name::String`: The name/identifier of the measurement type (e.g., `"msr_vel_reduction"`,
+  `"msr_added_turbulence"`, `"msr_eff_wind_speed"`)
 - `separated::Bool`: Whether the measurement should be plotted in separate individual plots (true) 
   or combined in a single plot (false). Default is false for combined plotting.
 - `skip::Bool`: Whether to skip processing of this measurement entirely (true) or process normally (false).
@@ -71,16 +71,16 @@ including the measurement type, whether it should be displayed in separated plot
 # Examples
 ```julia
 # Velocity reduction measurement with separated plots
-vel_measurement = Measurement("measurements_vel_reduction", true)
+vel_measurement = Measurement("msr_vel_reduction", true)
 
 # Turbulence measurement with combined plots  
-turb_measurement = Measurement("measurements_added_turbulence", false)
+turb_measurement = Measurement("msr_added_turbulence", false)
 
 # Measurement that should be skipped entirely
-skipped_measurement = Measurement("measurements_eff_wind_speed", false, true)
+skipped_measurement = Measurement("msr_eff_wind_speed", false, true)
 
 # Using keyword arguments
-eff_measurement = Measurement(name="measurements_eff_wind_speed", separated=false, skip=false)
+eff_measurement = Measurement(name="msr_eff_wind_speed", separated=false, skip=false)
 ```
 
 # See Also
@@ -121,17 +121,17 @@ The function supports multiple YAML formats:
 ## Simple Format (separated=false, skip=false by default)
 ```yaml
 measurements:
-  - "measurements_vel_reduction"
-  - "measurements_added_turbulence" 
+  - "msr_vel_reduction"
+  - "msr_added_turbulence" 
 ```
 
 ## Extended Format (with separated and skip flags)
 ```yaml
 measurements:
-  - name: "measurements_vel_reduction"
+  - name: "msr_vel_reduction"
     separated: true
     skip: false
-  - name: "measurements_added_turbulence"
+  - name: "msr_added_turbulence"
     separated: false
     skip: true
 ```
@@ -139,8 +139,8 @@ measurements:
 ## Mixed Format
 ```yaml
 measurements:
-  - "measurements_vel_reduction"  # Simple string, defaults applied
-  - name: "measurements_added_turbulence"  # Dictionary format
+  - "msr_vel_reduction"           # Simple string, defaults applied
+  - name: "msr_added_turbulence"  # Dictionary format
     separated: true
     skip: false
 ```
@@ -160,20 +160,14 @@ measurements:
 ```julia
 # Parse from YAML data
 yaml_measurements = [
-    "measurements_vel_reduction",
-    Dict("name" => "measurements_added_turbulence", "separated" => true, "skip" => false)
+    "msr_vel_reduction",
+    Dict("name" => "msr_added_turbulence", "separated" => true, "skip" => false)
 ]
 
 measurements = parse_measurements(yaml_measurements)
-# Returns: [Measurement("measurements_vel_reduction", false, false), 
-#          Measurement("measurements_added_turbulence", true, false)]
+# Returns: [Measurement("msr_vel_reduction", false, false), 
+#          Measurement("msr_added_turbulence", true, false)]
 ```
-
-# Integration
-This function integrates with the existing visualization system:
-- Used by Vis struct constructor to parse YAML configurations  
-- Outputs compatible with plotMeasurements function
-- Supports the existing measurement naming conventions
 
 # See Also
 - [`Measurement`](@ref): The struct type created by this function
@@ -209,13 +203,13 @@ Convert YAML flow field configurations into an array of FlowField structs.
 
 This function parses the flow_fields section from a YAML visualization configuration and converts
 it into a structured array of FlowField objects. It handles both simple string entries and
-complex dictionary entries with name, online, create_video, and skip flag specifications.
+complex dictionary entries with name, online, `create_video`, and skip flag specifications.
 
 # Arguments
 - `flow_fields_yaml::Vector`: Vector containing flow field configurations from YAML.
   Each element can be either:
   - A simple string (flow field name)
-  - A dictionary with "name", "online", "create_video", and "skip" keys
+  - A dictionary with "name", "online", `"create_video"`, and "skip" keys
 
 # Returns
 - `Vector{FlowField}`: Array of FlowField structs with parsed configurations
@@ -223,14 +217,14 @@ complex dictionary entries with name, online, create_video, and skip flag specif
 # YAML Format Support
 The function supports multiple YAML formats:
 
-## Simple Format (online=false, create_video=false, skip=false by default)
+## Simple Format (online=false, `create_video`=false, skip=false by default)
 ```yaml
 flow_fields:
   - "flow_field_vel_reduction"
   - "flow_field_added_turbulence" 
 ```
 
-## Extended Format (with online, create_video, and skip flags)
+## Extended Format (with online, `create_video`, and skip flags)
 ```yaml
 flow_fields:
   - name: "flow_field_vel_reduction"
@@ -246,7 +240,7 @@ flow_fields:
 ## Mixed Format
 ```yaml
 flow_fields:
-  - "flow_field_vel_reduction"  # Simple string, defaults applied
+  - "flow_field_vel_reduction"           # Simple string, defaults applied
   - name: "flow_field_added_turbulence"  # Dictionary format
     online: true
     create_video: false
