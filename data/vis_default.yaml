@@ -3,7 +3,8 @@ vis:
   save: true    # Enable/disable saving of plots to disk
   print_filenames: false # If true, print the names of the saved files
   video_folder: "video" # Relative video folder path 
-  output_folder: "out"  # Relative output folder path  
+  output_folder: "out"  # Relative output folder path
+  unique_output_folder: true  
   # flow_fields: # List of flow field visualizations to be created
   #   - name: "flow_field_vel_reduction"    # Flow field relative wind speed
   #     online: false

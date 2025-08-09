@@ -339,10 +339,11 @@ The struct automatically adapts to different computing environments:
 """
 @with_kw mutable struct Vis
     online::Bool
-    save::Bool = false              # save plots to video folder
-    print_filenames::Bool = false   # if true, print the names of the saved files
-    video_folder::String = "video"  # relative video folder path
-    output_folder::String = "out"   # relative output folder path
+    save::Bool = false                # save plots to video folder
+    print_filenames::Bool = false     # if true, print the names of the saved files
+    video_folder::String = "video"    # relative video folder path
+    output_folder::String = "out"     # relative output folder path
+    unique_output_folder::Bool = true # if true, for each simulation run a new folder is created 
     flow_fields::Vector{FlowField} = FlowField[]  # list of flow field visualizations to create
     measurements::Vector{Measurement} = Measurement[]  # list of measurement visualizations to create (parsed from YAML)
     v_min::Float64 = 2
