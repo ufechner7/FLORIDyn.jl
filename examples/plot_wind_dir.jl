@@ -21,7 +21,8 @@ else
     println("Single turbine per subplot selected, up to 9 turbines.")
 end
 
-# plt.ion()
+plt.ion()
+plt.pygui(true)
 
 settings_file = "data/2021_9T_Data.yaml"
 
