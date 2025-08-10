@@ -5,21 +5,27 @@ vis:
   print_filenames: false # If true, print the names of the saved files
   video_folder: "video"  # Relative video folder path 
   output_folder: "out"   # Relative output folder path
-  unique_output_folder: true  
-  flow_fields:           # List of flow field visualizations to be created
-    - name: "flow_field_vel_reduction"    # Flow field relative wind speed
+  unique_output_folder: true # If true, a unique output folder is created for each simulation run
+  skip_flow_fields: false    # When true, do not create flow field visualizations
+  flow_fields:               # List of flow field visualizations to be created
+    - name: "flow_field_vel_reduction"    # Flow field relative wind speed (video)
       online: true
       create_video: true
-      skip: false
-    - name: "flow_field_added_turbulence" # Flow field added turbulence
+      skip: true
+    - name: "flow_field_vel_reduction"    # Flow field relative wind speed (plot)
       online: false
       create_video: false
-      skip: false
+      skip: false      
+    - name: "flow_field_added_turbulence" # Flow field added turbulence
+      online: true
+      create_video: false
+      skip: true
     - name: "flow_field_eff_wind_speed"   # Flow field effective wind speed
       online: false
       create_video: false
-      skip: false
-  measurements:          # List of measurement plots to be created
+      skip: true
+  skip_measurements: true # When true, do not create measurement visualizations
+  measurements:           # List of measurement plots to be created
     - name: "msr_vel_reduction"     # Measurement relative wind speed
       separated: true
       skip: false

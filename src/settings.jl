@@ -377,7 +377,9 @@ The struct automatically adapts to different computing environments:
     unique_folder::String = ""        # this will be set when starting the simulation
     video_folder::String = "video"    # relative video folder path
     output_folder::String = "out"     # relative output folder path
-    unique_output_folder::Bool = true # if true, for each simulation run a new folder is created 
+    unique_output_folder::Bool = true # if true, for each simulation run a new folder is created
+    skip_flow_fields::Bool = false    # if true, completely skip creation of flow field visualizations (overrides individual entries)
+    skip_measurements::Bool = false   # if true, completely skip creation of measurement visualizations (overrides individual entries)
     flow_fields::Vector{FlowField} = FlowField[]  # list of flow field visualizations to create
     measurements::Vector{Measurement} = Measurement[]  # list of measurement visualizations to create (parsed from YAML)
     v_min::Float64 = 2

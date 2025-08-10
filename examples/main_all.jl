@@ -29,8 +29,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 
 # Run initial conditions
 wf = initSimulation(wf, sim)
-@info "Initial conditions done, starting simulation..."
-toc()
+@info "Initialization done after $(round(toc(false), digits=2)) s, starting simulation..."
 
 close_all(plt)
 if vis.unique_output_folder
@@ -45,6 +44,11 @@ if length(vis.flow_fields) == 0
 end
 for flow_field in vis.flow_fields
     global wf, md, mi, FLORIDYN_EXECUTED
+
+    if vis.skip_flow_fields
+        @info "Skipping flow field visualisation."
+        break
+    end
     
     # Skip this flow field if skip flag is set
     if flow_field.skip
@@ -83,7 +87,7 @@ for flow_field in vis.flow_fields
     else
         vis.online = false
         @info "Plotting flow field: $(flow_field.name)"
-        @time plot_flow_field(wf, X, Y, Z, vis; msr, plt)
+        plot_flow_field(wf, X, Y, Z, vis; msr, plt)
     end
 end
 if length(vis.measurements) > 0 && ! FLORIDYN_EXECUTED
@@ -96,6 +100,10 @@ for measurement in vis.measurements
     if measurement.skip
         @info "Skipping measurement: $(measurement.name), separated: $(measurement.separated)"
         continue
+    end
+    if vis.skip_measurements
+        @info "Skipping measurement visualisation."
+        break
     end
     
     @info "Plotting measurement: $(measurement.name), separated: $(measurement.separated)"
@@ -129,6 +137,5 @@ end
 cp(settings_file, joinpath(vis.output_path, basename(settings_file)))
 cp(vis_file, joinpath(vis.output_path, basename(vis_file)))
 
-toc()
-
+@info "Total execution time: $(round(toc(false), digits=2)) s"
 nothing
