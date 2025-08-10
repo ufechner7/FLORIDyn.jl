@@ -781,6 +781,7 @@ end
                 rethrow(e)
             end
         end
+        Threads.nthreads() > 1 && sleep(10)
     end
     
     @testset "createVideo" begin
