@@ -35,6 +35,7 @@ getYaw
 ```
 # Helper functions
 ```@docs
+toMSR
 now_microseconds
 now_nanoseconds
 precise_now

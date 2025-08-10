@@ -130,6 +130,7 @@ WindPerturbation
 
 ## Other types
 ```@docs
+MSR
 States
 IterateOPsBuffers
 ```

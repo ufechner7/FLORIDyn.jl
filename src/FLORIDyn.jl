@@ -55,7 +55,6 @@ export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_resul
 export isdelftblue, Measurement, parse_measurements
 export FlowField, parse_flow_fields
 
-@enum MSR VelReduction=1 AddedTurbulence=2 EffWind=3
 """
     MSR, VelReduction, AddedTurbulence, EffWind
 
@@ -85,6 +84,13 @@ run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
 ```
 
 See also: [`toMSR`](@ref)
+"""
+@enum MSR VelReduction=1 AddedTurbulence=2 EffWind=3
+
+"""
+    toMSR(s::String)
+
+Converts the input string `s` to the MSR (Measurement System Representation) format.
 """
 function toMSR(s::String)
     if s == "VelReduction"
