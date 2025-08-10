@@ -502,18 +502,23 @@ end
                     @test result1 === nothing
                     velocity_file = joinpath(output_path, "ff_velocity_reduction.png")
                     @test isfile(velocity_file)
+                    # plt.close_all(plt); plt.pause(0.1)
+                    plt.pause(0.1)
                     
                     # Test msr=2 (added turbulence)  
                     result2 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
                     @test result2 === nothing
                     turbulence_file = joinpath(output_path, "ff_added_turbulence.png")
                     @test isfile(turbulence_file)
+                    plt.pause(0.1)
                     
                     # Test msr=3 (wind speed)
                     result3 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
                     @test result3 === nothing
                     wind_speed_file = joinpath(output_path, "ff_wind_speed.png")
                     @test isfile(wind_speed_file)
+                    plt.pause(0.1)
+                    plt.close("all")
                 end
                 
                 @testset "save files with time parameter" begin
@@ -528,6 +533,8 @@ end
                     @test result_t2 === nothing
                     time_file2 = joinpath(output_path, "ff_added_turbulence_t0046s.png")  # Should round to nearest int
                     @test isfile(time_file2)
+                    plt.pause(0.1)
+                    plt.close("all")
                 end
                 
                 @testset "online vs offline saving behavior" begin
