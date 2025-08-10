@@ -15,6 +15,13 @@ vis_file      = "data/vis_default.yaml"
 
 vis = Vis(vis_file)
 
+if !vis.show_plots
+    plt.ioff()
+    plt.pygui(false)
+else
+    plt.ion()
+end
+
 # Automatic parallel/threading setup
 include("remote_plotting.jl")
 

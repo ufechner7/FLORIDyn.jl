@@ -370,7 +370,7 @@ The struct automatically adapts to different computing environments:
 - [`parse_measurements`](@ref): Function to convert YAML measurement configurations
 """
 @with_kw mutable struct Vis
-    online::Bool
+    online::Bool = false              # Enable/disable online visualization during simulation; temporary variable
     no_plots::Int64 = 0               # Number of plots created, used for reporting
     no_videos::Int64 = 0              # Number of videos created, used for reporting
     show_plots::Bool = true           # master switch: if false, don't show plots, but results are still saved
