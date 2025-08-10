@@ -968,7 +968,7 @@ applying control strategies and updating turbine states over time.
 
 """
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
-                          vis::Vis, floridyn::FloriDyn, floris::Floris, pff=nothing)
+                          vis::Vis, floridyn::FloriDyn, floris::Floris, pff=nothing; msr=1)
     nT      = wf.nT
     sim_steps    = sim.n_sim_steps
     ma       = zeros(sim_steps * nT, 6)
@@ -1022,11 +1022,11 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
             if mod(t_rel, vis.up_int) == 0
                 Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
                 if isnothing(pff)
-                    plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel; msr=1)
+                    plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel; msr)
                     plt.pause(0.01)
                 else
                     # @info "time: $t_rel, plotting with pff"
-                    @spawnat 2 pff(wf, X, Y, Z, vis, t_rel; msr=1)
+                    @spawnat 2 pff(wf, X, Y, Z, vis, t_rel; msr=msr)
                 end
             end
         end

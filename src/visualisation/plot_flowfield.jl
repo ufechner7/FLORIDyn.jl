@@ -334,7 +334,7 @@ This method is provided for backward compatibility. For animation support,
 use the new interface with explicit state management.
 """
 function plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=3)
-    plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr=msr)
+    plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr)
     return nothing
 end
 

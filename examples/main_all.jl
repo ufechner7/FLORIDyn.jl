@@ -73,7 +73,7 @@ for flow_field in vis.flow_fields
         cleanup_video_folder()
         vis.online = true
         @info "Starting simulation with online visualisation for flow field $(flow_field.name) ..."
-        wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+        wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
         FLORIDYN_EXECUTED = true
 
         if flow_field.create_video

@@ -278,7 +278,7 @@ include("visualisation/smart_plotting.jl")
 
 """
     run_floridyn(plt, set, wf, wind, sim, con, vis, 
-                 floridyn, floris) -> (WindFarm, DataFrame, Matrix)
+                 floridyn, floris; msr=1) -> (WindFarm, DataFrame, Matrix)
 
 Unified function that automatically handles both multi-threading and single-threading modes
 for running FLORIDyn simulations with appropriate plotting callbacks.
@@ -293,16 +293,17 @@ for running FLORIDyn simulations with appropriate plotting callbacks.
 - `vis`: Visualization settings
 - `floridyn`: FLORIDyn model object
 - `floris`: FLORIS model object
+- `msr`: Measurement index for online flow field plotting (1=velocity reduction, 2=added turbulence, 3=effective wind speed). Default 1.
 
 # Returns
 - Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
 """
-function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=1)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Multi-threading mode: use remote plotting callback
         # The rmt_plot_flow_field function should be defined via remote_plotting.jl
         try
-            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, Main.rmt_plot_flow_field)
+            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, Main.rmt_plot_flow_field; msr)
         catch e
             if isa(e, UndefVarError)
                 error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
@@ -312,7 +313,7 @@ function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
         end
     else
         # Single-threading mode: no plotting callback
-        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
     end
 end
 
