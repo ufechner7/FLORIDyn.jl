@@ -134,8 +134,14 @@ if vis.save_results
         @error "Failed to save simulation results: $e"
     end
 end
-cp(settings_file, joinpath(vis.output_path, basename(settings_file)))
-cp(vis_file, joinpath(vis.output_path, basename(vis_file)))
+
+# Log copying of configuration files (settings + visualization)
+shorten(p) = replace(p, homedir() => "~")
+target_dir = vis.output_path
+@info "Copying yaml files: $(shorten(settings_file)) -> $(shorten(target_dir))"
+@info "Copying yaml files: $(shorten(vis_file)) -> $(shorten(target_dir))"
+cp(settings_file, joinpath(target_dir, basename(settings_file)))
+cp(vis_file,      joinpath(target_dir, basename(vis_file)))
 
 # Copy the subfolder named like the settings file (without extension) to the output path
 try
@@ -144,14 +150,9 @@ try
     src_dir = joinpath(dirname(settings_file), settings_foldername)  # e.g. data/2021_9T_Data
     dest_dir = joinpath(vis.output_path, settings_foldername)
     if isdir(src_dir)
-        homedir_str = homedir()
-        # helper to shorten paths in log output
-        shorten(p) = replace(p, homedir_str => "~")
-        @info "Copying CSV folder $(shorten(src_dir)) -> $(shorten(dest_dir))"
+        @info "Copying CSV folder: $(shorten(src_dir)) -> $(shorten(dest_dir))"
         cp(src_dir, dest_dir; force=true)
     else
-        homedir_str = homedir()
-        shorten(p) = replace(p, homedir_str => "~")
         @info "No matching CSV folder to copy (expected directory not found): $(shorten(src_dir))"
     end
 catch e
