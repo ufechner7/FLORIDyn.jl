@@ -8,7 +8,7 @@ module FLORIDyn
 
 using PrecompileTools: @setup_workload, @compile_workload
 using LaTeXStrings
-import DocStringExtensions
+import DocStringExtensions, LoggingExtras
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
 using Statistics, StaticArrays, Pkg, DistributedNext, Dates

@@ -8,6 +8,7 @@
 using Timers
 tic()
 using FLORIDyn, TerminalPager, DistributedNext, ControlPlots, JLD2
+using Logging, LoggingExtras, Dates
 
 settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"
@@ -27,144 +28,122 @@ set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
-# Run initial conditions
-wf = initSimulation(wf, sim)
-@info "Initialization done after $(round(toc(false), digits=2)) s, starting simulation..."
-
-close_all(plt)
-if vis.unique_output_folder
-    vis.unique_folder = unique_name()
-else
-    vis.unique_folder = ""
+log_path = joinpath(vis.output_path, "simulation.log")
+file_logger = LoggingExtras.FormatLogger(log_path) do io, meta
+    # meta.level is e.g. Info, Warn, Error; append ':' to match requested style
+    println(io, meta.level, ": ", meta.message)
 end
+console_logger = current_logger()
+tee_logger = LoggingExtras.TeeLogger(console_logger, file_logger)
+with_logger(tee_logger) do
+    # Run initial conditions
+    wf = initSimulation(wf, sim)
+    @info "Initialization done after $(round(toc(false), digits=2)) s, starting simulation..."
+    @warn "This may take a while, please be patient."
 
-# Process flow fields
-if length(vis.flow_fields) == 0
-    @info "Skipping flow field visualisation."
-end
-if ! vis.show_plots
-    @info "Do not show the plots, only create png files."
-end
-for flow_field in vis.flow_fields
-    global wf, md, mi, FLORIDYN_EXECUTED
+    close_all(plt)
+    if vis.unique_output_folder
+        vis.unique_folder = unique_name()
+    else
+        vis.unique_folder = ""
+    end
 
-    if vis.skip_flow_fields
+    # Process flow fields
+    if length(vis.flow_fields) == 0
         @info "Skipping flow field visualisation."
-        break
     end
-    
-    # Skip this flow field if skip flag is set
-    if flow_field.skip
-        @info "Skipping flow field: $(flow_field.name)"
-        continue
+    if ! vis.show_plots
+        @info "Do not show the plots, only create png files."
     end
-    
-    Z, X, Y = calcFlowField(set, wf, wind, floris)
-    if flow_field.name == "flow_field_vel_reduction"
-        msr = 1
-    elseif flow_field.name == "flow_field_added_turbulence"
-        msr = 2
-    elseif flow_field.name == "flow_field_eff_wind_speed"
-        msr = 3
-    else
-        msr = 1  # default to velocity reduction
-    end
-    if flow_field.online
-        cleanup_video_folder()
-        vis.online = true
-        @info "Starting simulation with online visualisation for $(flow_field.name) ..."
-        wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
-        FLORIDYN_EXECUTED = true
-
-        if flow_field.create_video
-            @info "Creating video for $(flow_field.name) ..."
-            video_paths = redirect_stdout(devnull) do
-                createAllVideos(fps=4, delete_frames=false, video_dir=vis.video_path, output_dir=vis.output_path)
-            end
-            if !isempty(video_paths)
-                @info "Video created successfully: $(video_paths[1])"
-                vis.no_videos += 1
-            else
-                @warn "No video created."
-            end
+    for flow_field in vis.flow_fields
+        global wf, md, mi, FLORIDYN_EXECUTED
+        if vis.skip_flow_fields
+            @info "Skipping flow field visualisation."
+            break
         end
-    else
+        if flow_field.skip
+            @info "Skipping flow field: $(flow_field.name)"
+            continue
+        end
+        Z, X, Y = calcFlowField(set, wf, wind, floris)
+        msr = flow_field.name == "flow_field_vel_reduction" ? 1 : flow_field.name == "flow_field_added_turbulence" ? 2 : flow_field.name == "flow_field_eff_wind_speed" ? 3 : 1
+        if flow_field.online
+            cleanup_video_folder()
+            vis.online = true
+            @info "Starting simulation with online visualisation for $(flow_field.name) ..."
+            wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
+            FLORIDYN_EXECUTED = true
+            if flow_field.create_video
+                @info "Creating video for $(flow_field.name) ..."
+                video_paths = redirect_stdout(devnull) do
+                    createAllVideos(fps=4, delete_frames=false, video_dir=vis.video_path, output_dir=vis.output_path)
+                end
+                if !isempty(video_paths)
+                    @info "Video created successfully: $(video_paths[1])"
+                    vis.no_videos += 1
+                else
+                    @warn "No video created."
+                end
+            end
+        else
+            vis.online = false
+            @info "Plotting flow field: $(flow_field.name)"
+            plot_flow_field(wf, X, Y, Z, vis; msr, plt)
+            vis.no_plots += 1
+        end
+    end
+    if length(vis.measurements) > 0 && ! FLORIDYN_EXECUTED
+        global wf, md, mi
         vis.online = false
-        @info "Plotting flow field: $(flow_field.name)"
-        plot_flow_field(wf, X, Y, Z, vis; msr, plt)
+        wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    end
+    for measurement in vis.measurements
+        if measurement.skip
+            @info "Skipping measurement: $(measurement.name), separated: $(measurement.separated)"
+            continue
+        end
+        if vis.skip_measurements
+            @info "Skipping measurement visualisation."
+            break
+        end
+        @info "Plotting measurement: $(measurement.name), separated: $(measurement.separated)"
+        msr = measurement.name == "msr_vel_reduction" ? 1 : measurement.name == "msr_added_turbulence" ? 2 : measurement.name == "msr_eff_wind_speed" ? 3 : 1
+        plot_measurements(wf, md, vis; separated=measurement.separated, msr, plt)
         vis.no_plots += 1
     end
-end
-if length(vis.measurements) > 0 && ! FLORIDYN_EXECUTED
-    global wf, md, mi
-    vis.online = false
-    wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)    
-end
-for measurement in vis.measurements
-    # Skip this measurement if skip flag is set
-    if measurement.skip
-        @info "Skipping measurement: $(measurement.name), separated: $(measurement.separated)"
-        continue
+    if vis.save_results
+        @info "Saving simulation results..."
+        results_filename = joinpath(vis.output_path, "results.jld2")
+        try
+            jldsave(results_filename; wf, md, mi)
+            if vis.print_filenames
+                @info "Simulation results saved to: $(results_filename)"
+            end
+        catch e
+            @error "Failed to save simulation results: $e"
+        end
     end
-    if vis.skip_measurements
-        @info "Skipping measurement visualisation."
-        break
-    end
-    
-    @info "Plotting measurement: $(measurement.name), separated: $(measurement.separated)"
-    if measurement.name == "msr_vel_reduction"
-        msr = 1
-    elseif measurement.name == "msr_added_turbulence"
-        msr = 2
-    elseif measurement.name == "msr_eff_wind_speed"
-        msr = 3
-    else
-        msr = 1  # default to velocity reduction
-    end
-    plot_measurements(wf, md, vis; separated=measurement.separated, msr, plt)
-    vis.no_plots += 1
-end
-
-if vis.save_results
-    # Save simulation results as .jld2 files
-    @info "Saving simulation results..."
-    results_filename = joinpath(vis.output_path, "results.jld2")
-    
+    shorten(p) = replace(p, homedir() => "~")
+    target_dir = vis.output_path
+    @info "Copying yaml files: $(shorten(settings_file)) -> $(shorten(target_dir))"
+    @info "Copying yaml files: $(shorten(vis_file)) -> $(shorten(target_dir))"
+    cp(settings_file, joinpath(target_dir, basename(settings_file)))
+    cp(vis_file,      joinpath(target_dir, basename(vis_file)))
     try
-        # Save the main simulation variables
-        jldsave(results_filename; wf, md, mi)
-        if vis.print_filenames
-            @info "Simulation results saved to: $(results_filename)"
+        settings_basename = basename(settings_file)
+        settings_foldername = first(splitext(settings_basename))
+        src_dir = joinpath(dirname(settings_file), settings_foldername)
+        dest_dir = joinpath(vis.output_path, settings_foldername)
+        if isdir(src_dir)
+            @info "Copying CSV folder: $(shorten(src_dir)) -> $(shorten(dest_dir))"
+            cp(src_dir, dest_dir; force=true)
+        else
+            @info "No matching CSV folder to copy (expected directory not found): $(shorten(src_dir))"
         end
     catch e
-        @error "Failed to save simulation results: $e"
+        @warn "Failed to copy settings data folder" exception=(e, catch_backtrace())
     end
+    @info "Simulation completed. Plots created: $(vis.no_plots), videos created: $(vis.no_videos) ."
+    @info "Total execution time: $(round(toc(false), digits=2)) s"
 end
-
-# Log copying of configuration files (settings + visualization)
-shorten(p) = replace(p, homedir() => "~")
-target_dir = vis.output_path
-@info "Copying yaml files: $(shorten(settings_file)) -> $(shorten(target_dir))"
-@info "Copying yaml files: $(shorten(vis_file)) -> $(shorten(target_dir))"
-cp(settings_file, joinpath(target_dir, basename(settings_file)))
-cp(vis_file,      joinpath(target_dir, basename(vis_file)))
-
-# Copy the subfolder named like the settings file (without extension) to the output path
-try
-    settings_basename = basename(settings_file)                      # e.g. "2021_9T_Data.yaml"
-    settings_foldername = first(splitext(settings_basename))         # => "2021_9T_Data"
-    src_dir = joinpath(dirname(settings_file), settings_foldername)  # e.g. data/2021_9T_Data
-    dest_dir = joinpath(vis.output_path, settings_foldername)
-    if isdir(src_dir)
-        @info "Copying CSV folder: $(shorten(src_dir)) -> $(shorten(dest_dir))"
-        cp(src_dir, dest_dir; force=true)
-    else
-        @info "No matching CSV folder to copy (expected directory not found): $(shorten(src_dir))"
-    end
-catch e
-    @warn "Failed to copy settings data folder" exception=(e, catch_backtrace())
-end
-
-@info "Simulation completed. Plots created: $(vis.no_plots), videos created: $(vis.no_videos) ."
-@info "Total execution time: $(round(toc(false), digits=2)) s"
 nothing

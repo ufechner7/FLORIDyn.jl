@@ -15,12 +15,12 @@ vis:
       create_video: true
       skip: true
     - name: "flow_field_vel_reduction"    # Flow field relative wind speed (plot)
-      online: false
-      create_video: false
-      skip: false      
-    - name: "flow_field_added_turbulence" # Flow field added turbulence
       online: true
       create_video: true
+      skip: false      
+    - name: "flow_field_added_turbulence" # Flow field added turbulence
+      online: false
+      create_video: false
       skip: false
     - name: "flow_field_eff_wind_speed"   # Flow field effective wind speed
       online: false
