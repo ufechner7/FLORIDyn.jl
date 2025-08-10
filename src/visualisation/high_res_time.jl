@@ -161,21 +161,19 @@ function delete_results(vis::Vis, n::Int=1; dry_run::Bool = false)
     deleted_dirs = String[]
     
     # Construct paths without creating them (avoid using computed properties that call mkpath)
-    # Use getfield to avoid any getproperty overrides
-    output_folder = getfield(vis, :output_folder)
-    video_folder = getfield(vis, :video_folder) 
-    unique_folder = getfield(vis, :unique_folder)
+    output_folder = vis.output_folder
+    video_folder = vis.video_folder
     
     output_dir = if isdelftblue() 
-        joinpath(homedir(), "scratch", unique_folder, output_folder)
+        joinpath(homedir(), "scratch", output_folder)
     else 
-        joinpath(pwd(), output_folder, unique_folder)
+        joinpath(pwd(), output_folder)
     end
     
     video_dir = if isdelftblue()
-        joinpath(homedir(), "scratch", unique_folder, video_folder) 
+        joinpath(homedir(), "scratch", video_folder) 
     else
-        joinpath(pwd(), video_folder, unique_folder)
+        joinpath(pwd(), video_folder)
     end
     
     for directory in [output_dir, video_dir]
