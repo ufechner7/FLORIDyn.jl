@@ -21,6 +21,7 @@ else
     println("Single turbine per subplot selected, up to 9 turbines.")
 end
 
+# turn on interactive visualisation in case it was turned off before
 plt.ion()
 plt.pygui(true)
 
