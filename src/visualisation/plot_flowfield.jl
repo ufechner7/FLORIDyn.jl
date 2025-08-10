@@ -104,7 +104,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
     end
     
     # Get the 2D slice
-    mz_2d = mz[:, :, Int64(msr)]
+    mz_2d = mz[:, :, Int(msr)]
     
     # Try to use ControlPlots if available
     try
