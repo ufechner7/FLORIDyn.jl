@@ -119,7 +119,9 @@ if vis.save_results
     try
         # Save the main simulation variables
         jldsave(results_filename; wf, md, mi)
-        @info "Simulation results saved to: $(results_filename)"
+        if vis.print_filenames
+            @info "Simulation results saved to: $(results_filename)"
+        end
     catch e
         @error "Failed to save simulation results: $e"
     end
