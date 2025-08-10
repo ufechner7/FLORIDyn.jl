@@ -139,7 +139,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         end
         
         # Initialize or update plot state
-        if state === nothing
+    if state === nothing
             # First call - create new figure and all elements
             size = 0.84
             fig = plt.figure(figure_name, figsize=(7.25size, 6size))
@@ -172,19 +172,48 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             end
             
             # Create state object
-            state = PlotState(fig, ax, cb, contour_collection, turbine_lines, op_scatter1, op_scatter2, 
-                             title_obj, figure_name, label, lev_min, lev_max, levels)            
+            state = PlotState(fig, ax, cb, contour_collection, turbine_lines, op_scatter1, op_scatter2,
+                              title_obj, figure_name, label, lev_min, lev_max, levels)
+            if vis.log_debug
+                @info "plotFlowField init" msr figure_name contour_type=string(typeof(contour_collection)) threads=Threads.nthreads() show_plots=vis.show_plots save=vis.save
+            end
         else
             # Subsequent calls - update existing plot
             plt.figure(state.figure_name)
-            
-            # Update contour data
-            for collection in state.contour_collection.collections
-                collection.remove()
+            if vis.log_debug
+                has_prop = try
+                    hasproperty(state.contour_collection, :collections)
+                catch
+                    false
+                end
+                @info "plotFlowField update" msr figure=state.figure_name contour_type=string(typeof(state.contour_collection)) has_collections=has_prop levels_len=length(state.levels) threads=Threads.nthreads()
             end
-            
+            # Update contour data with defensive handling for backend differences
+            try
+                for collection in state.contour_collection.collections
+                    collection.remove()
+                end
+            catch e
+                @warn "Failed to iterate contour collections; rebuilding figure (possible backend difference)" exception=(e, catch_backtrace())
+                if vis.log_debug
+                    try
+                        pyobj_str = string(state.contour_collection)
+                        @info "Contour object repr" pyobj_str
+                    catch
+                    end
+                end
+                # Rebuild full figure state defensively
+                try
+                    plt.close(state.fig)
+                catch
+                end
+                return plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr)
+            end
             # Create new contour with updated data
             state.contour_collection = plt.contourf(my, mx, mz_2d, 40; levels=state.levels, cmap="inferno")
+            if vis.log_debug
+                @info "plotFlowField updated contour" msr contour_type_new=string(typeof(state.contour_collection))
+            end
         end
 
         # Plot the turbine rotors as short, thick lines (as seen from above)
