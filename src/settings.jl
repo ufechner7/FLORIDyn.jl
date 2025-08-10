@@ -377,6 +377,7 @@ The struct automatically adapts to different computing environments:
     save::Bool = false                # save plots to video or output folder
     save_results::Bool = false        # save simulation results as .jld2 files
     print_filenames::Bool = false     # if true, print the names of the saved files
+    log_debug::Bool = false           # if true, enable debug level logging output
     unique_folder::String = ""        # this will be set when starting the simulation
     video_folder::String = "video"    # relative video folder path
     output_folder::String = "out"     # relative output folder path

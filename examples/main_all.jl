@@ -44,8 +44,9 @@ log_path = joinpath(vis.output_path, "simulation.log")
 base_file_logger = LoggingExtras.FormatLogger(log_path) do io, meta
     println(io, meta.level, ": ", meta.message)
 end
-# Keep only Info and above (drop Debug) in file
-file_logger = LoggingExtras.MinLevelLogger(base_file_logger, Logging.Info)
+# Keep only Info and above (drop Debug) unless explicitly enabled via vis.log_debug
+min_level = vis.log_debug ? Logging.Debug : Logging.Info
+file_logger = LoggingExtras.MinLevelLogger(base_file_logger, min_level)
 console_logger = current_logger()
 tee_logger = LoggingExtras.TeeLogger(console_logger, file_logger)
 with_logger(tee_logger) do
