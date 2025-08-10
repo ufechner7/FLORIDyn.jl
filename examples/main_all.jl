@@ -28,11 +28,17 @@ set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
+if vis.unique_output_folder
+    vis.unique_folder = unique_name()
+else
+    vis.unique_folder = ""
+end
 log_path = joinpath(vis.output_path, "simulation.log")
-file_logger = LoggingExtras.FormatLogger(log_path) do io, meta
-    # meta.level is e.g. Info, Warn, Error; append ':' to match requested style
+base_file_logger = LoggingExtras.FormatLogger(log_path) do io, meta
     println(io, meta.level, ": ", meta.message)
 end
+# Keep only Info and above (drop Debug) in file
+file_logger = LoggingExtras.MinLevelLogger(base_file_logger, Logging.Info)
 console_logger = current_logger()
 tee_logger = LoggingExtras.TeeLogger(console_logger, file_logger)
 with_logger(tee_logger) do
@@ -42,11 +48,6 @@ with_logger(tee_logger) do
     @warn "This may take a while, please be patient."
 
     close_all(plt)
-    if vis.unique_output_folder
-        vis.unique_folder = unique_name()
-    else
-        vis.unique_folder = ""
-    end
 
     # Process flow fields
     if length(vis.flow_fields) == 0
@@ -68,7 +69,10 @@ with_logger(tee_logger) do
         Z, X, Y = calcFlowField(set, wf, wind, floris)
         msr = flow_field.name == "flow_field_vel_reduction" ? 1 : flow_field.name == "flow_field_added_turbulence" ? 2 : flow_field.name == "flow_field_eff_wind_speed" ? 3 : 1
         if flow_field.online
-            cleanup_video_folder()
+            if ! vis.unique_output_folder
+                @info "Cleaning up video folder: $(vis.video_path)"
+                cleanup_video_folder()
+            end
             vis.online = true
             @info "Starting simulation with online visualisation for $(flow_field.name) ..."
             wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
