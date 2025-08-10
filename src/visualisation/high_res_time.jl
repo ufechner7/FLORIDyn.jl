@@ -109,57 +109,70 @@ end
 """
     delete_results(vis::Vis, n::Int=1; dry_run::Bool = false)
 
-Delete the last (newest) n folders starting with "floridyn_run" from the output directory.
+Delete the newest `n` directories starting with "floridyn_run" from both the visualization 
+output directory and video directory.
 
-This function helps manage disk space by removing recent simulation run directories. It sorts
-directories by modification time and removes the newest ones first, preserving older
-simulation results that may be more established or important. The function operates on the
-parent directory of the visualization output path.
+This function provides comprehensive cleanup by removing the most recent floridyn_run directories
+from both output and video paths simultaneously. It's particularly useful for removing failed runs, 
+test runs, or managing disk space by keeping only the most relevant simulation outputs across
+both directory types.
 
 # Arguments
-- `vis::Vis`: Visualization settings object containing output path information
-- `n::Int`: Number of folders to delete (must be positive, default: 1)
-- `dry_run::Bool`: If `true`, only shows what would be deleted without actually deleting (default: `false`)
+- `vis::Vis`: Visualization settings object containing both output and video path configurations
+- `n::Int`: Number of newest directories to delete from each directory (must be positive, default: 1)  
+- `dry_run::Bool`: Preview mode - shows what would be deleted without actually deleting (default: `false`)
 
 # Returns
-- `Vector{String}`: List of directories that were deleted (or would be deleted in dry_run mode)
+- `Vector{String}`: Absolute paths of directories that were deleted from both locations combined.
+  Returns empty vector if no matching directories found or if `n ≤ 0`.
+
+# Behavior
+- **Directory Search**: Searches both `vis.output_path` and `vis.video_path` for directories matching `floridyn_run_*` pattern
+- **Dual Cleanup**: Operates on both output and video directories in sequence
+- **Sorting**: Sorts directories by modification time (newest first) within each directory
+- **Selection**: Selects up to `n` newest directories for deletion from each location
+- **Cleanup**: Automatically sets `vis.unique_folder = ""` before processing
+- **Dry Run**: When `dry_run=true`, logs what would be deleted but performs no actual deletion
 
 # Examples
 ```julia
 # Create visualization settings
 vis = Vis("data/vis_default.yaml")
 
-# Delete the newest floridyn_run folder from vis.output_path directory
+# Delete the single newest floridyn_run directory from both output and video directories
 deleted = delete_results(vis)
+println("Deleted: ", length(deleted), " directories total")
 
-# Delete the 3 newest floridyn_run folders
+# Delete the 3 newest floridyn_run directories from each location
 deleted = delete_results(vis, 3)
+println("Deleted directories: ", basename.(deleted))
 
-# Preview what would be deleted without actually deleting
-delete_results(vis, 5, dry_run=true)
+# Preview what would be deleted from both directories
+delete_results(vis, 5, dry_run=true)  # Shows info about 5 newest in each directory
+
+# Check existing directories in both locations
+vis.unique_folder = ""  
+output_runs = find_floridyn_runs(vis.output_path)
+video_runs = find_floridyn_runs(vis.video_path)
+println("Found \$(length(output_runs)) in output, \$(length(video_runs)) in video")
 ```
 
-# Behavior
-- Automatically determines the directory to search from `dirname(vis.output_path)`
-- Sets `vis.unique_folder = ""` as part of the cleanup process
-- Only deletes directories that start with "floridyn_run"
-- Sorts by modification time (newest deleted first)
-
 # Error Handling
-- Returns empty list if no matching directories found
-- Skips directories that cannot be deleted due to permissions
-- Validates positive number of folders to delete
+- **Invalid Input**: Warns and returns empty vector for non-positive `n`
+- **Missing Directories**: Errors if either `vis.output_path` or `vis.video_path` doesn't exist
+- **No Matches**: Info message and early return if no floridyn_run directories found in either location
+- **Deletion Failures**: Individual directory deletion errors are logged but don't stop the process
 
-# Notes
-- Preserves the oldest simulation results
-- Useful for removing failed or incomplete recent runs, or test runs
-- Works with directories created by [`unique_name()`](@ref)
-- Integrates with the [`Vis`](@ref) settings system
+# Important Notes
+- **Dual Operation**: This function operates on BOTH output and video directories
+- **Independent Processing**: Each directory is processed separately - `n` directories from output AND `n` directories from video
+- **Early Return**: Function returns early if no directories are found in the first location checked
+- **Path Creation**: Accessing `vis.output_path` and `vis.video_path` automatically creates these directories if they don't exist
 
 # See Also
-- [`Vis`](@ref): Visualization settings struct
-- [`unique_name`](@ref): Function that creates floridyn_run directories
-- [`find_floridyn_runs`](@ref): Function to list existing floridyn_run directories
+- [`Vis`](@ref): Visualization settings struct with output and video path configuration
+- [`unique_name()`](@ref): Creates timestamped floridyn_run directories
+- [`find_floridyn_runs()`](@ref): Lists existing floridyn_run directories in a given path
 """
 function delete_results(vis::Vis, n::Int=1; dry_run::Bool = false)
     vis.unique_folder = ""
