@@ -17,7 +17,7 @@ Usage:
 using Printf
 
 # Default video directory where FLORIDyn saves videos
-const DEFAULT_VIDEO_DIR = "video"
+const DEFAULT_VIDEO_DIR = "out"
 
 """
     detect_video_player()

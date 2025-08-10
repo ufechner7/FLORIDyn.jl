@@ -260,18 +260,18 @@ properties for flexible path management.
                                       contains configuration for name, separated plotting, and skip control.
                                       See [`Measurement`](@ref) for details (default: `Measurement[]`).
 - `v_min::Float64`: Minimum velocity value for color scale in effective wind speed 
-                   visualizations (msr=3). Used to set consistent color scale limits 
+                   visualizations (msr=EffWind). Used to set consistent color scale limits 
                    across animation frames (default: `2.0`).
 - `v_max::Float64`: Maximum velocity value for color scale in effective wind speed 
-                   visualizations (msr=3). Used to set consistent upper limits across 
+                   visualizations (msr=EffWind). Used to set consistent upper limits across 
                    animation frames (default: `10.0`).
 - `rel_v_min::Float64`: Minimum relative velocity value for velocity reduction 
-                       visualizations (msr=1). Controls the color scale for relative 
+                       visualizations (msr=VelReduction). Controls the color scale for relative 
                        wind speed plots. Range: \\[0, 100\\] (default: `20.0`).
 - `rel_v_max::Float64`: Maximum relative velocity value for velocity reduction 
-                       visualizations (msr=1). Controls the upper limit for relative 
+                       visualizations (msr=VelReduction). Controls the upper limit for relative 
                        wind speed plots. Range: \\[0, 100\\] (default: `100.0`).
-- `turb_max::Float64`: Maximum turbulence value for added turbulence visualizations (msr=2).
+- `turb_max::Float64`: Maximum turbulence value for added turbulence visualizations (msr=AddedTurbulence).
                       Controls the upper limit for turbulence plots (default: `35.0`).
 - `up_int::Int`: Update interval - controls how frequently visualization updates occur.
                 Higher values result in less frequent updates for better performance (default: `1`).
@@ -340,9 +340,9 @@ vis:
 
 # File Saving Behavior
 When `save=true`, plots are saved as PNG files with descriptive names:
-- `ff_velocity_reduction.png` - for velocity reduction plots (msr=1)
-- `ff_added_turbulence.png` - for turbulence intensity plots (msr=2)  
-- `ff_wind_speed.png` - for effective wind speed plots (msr=3)
+- `ff_velocity_reduction.png` - for velocity reduction plots (msr=VelReduction)
+- `ff_added_turbulence.png` - for turbulence intensity plots (msr=AddedTurbulence)  
+- `ff_wind_speed.png` - for effective wind speed plots (msr=EffWind)
 - Time-stamped versions: `ff_velocity_reduction_t0120s.png` when time parameter is provided
 
 Save location depends on the `online` setting:

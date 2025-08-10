@@ -119,7 +119,8 @@ with_logger(tee_logger) do
             break
         end
         @info "Plotting measurement: $(measurement.name), separated: $(measurement.separated)"
-        msr = measurement.name == "msr_vel_reduction" ? 1 : measurement.name == "msr_added_turbulence" ? 2 : measurement.name == "msr_eff_wind_speed" ? 3 : 1
+        msr = measurement.name == "msr_vel_reduction" ? VelReduction : measurement.name == "msr_added_turbulence" ? 
+                                AddedTurbulence : measurement.name == "msr_eff_wind_speed" ? EffWind : VelReduction
         plot_measurements(wf, md, vis; separated=measurement.separated, msr, plt)
         vis.no_plots += 1
     end

@@ -38,7 +38,7 @@ mutable struct PlotState
 end
 
 """
-    plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t; msr=3)
+    plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t; msr=EffWind)
 
 Plot a 2D contour of the flow field data with support for animation.
 
@@ -52,10 +52,7 @@ Plot a 2D contour of the flow field data with support for animation.
 - `mz::Array{Float64,3}`: 3D array of measurements with dimensions (rows, cols, nM)
 - `vis::Vis`: Visualization settings including save options and color scale parameters
 - `t`: Time value for display in the plot title or annotations
-- `msr::Int`: Which measurement to plot (1, 2, or 3). Default is 3.
-   - `msr=1`: Velocity reduction [%]
-   - `msr=2`: Added turbulence [%]  
-   - `msr=3`: Effective wind speed [m/s]
+- `msr::MSR`: Which measurement to plot. See: [MSR](@ref)
 - `vis.unit_test::Bool`: Whether to automatically close plots for testing.
 
 # Returns
@@ -81,7 +78,7 @@ state = nothing
 vis = Vis(online=true, save=true)  # Enable saving to video folder
 for t in time_steps
     Z, X, Y = calcFlowField(settings, wind_farm, wind, floris)
-    state = plotFlowField(state, plt, wind_farm, X, Y, Z, vis, t; msr=1)
+    state = plotFlowField(state, plt, wind_farm, X, Y, Z, vis, t; msr=EffWind)
     plt.pause(0.01)  # Small delay for animation
 end
 ```
@@ -96,35 +93,35 @@ end
 - The `video/` directory is automatically created if it doesn't exist
 - This function requires a plotting package like ControlPlots.jl to be loaded and available as `plt`
 """
-function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis::Vis, t=nothing; msr=3)
+function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis::Vis, t=nothing; msr::MSR=EffWind)
     @assert ! isnothing(plt) "plt is nothing function plotFlowField() of plot_flowfield.jl"
     # Use unit_test from vis
     use_unit_test = vis.unit_test
     
     # Extract the 2D slice for the specified measurement
-    if msr > size(mz, 3)
+    if Int64(msr) > size(mz, 3)
         error("msr ($msr) exceeds number of measurements ($(size(mz, 3)))")
     end
     
     # Get the 2D slice
-    mz_2d = mz[:, :, msr]
+    mz_2d = mz[:, :, Int64(msr)]
     
     # Try to use ControlPlots if available
     try
         # This will work if ControlPlots is loaded and plt is available
-        if msr == 1
+        if msr == VelReduction
             figure_name = "Velocity Reduction"
             label = "Relative Wind Speed [%]"
             mz_2d .*= 100
             # Use fixed color scale for consistency across frames
             lev_min = vis.rel_v_min; lev_max = vis.rel_v_max;
-        elseif msr == 2
+        elseif msr == AddedTurbulence
             figure_name = "Added Turbulence"
             label = "Added Turbulence [%]"
             mz_2d .*= 100
             # Use fixed upper limit for consistency
             lev_min = 0.0; lev_max = vis.turb_max;
-        elseif msr == 3
+        elseif msr == EffWind
             figure_name = "Effective Wind Speed"
             lev_min = vis.v_min; lev_max = vis.v_max;
             label = "Wind speed [m/s]"
@@ -139,7 +136,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         end
         
         # Initialize or update plot state
-    if state === nothing
+        if state === nothing
             # First call - create new figure and all elements
             size = 0.84
             fig = plt.figure(figure_name, figsize=(7.25size, 6size))
@@ -300,7 +297,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             end
             
             # Generate filename with measurement type and time information
-            msr_name = msr == 1 ? "velocity_reduction" : msr == 2 ? "added_turbulence" : "wind_speed"
+            msr_name = msr == VelReduction ? "velocity_reduction" : msr == AddedTurbulence ? "added_turbulence" : "wind_speed"
             if t !== nothing
                 time_str = lpad(string(round(Int, t)), 4, '0')
                 filename = joinpath(directory, "ff_$(msr_name)_t$(time_str)s.png")
@@ -350,7 +347,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
 end
 
 """
-    plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=3)
+    plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=EffWind)
 
 Compatibility method for the original plotFlowField interface.
 
@@ -365,7 +362,7 @@ with `state=nothing`, effectively creating a single plot without animation suppo
 - `mz::Array{Float64,3}`: 3D array of measurements with dimensions (rows, cols, nM)
 - `vis::Vis`: Visualization settings including save options and color scale parameters
 - `t`: Time value for display in the plot title or annotations
-- `msr::Int`: Which measurement to plot (1, 2, or 3). Default is 3.
+- `msr::MSR`: Which measurement to plot. See: [MSR](@ref)
 - `vis.unit_test::Bool`: Whether to automatically close plots for testing.
 
 # Returns
@@ -375,7 +372,7 @@ with `state=nothing`, effectively creating a single plot without animation suppo
 This method is provided for backward compatibility. For animation support, 
 use the new interface with explicit state management.
 """
-function plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=3)
+function plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=EffWind)
     plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr)
     return nothing
 end

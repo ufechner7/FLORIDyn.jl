@@ -30,7 +30,8 @@ suppress_error_files = [
     "test_tit.jl", 
     "test_vel.jl",
     "test_iterate.jl",
-    "test_floridyn_cl.jl"
+    "test_floridyn_cl.jl",
+    "test_prepare_simulation.jl"
 ]
 
 function get_test_files()

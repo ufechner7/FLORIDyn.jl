@@ -41,7 +41,7 @@ end
         local wf, md, set, floris, wind, X, Y, Z
         wf, md, set, floris, wind = get_parameters(vis, settings_file)
         @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
-        msr = mod(i - 1, 3) + 1  # Convert to 1-based indexing (1, 2, 3, 1, 2, 3)
+        msr = MSR(mod(i - 1, 3) + 1)  # Convert to 1-based indexing (1, 2, 3, 1, 2, 3)
         plot_flow_field(wf, X, Y, Z, vis; msr, plt=ControlPlots.plt)
         @test true
         GC.gc()  # Force garbage collection between iterations

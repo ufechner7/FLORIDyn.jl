@@ -207,13 +207,13 @@ vis:
       skip: false
   v_min:  2.0   # Minimum velocity for color scale in flow field visualizations [m/s] 
   v_max: 10.0   # Maximum velocity for color scale in flow field visualizations [m/s]
-  # Minimum relative velocity value for velocity reduction visualizations (msr=1)
+  # Minimum relative velocity value for velocity reduction visualizations (msr=VelReduction)
   # Controls the color scale for relative wind speed plots. Range: 0 .. 100 %
   rel_v_min:  20.0 # Unit: [%]
-  # Maximum relative velocity value for velocity reduction visualizations (msr=1)
+  # Maximum relative velocity value for velocity reduction visualizations (msr=VelReduction)
   # Controls the upper limit for relative wind speed plots. Range: 0 .. 100 %
   rel_v_max: 100.0 # Unit: [%]
-  # Maximum turbulence value for added turbulence visualizations (msr=2)
+  # Maximum turbulence value for added turbulence visualizations (msr=AddedTurbulence)
   # Controls the upper limit for turbulence plots
   turb_max: 35.0   # Turbulence intensity, Unit: [%]
   up_int: 1        # Update interval - how frequently visualization updates occur  [s]

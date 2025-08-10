@@ -298,33 +298,33 @@ end
         
         @testset "msr parameter tests" begin
             
-            @testset "msr=1 (velocity reduction)" begin
-                # Test plot_flow_field with msr=1
-                plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=ControlPlots.plt)
+            @testset "msr=VelReduction (velocity reduction)" begin
+                # Test plot_flow_field with msr=VelReduction
+                plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt=ControlPlots.plt)
 
                 # Test that the function runs without error
                 @test true  # If we get here, the function didn't throw an error
                 
-                # Test that Z has the required third dimension for msr=1
+                # Test that Z has the required third dimension for msr=VelReduction
                 @test size(Z, 3) >= 1
                 
-                # Test that msr=1 data exists and is reasonable (velocity reduction should be >= 0%)
+                # Test that msr=VelReduction data exists and is reasonable (velocity reduction should be >= 0%)
                 velocity_reduction = Z[:, :, 1]
                 @test all(velocity_reduction .>= 0.0)
                 @test all(velocity_reduction .<= 100.0)  # Should not exceed 100% reduction
             end
             
-            @testset "msr=2 (added turbulence)" begin
-                # Test plot_flow_field with msr=2
-                plot_flow_field(wf, X, Y, Z, vis; msr=2, plt=ControlPlots.plt)
+            @testset "msr=AddedTurbulence (added turbulence)" begin
+                # Test plot_flow_field with msr=AddedTurbulence
+                plot_flow_field(wf, X, Y, Z, vis; msr=AddedTurbulence, plt=ControlPlots.plt)
 
                 # Test that the function runs without error
                 @test true  # If we get here, the function didn't throw an error
                 
-                # Test that Z has the required third dimension for msr=2
+                # Test that Z has the required third dimension for msr=AddedTurbulence
                 @test size(Z, 3) >= 2
                 
-                # Test that msr=2 data exists and is reasonable (added turbulence should be >= 0%)
+                # Test that msr=AddedTurbulence data exists and is reasonable (added turbulence should be >= 0%)
                 added_turbulence = Z[:, :, 2]
                 @test all(added_turbulence .>= 0.0)
                 @test all(isfinite.(added_turbulence))  # Should be finite values
@@ -334,16 +334,16 @@ end
                 if Threads.nthreads() == 1
                     vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
                     # Test error handling for invalid msr values
-                    # msr=0 causes BoundsError (Julia arrays are 1-indexed)
-                    @test_throws BoundsError plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=0)
-                    # msr > 3 causes ErrorException from explicit check
-                    @test_throws ErrorException plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=4)
+                    # msr=0 causes TypeError
+                    @test_throws TypeError plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=0)
+                    # msr > 3 causes TypeError from explicit check
+                    @test_throws TypeError plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=4)
 
-                    # Test that msr=3 (default) still works with smart function
-                    plot_flow_field(wf, X, Y, Z, vis; msr=3, plt=ControlPlots.plt)
+                    # Test that msr=EffWind (default) still works with smart function
+                    plot_flow_field(wf, X, Y, Z, vis; msr=EffWind, plt=ControlPlots.plt)
                     @test true  # If we get here, the function didn't throw an error
                     
-                    # Test that wind speed data (msr=3) is reasonable
+                    # Test that wind speed data (msr=EffWind) is reasonable
                     wind_speed = Z[:, :, 3]
                     @test all(wind_speed .>= 0.0)  # Wind speed should be non-negative
                     @test all(isfinite.(wind_speed))  # Should be finite values
@@ -363,7 +363,7 @@ end
                 @info "Diagnostics: starting two-call PlotState test" threads=Threads.nthreads() show_plots=vis.show_plots save=vis.save
                 
                 # First call with nothing state (should create new PlotState)
-                state1 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=3)
+                state1 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=EffWind)
                 if vis.log_debug
                     @info "After first call" figure_name=state1.figure_name label=state1.label lev_min=state1.lev_min lev_max=state1.lev_max levels_len=length(state1.levels) contour_type=string(typeof(state1.contour_collection))
                 end
@@ -395,7 +395,7 @@ end
                 @test state1.turbine_lines isa Vector
                 
                 # Test second call with existing state (should update same PlotState)
-                state2 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 12; msr=1)
+                state2 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 12; msr=VelReduction)
                 if vis.log_debug
                     @info "After second call" figure_name=state2.figure_name label=state2.label lev_min=state2.lev_min lev_max=state2.lev_max levels_len=length(state2.levels) contour_type=string(typeof(state2.contour_collection))
                 end
@@ -410,10 +410,10 @@ end
                 end
                 
                 # Test error handling for invalid msr values
-                @test_throws ErrorException plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=99)
-                
-                # Test with msr=2 (added turbulence) - create new state for this test
-                state3 = @test_nowarn plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 24; msr=2)
+                @test_throws TypeError plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=99)
+
+                # Test with msr=AddedTurbulence (added turbulence) - create new state for this test
+                state3 = @test_nowarn plotFlowField(nothing, ControlPlots.plt, wf, X, Y, Z, vis, 24; msr=AddedTurbulence)
                 @test state3 isa FLORIDyn.PlotState
                 
                 # Close the plot after testing
@@ -447,14 +447,14 @@ end
                 @test result === nothing
                 
                 # Test that the function is callable and accepts all expected parameters
-                result2 = plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
+                result2 = plotFlowField(plt, wf, X, Y, Z, vis; msr=VelReduction)
                 @test result2 === nothing
                 
-                result3 = plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
+                result3 = plotFlowField(plt, wf, X, Y, Z, vis; msr=AddedTurbulence)
                 @test result3 === nothing
                 
                 # Test with time parameter
-                result4 = plotFlowField(plt, wf, X, Y, Z, vis, 120.0; msr=3)
+                result4 = plotFlowField(plt, wf, X, Y, Z, vis, 120.0; msr=EffWind)
                 @test result4 === nothing
             end
         else
@@ -470,8 +470,8 @@ end
                 vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
                 
                 # Test error handling for invalid msr values in backward compatibility method
-                @test_throws BoundsError plotFlowField(plt, wf, X, Y, Z, vis; msr=0)
-                @test_throws ErrorException plotFlowField(plt, wf, X, Y, Z, vis; msr=4)
+                @test_throws TypeError plotFlowField(plt, wf, X, Y, Z, vis; msr=0)
+                @test_throws TypeError plotFlowField(plt, wf, X, Y, Z, vis; msr=4)
             else
                 @info "Skipping parameter validation for backward compatibility tests - only run in single-threaded mode (current: $(Threads.nthreads()) threads)"
 
@@ -497,23 +497,23 @@ end
                 
                 # Test file saving for different measurement types
                 @testset "save files for different msr values" begin
-                    # Test msr=1 (velocity reduction)
-                    result1 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
+                    # Test msr=VelReduction (velocity reduction)
+                    result1 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=VelReduction)
                     @test result1 === nothing
                     velocity_file = joinpath(output_path, "ff_velocity_reduction.png")
                     @test isfile(velocity_file)
                     # plt.close_all(plt); plt.pause(0.1)
                     plt.pause(0.1)
                     
-                    # Test msr=2 (added turbulence)  
-                    result2 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
+                    # Test msr=AddedTurbulence (added turbulence)  
+                    result2 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=AddedTurbulence)
                     @test result2 === nothing
                     turbulence_file = joinpath(output_path, "ff_added_turbulence.png")
                     @test isfile(turbulence_file)
                     plt.pause(0.1)
                     
-                    # Test msr=3 (wind speed)
-                    result3 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
+                    # Test msr=EffWind (wind speed)
+                    result3 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=EffWind)
                     @test result3 === nothing
                     wind_speed_file = joinpath(output_path, "ff_wind_speed.png")
                     @test isfile(wind_speed_file)
@@ -523,13 +523,13 @@ end
                 
                 @testset "save files with time parameter" begin
                     # Test file saving with time parameter
-                    result_t = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis, 120.0; msr=1)
+                    result_t = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis, 120.0; msr=VelReduction)
                     @test result_t === nothing
                     time_file = joinpath(output_path, "ff_velocity_reduction_t0120s.png")
                     @test isfile(time_file)
                     
                     # Test with different time value
-                    result_t2 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis, 45.7; msr=2)
+                    result_t2 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis, 45.7; msr=AddedTurbulence)
                     @test result_t2 === nothing
                     time_file2 = joinpath(output_path, "ff_added_turbulence_t0046s.png")  # Should round to nearest int
                     @test isfile(time_file2)
@@ -546,7 +546,7 @@ end
                     video_path = vis_online.video_path
                     @test isdir(video_path)
                     
-                    result_online = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis_online; msr=1)
+                    result_online = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis_online; msr=VelReduction)
                     @test result_online === nothing
                     online_file = joinpath(video_path, "ff_velocity_reduction.png")
                     @test isfile(online_file)
@@ -711,85 +711,85 @@ end
         wf, set, floris, wind, md = get_parameters()
         vis = Vis(online=false, save=false, unit_test=true)
         
-        # Test msr=1 (velocity reduction) - existing tests
-        @testset "msr=1 (velocity reduction)" begin
+        # Test msr=VelReduction (velocity reduction) - existing tests
+        @testset "msr=VelReduction (velocity reduction)" begin
             try
-                plot_measurements(wf, md, vis; separated=true, msr=1, plt=ControlPlots.plt)
-                println("✓ plot_measurements msr=1 with separated=true completed successfully")
+                plot_measurements(wf, md, vis; separated=true, msr=VelReduction, plt=ControlPlots.plt)
+                println("✓ plot_measurements msr=VelReduction with separated=true completed successfully")
             catch e
-                @error "plot_measurements msr=1 with separated=true failed: $e"
+                @error "plot_measurements msr=VelReduction with separated=true failed: $e"
                 rethrow(e)
             end
             
             try
-                plot_measurements(wf, md, vis; separated=false, msr=1, plt=ControlPlots.plt)
-                println("✓ plot_measurements msr=1 with separated=false completed successfully")
+                plot_measurements(wf, md, vis; separated=false, msr=VelReduction, plt=ControlPlots.plt)
+                println("✓ plot_measurements msr=VelReduction with separated=false completed successfully")
             catch e
-                @error "plot_measurements msr=1 with separated=false failed: $e"
+                @error "plot_measurements msr=VelReduction with separated=false failed: $e"
                 rethrow(e)
             end
         end
         
-        # Test msr=2 (added turbulence) - new tests
-        @testset "msr=2 (added turbulence)" begin
+        # Test msr=AddedTurbulence (added turbulence) - new tests
+        @testset "msr=AddedTurbulence (added turbulence)" begin
             # Check if AddedTurbulence column exists and has data
             if "AddedTurbulence" in names(md) && any(x -> !ismissing(x) && x != 0, md.AddedTurbulence)
                 try
-                    plot_measurements(wf, md, vis; separated=true, msr=2, plt=ControlPlots.plt)
-                    println("✓ plot_measurements msr=2 with separated=true completed successfully")
+                    plot_measurements(wf, md, vis; separated=true, msr=AddedTurbulence, plt=ControlPlots.plt)
+                    println("✓ plot_measurements msr=AddedTurbulence with separated=true completed successfully")
                 catch e
-                    @warn "plot_measurements msr=2 with separated=true failed: $e"
+                    @warn "plot_measurements msr=AddedTurbulence with separated=true failed: $e"
                     # Still test that it fails gracefully, not with unhandled errors
                     @test isa(e, Exception)
                 end
                 
                 try
-                    plot_measurements(wf, md, vis; separated=false, msr=2, plt=ControlPlots.plt)
-                    println("✓ plot_measurements msr=2 with separated=false completed successfully")
+                    plot_measurements(wf, md, vis; separated=false, msr=AddedTurbulence, plt=ControlPlots.plt)
+                    println("✓ plot_measurements msr=AddedTurbulence with separated=false completed successfully")
                 catch e
-                    @warn "plot_measurements msr=2 with separated=false failed: $e"
+                    @warn "plot_measurements msr=AddedTurbulence with separated=false failed: $e"
                     @test isa(e, Exception)
                 end
             else
-                @test_skip "Skipping msr=2 tests - AddedTurbulence column not available or contains no data"
+                @test_skip "Skipping msr=AddedTurbulence tests - AddedTurbulence column not available or contains no data"
             end
         end
         
-        # Test msr=3 (effective wind speed) - new tests
-        @testset "msr=3 (effective wind speed)" begin
+        # Test msr=EffWind (effective wind speed) - new tests
+        @testset "msr=EffWind (effective wind speed)" begin
             # Check if EffWindSpeed column exists and has data
             if "EffWindSpeed" in names(md) && any(x -> !ismissing(x) && x != 0, md.EffWindSpeed)
                 try
-                    plot_measurements(wf, md, vis; separated=true, msr=3, plt=ControlPlots.plt)
-                    println("✓ plot_measurements msr=3 with separated=true completed successfully")
+                    plot_measurements(wf, md, vis; separated=true, msr=EffWind, plt=ControlPlots.plt)
+                    println("✓ plot_measurements msr=EffWind with separated=true completed successfully")
                 catch e
-                    @warn "plot_measurements msr=3 with separated=true failed: $e"
+                    @warn "plot_measurements msr=EffWind with separated=true failed: $e"
                     @test isa(e, Exception)
                 end
                 
                 try
-                    plot_measurements(wf, md, vis; separated=false, msr=3, plt=ControlPlots.plt)
-                    println("✓ plot_measurements msr=3 with separated=false completed successfully")
+                    plot_measurements(wf, md, vis; separated=false, msr=EffWind, plt=ControlPlots.plt)
+                    println("✓ plot_measurements msr=EffWind with separated=false completed successfully")
                 catch e
-                    @warn "plot_measurements msr=3 with separated=false failed: $e"
+                    @warn "plot_measurements msr=EffWind with separated=false failed: $e"
                     @test isa(e, Exception)
                 end
             else
-                @test_skip "Skipping msr=3 tests - EffWindSpeed column not available or contains no data"
+                @test_skip "Skipping msr=EffWind tests - EffWindSpeed column not available or contains no data"
             end
         end
         
         # Test error handling for invalid msr values
         @testset "Invalid msr values" begin
-            @test_throws ArgumentError plot_measurements(wf, md, vis; separated=true, msr=0, plt=ControlPlots.plt)
-            @test_throws ArgumentError plot_measurements(wf, md, vis; separated=true, msr=4, plt=ControlPlots.plt)
-            @test_throws ArgumentError plot_measurements(wf, md, vis; separated=false, msr=-1, plt=ControlPlots.plt)
+            @test_throws TypeError plot_measurements(wf, md, vis; separated=true, msr=0, plt=ControlPlots.plt)
+            @test_throws TypeError plot_measurements(wf, md, vis; separated=true, msr=4, plt=ControlPlots.plt)
+            @test_throws TypeError plot_measurements(wf, md, vis; separated=false, msr=-1, plt=ControlPlots.plt)
         end
         
         # Test default msr value (should be 1)
         @testset "Default msr value" begin
             try
-                # Test that calling without msr parameter defaults to msr=1
+                # Test that calling without msr parameter defaults to msr=VelReduction
                 plot_measurements(wf, md, vis; separated=true, plt=ControlPlots.plt)
                 println("✓ plot_measurements with default msr completed successfully")
             catch e

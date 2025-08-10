@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=nothing) -> Nothing
+    plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt=nothing) -> Nothing
 
 High-level plotting function that automatically dispatches to either parallel or 
 sequential plotting based on the number of available threads and processes.
@@ -17,7 +17,7 @@ sequential plotting based on the number of available threads and processes.
 # Returns
 - nothing
 """
-function plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=nothing)
+function plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt=nothing)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Use parallel plotting with remote worker
         @spawnat 2 Main.rmt_plot_flow_field(wf, X, Y, Z, vis; msr=msr)
@@ -32,7 +32,7 @@ function plot_flow_field(wf, X, Y, Z, vis; msr=1, plt=nothing)
 end
 
 """
-    plot_measurements(wf, md, vis; separated=true, msr=1, plt=nothing) -> Nothing
+    plot_measurements(wf, md, vis; separated=true, msr=VelReduction, plt=nothing) -> Nothing
 
 High-level measurements plotting function that automatically dispatches to either 
 parallel or sequential plotting based on the number of available threads and processes.
@@ -51,12 +51,7 @@ parallel or sequential plotting based on the number of available threads and pro
 # See Also
 - [`plotMeasurements`](@ref): The underlying plotting function used in sequential mode
 """
-function plot_measurements(wf, md, vis; separated=true, msr=1, plt=nothing)
-    # Validate msr parameter
-    if !(msr in [1, 2, 3])
-        throw(ArgumentError("Invalid msr value: $msr. Must be 1 (velocity reduction), 2 (added turbulence), or 3 (effective wind speed)."))
-    end
-    
+function plot_measurements(wf, md, vis; separated=true, msr::MSR=VelReduction, plt=nothing)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Use parallel plotting with remote worker
         @spawnat 2 Main.rmt_plot_measurements(wf, md, vis; separated=separated, msr=msr)

@@ -27,7 +27,7 @@ function read_results(filepath::String = "out/results.jld2")
     
     try
         # Load the JLD2 file
-        data = load(filepath)
+        data = JLD2.load(filepath)
         
         # Check if required variables are present
         required_vars = ["wf", "md", "mi"]

@@ -13,6 +13,7 @@ import DocStringExtensions, LoggingExtras
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
 using Statistics, StaticArrays, Pkg, DistributedNext, Dates
 
+export MSR, toMSR, VelReduction, AddedTurbulence, EffWind
 export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
@@ -53,6 +54,49 @@ export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
 export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_results, find_floridyn_runs
 export isdelftblue, Measurement, parse_measurements
 export FlowField, parse_flow_fields
+
+@enum MSR VelReduction=1 AddedTurbulence=2 EffWind=3
+"""
+    MSR, VelReduction, AddedTurbulence, EffWind
+
+Enumeration that selects which (scalar) quantity is visualised / stored when plotting
+or saving flow field measurements. Passed via the `msr` keyword to
+[`run_floridyn`](@ref) and the plotting helpers (`plot_flow_field`, `plot_measurements`).
+
+# Values
+- `VelReduction` (1): Velocity reduction (1 - u / u_ref) downstream of turbines.
+- `AddedTurbulence` (2): Added turbulence intensity contributed by wakes (ΔTI component).
+- `EffWind` (3): Effective wind speed at turbine locations (including wake effects).
+
+The numeric codes (1, 2, 3) are retained for backwards compatibility with legacy
+scripts that may pass integers; prefer the symbolic names above in new code.
+
+# Usage
+```julia
+# Use default (VelReduction)
+run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+
+# Explicitly request added turbulence visualisation
+run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=AddedTurbulence)
+
+# Convert from a user string (e.g. parsed CLI / YAML value)
+msr = toMSR("EffWind")
+run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
+```
+
+See also: [`toMSR`](@ref)
+"""
+function toMSR(s::String)
+    if s == "VelReduction"
+        return VelReduction
+    elseif s == "AddedTurbulence"
+        return AddedTurbulence
+    elseif s == "EffWind"
+        return EffWind
+    else
+        error("Unknown measurement type: $s")
+    end
+end
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
@@ -278,7 +322,7 @@ include("visualisation/smart_plotting.jl")
 
 """
     run_floridyn(plt, set, wf, wind, sim, con, vis, 
-                 floridyn, floris; msr=1) -> (WindFarm, DataFrame, Matrix)
+                 floridyn, floris; msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
 
 Unified function that automatically handles both multi-threading and single-threading modes
 for running FLORIDyn simulations with appropriate plotting callbacks.
@@ -298,7 +342,7 @@ for running FLORIDyn simulations with appropriate plotting callbacks.
 # Returns
 - Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
 """
-function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=1)
+function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Multi-threading mode: use remote plotting callback
         # The rmt_plot_flow_field function should be defined via remote_plotting.jl

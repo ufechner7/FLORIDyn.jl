@@ -11,12 +11,12 @@ if Threads.nthreads() > 1
             @eval @everywhere using FLORIDyn      # Ensure FLORIDyn (including WindFarm) is available on all workers
             
             # Create a completely isolated plt instance for this specific task
-            @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis; msr=3)
+            @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis; msr=EffWind)
                 # Create a fresh plt instance just for this task
                 local_plt = ControlPlots.plt
                 return plotFlowField(local_plt, wf, X, Y, Z, vis; msr=msr)
             end
-            @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis, t_rel; msr=1)
+            @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis, t_rel; msr=VelReduction)
                 global plot_state
                 if abs(t_rel) < 1e-6
                     plot_state = nothing
@@ -25,7 +25,7 @@ if Threads.nthreads() > 1
                 plot_state = plotFlowField(plot_state, local_plt, wf, X, Y, Z, vis, t_rel; msr)
                 nothing
             end
-            @everywhere function rmt_plot_measurements(wf, md, vis; separated, msr=1)
+            @everywhere function rmt_plot_measurements(wf, md, vis; separated, msr=VelReduction)
                 # Create a fresh plt instance just for this task
                 local_plt = ControlPlots.plt
                 return plotMeasurements(local_plt, wf, md, vis; separated=separated, msr)

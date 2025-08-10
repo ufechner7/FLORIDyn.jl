@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=1) -> Nothing
+    plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=VelReduction) -> Nothing
 
 Plot foreign reduction measurements from FLORIDyn simulation data.
 
@@ -26,9 +26,9 @@ This function creates time series plots of foreign reduction measurements from F
 3. Different measurement types based on the `msr` parameter
 
 # Measurement Types
-- `msr=1`: Velocity reduction \\[%\\] (default)
-- `msr=2`: Added turbulence \\[%\\] 
-- `msr=3`: Effective wind speed [m/s]
+- `msr=VelReduction`: Velocity reduction \\[%\\] (default)
+- `msr=AddedTurbulence`: Added turbulence \\[%\\] 
+- `msr=EffWind`: Effective wind speed [m/s]
 
 # Plotting Modes
 - **Separated mode** (`separated=true`): Creates individual subplots for each turbine
@@ -39,17 +39,17 @@ This function creates time series plots of foreign reduction measurements from F
 using ControlPlots
 
 # Plot velocity reduction for all turbines in combined mode
-plotMeasurements(plt, wind_farm, measurements_df, vis; msr=1)
+plotMeasurements(plt, wind_farm, measurements_df, vis; msr=VelReduction)
 
 # Plot added turbulence with separated subplots
-plotMeasurements(plt, wind_farm, measurements_df, vis; separated=true, msr=2)
+plotMeasurements(plt, wind_farm, measurements_df, vis; separated=true, msr=AddedTurbulence)
 ```
 
 # See Also
 - [`plotFlowField`](@ref): For flow field visualization
 - [`getMeasurements`](@ref): For generating measurement data
 """
-function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=1)
+function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=VelReduction)
     local fig
     # Master switch: still create figures for saving, but suppress interactive pauses/display when show_plots=false
     show_plots = vis.show_plots
@@ -58,23 +58,23 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
     timeFDyn = md.Time .- md.Time[1]
 
     # Determine measurement type based on msr parameter
-    if msr == 1
+    if msr == VelReduction
         data_column = "ForeignReduction"
         title = "Velocity Reduction"
         ylabel = "Velocity Reduction \\[%\\]"
         msr_name = "msr_velocity_reduction"
-    elseif msr == 2
+    elseif msr == AddedTurbulence
         data_column = "AddedTurbulence" 
         title = "Added Turbulence"
         ylabel = "Added Turbulence \\[%\\]"
         msr_name = "msr_added_turbulence"
-    elseif msr == 3
+    elseif msr == EffWind
         data_column = "EffWindSpeed"
         title = "Effective Wind Speed"
         ylabel = "Effective Wind Speed [m/s]"
         msr_name = "msr_eff_wind_speed"
     else
-        error("Invalid msr value: $msr. Must be 1 (velocity reduction), 2 (added turbulence), or 3 (effective wind speed).")
+        error("Invalid msr value: $msr. Must be VelReduction, AddedTurbulence, or EffWind.")
     end
     
     # Check if the required column exists in the DataFrame
