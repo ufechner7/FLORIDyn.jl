@@ -51,6 +51,8 @@ plotMeasurements(plt, wind_farm, measurements_df, vis; separated=true, msr=2)
 """
 function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=1)
     local fig
+    # Master switch: still create figures for saving, but suppress interactive pauses/display when show_plots=false
+    show_plots = vis.show_plots
 
     # Subtract start time
     timeFDyn = md.Time .- md.Time[1]
@@ -152,10 +154,14 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
     end
 
     if vis.unit_test
-        plt.pause(1.0)
+        if show_plots
+            plt.pause(1.0)
+        end
         plt.close(fig)
     end
-    plt.pause(0.01)
+    if show_plots
+        plt.pause(0.01)
+    end
     return nothing
 end
 

@@ -167,7 +167,9 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             op_scatter2 = plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=6, color="white", marker="o")
             
             title_obj = plt.title(title)
-            plt.show(block=false)
+            if vis.show_plots
+                plt.show(block=false)
+            end
             
             # Create state object
             state = PlotState(fig, ax, cb, contour_collection, turbine_lines, op_scatter1, op_scatter2, 
@@ -244,7 +246,9 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         state.title_obj.set_text(title)
         
         # Force display update for animation
-        plt.draw()
+        if vis.show_plots
+            plt.draw()
+        end
         
         # Save plot to video or output folder if requested
         if vis.save && !use_unit_test
@@ -276,9 +280,12 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         end
         
         if !use_unit_test
+            # nothing special here; if show_plots=false we already avoided interactive draw/show
         else
             # In unit test mode, pause to show the plot then close the figure
-            plt.pause(1.0)
+            if vis.show_plots
+                plt.pause(1.0)
+            end
             try
                 plt.close(state.fig)
             catch
@@ -327,7 +334,6 @@ This method is provided for backward compatibility. For animation support,
 use the new interface with explicit state management.
 """
 function plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=3)
-    # Create default visualization settings for backward compatibility
     plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr=msr)
     return nothing
 end

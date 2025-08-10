@@ -1,5 +1,6 @@
 vis:
   online: false          # Enable/disable online visualization during simulation
+  show_plots: false      # Enable/disable showing plots during simulation
   save: true             # Enable/disable saving of plots to disk
   save_results: true     # Enable/disable saving of simulation results as .jld2 files
   print_filenames: false # If true, print the names of the saved files

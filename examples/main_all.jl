@@ -42,6 +42,9 @@ end
 if length(vis.flow_fields) == 0
     @info "Skipping flow field visualisation."
 end
+if ! vis.show_plots
+    @info "Do not show the plots, only create png files."
+end
 for flow_field in vis.flow_fields
     global wf, md, mi, FLORIDYN_EXECUTED
 
