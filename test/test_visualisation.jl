@@ -502,7 +502,6 @@ end
                     @test result1 === nothing
                     velocity_file = joinpath(output_path, "ff_velocity_reduction.png")
                     @test isfile(velocity_file)
-                    # plt.close_all(plt); plt.pause(0.1)
                     plt.pause(0.1)
                     
                     # Test msr=AddedTurbulence (added turbulence)  
