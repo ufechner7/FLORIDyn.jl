@@ -491,19 +491,19 @@ end
                     # Test msr=1 (velocity reduction)
                     result1 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=1)
                     @test result1 === nothing
-                    velocity_file = joinpath(output_path, "velocity_reduction.png")
+                    velocity_file = joinpath(output_path, "ff_velocity_reduction.png")
                     @test isfile(velocity_file)
                     
                     # Test msr=2 (added turbulence)  
                     result2 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=2)
                     @test result2 === nothing
-                    turbulence_file = joinpath(output_path, "added_turbulence.png")
+                    turbulence_file = joinpath(output_path, "ff_added_turbulence.png")
                     @test isfile(turbulence_file)
                     
                     # Test msr=3 (wind speed)
                     result3 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis; msr=3)
                     @test result3 === nothing
-                    wind_speed_file = joinpath(output_path, "wind_speed.png")
+                    wind_speed_file = joinpath(output_path, "ff_wind_speed.png")
                     @test isfile(wind_speed_file)
                 end
                 
@@ -511,13 +511,13 @@ end
                     # Test file saving with time parameter
                     result_t = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis, 120.0; msr=1)
                     @test result_t === nothing
-                    time_file = joinpath(output_path, "velocity_reduction_t0120s.png")
+                    time_file = joinpath(output_path, "ff_velocity_reduction_t0120s.png")
                     @test isfile(time_file)
                     
                     # Test with different time value
                     result_t2 = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis, 45.7; msr=2)
                     @test result_t2 === nothing
-                    time_file2 = joinpath(output_path, "added_turbulence_t0046s.png")  # Should round to nearest int
+                    time_file2 = joinpath(output_path, "ff_added_turbulence_t0046s.png")  # Should round to nearest int
                     @test isfile(time_file2)
                 end
                 
@@ -532,7 +532,7 @@ end
                     
                     result_online = @test_nowarn plotFlowField(plt, wf, X, Y, Z, vis_online; msr=1)
                     @test result_online === nothing
-                    online_file = joinpath(video_path, "velocity_reduction.png")
+                    online_file = joinpath(video_path, "ff_velocity_reduction.png")
                     @test isfile(online_file)
                     
                     # Clean up video directory
@@ -544,7 +544,7 @@ end
                 
                 @testset "file properties verification" begin
                     # Verify that saved files have reasonable properties
-                    velocity_file = joinpath(output_path, "velocity_reduction.png")
+                    velocity_file = joinpath(output_path, "ff_velocity_reduction.png")
                     if isfile(velocity_file)
                         file_size = filesize(velocity_file)
                         @test file_size > 1000  # File should be at least 1KB (reasonable for a plot)
