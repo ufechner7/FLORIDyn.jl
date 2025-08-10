@@ -72,17 +72,18 @@ for flow_field in vis.flow_fields
     if flow_field.online
         cleanup_video_folder()
         vis.online = true
-        @info "Starting simulation with online visualisation for flow field $(flow_field.name) ..."
+        @info "Starting simulation with online visualisation for $(flow_field.name) ..."
         wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
         FLORIDYN_EXECUTED = true
 
         if flow_field.create_video
-            @info "Creating video for flow field $(flow_field.name) ..."
+            @info "Creating video for $(flow_field.name) ..."
             video_paths = redirect_stdout(devnull) do
                 createAllVideos(fps=4, delete_frames=false, video_dir=vis.video_path, output_dir=vis.output_path)
             end
             if !isempty(video_paths)
                 @info "Video created successfully: $(video_paths[1])"
+                vis.no_videos += 1
             else
                 @warn "No video created."
             end
@@ -91,6 +92,7 @@ for flow_field in vis.flow_fields
         vis.online = false
         @info "Plotting flow field: $(flow_field.name)"
         plot_flow_field(wf, X, Y, Z, vis; msr, plt)
+        vis.no_plots += 1
     end
 end
 if length(vis.measurements) > 0 && ! FLORIDYN_EXECUTED
@@ -120,6 +122,7 @@ for measurement in vis.measurements
         msr = 1  # default to velocity reduction
     end
     plot_measurements(wf, md, vis; separated=measurement.separated, msr, plt)
+    vis.no_plots += 1
 end
 
 if vis.save_results
@@ -162,5 +165,6 @@ catch e
     @warn "Failed to copy settings data folder" exception=(e, catch_backtrace())
 end
 
+@info "Simulation completed. Plots created: $(vis.no_plots), videos created: $(vis.no_videos) ."
 @info "Total execution time: $(round(toc(false), digits=2)) s"
 nothing

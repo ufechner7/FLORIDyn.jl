@@ -340,14 +340,14 @@ vis:
 
 # File Saving Behavior
 When `save=true`, plots are saved as PNG files with descriptive names:
-- `velocity_reduction.png` - for velocity reduction plots (msr=1)
-- `added_turbulence.png` - for turbulence intensity plots (msr=2)  
-- `wind_speed.png` - for effective wind speed plots (msr=3)
-- Time-stamped versions: `velocity_reduction_t0120s.png` when time parameter is provided
+- `ff_velocity_reduction.png` - for velocity reduction plots (msr=1)
+- `ff_added_turbulence.png` - for turbulence intensity plots (msr=2)  
+- `ff_wind_speed.png` - for effective wind speed plots (msr=3)
+- Time-stamped versions: `ff_velocity_reduction_t0120s.png` when time parameter is provided
 
 Save location depends on the `online` setting:
-- `online=true`: Files saved to `video_path` (typically for animations)
-- `online=false`: Files saved to `output_path` (typically for final results)
+- `online=true`: Files saved to `video_path` (for animations)
+- `online=false`: Files saved to `output_path` (for final results)
 
 # Performance Notes
 - Online visualization significantly slows down simulation performance
@@ -371,8 +371,10 @@ The struct automatically adapts to different computing environments:
 """
 @with_kw mutable struct Vis
     online::Bool
-    show_plots::Bool = true           # master switch: if false, suppress all plotting (still allows simulation & saving results)
-    save::Bool = false                # save plots to video folder
+    no_plots::Int64 = 0               # Number of plots created, used for reporting
+    no_videos::Int64 = 0              # Number of videos created, used for reporting
+    show_plots::Bool = true           # master switch: if false, don't show plots, but results are still saved
+    save::Bool = false                # save plots to video or output folder
     save_results::Bool = false        # save simulation results as .jld2 files
     print_filenames::Bool = false     # if true, print the names of the saved files
     unique_folder::String = ""        # this will be set when starting the simulation
