@@ -60,7 +60,7 @@ export FlowField, parse_flow_fields
 
 Enumeration that selects which (scalar) quantity is visualised / stored when plotting
 or saving flow field measurements. Passed via the `msr` keyword to
-[`run_floridyn`](@ref) and the plotting helpers (`plot_flow_field`, `plot_measurements`).
+[`run_floridyn`](@ref) and the plotting helpers [`plot_flow_field`](@ref), [`plot_measurements`](@ref).
 
 # Values
 - `VelReduction` (1): Velocity reduction (1 - u / u_ref) downstream of turbines.
