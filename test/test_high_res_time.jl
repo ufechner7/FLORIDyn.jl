@@ -182,7 +182,7 @@ using Dates
     @testset "delete_results function" begin
         @testset "Input validation" begin
             # Create a test Vis object with unique identifiers
-            unique_id = rand(UInt32)
+            unique_id = Dates.now().value
             vis = Vis(online=false, output_folder="test_validation_$(unique_id)", video_folder="test_validation_video_$(unique_id)")
             
             # Test with non-positive n
