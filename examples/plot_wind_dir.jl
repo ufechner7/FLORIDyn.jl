@@ -4,7 +4,10 @@
 # Status:
 # Works fine for one to nine wind turbines, not clear how to plot more wind turbines.
 
-using ControlPlots, FLORIDyn
+using ControlPlots, FLORIDyn, TOML
+
+v = VersionNumber(TOML.parsefile(joinpath(Base.pkgdir(ControlPlots), "Project.toml"))["version"])
+@assert v >= v"0.2.7" "This script requires ControlPlots version 0.2.7 or higher."
 
 # Dialog to set MULTI variable
 println("\033[1mPlot wind direction for multiple turbines?\033[0m")
@@ -17,6 +20,8 @@ if MULTI
 else
     println("Single turbine per subplot selected, up to 9 turbines.")
 end
+
+# plt.ion()
 
 settings_file = "data/2021_9T_Data.yaml"
 
