@@ -147,10 +147,6 @@ try
         homedir_str = homedir()
         # helper to shorten paths in log output
         shorten(p) = replace(p, homedir_str => "~")
-        if isdir(dest_dir)
-            @info "Removing existing destination folder before copy: $(shorten(dest_dir))"
-            rm(dest_dir; recursive=true, force=true)
-        end
         @info "Copying CSV folder $(shorten(src_dir)) -> $(shorten(dest_dir))"
         cp(src_dir, dest_dir; force=true)
     else
