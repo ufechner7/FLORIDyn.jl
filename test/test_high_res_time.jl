@@ -181,9 +181,9 @@ using Dates
 
     @testset "delete_results function" begin
         @testset "Input validation" begin
-            # Create a test Vis object
-            vis = Vis(online=false, output_folder="test_validation", video_folder="test_validation_video")
-            vis.unique_folder = "validation_test"
+            # Create a test Vis object with unique identifiers
+            unique_id = rand(UInt32)
+            vis = Vis(online=false, output_folder="test_validation_$(unique_id)", video_folder="test_validation_video_$(unique_id)")
             
             # Test with non-positive n
             @test_logs (:warn, r"Number of folders to delete must be positive") begin
@@ -199,8 +199,8 @@ using Dates
         
         @testset "Empty directory behavior" begin
             # Create a test Vis object with isolated directories
-            vis = Vis(online=false, output_folder="test_empty_output", video_folder="test_empty_video")
-            vis.unique_folder = "isolated_empty_test"
+            unique_id = rand(UInt32)
+            vis = Vis(online=false, output_folder="test_empty_output_$(unique_id)", video_folder="test_empty_video_$(unique_id)")
             
             # Test with empty directory (no floridyn_run folders)
             @test_logs (:info, r"Directory does not exist") match_mode=:any begin
@@ -216,13 +216,13 @@ using Dates
         end
 
         @testset "Single folder operations" begin
-            # Create a test Vis object with isolated paths
-            vis = Vis(online=false, output_folder="test_single", video_folder="test_single_video")  
-            vis.unique_folder = "single_test_$(rand(UInt32))"
+            # Create a test Vis object with isolated paths (use unique names for test isolation)
+            unique_id = rand(UInt32)
+            vis = Vis(online=false, output_folder="test_single_$(unique_id)", video_folder="test_single_video_$(unique_id)")  
             
-            # Get both paths manually without creating them via computed properties
-            output_dir = joinpath(pwd(), vis.output_folder, vis.unique_folder)
-            video_dir = joinpath(pwd(), vis.video_folder, vis.unique_folder)
+            # Get both paths - function now uses base directories directly
+            output_dir = joinpath(pwd(), vis.output_folder)
+            video_dir = joinpath(pwd(), vis.video_folder)
             
             # Create the directory structures manually
             mkpath(output_dir)
@@ -254,13 +254,13 @@ using Dates
         end
             
         @testset "Multiple folder operations" begin
-            # Create a test Vis object 
-            vis = Vis(online=false, output_folder="test_multiple", video_folder="test_multiple_video")
-            vis.unique_folder = "multiple_test_$(rand(UInt32))"
+            # Create a test Vis object with isolated paths
+            unique_id = rand(UInt32)
+            vis = Vis(online=false, output_folder="test_multiple_$(unique_id)", video_folder="test_multiple_video_$(unique_id)")
             
-            # Get both paths and create directory structures
-            output_dir = joinpath(pwd(), vis.output_folder, vis.unique_folder)
-            video_dir = joinpath(pwd(), vis.video_folder, vis.unique_folder)
+            # Get both paths - function now uses base directories directly
+            output_dir = joinpath(pwd(), vis.output_folder)
+            video_dir = joinpath(pwd(), vis.video_folder)
             mkpath(output_dir)
             
             # Create multiple test directories with different timestamps in output_dir
@@ -301,11 +301,11 @@ using Dates
         
         @testset "Boundary conditions" begin
             # Create a test Vis object
-            vis = Vis(online=false, output_folder="test_boundary", video_folder="test_boundary_video")
-            vis.unique_folder = "boundary_test_$(rand(UInt32))"
+            unique_id = rand(UInt32)
+            vis = Vis(online=false, output_folder="test_boundary_$(unique_id)", video_folder="test_boundary_video_$(unique_id)")
             
             # Get the paths and create directory structure
-            output_dir = joinpath(pwd(), vis.output_folder, vis.unique_folder)
+            output_dir = joinpath(pwd(), vis.output_folder)
             mkpath(output_dir)
             
             # Create 3 test directories
@@ -335,8 +335,8 @@ using Dates
         
         @testset "Error handling" begin
             # Create a test Vis object
-            vis = Vis(online=false, output_folder="test_error", video_folder="test_error_video")
-            vis.unique_folder = "error_test_$(rand(UInt32))"
+            unique_id = rand(UInt32)
+            vis = Vis(online=false, output_folder="test_error_$(unique_id)", video_folder="test_error_video_$(unique_id)")
             
             # Test deletion - should handle non-existent directories gracefully and return empty results
             result = delete_results(vis, 1)
@@ -346,11 +346,11 @@ using Dates
         
         @testset "Integration with find_floridyn_runs" begin
             # Create a test Vis object
-            vis = Vis(online=false, output_folder="test_integration", video_folder="test_integration_video")
-            vis.unique_folder = "integration_test_$(rand(UInt32))"
+            unique_id = rand(UInt32)
+            vis = Vis(online=false, output_folder="test_integration_$(unique_id)", video_folder="test_integration_video_$(unique_id)")
             
             # Get the paths and create directory structure
-            output_dir = joinpath(pwd(), vis.output_folder, vis.unique_folder)
+            output_dir = joinpath(pwd(), vis.output_folder)
             mkpath(output_dir)
             
             # Create mixed directories (some floridyn_run, some not)
@@ -386,11 +386,11 @@ using Dates
         
         @testset "Default parameter behavior" begin
             # Create a test Vis object
-            vis = Vis(online=false, output_folder="test_default", video_folder="test_default_video")
-            vis.unique_folder = "default_test_$(rand(UInt32))"
+            unique_id = rand(UInt32)
+            vis = Vis(online=false, output_folder="test_default_$(unique_id)", video_folder="test_default_video_$(unique_id)")
             
             # Get the paths and create directory structure
-            output_dir = joinpath(pwd(), vis.output_folder, vis.unique_folder)
+            output_dir = joinpath(pwd(), vis.output_folder)
             mkpath(output_dir)
             
             # Test default n=1
