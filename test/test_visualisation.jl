@@ -358,16 +358,10 @@ end
             @testset "plotFlowField with PlotState - two consecutive calls" begin
                 # Set up test data
                 state1 = nothing
-                # Disable debug logging for this diagnostic test in CI (single-thread scenario)
-                vis.log_debug = false
-                @info "Diagnostics: starting two-call PlotState test" threads=Threads.nthreads() show_plots=vis.show_plots save=vis.save
-                
+            
                 # First call with nothing state (should create new PlotState)
                 state1 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 0; msr=EffWind)
-                if vis.log_debug
-                    @info "After first call" figure_name=state1.figure_name label=state1.label lev_min=state1.lev_min lev_max=state1.lev_max levels_len=length(state1.levels) contour_type=string(typeof(state1.contour_collection))
-                end
-                
+                 
                 # Test that state1 is a PlotState object
                 @test state1 isa FLORIDyn.PlotState
                 
@@ -396,9 +390,6 @@ end
                 
                 # Test second call with existing state (should update same PlotState)
                 state2 = @test_nowarn plotFlowField(state1, ControlPlots.plt, wf, X, Y, Z, vis, 12; msr=VelReduction)
-                if vis.log_debug
-                    @info "After second call" figure_name=state2.figure_name label=state2.label lev_min=state2.lev_min lev_max=state2.lev_max levels_len=length(state2.levels) contour_type=string(typeof(state2.contour_collection))
-                end
                 
                 # Test that state2 is the same as state1 (same object, reused)
                 @test state2 isa FLORIDyn.PlotState
