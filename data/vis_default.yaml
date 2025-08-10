@@ -25,7 +25,7 @@ vis:
       online: false
       create_video: false
       skip: true
-  skip_measurements: true # When true, do not create measurement visualizations
+  skip_measurements: false # When true, do not create measurement visualizations
   measurements:           # List of measurement plots to be created
     - name: "msr_vel_reduction"     # Measurement relative wind speed
       separated: true
