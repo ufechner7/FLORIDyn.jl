@@ -126,6 +126,8 @@ if vis.save_results
         @error "Failed to save simulation results: $e"
     end
 end
+cp(settings_file, joinpath(vis.output_path, basename(settings_file)))
+cp(vis_file, joinpath(vis.output_path, basename(vis_file)))
 
 toc()
 
