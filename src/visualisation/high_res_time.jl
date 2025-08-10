@@ -131,7 +131,6 @@ both directory types.
 - **Dual Cleanup**: Operates on both output and video directories in sequence
 - **Sorting**: Sorts directories by modification time (newest first) within each directory
 - **Selection**: Selects up to `n` newest directories for deletion from each location
-- **Cleanup**: Automatically sets `vis.unique_folder = ""` before processing
 - **Dry Run**: When `dry_run=true`, logs what would be deleted but performs no actual deletion
 
 # Examples
@@ -146,28 +145,12 @@ println("Deleted: ", length(deleted), " directories total")
 # Delete the 3 newest floridyn_run directories from each location
 deleted = delete_results(vis, 3)
 println("Deleted directories: ", basename.(deleted))
-
-# Preview what would be deleted from both directories
-delete_results(vis, 5, dry_run=true)  # Shows info about 5 newest in each directory
-
-# Check existing directories in both locations
-vis.unique_folder = ""  
-output_runs = find_floridyn_runs(vis.output_path)
-video_runs = find_floridyn_runs(vis.video_path)
-println("Found \$(length(output_runs)) in output, \$(length(video_runs)) in video")
 ```
-
-# Error Handling
-- **Invalid Input**: Warns and returns empty vector for non-positive `n`
-- **Missing Directories**: Errors if either `vis.output_path` or `vis.video_path` doesn't exist
-- **No Matches**: Info message and early return if no floridyn_run directories found in either location
-- **Deletion Failures**: Individual directory deletion errors are logged but don't stop the process
 
 # Important Notes
 - **Dual Operation**: This function operates on BOTH output and video directories
 - **Independent Processing**: Each directory is processed separately - `n` directories from output AND `n` directories from video
-- **Early Return**: Function returns early if no directories are found in the first location checked
-- **Path Creation**: Accessing `vis.output_path` and `vis.video_path` automatically creates these directories if they don't exist
+- **Non-existent Directories**: Silently skips directories that don't exist rather than creating them
 
 # See Also
 - [`Vis`](@ref): Visualization settings struct with output and video path configuration
@@ -175,18 +158,35 @@ println("Found \$(length(output_runs)) in output, \$(length(video_runs)) in vide
 - [`find_floridyn_runs()`](@ref): Lists existing floridyn_run directories in a given path
 """
 function delete_results(vis::Vis, n::Int=1; dry_run::Bool = false)
-    vis.unique_folder = ""
     deleted_dirs = String[]
     
-    for directory in [vis.output_path, vis.video_path]
+    # Construct paths without creating them (avoid using computed properties that call mkpath)
+    # Use getfield to avoid any getproperty overrides
+    output_folder = getfield(vis, :output_folder)
+    video_folder = getfield(vis, :video_folder) 
+    unique_folder = getfield(vis, :unique_folder)
+    
+    output_dir = if isdelftblue() 
+        joinpath(homedir(), "scratch", unique_folder, output_folder)
+    else 
+        joinpath(pwd(), output_folder, unique_folder)
+    end
+    
+    video_dir = if isdelftblue()
+        joinpath(homedir(), "scratch", unique_folder, video_folder) 
+    else
+        joinpath(pwd(), video_folder, unique_folder)
+    end
+    
+    for directory in [output_dir, video_dir]
         if n <= 0
             @warn "Number of folders to delete must be positive. Got: $n"
             return String[]
         end
         
         if !isdir(directory)
-            @error "Directory does not exist: $directory"
-            return String[]
+            @info "Directory does not exist: $directory"
+            continue  # Skip non-existent directories instead of erroring
         end
         
         # Find all floridyn_run directories
@@ -194,7 +194,7 @@ function delete_results(vis::Vis, n::Int=1; dry_run::Bool = false)
         
         if isempty(floridyn_dirs)
             @info "No floridyn_run directories found in: $directory"
-            return String[]
+            continue  # Continue to next directory instead of returning
         end
         
         # Sort by modification time (newest first for deletion)
@@ -211,24 +211,27 @@ function delete_results(vis::Vis, n::Int=1; dry_run::Bool = false)
                 mod_time = Dates.unix2datetime(mtime(dir))
                 @info "  $(i). $dir_name (modified: $mod_time)"
             end
-            return dirs_to_delete
+            append!(deleted_dirs, dirs_to_delete)  # Collect results instead of returning
+            continue  # Continue to next directory
         end
         
         @info "Deleting $n_to_delete newest floridyn_run directories from: $directory"
         
+        deleted_from_current = 0
         for (i, dir) in enumerate(dirs_to_delete)
             dir_name = basename(dir)
             try
                 rm(dir, recursive=true)
                 push!(deleted_dirs, dir)
+                deleted_from_current += 1
                 @info "  $(i)/$n_to_delete Deleted: $dir_name"
             catch e
                 @error "Failed to delete $dir_name: $e"
             end
         end
         
-        remaining_count = length(floridyn_dirs) - length(deleted_dirs)
-        @info "Cleanup complete. Deleted $(length(deleted_dirs)) directories, $remaining_count remaining."
+        remaining_count = length(floridyn_dirs) - deleted_from_current
+        @info "Cleanup complete. Deleted $deleted_from_current directories from this location, $remaining_count remaining."
     end 
     return deleted_dirs
 end
