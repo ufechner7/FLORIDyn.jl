@@ -797,7 +797,14 @@ end
                 rethrow(e)
             end
         end
-        Threads.nthreads() > 1 && sleep(10)
+        if Threads.nthreads() > 1
+            sleep_duration = get(ENV, "TEST_THREAD_SLEEP", "10")
+            try
+                sleep(parse(Int, sleep_duration))
+            catch
+                sleep(10) # fallback to default if parsing fails
+            end
+        end
     end
     
     @testset "createVideo" begin
