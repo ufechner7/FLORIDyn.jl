@@ -334,7 +334,7 @@ end
                 if Threads.nthreads() == 1
                     vis = Vis(online=false, save=true, rel_v_min=20.0, up_int = 4, unit_test=true)
                     # Test error handling for invalid msr values
-                    # msr=0 causes TypeError
+                    # Passing msr=0 to plotFlowField is expected to cause a TypeError (as checked below)
                     @test_throws TypeError plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=0)
                     # msr > 3 causes TypeError from explicit check
                     @test_throws TypeError plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=4)
