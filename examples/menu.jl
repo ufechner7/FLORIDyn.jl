@@ -19,6 +19,7 @@ options = ["flow_field_vel_reduction        = PLT=1; include(\"main.jl\")",
            "plot_measurements_lineplot      = PLT=5; include(\"main.jl\")",
            "flow_field_vel_reduction_online = PLT=6; include(\"main.jl\")",
            "create_video_from_saved_frames  = PLT=7; include(\"main.jl\")",
+           "run_all_visualisations          = include(\"main_all.jl\")",
            "plot_wind_direction             = include(\"plot_wind_dir.jl\")",
            "play_videos                     = include(\"play_video.jl\")",
            "open_documentation()",
@@ -53,15 +54,7 @@ function example_menu()
         choice = request("\nChoose function to execute or `q` to quit: ", menu)
 
         if choice != -1 && choice != length(options)
-            try
-                eval(Meta.parse(options[choice]))
-            catch e
-                println("Error executing: ", options[choice])
-                println("Error: $e")
-                if choice == 1
-                    println("Make sure you are in the FLORIDyn.jl root directory and the examples/main.jl file exists.")
-                end
-            end
+            eval(Meta.parse(options[choice]))
         else
             println("Left menu. Press <ctrl><d> to quit Julia!")
             active = false

@@ -22,6 +22,8 @@ settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"
 
 vis = Vis(vis_file)
+vis.show_plots = true  # Enable/disable showing plots during simulation
+plt.ion()
 
 # Automatic parallel/threading setup
 tic()
