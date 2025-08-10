@@ -1,36 +1,11 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Script to read simulation results from results.jld2 file
+# Script to read simulation results from the last run, if it was saved as "results.jld2".
 # Creates global variables: wf, md, mi
 
 using JLD2
 using FLORIDyn
-
-"""
-    find_newest_run(base::String = "out") -> Union{String, Nothing}
-
-Return the name (relative to `base`) of the newest directory whose name starts with
-"floridyn_run" inside `base`. If no matching directory exists, return `nothing`.
-
-Selection logic:
-1. List entries in `base` that are directories and start with "floridyn_run".
-2. Sort them by modification time (mtime) descending.
-3. Return the first (newest) name.
-
-Edge cases handled:
-- Non‑existent base directory -> returns `nothing`.
-- No matching directories -> returns `nothing`.
-- Permission errors are propagated as an error.
-"""
-function find_newest_run(base::String = "out")::Union{String, Nothing}
-    isdir(base) || return nothing
-    entries = readdir(base; join=false)
-    runs = filter(name -> startswith(name, "floridyn_run") && isdir(joinpath(base, name)), entries)
-    isempty(runs) && return nothing
-    sort!(runs; by = name -> stat(joinpath(base, name)).mtime, rev=true)
-    return first(runs)
-end
 
 function read_results(filepath::String = "out/results.jld2")
     # Auto-discover newest run if default path not found and user passed the default
@@ -89,9 +64,12 @@ function read_results(filepath::String = "out/results.jld2")
     end
 end
 
-try
-    wf, md, mi = read_results()
-catch e
-    @warn "Could not auto-load results: $(e)" 
+vis = Vis("data/vis_default.yaml")
+runs = find_floridyn_runs(vis.output_folder)
+if length(runs) == 0
+    @warn "No FLORIDyn runs found in output folder: $(vis.output_folder)"
+else
+    wf, md, mi = read_results(joinpath(runs[end], "results.jld2"))
 end
+
 nothing
