@@ -162,63 +162,61 @@ delete_results(vis, 5, dry_run=true)
 - [`find_floridyn_runs`](@ref): Function to list existing floridyn_run directories
 """
 function delete_results(vis::Vis, n::Int=1; dry_run::Bool = false)
-    # Validate input
     vis.unique_folder = ""
-    directory = vis.output_path
-    if n <= 0
-        @warn "Number of folders to delete must be positive. Got: $n"
-        return String[]
-    end
-    
-    if !isdir(directory)
-        @error "Directory does not exist: $directory"
-        return String[]
-    end
-    
-    # Find all floridyn_run directories
-    floridyn_dirs = find_floridyn_runs(directory)
-    
-    if isempty(floridyn_dirs)
-        @info "No floridyn_run directories found in: $directory"
-        return String[]
-    end
-    
-    # Sort by modification time (newest first for deletion)
-    sorted_dirs = sort(floridyn_dirs, by=d -> mtime(d), rev=true)
-    
-    # Determine how many to actually delete
-    n_to_delete = min(n, length(sorted_dirs))
-    dirs_to_delete = sorted_dirs[1:n_to_delete]
-    
-    if dry_run
-        @info "DRY RUN - Would delete $n_to_delete newest floridyn_run directories:"
-        for (i, dir) in enumerate(dirs_to_delete)
-            dir_name = basename(dir)
-            mod_time = Dates.unix2datetime(mtime(dir))
-            @info "  $(i). $dir_name (modified: $mod_time)"
-        end
-        return dirs_to_delete
-    end
-    
-    # Actually delete the directories
     deleted_dirs = String[]
     
-    @info "Deleting $n_to_delete newest floridyn_run directories from: $directory"
-    
-    for (i, dir) in enumerate(dirs_to_delete)
-        dir_name = basename(dir)
-        try
-            rm(dir, recursive=true)
-            push!(deleted_dirs, dir)
-            @info "  $(i)/$n_to_delete Deleted: $dir_name"
-        catch e
-            @error "Failed to delete $dir_name: $e"
+    for directory in [vis.output_path, vis.video_path]
+        if n <= 0
+            @warn "Number of folders to delete must be positive. Got: $n"
+            return String[]
         end
-    end
-    
-    remaining_count = length(floridyn_dirs) - length(deleted_dirs)
-    @info "Cleanup complete. Deleted $(length(deleted_dirs)) directories, $remaining_count remaining."
-    
+        
+        if !isdir(directory)
+            @error "Directory does not exist: $directory"
+            return String[]
+        end
+        
+        # Find all floridyn_run directories
+        floridyn_dirs = find_floridyn_runs(directory)
+        
+        if isempty(floridyn_dirs)
+            @info "No floridyn_run directories found in: $directory"
+            return String[]
+        end
+        
+        # Sort by modification time (newest first for deletion)
+        sorted_dirs = sort(floridyn_dirs, by=d -> mtime(d), rev=true)
+        
+        # Determine how many to actually delete
+        n_to_delete = min(n, length(sorted_dirs))
+        dirs_to_delete = sorted_dirs[1:n_to_delete]
+        
+        if dry_run
+            @info "DRY RUN - Would delete $n_to_delete newest floridyn_run directories:"
+            for (i, dir) in enumerate(dirs_to_delete)
+                dir_name = basename(dir)
+                mod_time = Dates.unix2datetime(mtime(dir))
+                @info "  $(i). $dir_name (modified: $mod_time)"
+            end
+            return dirs_to_delete
+        end
+        
+        @info "Deleting $n_to_delete newest floridyn_run directories from: $directory"
+        
+        for (i, dir) in enumerate(dirs_to_delete)
+            dir_name = basename(dir)
+            try
+                rm(dir, recursive=true)
+                push!(deleted_dirs, dir)
+                @info "  $(i)/$n_to_delete Deleted: $dir_name"
+            catch e
+                @error "Failed to delete $dir_name: $e"
+            end
+        end
+        
+        remaining_count = length(floridyn_dirs) - length(deleted_dirs)
+        @info "Cleanup complete. Deleted $(length(deleted_dirs)) directories, $remaining_count remaining."
+    end 
     return deleted_dirs
 end
 
