@@ -336,7 +336,7 @@ end
                     # Test error handling for invalid msr values
                     # Passing msr=0 to plotFlowField is expected to cause a TypeError (as checked below)
                     @test_throws TypeError plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=0)
-                    # msr > 3 causes TypeError from explicit check
+                    # Passing an invalid msr enum value (e.g., msr=4) causes TypeError due to explicit enum validation
                     @test_throws TypeError plotFlowField(nothing, plt, wf, X, Y, Z, vis; msr=4)
 
                     # Test that msr=EffWind (default) still works with smart function
