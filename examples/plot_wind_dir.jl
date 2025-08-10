@@ -21,14 +21,14 @@ else
     println("Single turbine per subplot selected, up to 9 turbines.")
 end
 
-# turn on interactive visualisation in case it was turned off before
-plt.ion()
-plt.pygui(true)
-
 settings_file = "data/2021_9T_Data.yaml"
 
 @assert Threads.nthreads() == 1 "This script is written for single threaded operation.
                                   Quit Julia and start it with 'jl2'."
+
+# turn on interactive visualisation in case it was turned off before
+plt.ion()
+plt.pygui(true)
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
