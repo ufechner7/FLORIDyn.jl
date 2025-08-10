@@ -137,5 +137,30 @@ end
 cp(settings_file, joinpath(vis.output_path, basename(settings_file)))
 cp(vis_file, joinpath(vis.output_path, basename(vis_file)))
 
+# Copy the subfolder named like the settings file (without extension) to the output path
+try
+    settings_basename = basename(settings_file)                      # e.g. "2021_9T_Data.yaml"
+    settings_foldername = first(splitext(settings_basename))         # => "2021_9T_Data"
+    src_dir = joinpath(dirname(settings_file), settings_foldername)  # e.g. data/2021_9T_Data
+    dest_dir = joinpath(vis.output_path, settings_foldername)
+    if isdir(src_dir)
+        homedir_str = homedir()
+        # helper to shorten paths in log output
+        shorten(p) = replace(p, homedir_str => "~")
+        if isdir(dest_dir)
+            @info "Removing existing destination folder before copy: $(shorten(dest_dir))"
+            rm(dest_dir; recursive=true, force=true)
+        end
+        @info "Copying CSV folder $(shorten(src_dir)) -> $(shorten(dest_dir))"
+        cp(src_dir, dest_dir; force=true)
+    else
+        homedir_str = homedir()
+        shorten(p) = replace(p, homedir_str => "~")
+        @info "No matching CSV folder to copy (expected directory not found): $(shorten(src_dir))"
+    end
+catch e
+    @warn "Failed to copy settings data folder" exception=(e, catch_backtrace())
+end
+
 @info "Total execution time: $(round(toc(false), digits=2)) s"
 nothing
