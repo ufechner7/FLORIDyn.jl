@@ -358,7 +358,7 @@ end
             @testset "plotFlowField with PlotState - two consecutive calls" begin
                 # Set up test data
                 state1 = nothing
-                # Enable debug logging for this diagnostic test in CI (single-thread scenario)
+                # Disable debug logging for this diagnostic test in CI (single-thread scenario)
                 vis.log_debug = false
                 @info "Diagnostics: starting two-call PlotState test" threads=Threads.nthreads() show_plots=vis.show_plots save=vis.save
                 
