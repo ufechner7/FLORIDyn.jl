@@ -56,19 +56,17 @@ export isdelftblue, Measurement, parse_measurements
 export FlowField, parse_flow_fields
 
 """
-    MSR, VelReduction, AddedTurbulence, EffWind
+    MSR `VelReduction` `AddedTurbulence` `EffWind`
 
 Enumeration that selects which (scalar) quantity is visualised / stored when plotting
-or saving flow field measurements. Passed via the `msr` keyword to
-[`run_floridyn`](@ref) and the plotting helpers [`plot_flow_field`](@ref), [`plot_measurements`](@ref).
+or saving flow field measurements. The acronym stands for Measurement System Representation.
+Passed via the `msr` keyword to [`run_floridyn`](@ref) and the plotting helpers
+[`plot_flow_field`](@ref), [`plot_measurements`](@ref).
 
-# Values
-- `VelReduction` (1): Velocity reduction (1 - u / u_ref) downstream of turbines.
+# Elements
+- `VelReduction`    (1): Velocity reduction (1 - u / u_ref) downstream of turbines.
 - `AddedTurbulence` (2): Added turbulence intensity contributed by wakes (ΔTI component).
-- `EffWind` (3): Effective wind speed at turbine locations (including wake effects).
-
-The numeric codes (1, 2, 3) are retained for backwards compatibility with legacy
-scripts that may pass integers; prefer the symbolic names above in new code.
+- `EffWind`         (3): Effective wind speed at turbine locations (including wake effects).
 
 # Usage
 ```julia
@@ -85,12 +83,36 @@ run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
 
 See also: [`toMSR`](@ref)
 """
-@enum MSR VelReduction=1 AddedTurbulence=2 EffWind=3
+@enum MSR begin
+    VelReduction = 1 
+    AddedTurbulence = 2 
+    EffWind = 3
+end
+
+@doc """
+VelReduction::MSR
+Velocity Reduction.
+See also [`MSR`](@ref).
+""" VelReduction
+
+@doc """
+AddedTurbulence::MSR
+Added Turbulence.
+See also [`MSR`](@ref).
+""" AddedTurbulence
+
+@doc """
+EffWind::MSR
+Added Turbulence.
+See also [`MSR`](@ref).
+""" EffWind
 
 """
     toMSR(s::String)
 
-Converts the input string `s` to the MSR (Measurement System Representation) format.
+Converts the input string `s` to a MSR (Measurement System Representation) enumeration.
+
+See also [`MSR`](@ref).
 """
 function toMSR(s::String)
     if s == "VelReduction"
