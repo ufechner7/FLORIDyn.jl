@@ -926,6 +926,20 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
     return M_buffer, wf
 end
 
+@with_kw mutable struct Allocations
+    iterateOPs::Int64=0
+    perturbationOfTheWF::Int64=0
+    findTurbineGroups::Int64=0
+    interpolateOPs::Int64=0
+    setUpTmpWFAndRun::Int64=0
+    correctVel::Int64=0
+    correctDir::Int64=0
+    correctTI::Int64=0
+    getYaw::Int64=0
+    getPower::Int64=0
+    calcFlowField::Int64=0
+end
+
 
 """
     runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, vis::Vis,
@@ -969,6 +983,7 @@ applying control strategies and updating turbine states over time.
 """
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
                           vis::Vis, floridyn::FloriDyn, floris::Floris, pff=nothing; msr=VelReduction)
+    alloc = Allocations()
     nT      = wf.nT
     sim_steps    = sim.n_sim_steps
     ma       = zeros(sim_steps * nT, 6)
@@ -983,16 +998,21 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         sim.sim_step = it
 
         # ========== PREDICTION ==========
-        iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn, buffers)
+        a = @allocated iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn, buffers)
+        alloc.iterateOPs += a
 
         # ========== Wind Field Perturbation ==========
-        perturbationOfTheWF!(wf, wind)
+        a = @allocated perturbationOfTheWF!(wf, wind)
+        alloc.perturbationOfTheWF += a
 
         # ========== Get FLORIS reductions ==========
-        wf.dep = findTurbineGroups(wf, floridyn)
-        wf.intOPs = interpolateOPs(wf)
-        a, b = setUpTmpWFAndRun(set, wf, floris, wind)
-        tmpM, wf = a, b
+        a = @allocated wf.dep = findTurbineGroups(wf, floridyn)
+        alloc.findTurbineGroups += a
+        a = @allocated wf.intOPs = interpolateOPs(wf)
+        alloc.interpolateOPs += a
+        a = @allocated tmpM, wf = setUpTmpWFAndRun(set, wf, floris, wind)
+        alloc.setUpTmpWFAndRun += a
+
         ma[(it-1)*nT+1 : it*nT, 2:4] .= tmpM
         ma[(it-1)*nT+1 : it*nT, 1]   .= sim_time
         wf.States_T[wf.StartI, 3] = tmpM[:, 2]
@@ -1039,5 +1059,6 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         [:Time, :ForeignReduction, :AddedTurbulence, :EffWindSpeed, :FreeWindSpeed, :PowerGen]
     )
     mi = hcat(md.Time, hcat(vm_int...)')
+    @info alloc
     return wf, md, mi
 end
