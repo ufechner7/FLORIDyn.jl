@@ -297,7 +297,13 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             end
             
             # Generate filename with measurement type and time information
-            msr_name = msr == VelReduction ? "velocity_reduction" : msr == AddedTurbulence ? "added_turbulence" : "wind_speed"
+            if msr == VelReduction
+                msr_name = "velocity_reduction"
+            elseif msr == AddedTurbulence
+                msr_name = "added_turbulence"
+            else
+                msr_name = "wind_speed"
+            end
             if t !== nothing
                 time_str = lpad(string(round(Int, t)), 4, '0')
                 filename = joinpath(directory, "ff_$(msr_name)_t$(time_str)s.png")

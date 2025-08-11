@@ -441,10 +441,20 @@ For all other properties, it returns the field value as usual.
 """
 function Base.getproperty(vis::Vis, name::Symbol)
     if name === :video_path
-        path = isdelftblue() ? joinpath(homedir(), "scratch", vis.video_folder, vis.unique_folder) : joinpath(pwd(), vis.video_folder, vis.unique_folder)
+        # Refactored from ternary operator to explicit if/else for clarity
+        if isdelftblue()
+            path = joinpath(homedir(), "scratch", vis.video_folder, vis.unique_folder)
+        else
+            path = joinpath(pwd(), vis.video_folder, vis.unique_folder)
+        end
         return mkpath(path)
     elseif name === :output_path
-        path = isdelftblue() ? joinpath(homedir(), "scratch", vis.output_folder, vis.unique_folder) : joinpath(pwd(), vis.output_folder, vis.unique_folder)
+        # Refactored from ternary operator to explicit if/else for clarity
+        if isdelftblue()
+            path = joinpath(homedir(), "scratch", vis.output_folder, vis.unique_folder)
+        else
+            path = joinpath(pwd(), vis.output_folder, vis.unique_folder)
+        end
         return mkpath(path)
     else
         return getfield(vis, name)
