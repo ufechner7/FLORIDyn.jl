@@ -786,7 +786,7 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
                            iTWFState_buffer::Vector{Float64}, tmp_Tpos_buffer::Matrix{Float64}, 
                            tmp_WF_buffer::Matrix{Float64}, tmp_Tst_buffer::Matrix{Float64},
                            dists_buffer::Vector{Float64}, plot_WF_buffer::Matrix{Float64}, 
-                           plot_OP_buffer::Matrix{Float64})
+                           plot_OP_buffer::Matrix{Float64}; alloc=nothing)
     # Reuse the provided M_buffer instead of allocating new
     M_buffer .= 0.0  # Clear the buffer
     wf.Weight = Vector{Vector{Float64}}(undef,wf.nT)
@@ -872,7 +872,10 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
         tmp_Tpos_view = @view tmp_Tpos_buffer[1:tmp_nT, :]
         tmp_WF_view = @view tmp_WF_buffer[1:tmp_nT, :]
         tmp_Tst_view = @view tmp_Tst_buffer[1:tmp_nT, :]
-        T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, wind.shear)
+        a = @allocated T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, wind.shear)
+        if !isnothing(alloc)
+            alloc.floris += a
+        end
 
         T_red = prod(T_red_arr)
         wf.red_arr[iT, vcat(wf.dep[iT], iT)] = T_red_arr
