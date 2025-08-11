@@ -790,7 +790,8 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
     # Reuse the provided M_buffer instead of allocating new
     M_buffer .= 0.0  # Clear the buffer
     wf.Weight = Vector{Vector{Float64}}(undef,wf.nT)
-    wf.red_arr = ones(wf.nT,wf.nT)
+    wf.red_arr = ones(wf.nT, wf.nT)  # Initialize if not already allocated
+
 
     for iT in 1:wf.nT
         # Reuse iTWFState_buffer instead of allocating
@@ -938,6 +939,12 @@ end
     getYaw::Int64=0
     getPower::Int64=0
     calcFlowField::Int64=0
+    cff_X::Int64=0
+    cff_Y::Int64=0
+    getMeasurementsP::Int64=0
+    gmp_mx::Int64=0
+    gmp_buffers::Int64=0
+    gmp_alloc2::Int64=0 # allocations of setUpTmpWFAndRun! inside of the threaded loop
 end
 
 function Base.show(io::IO, allocs::Allocations)
@@ -1054,13 +1061,13 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         a = @allocated if vis.online
             t_rel = sim_time-sim.start_time
             if mod(t_rel, vis.up_int) == 0
-                Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+                Z, X, Y = calcFlowField(set, wf, wind, floris; plt, alloc)
                 if isnothing(pff)
                     plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel; msr)
                     plt.pause(0.01)
                 else
                     # @info "time: $t_rel, plotting with pff"
-                    @spawnat 2 pff(wf, X, Y, Z, vis, t_rel; msr=msr)
+                    @spawnat 2 pff(wf, X, Y, Z, vis, t_rel; msr)
                 end
             end
         end

@@ -325,14 +325,22 @@ wind_speed_field = mz[:, :, 3]
 - [`calcFlowField`](@ref): Higher-level function that uses this to create complete flow field data
 - [`setUpTmpWFAndRun`](@ref): Underlying simulation function used for each grid point
 """
-function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
+function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind; alloc=nothing)
     size_mx = size(mx)
-    mz = zeros(size_mx[1], size_mx[2], nM)
+    a = @allocated mz = zeros(size_mx[1], size_mx[2], nM)
+    if ! isnothing(alloc)
+        alloc.gmp_mx += a
+    end
+
     # for Julia 1.12 we need one extra thread
     nth = nthreads() + 1
     
     # Create thread-local buffers using the new function
-    buffers = create_thread_buffers(wf, nth)
+    a = @allocated buffers = create_thread_buffers(wf, nth)
+    if ! isnothing(alloc)
+        alloc.gmp_buffers += a
+    end
+    gmp_alloc2 = Threads.Atomic{Int64}(0)
     
     # Parallel loop using @threads
     @threads :static for iGP in 1:length(mx)
@@ -361,11 +369,13 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
         interpolateOPs!(GP.intOPs, GP, comp_buffers.dist_buffer, comp_buffers.sorted_indices_buffer)
 
-        tmpM, _ = setUpTmpWFAndRun!(comp_buffers.M_buffer, GP, set, floris, wind,
+        a = @allocated tmpM, _ = setUpTmpWFAndRun!(comp_buffers.M_buffer, GP, set, floris, wind,
                                    comp_buffers.iTWFState_buffer, comp_buffers.tmp_Tpos_buffer, 
                                    comp_buffers.tmp_WF_buffer, comp_buffers.tmp_Tst_buffer,
                                    comp_buffers.dists_buffer, comp_buffers.plot_WF_buffer, 
                                    comp_buffers.plot_OP_buffer)
+
+        Threads.atomic_add!(gmp_alloc2, a)
         
         # Extract only the result for the grid point (last "turbine")
         @views gridPointResult = tmpM[end, :]
@@ -378,6 +388,7 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         # Thread-safe assignment using @views to avoid race conditions
         @views mz[rw, cl, 1:3] .= gridPointResult
     end
+    alloc.gmp_alloc2 += gmp_alloc2[]  # Add total allocation to the main allocator
     
     return mz
 end
@@ -436,7 +447,7 @@ wind_speed = Z[:, :, 3]
 - [`getMeasurementsP`](@ref): Multi-threaded implementation
 - [`plotFlowField`](@ref): Visualization function for the generated data
 """
-function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing)
+function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing, alloc=nothing)
     # Preallocate field
     nM = 3
     fieldLims = [0.0 0.0 0.0;
@@ -445,10 +456,14 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; 
     
     xAx = fieldLims[1,1]:fieldRes:fieldLims[2,1]
     yAx = fieldLims[1,2]:fieldRes:fieldLims[2,2]
-    
+
     # Create coordinate grids (Julia equivalent of meshgrid)
-    X = repeat(collect(xAx)', length(yAx), 1)
-    Y = repeat(collect(yAx), 1, length(xAx))
+    a = @allocated X = repeat(collect(xAx)', length(yAx), 1)
+    b = @allocated Y = repeat(collect(yAx), 1, length(xAx))
+    if ! isnothing(alloc)
+        alloc.cff_X += a
+        alloc.cff_Y += b
+    end
     
     # Get hub height from first turbine
     zh = wf.posNac[1, 3]
@@ -460,7 +475,8 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; 
             GC.enable(false)
         end
         try
-            Z = getMeasurementsP(X, Y, nM, zh, wf, set, floris, wind)
+            a = @allocated Z = getMeasurementsP(X, Y, nM, zh, wf, set, floris, wind; alloc)
+            alloc.getMeasurementsP += a
         finally
             # Re-enable garbage collection after multithreading if not parallel
             if ! set.parallel
