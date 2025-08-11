@@ -328,7 +328,8 @@ wind_speed_field = mz[:, :, 3]
 function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
     size_mx = size(mx)
     mz = zeros(size_mx[1], size_mx[2], nM)
-    nth = nthreads()
+    # for Julia 1.12 we need one extra thread
+    nth = nthreads() + 1
     
     # Create thread-local buffers using the new function
     buffers = create_thread_buffers(wf, nth)
