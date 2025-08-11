@@ -25,11 +25,6 @@ This function creates time series plots of foreign reduction measurements from F
 2. Foreign reduction plots in either separated (subplot) or combined layout
 3. Different measurement types based on the `msr` parameter
 
-# Measurement Types
-- `msr=VelReduction`: Velocity reduction \\[%\\] (default)
-- `msr=AddedTurbulence`: Added turbulence \\[%\\] 
-- `msr=EffWind`: Effective wind speed [m/s]
-
 # Plotting Modes
 - **Separated mode** (`separated=true`): Creates individual subplots for each turbine
 - **Combined mode** (`separated=false`): Plots all turbines on a single figure with different colors
