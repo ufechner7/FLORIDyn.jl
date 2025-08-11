@@ -4,7 +4,8 @@
 using FLORIDyn, Test, BenchmarkTools
 
 set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), 
-                Direction_All(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA())
+                Direction_All(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(),
+                false, false)
 LocationT = [600.0  2400.0  119.0]
 States_WF = [8.2     255.0    0.062  255.0]
 States_T  = [0.33      0.0    0.06]
@@ -47,5 +48,5 @@ t = @benchmark T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = runFLORIS(set, Locat
 time = mean(t.times)/1e9
 rel_time = time * 301 / 0.115  # Relative to the total time of 0.115 seconds
 println("Benchmark time: $time seconds, relative to 0.115s: $(round(rel_time * 100, digits=2)) %")
-
+println("Allocations: $(t.allocs), in total $(t.memory) bytes.")
 # Benchmark time: 1.29870531e-5 seconds, relative to 0.115s: 3.4 %
