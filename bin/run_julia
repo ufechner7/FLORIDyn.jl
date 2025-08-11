@@ -6,6 +6,12 @@
 
 USE_REVISE=false
 
+julia_version=$($JULIA_CMD --version | awk '{print($3)}')
+julia_major=${julia_version:0:3}
+if [[ $julia_major == "1.1" ]]; then
+    julia_major=${julia_version:0:4} 
+fi
+
 # Treats unset/empty as true
 if [[ "${USE_REVISE:-true}" == "true" ]]; then
     echo "Revise is ON"
@@ -27,11 +33,13 @@ else
     if ! ("TerminalPager" in globaldependencies()); Pkg.add("TerminalPager"); end;
     if ! ("Timers" in globaldependencies()); Pkg.add("Timers"); end;
     if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
-    # Run Julia with 8 threads and load FLORIdyn
+    # Run Julia with 11 threads and load FLORIdyn
     # In addition, define the function menu()
-    # Note: gcthreads=4,1 is used to set the number of garbage collection threads; crashes on Julia 1.12
-    # julia --project -t 11 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
-    julia --project -t 11,1 -i --gcthreads=4,0 -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
+    if [[ $julia_major == "1.12" ]]; then
+        julia --project -t 11,1 -i --gcthreads=4,0 -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
+    else
+        julia --project -t 11 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
+    fi
 fi
 
 # ON DESKTOP Ryzen 7 7850X
