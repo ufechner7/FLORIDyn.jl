@@ -193,7 +193,7 @@ function create_test_png(filepath::String, width::Int, height::Int)
     end
 end
 
-@testset verbose=true "visualisation                                           " begin
+@testset verbose=true "Visualisation Tests                                    " begin
     # Add explicit garbage collection at start
     GC.gc()
     

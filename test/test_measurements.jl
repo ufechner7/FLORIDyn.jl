@@ -4,7 +4,7 @@
 using Test
 using FLORIDyn
 
-@testset "Measurement Struct Tests" begin
+@testset verbose=true "Measurement Struct Tests" begin
     @testset "Measurement Construction" begin
         # Test basic construction
         m1 = Measurement("test_measurement", true)

@@ -2,4 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 using Aqua
-Aqua.test_all(FLORIDyn)
+
+@testset verbose=true "AQUA Quality Assurance Tests" begin
+    Aqua.test_all(FLORIDyn)
+end

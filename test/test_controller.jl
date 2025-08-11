@@ -6,7 +6,7 @@ using FLORIDyn, Test, Interpolations
 # Import the getYaw function directly
 import FLORIDyn: getYaw
 
-@testset "getYaw function tests" begin
+@testset verbose=true "getYaw function tests" begin
     
     @testset "Basic interpolation with single turbine" begin
         # Test data: time column + one turbine yaw column

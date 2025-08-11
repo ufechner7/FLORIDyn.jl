@@ -15,7 +15,7 @@ if !isdefined(Main, :DataFrames)
     using DataFrames
 end
 
-@testset "Pretty Print Tests" begin
+@testset verbose=true "Pretty Print Tests" begin
 
     # Helper function to create a test WindFarm
     function create_test_windfarm(;nT=3, nOP=24, nWF=2, nStates=4, nTimesteps=12)
