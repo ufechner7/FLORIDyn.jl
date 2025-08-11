@@ -447,7 +447,8 @@ function Base.getproperty(vis::Vis, name::Symbol)
         else
             path = joinpath(pwd(), vis.video_folder, vis.unique_folder)
         end
-        return String(rstrip(mkpath(path), '/'))
+        return mkpath(path)  # Ensure the directory exists
+        # return String(rstrip(mkpath(path), '/'))
     elseif name === :output_path
         # Refactored from ternary operator to explicit if/else for clarity
         if isdelftblue()
