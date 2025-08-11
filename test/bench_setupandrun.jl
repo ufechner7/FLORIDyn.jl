@@ -1,11 +1,15 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, BenchmarkTools
+using FLORIDyn, BenchmarkTools, Parameters
 
 settings_file = "data/2021_9T_Data.yaml"
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 set = Settings(wind, sim, con)
+
+@with_kw_noshow mutable struct Allocs
+    floris::Int64 = 0
+end
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 wf = initSimulation(wf, sim)
@@ -28,6 +32,8 @@ dists_buffer = zeros(nT)
 plot_WF_buffer = zeros(nT, nWF)
 plot_OP_buffer = zeros(nT, 2)
 
+alloc=Allocs()
+
 # Run once to warm up
 setUpTmpWFAndRun!(M_buffer, wf, set, floris, wind,
     iTWFState_buffer, tmp_Tpos_buffer, tmp_WF_buffer, tmp_Tst_buffer,
@@ -36,8 +42,9 @@ setUpTmpWFAndRun!(M_buffer, wf, set, floris, wind,
 # Benchmark
 bench = @benchmark setUpTmpWFAndRun!(M_buffer, wf, set, floris, wind,
     iTWFState_buffer, tmp_Tpos_buffer, tmp_WF_buffer, tmp_Tst_buffer,
-    dists_buffer, plot_WF_buffer, plot_OP_buffer)
+    dists_buffer, plot_WF_buffer, plot_OP_buffer; alloc)
 
 mean_time = mean(bench.times) / 1e6  # ms
 allocs = mean(bench.memory) / 1024   # KiB
 println("Benchmark setUpTmpWFAndRun!: $(round(mean_time, digits=3)) ms, $(round(allocs, digits=2)) KiB allocated")
+println(alloc)
