@@ -4,14 +4,29 @@
 
 # Start script for single threaded, normal use of FLORIDyn
 
-# Install TerminalPager and Timers and Revise and ControlPlots globally, if not yet installed
-julia -e 'using Pkg;
-globaldependencies() = keys(Pkg.project().dependencies)
-if ! ("TerminalPager" in globaldependencies()); Pkg.add("TerminalPager"); end;
-if ! ("Timers" in globaldependencies()); Pkg.add("Timers"); end;
-if ! ("Revise" in globaldependencies()); Pkg.add("Revise"); end;
-if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
+USE_REVISE=false
 
-# Run Julia with 1 threads and load FLORIdyn
-# In addition, define the function menu()
-julia --project -t 1 --gcthreads=1,0 -i -e 'using Revise; using FLORIDyn; function menu(); include("examples/menu.jl"); end'
+# Treats unset/empty as true
+if [[ "${USE_REVISE:-true}" == "true" ]]; then
+    # Install TerminalPager and Timers and Revise and ControlPlots globally, if not yet installed
+    julia -e 'using Pkg;
+    globaldependencies() = keys(Pkg.project().dependencies)
+    if ! ("TerminalPager" in globaldependencies()); Pkg.add("TerminalPager"); end;
+    if ! ("Timers" in globaldependencies()); Pkg.add("Timers"); end;
+    if ! ("Revise" in globaldependencies()); Pkg.add("Revise"); end;
+    if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
+
+    # Run Julia with 1 threads and load FLORIdyn
+    # In addition, define the function menu()
+    julia --project -t 1 --gcthreads=1,0 -i -e 'using Revise; using FLORIDyn; function menu(); include("examples/menu.jl"); end'
+else
+    echo "Revise is OFF"
+    julia -e 'using Pkg;
+    globaldependencies() = keys(Pkg.project().dependencies)
+    if ! ("TerminalPager" in globaldependencies()); Pkg.add("TerminalPager"); end;
+    if ! ("Timers" in globaldependencies()); Pkg.add("Timers"); end;
+    if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
+    # Run Julia with 1 threads and load FLORIdyn
+    # In addition, define the function menu()
+    julia --project -t 1 --gcthreads=1,0 -i -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
+fi
