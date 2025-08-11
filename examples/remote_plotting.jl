@@ -7,7 +7,7 @@ if Threads.nthreads() > 1
         if nprocs() < 2  # nprocs() counts main + workers, so < 2 means no dedicated workers
             println("No dedicated workers found, adding 1 worker...")
             addprocs(1)
-            @eval @everywhere using ControlPlots  # Ensure ControlPlots is available on all workers
+            @eval @everywhere workers() using ControlPlots  # Ensure ControlPlots is available only on workers
             @eval @everywhere using FLORIDyn      # Ensure FLORIDyn (including WindFarm) is available on all workers
             
             # Create a completely isolated plt instance for this specific task
