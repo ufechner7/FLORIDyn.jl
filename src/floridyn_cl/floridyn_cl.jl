@@ -926,7 +926,7 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
     return M_buffer, wf
 end
 
-@with_kw mutable struct Allocations
+@with_kw_noshow mutable struct Allocations
     iterateOPs::Int64=0
     perturbationOfTheWF::Int64=0
     findTurbineGroups::Int64=0
@@ -940,6 +940,16 @@ end
     calcFlowField::Int64=0
 end
 
+function Base.show(io::IO, allocs::Allocations)
+    println(io, "Allocations:")
+    for field_name in fieldnames(typeof(allocs))
+        value = getfield(allocs, field_name)
+        if value > 5e7
+            gb_value = value / 1e9
+            println(io, "  $field_name: $(round(gb_value, digits=3)) GB")
+        end
+    end
+end
 
 """
     runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, vis::Vis,
@@ -1064,6 +1074,6 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         [:Time, :ForeignReduction, :AddedTurbulence, :EffWindSpeed, :FreeWindSpeed, :PowerGen]
     )
     mi = hcat(md.Time, hcat(vm_int...)')
-    @info alloc
+    println(alloc)
     return wf, md, mi
 end
