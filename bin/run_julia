@@ -29,8 +29,9 @@ else
     if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;'
     # Run Julia with 8 threads and load FLORIdyn
     # In addition, define the function menu()
+    # Note: gcthreads=4,1 is used to set the number of garbage collection threads; crashes on Julia 1.12
     # julia --project -t 11 --gcthreads=4,1 -i -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
-    julia --project -t 11 -i -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
+    julia --project -t 11,1 -i --gcthreads=4,0 -e 'using FLORIDyn; function menu(); include("examples/menu.jl"); end'
 fi
 
 # ON DESKTOP Ryzen 7 7850X
