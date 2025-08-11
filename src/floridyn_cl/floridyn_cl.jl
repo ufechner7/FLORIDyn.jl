@@ -1019,25 +1019,29 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         vm_int[it] = wf.red_arr
 
         # ========== wind field corrections ==========
-        wf, wind = correctVel(set.cor_vel_mode, set, wf, wind, sim_time, floris, tmpM)
-        correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
-        correctTI!(set.cor_turb_mode, set, wf, wind, sim_time)
+        a = @allocated wf, wind = correctVel(set.cor_vel_mode, set, wf, wind, sim_time, floris, tmpM)
+        alloc.correctVel += a
+        a = @allocated correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
+        alloc.correctDir += a
+        a = @allocated correctTI!(set.cor_turb_mode, set, wf, wind, sim_time)
+        alloc.correctTI += a
 
         # Save free wind speed as measurement
         ma[(it-1)*nT+1 : it*nT, 5] = wf.States_WF[wf.StartI, 1]
 
         # ========== Get Control settings ==========
-        wf.States_T[wf.StartI, 2] = (
+        a = @allocated wf.States_T[wf.StartI, 2] = (
             wf.States_WF[wf.StartI, 2] .-
                 getYaw(set.control_mode, con.yaw_data, (1:nT), sim_time)'
         )
+        alloc.getYaw += a
 
         # ========== Calculate Power ==========
         P = getPower(wf, tmpM, floris, con)
         ma[(it-1)*nT+1:it*nT, 6] = P
 
         # ========== Live Plotting ============
-        if vis.online
+        a = @allocated if vis.online
             t_rel = sim_time-sim.start_time
             if mod(t_rel, vis.up_int) == 0
                 Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
@@ -1050,6 +1054,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
                 end
             end
         end
+        alloc.calcFlowField += a
 
         sim_time += sim.time_step
     end
