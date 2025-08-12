@@ -657,6 +657,195 @@ function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, flor
 end
 
 """
+In-place, non-allocating version of runFLORIS for performance-critical applications.
+
+This function performs the same wake analysis as runFLORIS but uses preallocated buffers
+and in-place operations to minimize memory allocations during simulation loops.
+
+# Arguments
+- `T_red_arr`: Preallocated output array for velocity reduction factors
+- `T_aTI_arr`: Preallocated output array for added turbulence intensity
+- `T_weight`: Preallocated output array for Gaussian weights
+- `buffers`: Struct containing all preallocated temporary arrays
+- `set::Settings`: Simulation settings
+- `location_t`: Matrix of turbine positions [x, y, z] coordinates
+- `states_wf`: Wind field state matrix
+- `states_t`: Turbine state matrix
+- `d_rotor`: Vector of rotor diameters
+- `floris::Floris`: FLORIS model parameters
+- `windshear`: Wind shear profile data
+
+# Returns
+- `T_Ueff::Float64`: Effective wind speed at the last turbine
+
+All outputs are written to the provided preallocated arrays in-place.
+"""
+function runFLORIS!(T_red_arr::Vector{Float64}, T_aTI_arr::Vector{Float64}, T_weight::Vector{Float64}, 
+                    buffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
+                    floris::Floris, windshear::Union{Matrix, WindShear})
+    
+    nT = length(d_rotor)
+    
+    # Initialize output arrays in-place
+    fill!(T_red_arr, 1.0)
+    fill!(T_aTI_arr, 0.0)
+    fill!(T_weight, 0.0)
+    
+    # Get rotor discretization (potentially allocating, but only once)
+    if d_rotor[end] > 0
+        RPl, RPw = discretizeRotor(floris.rotor_points)
+    else
+        # Use single point for inactive turbine
+        copyto!(buffers.RPl_single, [0.0 0.0 0.0])
+        buffers.RPw_single[1] = 1.0
+        RPl, RPw = view(buffers.RPl_single, 1:1, :), view(buffers.RPw_single, 1:1)
+    end
+    
+    # Yaw rotation for last turbine (in-place using buffers)
+    tmp_yaw = deg2rad(states_t[end, 2])
+    cos_yaw, sin_yaw = cos(tmp_yaw), sin(tmp_yaw)
+    
+    # Rotation matrix computation in-place
+    buffers.R[1,1] = cos_yaw;  buffers.R[1,2] = sin_yaw;  buffers.R[1,3] = 0.0
+    buffers.R[2,1] = -sin_yaw; buffers.R[2,2] = cos_yaw;  buffers.R[2,3] = 0.0
+    buffers.R[3,1] = 0.0;      buffers.R[3,2] = 0.0;      buffers.R[3,3] = 1.0
+    
+    # Apply rotation and scaling in-place
+    n_points = size(RPl, 1)
+    for i in 1:n_points
+        # Scale by rotor diameter
+        for j in 1:3
+            buffers.tmp_vec[j] = RPl[i, j] * d_rotor[end]
+        end
+        
+        # Apply rotation
+        for j in 1:3
+            buffers.RPl_transformed[i, j] = 0.0
+            for k in 1:3
+                buffers.RPl_transformed[i, j] += buffers.R[j, k] * buffers.tmp_vec[k]
+            end
+            # Add location offset
+            buffers.RPl_transformed[i, j] += location_t[end, j]
+        end
+    end
+    
+    # Single turbine case
+    if nT == 1
+        # Compute wind shear in-place
+        for i in 1:n_points
+            buffers.height_ratios[i] = buffers.RPl_transformed[i, 3] / location_t[1, 3]
+        end
+        buffers.redShear_view = view(buffers.redShear, 1:n_points)
+        getWindShearT!(buffers.redShear_view, set.shear_mode, windshear, view(buffers.height_ratios, 1:n_points))
+        
+        T_red_arr[1] = dot(view(RPw, 1:n_points), buffers.redShear_view)
+        return states_wf[end, 1] * T_red_arr[1]
+    end
+    
+    # Multi-turbine wake analysis
+    for iT in 1:(nT - 1)
+        # Get wind direction
+        tmp_phi = if size(states_wf, 2) == 4
+            angSOWFA2world(states_wf[iT, 4])
+        else
+            angSOWFA2world(states_wf[iT, 2])
+        end
+        
+        # Compute relative positions in-place
+        for i in 1:n_points
+            for j in 1:3
+                buffers.tmp_RPs[i, j] = buffers.RPl_transformed[i, j] - location_t[iT, j]
+            end
+        end
+        
+        # Apply wind direction rotation in-place
+        cos_phi, sin_phi = cos(tmp_phi), sin(tmp_phi)
+        buffers.R_phi[1,1] = cos_phi;  buffers.R_phi[1,2] = sin_phi;  buffers.R_phi[1,3] = 0.0
+        buffers.R_phi[2,1] = -sin_phi; buffers.R_phi[2,2] = cos_phi;  buffers.R_phi[2,3] = 0.0
+        buffers.R_phi[3,1] = 0.0;      buffers.R_phi[3,2] = 0.0;      buffers.R_phi[3,3] = 1.0
+        
+        for i in 1:n_points
+            for j in 1:3
+                buffers.tmp_vec[j] = buffers.tmp_RPs[i, j]
+            end
+            for j in 1:3
+                buffers.tmp_RPs[i, j] = 0.0
+                for k in 1:3
+                    buffers.tmp_RPs[i, j] += buffers.R_phi[j, k] * buffers.tmp_vec[k]
+                end
+            end
+        end
+        
+        # Skip if too close (first point check for efficiency)
+        if buffers.tmp_RPs[1, 1] <= 10.0
+            continue
+        end
+        
+        # Extract turbine states
+        a = states_t[iT, 1]
+        yaw_deg = states_t[iT, 2]
+        yaw = -deg2rad(yaw_deg)
+        TI = states_t[iT, 3]
+        Ct = calcCt(a, yaw_deg)
+        TI0 = states_wf[iT, 3]
+        
+        # Get wake variables in-place using buffers
+        getVars!(buffers.sig_y, buffers.sig_z, buffers.delta, buffers.pc_y, buffers.pc_z,
+                 view(buffers.tmp_RPs, 1:n_points, :), Ct, yaw, TI, TI0, floris, d_rotor[iT])
+        
+        # Compute crosswind positions in-place
+        for i in 1:n_points
+            buffers.cw_y[i] = buffers.tmp_RPs[i, 2] - buffers.delta[i, 1]
+            buffers.cw_z[i] = buffers.tmp_RPs[i, 3] - buffers.delta[i, 2]
+            buffers.phi_cw[i] = atan(buffers.cw_z[i], buffers.cw_y[i])
+            buffers.r_cw[i] = sqrt(buffers.cw_y[i]^2 + buffers.cw_z[i]^2)
+        end
+        
+        # Compute core region and wake effects in-place
+        computeWakeEffects!(view(buffers.tmp_RPs_r, 1:n_points), view(buffers.gaussWght, 1:n_points),
+                           view(buffers.cw_y, 1:n_points), view(buffers.cw_z, 1:n_points), 
+                           view(buffers.phi_cw, 1:n_points), view(buffers.r_cw, 1:n_points),
+                           view(buffers.tmp_RPs, 1:n_points, :), view(buffers.pc_y, 1:n_points), 
+                           view(buffers.pc_z, 1:n_points), view(buffers.sig_y, 1:n_points), 
+                           view(buffers.sig_z, 1:n_points), Ct, yaw, d_rotor[iT], buffers.x_0[1])
+        
+        T_weight[iT] = sum(view(buffers.gaussWght, 1:n_points))
+        T_red_arr[iT] = 1.0 - dot(view(RPw, 1:n_points), view(buffers.tmp_RPs_r, 1:n_points))
+        
+        # Added turbulence intensity computation in-place
+        T_addedTI_tmp = floris.k_fa * (a^floris.k_fb * TI0^floris.k_fc * 
+                                      (sum(view(buffers.tmp_RPs, 1:n_points, 1)) / n_points / d_rotor[iT])^floris.k_fd)
+        
+        computeAddedTI!(view(buffers.exp_y, 1:n_points), view(buffers.exp_z, 1:n_points),
+                       view(buffers.cw_y, 1:n_points), view(buffers.cw_z, 1:n_points),
+                       view(buffers.phi_cw, 1:n_points), view(buffers.pc_y, 1:n_points),
+                       view(buffers.pc_z, 1:n_points), view(buffers.sig_y, 1:n_points),
+                       view(buffers.sig_z, 1:n_points), floris.TIexp)
+        
+        T_aTI_arr[iT] = T_addedTI_tmp * dot(view(RPw, 1:n_points), 
+                                          view(buffers.exp_y, 1:n_points) .* view(buffers.exp_z, 1:n_points))
+    end
+    
+    # Final wind shear computation for last turbine
+    for i in 1:n_points
+        buffers.height_ratios[i] = buffers.RPl_transformed[i, 3] / location_t[end, 3]
+    end
+    buffers.redShear_view = view(buffers.redShear, 1:n_points)
+    getWindShearT!(buffers.redShear_view, set.shear_mode, windshear, view(buffers.height_ratios, 1:n_points))
+    
+    T_red_arr[end] = dot(view(RPw, 1:n_points), buffers.redShear_view)
+    
+    # Compute effective wind speed
+    T_red = 1.0
+    for i in 1:nT
+        T_red *= T_red_arr[i]
+    end
+    T_Ueff = states_wf[end, 1] * T_red
+    
+    return T_Ueff
+end
+
+"""
     getPower(wf::WindFarm, m::AbstractMatrix, floris::Floris, con::Con)
 
 Calculate the power output of wind turbines in a wind farm simulation.
@@ -817,5 +1006,247 @@ function getUadv(states_op, states_t, states_wf, floris::Floris, d_rotor)
     Uadv_div_U_inf = 0.5 .* (1 .+ U_cen_div_U_inf)
 
     return Uadv_div_U_inf
+end
+
+"""
+Buffer struct for non-allocating runFLORIS! function.
+
+Contains all preallocated arrays needed for the wake calculations.
+All arrays should be sized according to the maximum expected rotor discretization points.
+"""
+mutable struct FLORISBuffers
+    # Rotation matrices
+    R::Matrix{Float64}              # 3x3 rotation matrix for yaw
+    R_phi::Matrix{Float64}          # 3x3 rotation matrix for wind direction
+    
+    # Rotor point arrays
+    RPl_single::Matrix{Float64}     # 1x3 single point for inactive turbines
+    RPw_single::Vector{Float64}     # 1-element weight array
+    RPl_transformed::Matrix{Float64} # Transformed rotor points
+    tmp_RPs::Matrix{Float64}        # Temporary rotor points array
+    
+    # Temporary vectors
+    tmp_vec::Vector{Float64}        # 3-element temporary vector
+    height_ratios::Vector{Float64}  # Height ratio calculations
+    redShear::Vector{Float64}       # Wind shear reduction factors
+    redShear_view::SubArray{Float64,1,Vector{Float64},Tuple{UnitRange{Int64}},true}
+    
+    # Wake calculation arrays
+    sig_y::Vector{Float64}          # Wake width in y direction
+    sig_z::Vector{Float64}          # Wake width in z direction
+    delta::Matrix{Float64}          # Wake deflection (nx2)
+    pc_y::Vector{Float64}           # Potential core boundary y
+    pc_z::Vector{Float64}           # Potential core boundary z
+    x_0::Vector{Float64}            # Core length (1-element for scalar storage)
+    
+    # Crosswind position arrays
+    cw_y::Vector{Float64}           # Crosswind y positions
+    cw_z::Vector{Float64}           # Crosswind z positions
+    phi_cw::Vector{Float64}         # Crosswind angles
+    r_cw::Vector{Float64}           # Crosswind radial distances
+    
+    # Wake effect arrays
+    tmp_RPs_r::Vector{Float64}      # Wake reduction factors
+    gaussWght::Vector{Float64}      # Gaussian weights
+    
+    # Turbulence intensity arrays
+    exp_y::Vector{Float64}          # Exponential terms in y
+    exp_z::Vector{Float64}          # Exponential terms in z
+end
+
+"""
+Create FLORISBuffers with arrays sized for maximum rotor discretization points.
+"""
+function FLORISBuffers(max_points::Int)
+    return FLORISBuffers(
+        zeros(3, 3),                    # R
+        zeros(3, 3),                    # R_phi
+        zeros(1, 3),                    # RPl_single
+        ones(1),                        # RPw_single
+        zeros(max_points, 3),           # RPl_transformed
+        zeros(max_points, 3),           # tmp_RPs
+        zeros(3),                       # tmp_vec
+        zeros(max_points),              # height_ratios
+        zeros(max_points),              # redShear
+        view(zeros(max_points), 1:1),   # redShear_view (placeholder)
+        zeros(max_points),              # sig_y
+        zeros(max_points),              # sig_z
+        zeros(max_points, 2),           # delta
+        zeros(max_points),              # pc_y
+        zeros(max_points),              # pc_z
+        zeros(1),                       # x_0
+        zeros(max_points),              # cw_y
+        zeros(max_points),              # cw_z
+        zeros(max_points),              # phi_cw
+        zeros(max_points),              # r_cw
+        zeros(max_points),              # tmp_RPs_r
+        zeros(max_points),              # gaussWght
+        zeros(max_points),              # exp_y
+        zeros(max_points)               # exp_z
+    )
+end
+
+"""
+In-place version of getVars function that writes results to preallocated buffers.
+"""
+function getVars!(sig_y, sig_z, delta, pc_y, pc_z, rps, c_t, yaw, ti, ti0, floris, d_rotor)
+    # Unpack parameters
+    k_a = floris.k_a
+    k_b = floris.k_b
+    alpha = floris.alpha
+    beta = floris.beta
+    
+    # States
+    I = sqrt(ti^2 + ti0^2)
+    
+    # Core length x_0
+    x_0 = (cos(yaw) * (1 + sqrt(1 - c_t)) / 
+          (sqrt(2) * (alpha * I + beta * (1 - sqrt(1 - c_t))))) * d_rotor
+    
+    # Compute k_y and k_z
+    k_y = k_a * I + k_b
+    k_z = k_y
+    
+    # Process each point
+    n_points = size(rps, 1)
+    for i in 1:n_points
+        OPdw = rps[i, 1]
+        
+        # sig_y calculation (field width in y)
+        sig_y[i] = max(OPdw - x_0, 0.0) * k_y +
+                   min(OPdw / x_0, 1.0) * cos(yaw) * d_rotor / sqrt(8)
+        
+        # sig_z calculation (field width in z)
+        sig_z[i] = max(OPdw - x_0, 0.0) * k_z +
+                   min(OPdw / x_0, 1.0) * d_rotor / sqrt(8)
+    end
+    
+    # Theta
+    Theta = 0.3 * yaw / cos(yaw) * (1 - sqrt(1 - c_t * cos(yaw)))
+    
+    # Deflection delta calculation
+    for i in 1:n_points
+        OPdw = rps[i, 1]
+        
+        # Near wake deflection
+        delta_nfw = Theta * min(OPdw, x_0)
+        
+        # Far wake deflection parts
+        delta_fw_1 = Theta / 14.7 * sqrt(cos(yaw) / (k_y * k_z * c_t)) * 
+                     (2.9 + 1.3 * sqrt(1 - c_t) - c_t)
+        
+        # Intermediate term
+        term = 1.6 * sqrt((8 * sig_y[i] * sig_z[i]) / (d_rotor^2 * cos(yaw)))
+        arg = (1.6 + sqrt(c_t)) * (term - sqrt(c_t)) / ((1.6 - sqrt(c_t)) * (term + sqrt(c_t)))
+        delta_fw_2 = log(max(eps(), arg))
+        
+        # Blending factor
+        blend = 0.5 * sign(OPdw - x_0) + 0.5
+        
+        # Total delta in y
+        delta[i, 1] = delta_nfw + blend * delta_fw_1 * delta_fw_2 * d_rotor
+        delta[i, 2] = 0.0  # delta_z is always zero
+    end
+    
+    # Potential core
+    u_r_0 = (c_t * cos(yaw)) / (2 * (1 - sqrt(1 - c_t * cos(yaw))) * sqrt(1 - c_t))
+    
+    for i in 1:n_points
+        OPdw = rps[i, 1]
+        pc_y[i] = d_rotor * cos(yaw) * sqrt(u_r_0) * max(1 - OPdw / x_0, 0.0)
+        pc_z[i] = d_rotor * sqrt(u_r_0) * max(1 - OPdw / x_0, 0.0)
+        
+        # For points exactly at the rotor plane
+        if OPdw == 0.0
+            pc_y[i] = d_rotor * cos(yaw)
+            pc_z[i] = d_rotor
+        end
+    end
+end
+
+"""
+In-place computation of wake effects including core region detection and Gaussian weighting.
+"""
+function computeWakeEffects!(tmp_RPs_r, gaussWght, cw_y, cw_z, phi_cw, r_cw, tmp_RPs, 
+                            pc_y, pc_z, sig_y, sig_z, C_T, yaw, d_rotor, x_0)
+    n_points = length(tmp_RPs_r)
+    
+    # Initialize arrays
+    fill!(tmp_RPs_r, 0.0)
+    fill!(gaussWght, 1.0)
+    
+    for i in 1:n_points
+        OPdw = tmp_RPs[i, 1]
+        
+        # Check if in core region
+        core_boundary = sqrt((0.5 * pc_y[i] * cos(phi_cw[i]))^2 + 
+                            (0.5 * pc_z[i] * sin(phi_cw[i]))^2)
+        is_core = (r_cw[i] < core_boundary) || (OPdw == 0.0)
+        is_near_wake = OPdw < x_0
+        
+        if is_core
+            tmp_RPs_r[i] = 1 - sqrt(1 - C_T)
+        else
+            # Gaussian wake region
+            if is_near_wake
+                gauss_abs = 1 - sqrt(1 - C_T)
+            else
+                gauss_abs = 1 - sqrt(1 - C_T * cos(yaw) / (8 * sig_y[i] * sig_z[i] / d_rotor^2))
+            end
+            
+            # Gaussian weights
+            exp_y = exp(-0.5 * ((cw_y[i] - cos(phi_cw[i]) * pc_y[i] * 0.5) / sig_y[i])^2)
+            exp_z = exp(-0.5 * ((cw_z[i] - sin(phi_cw[i]) * pc_z[i] * 0.5) / sig_z[i])^2)
+            
+            gaussWght[i] = exp_y * exp_z
+            tmp_RPs_r[i] = gauss_abs * gaussWght[i]
+        end
+    end
+end
+
+"""
+In-place computation of added turbulence intensity exponential terms.
+"""
+function computeAddedTI!(exp_y, exp_z, cw_y, cw_z, phi_cw, pc_y, pc_z, sig_y, sig_z, TIexp)
+    n_points = length(exp_y)
+    
+    for i in 1:n_points
+        exp_y[i] = exp(-0.5 * ((cw_y[i] - cos(phi_cw[i]) * pc_y[i] * 0.5) / (TIexp * sig_y[i]))^2)
+        exp_z[i] = exp(-0.5 * ((cw_z[i] - sin(phi_cw[i]) * pc_z[i] * 0.5) / (TIexp * sig_z[i]))^2)
+    end
+end
+
+"""
+In-place version of getWindShearT function that writes results to preallocated output array.
+
+# Arguments
+- `output`: Preallocated array to store wind shear reduction factors
+- `shear_mode`: Shear model type
+- `windshear`: Wind shear parameters or data
+- `height_ratios`: Normalized height ratios (h/href)
+
+# Returns
+Nothing, results are written to the output array in-place.
+"""
+function getWindShearT!(output, shear_mode, windshear, height_ratios)
+    n = length(height_ratios)
+    
+    if shear_mode == Shear_PowerLaw()
+        alpha = windshear.alpha
+        for i in 1:n
+            output[i] = height_ratios[i]^alpha
+        end
+    elseif shear_mode == Shear_Interpolation()
+        # For interpolation mode, just call the allocating version for each point
+        # This could be optimized further if needed
+        for i in 1:n
+            output[i] = getWindShearT(shear_mode, windshear, height_ratios[i])
+        end
+    else
+        # Default: no wind shear
+        fill!(output, 1.0)
+    end
+    
+    return nothing
 end
 

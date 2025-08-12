@@ -69,8 +69,21 @@ States_WF = [8.2  255.0  0.062  255.0;
 States_T_multi = [0.33 0.0 0.06;
                     0.33 0.0 0.06]
 D = [178.4, 178.4]
-t = @benchmark T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = runFLORIS(set, LocationT_multi, States_WF, States_T_multi, D, 
-                                                        paramFLORIS, windshear)
+nT = 2
+
+# Create preallocated output arrays
+T_red_arr = zeros(Float64, nT)
+T_aTI_arr = zeros(Float64, nT - 1)  
+T_weight = zeros(Float64, nT - 1)
+
+# Create buffer struct for temporary arrays
+buffers = FLORIDyn.FLORISBuffers(paramFLORIS.rotor_points)
+
+# t = @benchmark T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = runFLORIS(set, LocationT_multi, States_WF, States_T_multi, D, 
+#                                                         paramFLORIS, windshear)
+
+t = @benchmark  T_Ueff = runFLORIS!(T_red_arr, T_aTI_arr, T_weight, buffers, set, 
+                                    LocationT_multi, States_WF, States_T_multi, D, paramFLORIS, windshear)
 
 time = mean(t.times)/1e9
 rel_time = time * 301 / 0.115  # Relative to the total time of 0.115 seconds
@@ -78,4 +91,4 @@ println("Benchmark time: $time seconds, relative to 0.115s: $(round(rel_time * 1
 println("Allocations: $(t.allocs), in total $(t.memory) bytes.")
 # Benchmark time: 1.29870531e-5 seconds, relative to 0.115s: 3.4 %
 
-println(alloc)
+# println(alloc)
