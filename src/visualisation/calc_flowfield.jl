@@ -388,8 +388,10 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         # Thread-safe assignment using @views to avoid race conditions
         @views mz[rw, cl, 1:3] .= gridPointResult
     end
-    alloc.gmp_alloc2 += gmp_alloc2[]  # Add total allocation to the main allocator
-    
+    if ! isnothing(alloc)
+        alloc.gmp_alloc2 += gmp_alloc2[]  # Add total allocation to the main allocator
+    end
+
     return mz
 end
 
@@ -476,7 +478,9 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; 
         end
         try
             a = @allocated Z = getMeasurementsP(X, Y, nM, zh, wf, set, floris, wind; alloc)
-            alloc.getMeasurementsP += a
+            if ! isnothing(alloc)
+                alloc.getMeasurementsP += a
+            end
         finally
             # Re-enable garbage collection after multithreading if not parallel
             if ! set.parallel
