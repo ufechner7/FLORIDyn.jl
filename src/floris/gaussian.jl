@@ -669,8 +669,7 @@ and in-place operations to minimize memory allocations during simulation loops.
 - `buffers`: Struct containing all preallocated temporary arrays
 - `set::Settings`: Simulation settings
 - `location_t`: Matrix of turbine positions [x, y, z] coordinates
-- `states_wf`: Wind field state matrix
-- `states_t`: Turbine state matrix
+l- `states_t`: Turbine state matrix
 - `d_rotor`: Vector of rotor diameters
 - `floris::Floris`: FLORIS model parameters
 - `windshear`: Wind shear profile data
