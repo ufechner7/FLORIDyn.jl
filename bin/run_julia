@@ -12,6 +12,8 @@ if [[ $julia_major == "1.1" ]]; then
     julia_major=${julia_version:0:4} 
 fi
 
+export JULIA_DEBUG=Main,FLORIDyn
+
 # Treats unset/empty as true
 if [[ "${USE_REVISE:-true}" == "true" ]]; then
     echo "Revise is ON"

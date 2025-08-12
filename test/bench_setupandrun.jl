@@ -3,6 +3,8 @@
 
 using FLORIDyn, BenchmarkTools, Parameters
 
+import Base: show
+
 settings_file = "data/2021_9T_Data.yaml"
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 set = Settings(wind, sim, con)
@@ -18,6 +20,18 @@ set = Settings(wind, sim, con)
     if3::Int64 = 0    # allocated memory first if clause
     begin1::Int64 = 0
     floris::Int64 = 0
+end
+
+function Base.show(io::IO, allocs::Allocs)
+    println(io, "Allocations:")
+    for field_name in fieldnames(typeof(allocs))
+        value = getfield(allocs, field_name)
+        m = getfield(allocs, :m)
+        if value > 5e2 && field_name != :m
+            gb_value = value / 1024/ m
+            println(io, "  $field_name: $(round(gb_value, digits=3)) KiB")
+        end
+    end
 end
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
