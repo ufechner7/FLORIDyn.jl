@@ -521,35 +521,51 @@ The function implements several key wake modeling equations:
 - Bastankhah, M. and Porté-Agel, F. (2016). Experimental and theoretical study of wind turbine wakes in yawed conditions
 - Niayifar, A. and Porté-Agel, F. (2016). Analytical modeling of wind farms: A new approach for power prediction
 """
-function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, windshear::Union{Matrix, WindShear})
-    if d_rotor[end] > 0
+function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, 
+                   windshear::Union{Matrix, WindShear}; alloc=nothing)
+    a = @allocated if d_rotor[end] > 0
         RPl, RPw = discretizeRotor(floris.rotor_points)
     else
         RPl = [0.0 0.0 0.0]
         RPw = [1.0]
     end
+    if ! isnothing(alloc)
+        alloc.if1 += a
+        alloc.n += 1
+    end
     # Yaw rotation for last turbine
     tmp_yaw = deg2rad(states_t[end, 2])
-    R = [cos(tmp_yaw)  sin(tmp_yaw)  0.0;
-        -sin(tmp_yaw)  cos(tmp_yaw)  0.0;
-         0.0           0.0           1.0]
+    R = SA[cos(tmp_yaw)  sin(tmp_yaw)  0.0;
+          -sin(tmp_yaw)  cos(tmp_yaw)  0.0;
+           0.0           0.0           1.0]
 
-    RPl = (R * (RPl .* d_rotor[end])')' .+ location_t[end, :]'
+    a = @allocated RPl = (R * (RPl .* d_rotor[end])')' .+ location_t[end, :]'
+    if ! isnothing(alloc)
+        alloc.expr1 += a
+    end
 
-    if length(d_rotor) == 1
+    a = @allocated if length(d_rotor) == 1
         redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ location_t[3])
         T_red_arr = RPw' * redShear
         T_aTI_arr, T_Ueff, T_weight = nothing, nothing, nothing
         return T_red_arr, T_aTI_arr, T_Ueff, T_weight
     end
+    if ! isnothing(alloc)
+        alloc.if2 += a
+    end
 
     # Initialize outputs
-    nT = length(d_rotor)
-    T_red_arr = ones(nT)
-    T_aTI_arr = zeros(nT - 1)
-    T_weight = zeros(nT - 1)
+    a = @allocated begin
+        nT = length(d_rotor)
+        T_red_arr = ones(nT)
+        T_aTI_arr = zeros(nT - 1)
+        T_weight = zeros(nT - 1)
+    end
+    if ! isnothing(alloc)
+        alloc.expr2 += a
+    end
 
-    for iT in 1:(nT - 1)
+    a = @allocated for iT in 1:(nT - 1)
 
         tmp_phi = size(states_wf,2) == 4 ? angSOWFA2world(states_wf[iT, 4]) :
                                            angSOWFA2world(states_wf[iT, 2])
@@ -621,12 +637,21 @@ function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, flor
 
         T_aTI_arr[iT] = T_addedTI_tmp * dot(RPw, exp_y .* exp_z)
     end
+    if ! isnothing(alloc)
+        alloc.for1 += a
+    end
 
-    redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ location_t[end, 3])
-    T_red_arr[end] = dot(RPw, redShear)
+    a = @allocated begin
+        redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ location_t[end, 3])
+        T_red_arr[end] = dot(RPw, redShear)
 
-    T_red = prod(T_red_arr)
-    T_Ueff = states_wf[end, 1] * T_red
+        T_red = prod(T_red_arr)
+        T_Ueff = states_wf[end, 1] * T_red
+    end
+
+    if ! isnothing(alloc)
+        alloc.expr3 += a
+    end
 
     return T_red_arr, T_aTI_arr, T_Ueff, T_weight
 end
