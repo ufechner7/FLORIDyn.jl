@@ -679,9 +679,11 @@ and in-place operations to minimize memory allocations during simulation loops.
 - `T_Ueff::Float64`: Effective wind speed at the last turbine
 
 All outputs are written to the provided preallocated arrays in-place.
+This version accepts both regular arrays and views (AbstractArray types).
 """
-function runFLORIS!(T_red_arr::Vector{Float64}, T_aTI_arr::Vector{Float64}, T_weight::Vector{Float64}, 
-                    buffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
+function runFLORIS!(T_red_arr::AbstractVector{Float64}, T_aTI_arr::AbstractVector{Float64}, T_weight::AbstractVector{Float64}, 
+                    buffers, set::Settings, location_t::AbstractMatrix{Float64}, states_wf::AbstractMatrix{Float64}, 
+                    states_t::AbstractMatrix{Float64}, d_rotor::AbstractVector{Float64}, 
                     floris::Floris, windshear::Union{Matrix, WindShear})
     
     nT = length(d_rotor)
@@ -1088,8 +1090,12 @@ end
 
 """
 In-place version of getVars function that writes results to preallocated buffers.
+
+This version accepts both regular arrays and views (AbstractArray types).
 """
-function getVars!(sig_y, sig_z, delta, pc_y, pc_z, rps, c_t, yaw, ti, ti0, floris, d_rotor)
+function getVars!(sig_y::AbstractVector{Float64}, sig_z::AbstractVector{Float64}, 
+                 delta::AbstractMatrix{Float64}, pc_y::AbstractVector{Float64}, pc_z::AbstractVector{Float64}, 
+                 rps::AbstractMatrix{Float64}, c_t, yaw, ti, ti0, floris, d_rotor)
     # Unpack parameters
     k_a = floris.k_a
     k_b = floris.k_b
@@ -1166,9 +1172,15 @@ end
 
 """
 In-place computation of wake effects including core region detection and Gaussian weighting.
+
+This version accepts both regular arrays and views (AbstractArray types).
 """
-function computeWakeEffects!(tmp_RPs_r, gaussWght, cw_y, cw_z, phi_cw, r_cw, tmp_RPs, 
-                            pc_y, pc_z, sig_y, sig_z, C_T, yaw, d_rotor, x_0)
+function computeWakeEffects!(tmp_RPs_r::AbstractVector{Float64}, gaussWght::AbstractVector{Float64}, 
+                            cw_y::AbstractVector{Float64}, cw_z::AbstractVector{Float64}, 
+                            phi_cw::AbstractVector{Float64}, r_cw::AbstractVector{Float64}, 
+                            tmp_RPs::AbstractMatrix{Float64}, pc_y::AbstractVector{Float64}, 
+                            pc_z::AbstractVector{Float64}, sig_y::AbstractVector{Float64}, 
+                            sig_z::AbstractVector{Float64}, C_T, yaw, d_rotor, x_0)
     n_points = length(tmp_RPs_r)
     
     # Initialize arrays
@@ -1179,19 +1191,25 @@ function computeWakeEffects!(tmp_RPs_r, gaussWght, cw_y, cw_z, phi_cw, r_cw, tmp
         OPdw = tmp_RPs[i, 1]
         
         # Check if in core region
+        # Square term is always positive, no need for clamping
         core_boundary = sqrt((0.5 * pc_y[i] * cos(phi_cw[i]))^2 + 
                             (0.5 * pc_z[i] * sin(phi_cw[i]))^2)
         is_core = (r_cw[i] < core_boundary) || (OPdw == 0.0)
         is_near_wake = OPdw < x_0
         
         if is_core
-            tmp_RPs_r[i] = 1 - sqrt(1 - C_T)
+            # This term should always be in [0,1], but clamp to be safe
+            sqrt_arg = max(1 - C_T, 0.0)
+            tmp_RPs_r[i] = 1 - sqrt(sqrt_arg)
         else
             # Gaussian wake region
             if is_near_wake
                 gauss_abs = 1 - sqrt(1 - C_T)
             else
-                gauss_abs = 1 - sqrt(1 - C_T * cos(yaw) / (8 * sig_y[i] * sig_z[i] / d_rotor^2))
+                # Ensure the argument to sqrt is not negative (handle numerical issues)
+                sqrt_arg = 1 - C_T * cos(yaw) / (8 * sig_y[i] * sig_z[i] / d_rotor^2)
+                sqrt_arg = max(sqrt_arg, 0.0)  # Clamp to non-negative values
+                gauss_abs = 1 - sqrt(sqrt_arg)
             end
             
             # Gaussian weights
@@ -1206,8 +1224,14 @@ end
 
 """
 In-place computation of added turbulence intensity exponential terms.
+
+This version accepts both regular arrays and views (AbstractArray types).
 """
-function computeAddedTI!(exp_y, exp_z, cw_y, cw_z, phi_cw, pc_y, pc_z, sig_y, sig_z, TIexp)
+function computeAddedTI!(exp_y::AbstractVector{Float64}, exp_z::AbstractVector{Float64}, 
+                        cw_y::AbstractVector{Float64}, cw_z::AbstractVector{Float64}, 
+                        phi_cw::AbstractVector{Float64}, pc_y::AbstractVector{Float64}, 
+                        pc_z::AbstractVector{Float64}, sig_y::AbstractVector{Float64}, 
+                        sig_z::AbstractVector{Float64}, TIexp)
     n_points = length(exp_y)
     
     for i in 1:n_points
@@ -1227,8 +1251,10 @@ In-place version of getWindShearT function that writes results to preallocated o
 
 # Returns
 Nothing, results are written to the output array in-place.
+
+This version accepts both regular arrays and views (AbstractArray types).
 """
-function getWindShearT!(output, shear_mode, windshear, height_ratios)
+function getWindShearT!(output::AbstractVector{Float64}, shear_mode, windshear, height_ratios::AbstractVector{Float64})
     n = length(height_ratios)
     
     if shear_mode == Shear_PowerLaw()

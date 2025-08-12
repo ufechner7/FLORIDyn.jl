@@ -318,6 +318,11 @@ ops_data = wf.ops               # DataFrame with operating point states
     Names_T::Vector{String} = Vector{String}(undef, 0)          # Names of the states of the turbines
     Names_WF::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the wind farm
     Names_OP::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the operating points
+    # Buffers for non-allocating FLORIS
+    floris_buffers = nothing                                    # FLORISBuffers object for reuse
+    T_red_buffer::Vector{Float64} = Vector{Float64}(undef, 0)   # Buffer for velocity reduction factors
+    T_aTI_buffer::Vector{Float64} = Vector{Float64}(undef, 0)   # Buffer for added turbulence intensity
+    T_weight_buffer::Vector{Float64} = Vector{Float64}(undef, 0)# Buffer for Gaussian weights
 end
 
 include("visualisation/structs_measurements.jl")
