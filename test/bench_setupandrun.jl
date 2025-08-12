@@ -7,7 +7,16 @@ settings_file = "data/2021_9T_Data.yaml"
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 set = Settings(wind, sim, con)
 
-@with_kw_noshow mutable struct Allocs
+@with_kw mutable struct Allocs
+    n::Int64 = 0      # number of floris calls
+    m::Int64 = 0      # number of setupandrun calls
+    for1::Int64 = 0   # allocated memory outer for loop
+    for2::Int64 = 0   # allocated memory first inner for loop
+    for3::Int64 = 0   # allocated memory first inner for loop
+    if1::Int64 = 0    # allocated memory first if clause
+    if2::Int64 = 0    # allocated memory first if clause
+    if3::Int64 = 0    # allocated memory first if clause
+    begin1::Int64 = 0
     floris::Int64 = 0
 end
 

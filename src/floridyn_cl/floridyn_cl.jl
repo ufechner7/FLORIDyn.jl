@@ -792,8 +792,12 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
     wf.Weight = Vector{Vector{Float64}}(undef,wf.nT)
     wf.red_arr = ones(wf.nT, wf.nT)  # Initialize if not already allocated
 
+    if !isnothing(alloc)
+        alloc.m += 1
+    end
 
-    for iT in 1:wf.nT
+
+    a = @allocated for iT in 1:wf.nT
         # Reuse iTWFState_buffer instead of allocating
         iTWFState_buffer .= wf.States_WF[wf.StartI[iT], :]
 
@@ -804,6 +808,8 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
         if hasfield(typeof(wf), :C_Dir)
             iTWFState_buffer[2] = dot(wf.C_Dir[iT, :],wf.States_WF[:, 2])
         end
+
+        # @assert !isempty(wf.dep[iT])
 
         if isempty(wf.dep[iT])
             # Single turbine case
@@ -825,19 +831,28 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
         tmp_nT = length(wf.dep[iT]) + 1
 
         # Reuse buffers instead of repeat operations
-        for row in 1:tmp_nT
+        a = @allocated for row in 1:tmp_nT
             tmp_Tpos_buffer[row, :] = wf.posBase[iT,:]' + wf.posNac[iT,:]'
             tmp_WF_buffer[row, :] = iTWFState_buffer'
             tmp_Tst_buffer[row, :] = (wf.States_T[wf.StartI[iT], :])'
         end
+        if !isnothing(alloc)
+            alloc.for2 += a
+        end
 
-        tmp_D = if wf.D[end] > 0
-            vcat(wf.D[wf.dep[iT]],wf.D[iT])
+        a = @allocated tmp_D = if wf.D[end] > 0
+            vcat(wf.D[wf.dep[iT]], wf.D[iT])
         else
            wf.D
         end
 
-        for iiT in 1:(tmp_nT - 1)
+        if !isnothing(alloc)
+            alloc.if1 += a
+        end
+
+        @assert tmp_nT > 1
+
+        @allocated for iiT in 1:(tmp_nT - 1)
             OP1_i = Int(wf.intOPs[iT][iiT, 1])  # Index OP 1
             OP1_r = wf.intOPs[iT][iiT, 2]       # Ratio OP 1
             OP2_i = Int(wf.intOPs[iT][iiT, 3])  # Index OP 2
@@ -868,21 +883,31 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
             tmp_Tpos_buffer[iiT, 3] -= OPi_l[6]
         end
 
+        if !isnothing(alloc)
+            alloc.for3 += a
+        end
+
         # Run FLORIS using the buffer views
         tmp_Tpos_view = @view tmp_Tpos_buffer[1:tmp_nT, :]
         tmp_WF_view = @view tmp_WF_buffer[1:tmp_nT, :]
         tmp_Tst_view = @view tmp_Tst_buffer[1:tmp_nT, :]
         a = @allocated T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, wind.shear)
         if !isnothing(alloc)
+            alloc.n += 1
             alloc.floris += a
         end
 
-        T_red = prod(T_red_arr)
-        wf.red_arr[iT, vcat(wf.dep[iT], iT)] = T_red_arr
-        T_addedTI = sqrt(sum(T_aTI_arr .^ 2))
-        wf.Weight[iT] = T_weight
+        a = @allocated begin
+            T_red = prod(T_red_arr)
+            wf.red_arr[iT, vcat(wf.dep[iT], iT)] = T_red_arr
+            T_addedTI = sqrt(sum(T_aTI_arr .^ 2))
+            wf.Weight[iT] = T_weight
+        end
+        if !isnothing(alloc)
+            alloc.begin1 += a
+        end
 
-        if wf.D[end] <= 0
+        a = @allocated if wf.D[end] <= 0
             # Reuse buffers for distance and plotting calculations
             dists_view = @view dists_buffer[1:(tmp_nT - 1)]
             plot_WF_view = @view plot_WF_buffer[1:(tmp_nT - 1), :]
@@ -916,15 +941,21 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
                 T_Ueff = T_red * Ufree
             end
         end
+        if !isnothing(alloc)
+            alloc.if2 += a
+        end
 
         M_buffer[iT, :] = [T_red, T_addedTI, T_Ueff]
 
         wS = sum(wf.Weight[iT])
         if wS > 0
-           wf.Weight[iT] =wf.Weight[iT] ./ wS
+           wf.Weight[iT] = wf.Weight[iT] ./ wS
         else
            wf.Weight[iT] .= 0.0
         end
+    end
+    if !isnothing(alloc)
+        alloc.for1 += a
     end
 
     return M_buffer, wf
@@ -1084,6 +1115,6 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         [:Time, :ForeignReduction, :AddedTurbulence, :EffWindSpeed, :FreeWindSpeed, :PowerGen]
     )
     mi = hcat(md.Time, hcat(vm_int...)')
-    println(alloc)
+    @debug alloc
     return wf, md, mi
 end
