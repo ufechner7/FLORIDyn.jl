@@ -27,7 +27,7 @@ function Base.show(io::IO, allocs::Allocs)
     for field_name in fieldnames(typeof(allocs))
         value = getfield(allocs, field_name)
         m = getfield(allocs, :m)
-        if value > 5e2 && field_name != :m
+        if value > 5e2 && ! (field_name in [:n, :m])
             gb_value = value / 1024/ m
             println(io, "  $field_name: $(round(gb_value, digits=3)) KiB")
         end
@@ -38,7 +38,29 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 wf = initSimulation(wf, sim)
 
 # Initialize dependencies for all turbines
-wf.dep = [Int64[] for _ in 1:wf.nT]
+wf.dep = [
+    Int64[4, 7],
+    Int64[5, 7, 8],
+    Int64[6, 8, 9],
+    Int64[7],
+    Int64[8],
+    Int64[9],
+    Int64[],
+    Int64[],
+    Int64[]
+]
+
+wf.intOPs = [
+    [601.0 1.0 602.0 0.0; 1202.0 1.0 1201.0 0.0],
+    [801.0 1.0 802.0 0.0; 1201.0 1.0 1202.0 0.0; 1402.0 1.0 1401.0 0.0],
+    [1001.0 1.0 1002.0 0.0; 1401.0 1.0 1402.0 0.0; 1602.0 1.0 1601.0 0.0],
+    [1201.0 1.0 1202.0 0.0],
+    [1401.0 1.0 1402.0 0.0],
+    [1601.0 1.0 1602.0 0.0],
+    zeros(0, 4),
+    zeros(0, 4),
+    zeros(0, 4)
+]
 
 # Prepare buffers for setUpTmpWFAndRun!
 nT = wf.nT
@@ -56,6 +78,9 @@ plot_WF_buffer = zeros(nT, nWF)
 plot_OP_buffer = zeros(nT, 2)
 
 alloc=Allocs()
+
+iT = 1
+@assert !isempty(wf.intOPs[iT]) "wf.intOPs[$iT] is empty"
 
 # Run once to warm up
 setUpTmpWFAndRun!(M_buffer, wf, set, floris, wind,

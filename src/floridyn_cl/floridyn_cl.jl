@@ -850,7 +850,7 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
             alloc.if1 += a
         end
 
-        @assert tmp_nT > 1
+        # @assert tmp_nT > 1
 
         @allocated for iiT in 1:(tmp_nT - 1)
             OP1_i = Int(wf.intOPs[iT][iiT, 1])  # Index OP 1
