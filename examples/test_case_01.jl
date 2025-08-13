@@ -42,7 +42,6 @@ vis.online = false
 
 turbines_wf = Matrix(wf.turbines)
 # TODO
-# compare wf.turbines with Matlab
 # compare wf.windfield with Matlab
 # compare wf.ops with Matlab
 println("Relative error (turbines): ", round(rel_err(turbines_wf, turbines_ref)*100, digits=2), " %")
