@@ -56,7 +56,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 sim.n_sim_steps = 195
 
 # Run initial conditions
-wf = initSimulation(wf, sim)
+# wf = initSimulation(wf, sim)
 
 # TODO
 # compare wf.windfield with Matlab before running floridyn
