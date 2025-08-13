@@ -929,7 +929,7 @@ end
 
 """
     runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, vis::Vis,
-                floridyn::FloriDyn, floris::Floris, pff=nothing) -> (WindFarm, DataFrame, Matrix)
+                floridyn::FloriDyn, floris::Floris; pff=nothing, msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
@@ -943,11 +943,14 @@ Main entry point for the FLORIDyn closed-loop simulation.
 - `vis::Vis`: Visualization settings controlling online plotting and animation. See: [`Vis`](@ref)
 - `floridyn::FloriDyn`: Parameters specific to the FLORIDyn model. See: [`FloriDyn`](@ref)
 - `floris::Floris`: Parameters specific to the FLORIS model. See: [`Floris`](@ref)
+
+# Keyword Arguments
 - `pff`: Optional remote plotting function for intermediate simulation results. When provided, this function 
   is called remotely (using `@spawnat 2`) to plot flow field visualization on a separate worker process.
   The function should accept parameters `(wf, X, Y, Z, vis, t_rel; msr=VelReduction)` where `wf` is the wind farm state,
   `X`, `Y`, `Z` are flow field coordinates and velocities, `vis` contains visualization settings, and `t_rel` 
   is the relative simulation time. Defaults to `nothing` for local plotting.
+- `msr`: Measurement type for velocity reduction calculations. Defaults to `VelReduction`.
 
 # Returns
 A tuple `(wf, md, mi)` containing:
@@ -968,7 +971,7 @@ applying control strategies and updating turbine states over time.
 
 """
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
-                          vis::Vis, floridyn::FloriDyn, floris::Floris, pff=nothing; msr=VelReduction)
+                          vis::Vis, floridyn::FloriDyn, floris::Floris; pff=nothing, msr=VelReduction)
     nT      = wf.nT
     sim_steps    = sim.n_sim_steps
     ma       = zeros(sim_steps * nT, 6)

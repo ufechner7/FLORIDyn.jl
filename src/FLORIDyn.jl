@@ -376,7 +376,7 @@ function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=V
         # Multi-threading mode: use remote plotting callback
         # The rmt_plot_flow_field function should be defined via remote_plotting.jl
         try
-            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, Main.rmt_plot_flow_field; msr)
+            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; pff=Main.rmt_plot_flow_field, msr)
         catch e
             if isa(e, UndefVarError)
                 error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
