@@ -219,22 +219,14 @@ df = turbines(T)
 ```
 """
 function turbines(T::Dict)
-    # Try to find States_t/States_T with different possible key formats
+    # Try to find States_T with different possible key formats
     states_t = nothing
     if haskey(T, "States_T")
         states_t = T["States_T"]
     elseif haskey(T, :States_T)
         states_t = T[:States_T]
-    elseif haskey(T, "States_t")
-        states_t = T["States_t"]
-    elseif haskey(T, :States_t)
-        states_t = T[:States_t]
-    elseif haskey(T, "states_t")
-        states_t = T["states_t"]
-    elseif haskey(T, :states_t)
-        states_t = T[:states_t]
     else
-        throw(ArgumentError("Dictionary must contain key 'States_T' or 'States_t' (or symbols) with turbine state data"))
+        throw(ArgumentError("Dictionary must contain key 'States_T' (or :States_T) with turbine state data"))
     end
     
     # Try to find Names_T with different possible key formats
@@ -243,22 +235,18 @@ function turbines(T::Dict)
         names_t = T["Names_T"]
     elseif haskey(T, :Names_T)
         names_t = T[:Names_T]
-    elseif haskey(T, "names_t")
-        names_t = T["names_t"]
-    elseif haskey(T, :names_t)
-        names_t = T[:names_t]
     else
         throw(ArgumentError("Dictionary must contain key 'Names_T' (or :Names_T) with turbine names"))
     end
     
     # Validate inputs
     if isempty(states_t) || isempty(names_t)
-        throw(ArgumentError("Dictionary must have non-empty States_t and Names_T to create DataFrame"))
+        throw(ArgumentError("Dictionary must have non-empty States_T and Names_T to create DataFrame"))
     end
     
     # Check dimensions match
     if size(states_t, 2) != length(names_t)
-        throw(DimensionMismatch("Number of turbines in States_t ($(size(states_t, 2))) must match length of Names_T ($(length(names_t)))"))
+        throw(DimensionMismatch("Number of turbines in States_T ($(size(states_t, 2))) must match length of Names_T ($(length(names_t)))"))
     end
     
     # Create DataFrame with turbine names as columns
