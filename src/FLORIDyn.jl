@@ -357,15 +357,16 @@ for running FLORIDyn simulations with appropriate plotting callbacks.
 
 # Arguments
 - `plt`: PyPlot instance, usually provided by ControlPlots
-- `set`: Settings object
-- `wf`: WindFarm object
-- `wind`: Wind field object
-- `sim`: Simulation object
-- `con`: Controller object
-- `vis`: Visualization settings
-- `floridyn`: FLORIDyn model object
-- `floris`: FLORIS model object
-- `msr`: Measurement index for online flow field plotting (1=velocity reduction, 2=added turbulence, 3=effective wind speed). Default 1.
+- `set`: Settings object. See: [Settings](@ref)
+- `wf`: WindFarm struct. These are work arrays, not persistent objects. See: [WindFarm](@ref)
+- `wind`: Wind field input settings. See: [Wind](@ref)
+- `sim`: Simulation settings. See: [Sim](@ref)
+- `con`: Controller settings. See: [Con](@ref)
+- `vis`: Visualization settings. See: [Vis](@ref)
+- `floridyn`: FLORIDyn model struct. See: [FloriDyn](@ref)
+- `floris`: Floris model struct. See: [Floris](@ref)
+- `msr`: Measurement index for online flow field plotting (VelReduction, AddedTurbulence or EffWind). 
+         Default VelReduction. See: [MSR](@ref)
 
 # Returns
 - Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
