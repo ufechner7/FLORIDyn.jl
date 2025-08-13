@@ -2,10 +2,12 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Testcase for bug https://github.com/ufechner7/FLORIDyn.jl/issues/35
-using FLORIDyn, TerminalPager, ControlPlots, DistributedNext
+using FLORIDyn, TerminalPager, MAT, ControlPlots, DistributedNext, LinearAlgebra, Statistics
 
 settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"
+matlab_file   = "test/data/flowfield_z_195_steps.mat"
+Z_ref = matread(matlab_file)["Z"]
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -29,6 +31,10 @@ vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 @time Z, X, Y    = calcFlowField(set, wf, wind, floris; plt)
 
+A = Z_ref[:,:,3]
+B = Z[:,:,3]
+
 plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
-plot_measurements(wf, md, vis; separated=true, plt)
+plot_flow_field(wf, X, Y, Z_ref, vis; msr=VelReduction, plt, fig="Z_ref")
+# plot_measurements(wf, md, vis; separated=true, plt)
 nothing
