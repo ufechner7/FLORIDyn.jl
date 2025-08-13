@@ -813,38 +813,15 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
 
         if isempty(wf.dep[iT])
             # Single turbine case
-            
-            # Create buffers for the non-allocating version if they don't exist
-            if !hasfield(typeof(wf), :floris_buffers) || isnothing(wf.floris_buffers)
-                wf.floris_buffers = FLORISBuffers(100)  # Size for max expected points
-                wf.T_red_buffer = zeros(Float64, 1)
-                wf.T_aTI_buffer = zeros(Float64, 0)
-                wf.T_weight_buffer = zeros(Float64, 0)
-            end
-            
-            # Create single-point position and state matrices directly
-            # We can use reshape now since our function accepts AbstractArray
-            tmp_pos = reshape([wf.posBase[iT,1] + wf.posNac[iT,1], 
-                              wf.posBase[iT,2] + wf.posNac[iT,2], 
-                              wf.posBase[iT,3] + wf.posNac[iT,3]], 1, 3)
-            tmp_wf = reshape(iTWFState_buffer, 1, length(iTWFState_buffer))
-            tmp_st = reshape(wf.States_T[wf.StartI[iT], :], 1, length(wf.States_T[wf.StartI[iT], :]))
-            
-            # Make sure buffers are properly sized
-            resize!(wf.T_red_buffer, 1)
-            resize!(wf.T_aTI_buffer, 0)
-            resize!(wf.T_weight_buffer, 0)
-            
-            # Call non-allocating version for single turbine with views
-            T_Ueff = runFLORIS!(
-                wf.T_red_buffer, 
-                wf.T_aTI_buffer, 
-                wf.T_weight_buffer, 
-                wf.floris_buffers,
-                set, tmp_pos, tmp_wf, tmp_st, [wf.D[iT]], floris, wind.shear
+            T_red_arr, _, _ = runFLORIS(
+                set,
+                (wf.posBase[iT,:] +wf.posNac[iT,:])',
+                iTWFState_buffer',
+               wf.States_T[wf.StartI[iT], :]',
+               wf.D[iT],
+                floris,
+                wind.shear
             )
-            
-            T_red_arr = wf.T_red_buffer[1]
             M_buffer[iT, :] = [T_red_arr, 0, T_red_arr * wf.States_WF[wf.StartI[iT], 1]]
             wf.red_arr[iT, iT] = T_red_arr
             continue
@@ -910,58 +887,11 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
             alloc.for3 += a
         end
 
-        # Run non-allocating FLORIS using the buffer views
+        # Run FLORIS using the buffer views
         tmp_Tpos_view = @view tmp_Tpos_buffer[1:tmp_nT, :]
         tmp_WF_view = @view tmp_WF_buffer[1:tmp_nT, :]
         tmp_Tst_view = @view tmp_Tst_buffer[1:tmp_nT, :]
-        
-        # Create output buffers for runFLORIS! if they don't exist
-        if !hasfield(typeof(wf), :floris_buffers) || isnothing(wf.floris_buffers)
-            # Add buffers to the wf struct (first time only)
-            wf.floris_buffers = FLORISBuffers(100)  # Size for max expected points
-            wf.T_red_buffer = zeros(Float64, maximum([length(dep) + 1 for dep in wf.dep]))
-            wf.T_aTI_buffer = zeros(Float64, maximum([length(dep) for dep in wf.dep]))
-            wf.T_weight_buffer = zeros(Float64, maximum([length(dep) for dep in wf.dep]))
-        end
-        
-        # Ensure buffers are sized correctly for this specific turbine
-        if length(wf.T_red_buffer) < tmp_nT
-            wf.T_red_buffer = zeros(Float64, tmp_nT)
-        end
-        if length(wf.T_aTI_buffer) < tmp_nT - 1
-            wf.T_aTI_buffer = zeros(Float64, tmp_nT - 1)
-        end
-        if length(wf.T_weight_buffer) < tmp_nT - 1
-            wf.T_weight_buffer = zeros(Float64, tmp_nT - 1)
-        end
-        
-        # Use non-allocating version with buffers and views directly
-        a = @allocated begin
-            # Make sure buffers are properly sized
-            resize!(wf.T_red_buffer, tmp_nT)
-            resize!(wf.T_aTI_buffer, tmp_nT-1)
-            resize!(wf.T_weight_buffer, tmp_nT-1)
-            
-            # Create views for output arrays
-            T_red_arr_view = @view wf.T_red_buffer[1:tmp_nT]
-            T_aTI_arr_view = @view wf.T_aTI_buffer[1:tmp_nT-1]
-            T_weight_view = @view wf.T_weight_buffer[1:tmp_nT-1]
-            
-            # Call runFLORIS! with views directly (now that it accepts AbstractArray)
-            T_Ueff = runFLORIS!(
-                T_red_arr_view, 
-                T_aTI_arr_view, 
-                T_weight_view, 
-                wf.floris_buffers, 
-                set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, 
-                tmp_D, floris, wind.shear)
-            
-            # Create local variables for convenience (can use views directly now)
-            T_red_arr = T_red_arr_view
-            T_aTI_arr = T_aTI_arr_view
-            T_weight = T_weight_view
-        end
-        
+        a = @allocated T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, wind.shear)
         if !isnothing(alloc)
             alloc.n += 1
             alloc.floris += a
