@@ -42,11 +42,7 @@ msr = 1
 A = Z_ref[:,:,msr]
 B = Z[:,:,msr]
 
-# Option 1: Use transpose() to create a proper transposed copy
-Z_ref[:,:,msr] .= transpose(A)
-
-# Option 2: Alternative - create a materialized copy of the transpose
-# Z_ref[:,:,msr] .= collect(A')
+Z_ref[:,:,msr] .= A'
 
 A = Z_ref[:,:,msr]
 
