@@ -7,3 +7,6 @@ coverage/lcov.info
 coverage/
 video/
 out/
+
+# Ignore Julia coverage instrumentation output files
+*.cov

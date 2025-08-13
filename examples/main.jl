@@ -22,6 +22,8 @@ settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"
 
 vis = Vis(vis_file)
+vis.show_plots = true  # Enable/disable showing plots during simulation
+plt.ion()
 
 # Automatic parallel/threading setup
 tic()
@@ -63,17 +65,17 @@ if PLT == 1
     vis.online = false
     @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
-    @time plot_flow_field(wf, X, Y, Z, vis; msr=1, plt)
+    @time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
 elseif PLT == 2
     vis.online = false
     @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
-    @time plot_flow_field(wf, X, Y, Z, vis; msr=2, plt)
+    @time plot_flow_field(wf, X, Y, Z, vis; msr=AddedTurbulence, plt)
 elseif PLT == 3
     vis.online = false
     @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
-    @time plot_flow_field(wf, X, Y, Z, vis; msr=3, plt)
+    @time plot_flow_field(wf, X, Y, Z, vis; msr=EffWind, plt)
 elseif PLT == 4
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)

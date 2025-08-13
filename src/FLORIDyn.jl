@@ -8,11 +8,12 @@ module FLORIDyn
 
 using PrecompileTools: @setup_workload, @compile_workload
 using LaTeXStrings
-import DocStringExtensions
+import DocStringExtensions, LoggingExtras
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
-using Statistics, StaticArrays, Pkg, DistributedNext
+using Statistics, StaticArrays, Pkg, DistributedNext, Dates
 
+export MSR, toMSR, VelReduction, AddedTurbulence, EffWind
 export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
@@ -50,7 +51,80 @@ export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, i
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
 export run_floridyn, plot_flow_field, plot_measurements, close_all
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
-export isdelftblue
+export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_results, find_floridyn_runs
+export isdelftblue, Measurement, parse_measurements
+export FlowField, parse_flow_fields
+
+"""
+    MSR `VelReduction` `AddedTurbulence` `EffWind`
+
+Enumeration that selects which (scalar) quantity is visualised / stored when plotting
+or saving flow field measurements. The acronym stands for Measurement System Representation.
+Passed via the `msr` keyword to [`run_floridyn`](@ref) and the plotting helpers
+[`plot_flow_field`](@ref), [`plot_measurements`](@ref).
+
+# Elements
+- `VelReduction`    (1): Velocity reduction (1 - u / u_ref) downstream of turbines.
+- `AddedTurbulence` (2): Added turbulence intensity contributed by wakes (ΔTI component).
+- `EffWind`         (3): Effective wind speed at turbine locations (including wake effects).
+
+# Usage
+```julia
+# Use default (VelReduction)
+run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+
+# Explicitly request added turbulence visualisation
+run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=AddedTurbulence)
+
+# Convert from a user string (e.g. parsed CLI / YAML value)
+msr = toMSR("EffWind")
+run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
+```
+
+See also: [`toMSR`](@ref)
+"""
+@enum MSR begin
+    VelReduction = 1 
+    AddedTurbulence = 2 
+    EffWind = 3
+end
+
+@doc """
+VelReduction::MSR
+Velocity Reduction.
+See also [`MSR`](@ref).
+""" VelReduction
+
+@doc """
+AddedTurbulence::MSR
+Added Turbulence.
+See also [`MSR`](@ref).
+""" AddedTurbulence
+
+@doc """
+EffWind::MSR
+Added Turbulence.
+See also [`MSR`](@ref).
+""" EffWind
+
+"""
+    toMSR(s::String)
+
+Converts the input string `s` to a MSR (Measurement System Representation) enumeration.
+
+See also [`MSR`](@ref).
+"""
+function toMSR(s::String)
+    if s == "VelReduction"
+        return VelReduction
+    elseif s == "AddedTurbulence"
+        return AddedTurbulence
+    elseif s == "EffWind"
+        return EffWind
+    else
+        error("Unknown measurement type: $s")
+    end
+end
 
 # global variables
 RNG::AbstractRNG = Random.default_rng()
@@ -192,23 +266,39 @@ end
 
 A mutable struct representing a wind farm. Fields can be specified using keyword arguments.
 
+This struct supports convenient DataFrame access through property syntax:
+- `wf.turbines`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with turbine state data (columns: turbine state names)
+- `wf.windfield`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with wind field data (columns: wind field variables)  
+- `wf.ops`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with operating point data (columns: operating point variables)
+
 # Fields
-- nT::Int64: Number of turbines
-- nOP::Int64: Number of operating points
-- States_WF::Matrix{Float64}: States of the wind farm
-- States_OP::Matrix{Float64}: States of the operating points
-- States_T::Matrix{Float64}: States of the turbines
-- posBase::Matrix{Float64}: Base positions of the turbines
-- posNac::Matrix{Float64}: Positions of the nacelles
-- D::Vector{Float64}: Diameters of the turbines
-- StartI::Matrix{Int}: Start indices for each turbine
-- intOPs::Vector{Matrix{Float64}}: Interpolated operating points
-- Weight::Vector{Vector{Float64}}: Weights for the operating points
-- dep::Vector{Vector{Int}}: Dependencies between turbines
-- red_arr::Matrix{Float64}: Reduced array for each turbine
-- Names_T::Vector{String}: Names of the states of the turbines
-- Names_WF::Vector{String}: Names of the states of the wind farm
-- Names_OP::Vector{String}: Names of coordinates the operating points   
+- `nT::Int64`: Number of turbines
+- `nOP::Int64`: Number of operating points
+- `States_WF::Matrix{Float64}`: States of the wind farm (states × wind field variables)
+- `States_OP::Matrix{Float64}`: States of the operating points (states × operating point variables)
+- `States_T::Matrix{Float64}`: States of the turbines (states × turbines variables)
+- `posBase::Matrix{Float64}`: Base positions of the turbines (2 × nT matrix: [x-coords; y-coords])
+- `posNac::Matrix{Float64}`: Positions of the nacelles
+- `D::Vector{Float64}`: Diameters of the turbines
+- `StartI::Matrix{Int}`: Start indices for each turbine
+- `intOPs::Vector{Matrix{Float64}}`: Interpolated operating points
+- `Weight::Vector{Vector{Float64}}`: Weights for the operating points
+- `dep::Vector{Vector{Int}}`: Dependencies between turbines
+- `red_arr::Matrix{Float64}`: Reduced array for each turbine
+- `Names_T::Vector{String}`: Names of the turbine state variables
+- `Names_WF::Vector{String}`: Names of the wind field variables
+- `Names_OP::Vector{String}`: Names of the operating point variables
+
+# Examples
+```julia
+# Create a wind farm
+wf = WindFarm(nT=3, nOP=100, ...)
+
+# Access data as DataFrames
+turbine_data = wf.turbines      # DataFrame with turbine states
+windfield_data = wf.windfield   # DataFrame with wind field states
+ops_data = wf.ops               # DataFrame with operating point states
+```
 """
 @kwdef mutable struct WindFarm
     nT::Int64 = 0                                               # Number of turbines
@@ -229,6 +319,7 @@ A mutable struct representing a wind farm. Fields can be specified using keyword
     Names_OP::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the operating points
 end
 
+include("visualisation/structs_measurements.jl")
 include("settings.jl")
 
 # functions for calculating the wind field
@@ -253,35 +344,39 @@ include("visualisation/calc_flowfield.jl")
 include("visualisation/plot_flowfield.jl")
 include("visualisation/plot_measurements.jl")
 include("visualisation/create_video.jl")
+include("visualisation/high_res_time.jl")
+include("visualisation/pretty_print.jl")
 include("visualisation/smart_plotting.jl")
 
 """
     run_floridyn(plt, set, wf, wind, sim, con, vis, 
-                 floridyn, floris) -> (WindFarm, DataFrame, Matrix)
+                 floridyn, floris; msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
 
 Unified function that automatically handles both multi-threading and single-threading modes
 for running FLORIDyn simulations with appropriate plotting callbacks.
 
 # Arguments
 - `plt`: PyPlot instance, usually provided by ControlPlots
-- `set`: Settings object
-- `wf`: WindFarm object
-- `wind`: Wind field object
-- `sim`: Simulation object
-- `con`: Controller object
-- `vis`: Visualization settings
-- `floridyn`: FLORIDyn model object
-- `floris`: FLORIS model object
+- `set`: Settings object. See: [Settings](@ref)
+- `wf`: WindFarm struct. These are work arrays, not persistent objects. See: [WindFarm](@ref)
+- `wind`: Wind field input settings. See: [Wind](@ref)
+- `sim`: Simulation settings. See: [Sim](@ref)
+- `con`: Controller settings. See: [Con](@ref)
+- `vis`: Visualization settings. See: [Vis](@ref)
+- `floridyn`: FLORIDyn model struct. See: [FloriDyn](@ref)
+- `floris`: Floris model struct. See: [Floris](@ref)
+- `msr`: Measurement index for online flow field plotting (VelReduction, AddedTurbulence or EffWind). 
+         Default VelReduction. See: [MSR](@ref)
 
 # Returns
 - Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
 """
-function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Multi-threading mode: use remote plotting callback
         # The rmt_plot_flow_field function should be defined via remote_plotting.jl
         try
-            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, Main.rmt_plot_flow_field)
+            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr)
         catch e
             if isa(e, UndefVarError)
                 error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
@@ -291,7 +386,7 @@ function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
         end
     else
         # Single-threading mode: no plotting callback
-        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
     end
 end
 

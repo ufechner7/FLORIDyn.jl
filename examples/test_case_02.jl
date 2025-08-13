@@ -30,6 +30,6 @@ vis.online = false
 @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
 
 # Single line plotting - automatically dispatches based on available resources
-@time plot_flow_field(wf, X, Y, Z, vis; msr=1, plt)
+@time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
 
 nothing

@@ -35,5 +35,12 @@ getYaw
 ```
 # Helper functions
 ```@docs
+toMSR
+now_microseconds
+now_nanoseconds
+precise_now
+unique_name
 isdelftblue
+find_floridyn_runs
+delete_results
 ```
