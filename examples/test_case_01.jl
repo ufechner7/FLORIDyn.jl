@@ -36,6 +36,11 @@ wf = initSimulation(wf, sim)
 
 vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+# TODO
+# compare wf.turbines with Matlab
+# compare wf.windfield with Matlab
+# compare wf.ops with Matlab
+
 @time Z, X, Y    = calcFlowField(set, wf, wind, floris; plt)
 
 msr = 1
