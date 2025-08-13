@@ -6,8 +6,15 @@ using FLORIDyn, TerminalPager, MAT, ControlPlots, DistributedNext, LinearAlgebra
 
 settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"
-matlab_file   = "test/data/flowfield_z_195_steps.mat"
-Z_ref = matread(matlab_file)["Z"]
+matlab_file   = "test/data/flowfield_xyz_195_steps.mat"
+vars = matread(matlab_file)
+X_ref = vars["X"]
+Y_ref = vars["Y"]
+Z_ref = vars["Z"]
+
+function rel_err(a, b)
+    return norm(a - b) / norm(b)
+end
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -34,7 +41,9 @@ vis.online = false
 A = Z_ref[:,:,3]
 B = Z[:,:,3]
 
+println("Relative error (Z): ", round(rel_err(A, B)*100, digits=2), " %")
+
 plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
-plot_flow_field(wf, X, Y, Z_ref, vis; msr=VelReduction, plt, fig="Z_ref")
+plot_flow_field(wf, X_ref, Y_ref, Z_ref, vis; msr=VelReduction, plt, fig="Z_ref")
 # plot_measurements(wf, md, vis; separated=true, plt)
 nothing
