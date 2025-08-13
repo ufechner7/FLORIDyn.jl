@@ -5,11 +5,17 @@
 $(DocStringExtensions.README)
 """
 module FLORIDyn
+module Revert
+         macro allocated(ex)
+           esc(:((@timed $ex).bytes))
+         end
+       end
 
 using PrecompileTools: @setup_workload, @compile_workload
 using LaTeXStrings
 import DocStringExtensions, LoggingExtras
 import Base: show
+using .Revert: @allocated
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
 using Statistics, StaticArrays, Pkg, DistributedNext, Dates
