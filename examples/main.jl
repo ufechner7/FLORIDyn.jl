@@ -4,7 +4,8 @@
 # MainFLORIDyn Center-Line model
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
-using FLORIDyn, TerminalPager, DistributedNext, ControlPlots
+using FLORIDyn, TerminalPager, DistributedNext
+if Threads.nthreads() == 1; using ControlPlots; end
 
 # PLT options:
 # PLT=1: Velocity reduction plot
@@ -23,7 +24,9 @@ vis_file      = "data/vis_default.yaml"
 
 vis = Vis(vis_file)
 vis.show_plots = true  # Enable/disable showing plots during simulation
-plt.ion()
+if @isdefined plt
+    plt.ion()
+end
 
 # Automatic parallel/threading setup
 tic()

@@ -7,14 +7,14 @@ if Threads.nthreads() > 1
         if nprocs() < 2  # nprocs() counts main + workers, so < 2 means no dedicated workers
             println("No dedicated workers found, adding 1 worker...")
             addprocs(1)
-            @eval @everywhere using ControlPlots  # Ensure ControlPlots is available on all workers
+            @eval @everywhere workers() using ControlPlots  # Ensure ControlPlots is available only on workers
             @eval @everywhere using FLORIDyn      # Ensure FLORIDyn (including WindFarm) is available on all workers
             
             # Create a completely isolated plt instance for this specific task
-            @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis; msr=EffWind)
+            @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis; msr=EffWind, fig=nothing)
                 # Create a fresh plt instance just for this task
                 local_plt = ControlPlots.plt
-                return plotFlowField(local_plt, wf, X, Y, Z, vis; msr=msr)
+                return plotFlowField(local_plt, wf, X, Y, Z, vis; msr, fig)
             end
             @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis, t_rel; msr=VelReduction)
                 global plot_state
