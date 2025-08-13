@@ -929,7 +929,7 @@ end
 
 """
     runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, vis::Vis,
-                floridyn::FloriDyn, floris::Floris; pff=nothing, msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
+                floridyn::FloriDyn, floris::Floris; rmt_plot_fn=nothing, msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
@@ -945,7 +945,7 @@ Main entry point for the FLORIDyn closed-loop simulation.
 - `floris::Floris`: Parameters specific to the FLORIS model. See: [`Floris`](@ref)
 
 # Keyword Arguments
-- `pff`: Optional remote plotting function for intermediate simulation results. When provided, this function 
+- `rmt_plot_fn`: Optional remote plotting function for intermediate simulation results. When provided, this function 
   is called remotely (using `@spawnat 2`) to plot flow field visualization on a separate worker process.
   The function should accept parameters `(wf, X, Y, Z, vis, t_rel; msr=VelReduction)` where `wf` is the wind farm state,
   `X`, `Y`, `Z` are flow field coordinates and velocities, `vis` contains visualization settings, and `t_rel` 
@@ -971,7 +971,7 @@ applying control strategies and updating turbine states over time.
 
 """
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
-                          vis::Vis, floridyn::FloriDyn, floris::Floris; pff=nothing, msr=VelReduction)
+                          vis::Vis, floridyn::FloriDyn, floris::Floris; rmt_plot_fn=nothing, msr=VelReduction)
     nT      = wf.nT
     sim_steps    = sim.n_sim_steps
     ma       = zeros(sim_steps * nT, 6)
@@ -1024,12 +1024,12 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
             t_rel = sim_time-sim.start_time
             if mod(t_rel, vis.up_int) == 0
                 Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
-                if isnothing(pff)
+                if isnothing(rmt_plot_fn)
                     plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel; msr)
                     plt.pause(0.01)
                 else
-                    # @info "time: $t_rel, plotting with pff"
-                    @spawnat 2 pff(wf, X, Y, Z, vis, t_rel; msr=msr)
+                    # @info "time: $t_rel, plotting with rmt_plot_fn"
+                    @spawnat 2 rmt_plot_fn(wf, X, Y, Z, vis, t_rel; msr=msr)
                 end
             end
         end
