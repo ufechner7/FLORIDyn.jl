@@ -203,19 +203,30 @@ Create a DataFrame from a dictionary containing turbine state data.
 
 # Arguments
 - `T::Dict`: Dictionary containing turbine data with keys:
-  - `"States_t"` or `:States_t`: Matrix of turbine states (time_steps × n_turbines)  
+  - `"States_T"` or `:States_T`: Matrix of turbine states (time_steps × n_turbines)  
   - `"Names_T"` or `:Names_T`: Vector of turbine names/identifiers
 
 # Returns
 - `DataFrame`: DataFrame with turbine names as column headers and state values as rows
 
+# Notes
+- Both string keys (`"States_T"`) and symbol keys (`:States_T`) are accepted
+- The number of columns in `States_T` must match the length of `Names_T`
+- Each column in the resulting DataFrame represents one turbine's time series data
+
+# Throws
+- `ArgumentError`: If required keys are missing or data is empty
+- `DimensionMismatch`: If dimensions of states and names don't match
+
 # Example
 ```julia
+# Example with MAT file data format
 T = Dict(
-    "States_t" => [1.0 2.0 3.0; 4.0 5.0 6.0],  # 2 time steps × 3 turbines
-    "Names_T" => ["Turbine_1", "Turbine_2", "Turbine_3"]
+    "States_T" => [0.33 -0.1 0.0; 0.33 -0.099 0.01],  # 2 time steps × 3 turbines
+    "Names_T" => ["a", "yaw", "TI"]                     # Turbine state names
 )
 df = turbines(T)
+# Returns a 2×3 DataFrame with columns: a, yaw, TI
 ```
 """
 function turbines(T::Dict)

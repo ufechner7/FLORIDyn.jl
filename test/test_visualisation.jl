@@ -4,6 +4,7 @@
 if !isdefined(Main, :Test)
     using Test
 end 
+using DataFrames  # Add DataFrames import for the new tests
 
 if ! isinteractive()
 if !isdefined(Main, :FLORIDyn)
@@ -913,6 +914,323 @@ end
                     rm(test_dir; recursive=true)
                 end
             end
+        end
+    end
+end
+
+@testset verbose=true "Pretty Print Functions                                  " begin
+    @testset "turbines(T::Dict)" begin
+        @testset "basic functionality with States_T (capital T)" begin
+            # Test with the standard key format used in MAT files
+            T_dict = Dict(
+                "States_T" => [1.0 2.0 3.0; 4.0 5.0 6.0],  # 2 time steps × 3 turbines
+                "Names_T" => ["Turbine_1", "Turbine_2", "Turbine_3"]
+            )
+            
+            df = turbines(T_dict)
+            
+            # Test output structure
+            @test isa(df, DataFrame)
+            @test size(df) == (2, 3)
+            @test names(df) == ["Turbine_1", "Turbine_2", "Turbine_3"]
+            
+            # Test data values
+            @test df.Turbine_1 == [1.0, 4.0]
+            @test df.Turbine_2 == [2.0, 5.0]
+            @test df.Turbine_3 == [3.0, 6.0]
+            
+            # Test column types
+            @test eltype(df.Turbine_1) == Float64
+            @test eltype(df.Turbine_2) == Float64
+            @test eltype(df.Turbine_3) == Float64
+        end
+        
+        @testset "basic functionality with States_t (lowercase t)" begin
+            # Test error when using lowercase variant (should fail)
+            T_dict = Dict(
+                "States_t" => [10.0 20.0; 30.0 40.0; 50.0 60.0],  # 3 time steps × 2 turbines
+                "Names_T" => ["T1", "T2"]
+            )
+            
+            # This should throw an error since lowercase is not supported
+            @test_throws ArgumentError turbines(T_dict)
+        end
+        
+        @testset "symbol keys support" begin
+            # Test with symbol keys instead of string keys
+            T_dict = Dict(
+                :States_T => [1.5 2.5; 3.5 4.5],
+                :Names_T => ["A", "B"]
+            )
+            
+            df = turbines(T_dict)
+            
+            @test isa(df, DataFrame)
+            @test size(df) == (2, 2)
+            @test names(df) == ["A", "B"]
+            @test df.A == [1.5, 3.5]
+            @test df.B == [2.5, 4.5]
+        end
+        
+        @testset "mixed case key support" begin
+            # Test various case combinations - only uppercase should work
+            test_cases = [
+                ("States_T", "Names_T"),  # Both uppercase - should work
+                (:States_T, :Names_T),    # Both uppercase symbols - should work
+            ]
+            
+            for (states_key, names_key) in test_cases
+                T_dict = Dict(
+                    states_key => [7.0 8.0; 9.0 10.0],
+                    names_key => ["X", "Y"]
+                )
+                
+                df = turbines(T_dict)
+                @test isa(df, DataFrame)
+                @test size(df) == (2, 2)
+                @test names(df) == ["X", "Y"]
+            end
+            
+            # Test cases that should fail (lowercase)
+            invalid_cases = [
+                ("states_t", "Names_T"),  # Lowercase states key
+                ("States_T", "names_t"),  # Lowercase names key
+                ("states_t", "names_t"),  # Both lowercase
+            ]
+            
+            for (states_key, names_key) in invalid_cases
+                T_dict = Dict(
+                    states_key => [7.0 8.0; 9.0 10.0],
+                    names_key => ["X", "Y"]
+                )
+                
+                @test_throws ArgumentError turbines(T_dict)
+            end
+        end
+        
+        @testset "single turbine" begin
+            # Test with only one turbine
+            T_dict = Dict(
+                "States_T" => reshape([1.0, 2.0, 3.0], (3, 1)),  # 3 time steps × 1 turbine
+                "Names_T" => ["Solo_Turbine"]
+            )
+            
+            df = turbines(T_dict)
+            
+            @test isa(df, DataFrame)
+            @test size(df) == (3, 1)
+            @test names(df) == ["Solo_Turbine"]
+            @test df.Solo_Turbine == [1.0, 2.0, 3.0]
+        end
+        
+        @testset "large dataset" begin
+            # Test with larger realistic dataset
+            n_timesteps = 1000
+            n_turbines = 5
+            states_matrix = rand(Float64, n_timesteps, n_turbines)
+            turbine_names = ["T$i" for i in 1:n_turbines]
+            
+            T_dict = Dict(
+                "States_T" => states_matrix,
+                "Names_T" => turbine_names
+            )
+            
+            df = turbines(T_dict)
+            
+            @test isa(df, DataFrame)
+            @test size(df) == (n_timesteps, n_turbines)
+            @test names(df) == turbine_names
+            
+            # Test that data was copied correctly
+            for (i, name) in enumerate(turbine_names)
+                @test df[!, Symbol(name)] == states_matrix[:, i]
+            end
+        end
+        
+        @testset "different data types" begin
+            # Test with different numeric types that should work
+            T_dict_int = Dict(
+                "States_T" => [1 2; 3 4],  # Integer matrix
+                "Names_T" => ["Int1", "Int2"]
+            )
+            
+            df_int = turbines(T_dict_int)
+            @test isa(df_int, DataFrame)
+            @test size(df_int) == (2, 2)
+            
+            T_dict_mixed = Dict(
+                "States_T" => [1.0 2; 3.5 4],  # Mixed Float64 and Int
+                "Names_T" => ["Mixed1", "Mixed2"]
+            )
+            
+            df_mixed = turbines(T_dict_mixed)
+            @test isa(df_mixed, DataFrame)
+            @test size(df_mixed) == (2, 2)
+        end
+        
+        @testset "real MAT file format" begin
+            # Test with format similar to actual MAT file data
+            T_dict = Dict(
+                "States_T" => [0.33 -0.1 0.0; 0.33 -0.1 0.0; 0.33 -0.099 0.001],  # Similar to real data
+                "Names_T" => ["a", "yaw", "TI"]  # Actual names from MAT files
+            )
+            
+            df = turbines(T_dict)
+            
+            @test isa(df, DataFrame)
+            @test size(df) == (3, 3)
+            @test names(df) == ["a", "yaw", "TI"]
+            @test df.a == [0.33, 0.33, 0.33]
+            @test df.yaw ≈ [-0.1, -0.1, -0.099]
+            @test df.TI ≈ [0.0, 0.0, 0.001]
+        end
+        
+        @testset "error handling - missing keys" begin
+            # Test error when States key is missing
+            @test_throws ArgumentError turbines(Dict("Names_T" => ["T1"]))
+            @test_throws ArgumentError turbines(Dict("Random_Key" => [1.0 2.0], "Names_T" => ["T1", "T2"]))
+            
+            # Test error when Names key is missing  
+            @test_throws ArgumentError turbines(Dict("States_T" => [1.0 2.0; 3.0 4.0]))
+            @test_throws ArgumentError turbines(Dict("States_T" => [1.0 2.0; 3.0 4.0], "Random_Key" => ["T1", "T2"]))
+            
+            # Test error when using lowercase keys (not supported)
+            @test_throws ArgumentError turbines(Dict("States_t" => [1.0 2.0; 3.0 4.0], "Names_T" => ["T1", "T2"]))
+            @test_throws ArgumentError turbines(Dict("States_T" => [1.0 2.0; 3.0 4.0], "Names_t" => ["T1", "T2"]))
+        end
+        
+        @testset "error handling - empty data" begin
+            # Test error with empty states matrix
+            @test_throws ArgumentError turbines(Dict(
+                "States_T" => Matrix{Float64}(undef, 0, 0),
+                "Names_T" => String[]
+            ))
+            
+            # Test error with empty names vector
+            @test_throws ArgumentError turbines(Dict(
+                "States_T" => [1.0 2.0; 3.0 4.0],
+                "Names_T" => String[]
+            ))
+        end
+        
+        @testset "error handling - dimension mismatch" begin
+            # Test error when number of columns doesn't match number of names
+            @test_throws DimensionMismatch turbines(Dict(
+                "States_T" => [1.0 2.0 3.0; 4.0 5.0 6.0],  # 3 turbines
+                "Names_T" => ["T1", "T2"]  # Only 2 names
+            ))
+            
+            @test_throws DimensionMismatch turbines(Dict(
+                "States_T" => [1.0 2.0; 3.0 4.0],  # 2 turbines
+                "Names_T" => ["T1", "T2", "T3"]  # 3 names
+            ))
+        end
+        
+        @testset "error handling - invalid dictionary" begin
+            # Test with empty dictionary
+            @test_throws ArgumentError turbines(Dict{String, Any}())
+        end
+        
+        @testset "integration with actual MAT file data" begin
+            # Test that the function works with the format from test_case_01.jl
+            # This simulates the actual MAT file structure
+            using MAT  # Ensure MAT is available for this test
+            
+            # Create test data similar to what would come from matread()
+            T_ref_simulation = Dict(
+                "States_T" => [
+                    0.33  -0.09999  0.0;
+                    0.33  -0.1      0.0; 
+                    0.33  -0.1      0.0;
+                    0.33  -0.10001  0.0;
+                    0.33  -0.099    0.05
+                ],
+                "Names_T" => ["a" "yaw" "TI"]  # Note: MAT format might be row vector
+            )
+            
+            df = turbines(T_ref_simulation)
+            
+            @test isa(df, DataFrame)
+            @test size(df) == (5, 3)
+            @test names(df) == ["a", "yaw", "TI"]
+            
+            # Verify the values match expected patterns
+            @test all(df.a .== 0.33)  # Axial induction should be constant
+            @test all(df.yaw .≈ [-0.09999, -0.1, -0.1, -0.10001, -0.099])  # Yaw angles
+            @test df.TI[end] ≈ 0.05  # Last TI value
+        end
+        
+        @testset "function integration" begin
+            # Test that the function is properly exported
+            @test :turbines in names(FLORIDyn)
+            
+            # Test that it can be called without module qualification
+            T_simple = Dict(
+                "States_T" => [1.0 2.0; 3.0 4.0],
+                "Names_T" => ["A", "B"]
+            )
+            
+            # This should work without FLORIDyn.turbines()
+            df = turbines(T_simple)
+            @test isa(df, DataFrame)
+        end
+        
+        @testset "edge cases" begin
+            # Test with very small numbers
+            T_tiny = Dict(
+                "States_T" => [1e-10 2e-10; 3e-10 4e-10],
+                "Names_T" => ["Tiny1", "Tiny2"]
+            )
+            df_tiny = turbines(T_tiny)
+            @test isa(df_tiny, DataFrame)
+            @test size(df_tiny) == (2, 2)
+            
+            # Test with very large numbers
+            T_large = Dict(
+                "States_T" => [1e10 2e10; 3e10 4e10],
+                "Names_T" => ["Large1", "Large2"]
+            )
+            df_large = turbines(T_large)
+            @test isa(df_large, DataFrame)
+            @test size(df_large) == (2, 2)
+            
+            # Test with special float values (should handle gracefully)
+            T_special = Dict(
+                "States_T" => [1.0 Inf; NaN -Inf],
+                "Names_T" => ["Normal", "Special"]
+            )
+            df_special = turbines(T_special)
+            @test isa(df_special, DataFrame)
+            @test size(df_special) == (2, 2)
+            @test isinf(df_special.Special[1])
+            @test isnan(df_special.Normal[2])
+        end
+        
+        @testset "performance with large datasets" begin
+            # Test that the function performs reasonably with large data
+            n_timesteps = 1000
+            n_turbines = 10
+            
+            large_states = rand(Float64, n_timesteps, n_turbines)
+            large_names = ["Turbine_$i" for i in 1:n_turbines]
+            
+            T_large = Dict(
+                "States_T" => large_states,
+                "Names_T" => large_names
+            )
+            
+            # Time the operation (should complete in reasonable time)
+            time_start = time()
+            df_large = turbines(T_large)
+            time_elapsed = time() - time_start
+            
+            @test isa(df_large, DataFrame)
+            @test size(df_large) == (n_timesteps, n_turbines)
+            @test time_elapsed < 5.0  # Should complete in less than 5 seconds
+            
+            # Verify data integrity for large dataset
+            @test df_large[!, Symbol("Turbine_1")] == large_states[:, 1]
+            @test df_large[!, Symbol("Turbine_$n_turbines")] == large_states[:, n_turbines]
         end
     end
 end
