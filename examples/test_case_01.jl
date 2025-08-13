@@ -41,10 +41,18 @@ vis.online = false
 A = Z_ref[:,:,3]
 B = Z[:,:,3]
 
+# Option 1: Use transpose() to create a proper transposed copy
+Z_ref[:,:,3] .= transpose(A)
+
+# Option 2: Alternative - create a materialized copy of the transpose
+# Z_ref[:,:,3] .= collect(A')
+
+A = Z_ref[:,:,3]
+
 println("Relative error (Z): ", round(rel_err(A, B)*100, digits=2), " %")
 
-plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
-plot_flow_field(wf, X_ref, Y_ref, Z_ref, vis; msr=VelReduction, plt, fig="Z_ref")
+# plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
+plot_flow_field(wf, X_ref, Y_ref, Z_ref, vis; msr=VelReduction, plt)
 # plot_measurements(wf, md, vis; separated=true, plt)
 
 v_min = minimum(Z[:, :, 3])
