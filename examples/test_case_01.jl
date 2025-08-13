@@ -38,16 +38,17 @@ vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 @time Z, X, Y    = calcFlowField(set, wf, wind, floris; plt)
 
-A = Z_ref[:,:,3]
-B = Z[:,:,3]
+msr = 1
+A = Z_ref[:,:,msr]
+B = Z[:,:,msr]
 
 # Option 1: Use transpose() to create a proper transposed copy
-Z_ref[:,:,3] .= transpose(A)
+Z_ref[:,:,msr] .= transpose(A)
 
 # Option 2: Alternative - create a materialized copy of the transpose
-# Z_ref[:,:,3] .= collect(A')
+# Z_ref[:,:,msr] .= collect(A')
 
-A = Z_ref[:,:,3]
+A = Z_ref[:,:,msr]
 
 println("Relative error (Z): ", round(rel_err(A, B)*100, digits=2), " %")
 
@@ -55,8 +56,8 @@ println("Relative error (Z): ", round(rel_err(A, B)*100, digits=2), " %")
 plot_flow_field(wf, X_ref, Y_ref, Z_ref, vis; msr=VelReduction, plt)
 # plot_measurements(wf, md, vis; separated=true, plt)
 
-v_min = minimum(Z[:, :, 3])
-v_max = maximum(Z[:, :, 3])
+v_min = minimum(Z[:, :, msr])
+v_max = maximum(Z[:, :, msr])
 println("v_min: $v_min, v_max: $v_max")
 
 nothing
