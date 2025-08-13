@@ -196,6 +196,82 @@ function turbines(wf::WindFarm)
     return df
 end
 
+"""
+    turbines(T::Dict) -> DataFrame
+
+Create a DataFrame from a dictionary containing turbine state data.
+
+# Arguments
+- `T::Dict`: Dictionary containing turbine data with keys:
+  - `"States_t"` or `:States_t`: Matrix of turbine states (time_steps × n_turbines)  
+  - `"Names_T"` or `:Names_T`: Vector of turbine names/identifiers
+
+# Returns
+- `DataFrame`: DataFrame with turbine names as column headers and state values as rows
+
+# Example
+```julia
+T = Dict(
+    "States_t" => [1.0 2.0 3.0; 4.0 5.0 6.0],  # 2 time steps × 3 turbines
+    "Names_T" => ["Turbine_1", "Turbine_2", "Turbine_3"]
+)
+df = turbines(T)
+```
+"""
+function turbines(T::Dict)
+    # Try to find States_t/States_T with different possible key formats
+    states_t = nothing
+    if haskey(T, "States_T")
+        states_t = T["States_T"]
+    elseif haskey(T, :States_T)
+        states_t = T[:States_T]
+    elseif haskey(T, "States_t")
+        states_t = T["States_t"]
+    elseif haskey(T, :States_t)
+        states_t = T[:States_t]
+    elseif haskey(T, "states_t")
+        states_t = T["states_t"]
+    elseif haskey(T, :states_t)
+        states_t = T[:states_t]
+    else
+        throw(ArgumentError("Dictionary must contain key 'States_T' or 'States_t' (or symbols) with turbine state data"))
+    end
+    
+    # Try to find Names_T with different possible key formats
+    names_t = nothing
+    if haskey(T, "Names_T")
+        names_t = T["Names_T"]
+    elseif haskey(T, :Names_T)
+        names_t = T[:Names_T]
+    elseif haskey(T, "names_t")
+        names_t = T["names_t"]
+    elseif haskey(T, :names_t)
+        names_t = T[:names_t]
+    else
+        throw(ArgumentError("Dictionary must contain key 'Names_T' (or :Names_T) with turbine names"))
+    end
+    
+    # Validate inputs
+    if isempty(states_t) || isempty(names_t)
+        throw(ArgumentError("Dictionary must have non-empty States_t and Names_T to create DataFrame"))
+    end
+    
+    # Check dimensions match
+    if size(states_t, 2) != length(names_t)
+        throw(DimensionMismatch("Number of turbines in States_t ($(size(states_t, 2))) must match length of Names_T ($(length(names_t)))"))
+    end
+    
+    # Create DataFrame with turbine names as columns
+    df = DataFrame()
+    
+    # Add each turbine's states as a column
+    for (i, turbine_name) in enumerate(names_t)
+        df[!, Symbol(turbine_name)] = states_t[:, i]
+    end
+    
+    return df
+end
+
 function windfield(wf::WindFarm)
     # Check if we have wind field data
     if isempty(wf.States_WF) || isempty(wf.Names_WF)

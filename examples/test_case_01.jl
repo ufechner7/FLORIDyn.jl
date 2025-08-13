@@ -6,6 +6,9 @@ using FLORIDyn, TerminalPager, MAT, ControlPlots, DistributedNext, LinearAlgebra
 
 settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"
+input_file    = "test/data/input_T_195_steps.mat"
+T_ref = matread(input_file)["T"]
+turbines_ref = Matrix(turbines(T_ref))  # Creates a 1800×3 DataFrame with turbine states
 matlab_file   = "test/data/flowfield_xyz_195_steps.mat"
 vars = matread(matlab_file)
 X_ref = vars["X"]
@@ -36,10 +39,13 @@ wf = initSimulation(wf, sim)
 
 vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+
+turbines_wf = Matrix(wf.turbines)
 # TODO
 # compare wf.turbines with Matlab
 # compare wf.windfield with Matlab
 # compare wf.ops with Matlab
+println("Relative error (turbines): ", round(rel_err(turbines_wf, turbines_ref)*100, digits=2), " %")
 
 @time Z, X, Y    = calcFlowField(set, wf, wind, floris; plt)
 
