@@ -10,4 +10,3 @@ out/
 
 # Ignore Julia coverage instrumentation output files
 *.cov
-examples/test_non_allocating_floris.jl

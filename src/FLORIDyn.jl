@@ -363,15 +363,16 @@ for running FLORIDyn simulations with appropriate plotting callbacks.
 
 # Arguments
 - `plt`: PyPlot instance, usually provided by ControlPlots
-- `set`: Settings object
-- `wf`: WindFarm object
-- `wind`: Wind field object
-- `sim`: Simulation object
-- `con`: Controller object
-- `vis`: Visualization settings
-- `floridyn`: FLORIDyn model object
-- `floris`: FLORIS model object
-- `msr`: Measurement index for online flow field plotting (1=velocity reduction, 2=added turbulence, 3=effective wind speed). Default 1.
+- `set`: Settings object. See: [Settings](@ref)
+- `wf`: WindFarm struct. These are work arrays, not persistent objects. See: [WindFarm](@ref)
+- `wind`: Wind field input settings. See: [Wind](@ref)
+- `sim`: Simulation settings. See: [Sim](@ref)
+- `con`: Controller settings. See: [Con](@ref)
+- `vis`: Visualization settings. See: [Vis](@ref)
+- `floridyn`: FLORIDyn model struct. See: [FloriDyn](@ref)
+- `floris`: Floris model struct. See: [Floris](@ref)
+- `msr`: Measurement index for online flow field plotting (VelReduction, AddedTurbulence or EffWind). 
+         Default VelReduction. See: [MSR](@ref)
 
 # Returns
 - Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
@@ -381,7 +382,7 @@ function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=V
         # Multi-threading mode: use remote plotting callback
         # The rmt_plot_flow_field function should be defined via remote_plotting.jl
         try
-            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris, Main.rmt_plot_flow_field; msr)
+            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr)
         catch e
             if isa(e, UndefVarError)
                 error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
