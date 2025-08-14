@@ -170,6 +170,7 @@ end
     @test size(ops_df) == (1800, 6)  # 1800 states, 6 OP variables
 end
  @testset "setUpTmpWFAndRun_vs_matlab" begin
+    global wf1, wf_old
     settings_file = "data/2021_9T_Data.yaml"
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -177,7 +178,7 @@ end
     set = Settings(wind, sim, con)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     sim.n_sim_steps = 2
-    wf = convert_wf_dict2windfarm(wf_dict)
+    wf1 = convert_wf_dict2windfarm(wf_dict)
     wf_old = deepcopy(wf)
     # M, wf = setUpTmpWFAndRun(set, wf, floris, wind)
 end
