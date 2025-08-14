@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Testcase for bug https://github.com/ufechner7/FLORIDyn.jl/issues/35
-using FLORIDyn, TerminalPager, MAT, ControlPlots, DistributedNext, LinearAlgebra, Statistics
+using FLORIDyn, TerminalPager, MAT, ControlPlots, DistributedNext, LinearAlgebra, Statistics, DataFrames
 
 settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"
@@ -18,8 +18,6 @@ Z_ref = vars["Z"]
 function rel_err(a, b)
     return norm(a - b) / norm(b)
 end
-
-using DataFrames
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -43,7 +41,9 @@ vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 
 turbines_wf = wf.turbines
-# plot(1:length(turbines_ref.yaw), [turbines_wf.TI, turbines_ref.TI])
+p = plot(1:length(turbines_ref.yaw), [turbines_wf.TI, turbines_ref.TI]; 
+         ylabel="TI", labels=["wf (Julia)", "Reference"], fig="turbines(wf), turbines(T_ref)")
+display(p)
 
 # println("Relative error (turbines): ", round(rel_err(turbines_wf, turbines_ref)*100, digits=2), " %")
 df1, df2 = compare_dataframes(turbines_wf, turbines_ref)
