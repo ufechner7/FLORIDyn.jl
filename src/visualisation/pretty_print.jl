@@ -174,6 +174,45 @@ function Base.summary(wf::WindFarm)
     return "WindFarm: $(wf.nT) turbines, $(wf.nOP) op. points$layout"
 end
 
+"""
+    turbines(wf::WindFarm) -> DataFrame
+
+Create a DataFrame from WindFarm turbine state data with operating point and turbine identifiers.
+
+# Arguments
+- `wf::WindFarm`: WindFarm object containing turbine state data
+
+# Returns
+- `DataFrame`: DataFrame with columns:
+  - `:OP`: Operating point number (1 to nOP, repeated for each turbine)
+  - `:Turbine`: Turbine number (1 to nT, each repeated nOP times)
+  - Additional columns for each turbine state name from `wf.Names_T`
+
+# Data Structure
+The DataFrame rows are organized with all operating points for turbine 1, 
+followed by all operating points for turbine 2, etc:
+- Rows 1 to nOP: Turbine 1, OP 1 to nOP
+- Rows nOP+1 to 2×nOP: Turbine 2, OP 1 to nOP  
+- ...and so on
+
+# Throws
+- `ArgumentError`: If States_T or Names_T are empty
+- `DimensionMismatch`: If dimensions don't match
+
+# Example
+```julia
+julia> df = wf.turbines
+100×5 DataFrame
+ Row │ OP     Turbine  a        yaw      TI      
+     │ Int64  Int64    Float64  Float64  Float64 
+─────┼─────────────────────────────────────────
+   1 │     1        1     0.33      0.0   0.101
+   2 │     2        1     0.33      0.0   0.102
+  ⋮  │   ⋮       ⋮       ⋮        ⋮        ⋮
+  50 │    50        1     0.33      0.0   0.105
+  51 │     1        2     0.33      0.0   0.101
+```
+"""
 function turbines(wf::WindFarm)
     # Check if we have turbine data
     if isempty(wf.States_T) || isempty(wf.Names_T)
@@ -187,6 +226,21 @@ function turbines(wf::WindFarm)
     
     # Create DataFrame with turbine names as columns
     df = DataFrame()
+    
+    # Add OP and Turbine identifier columns
+    n_rows = size(wf.States_T, 1)
+    n_ops = wf.nOP
+    n_turbines = wf.nT
+    
+    # Create OP column: repeats 1:nOP for each turbine
+    op_col = repeat(1:n_ops, n_turbines)
+    
+    # Create Turbine column: each turbine number repeated nOP times
+    turbine_col = repeat(1:n_turbines, inner=n_ops)
+    
+    # Add identifier columns to DataFrame
+    df[!, :OP] = op_col[1:n_rows]  # Truncate to actual row count
+    df[!, :Turbine] = turbine_col[1:n_rows]  # Truncate to actual row count
     
     # Add each turbine's states as a column
     for (i, turbine_name) in enumerate(wf.Names_T)
