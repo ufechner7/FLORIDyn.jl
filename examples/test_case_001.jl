@@ -36,7 +36,7 @@ vis.online = false
 
 turbines_wf = wf.turbines
 
-function plot_dfs(df1, df2; fig=nothing, max_op=5)
+function plot_dfs(df1, df2; fig=nothing, max_op=3)
     # Filter dataframes to keep only rows where OP <= max_op
     df1_filtered = filter(row -> row.OP <= max_op, df1)
     df2_filtered = filter(row -> row.OP <= max_op, df2)
@@ -58,9 +58,13 @@ function plot_dfs(df1, df2; fig=nothing, max_op=5)
               fig, bottom=0.02)
     display(p)
 end
+
 plot_dfs(turbines_wf, turbines_ref; fig="Turbine TI Comparison $(sim.n_sim_steps)")
 
-# println("Relative error (turbines): ", round(rel_err(turbines_wf, turbines_ref)*100, digits=2), " %")
+max_op = 1  # Maximum operating point to consider   
+turbines_wf = filter(row -> row.OP <= max_op, turbines_wf)
+turbines_ref = filter(row -> row.OP <= max_op, turbines_ref)
+
 df1, df2 = compare_dataframes(turbines_wf, turbines_ref)
 println("Number of differing rows found: ", size(df1, 1), " out of ", size(turbines_wf, 1))
 
