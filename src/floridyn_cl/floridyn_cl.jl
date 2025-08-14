@@ -1076,8 +1076,10 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         ma[(it-1)*nT+1 : it*nT, 2:4] .= tmpM
         ma[(it-1)*nT+1 : it*nT, 1]   .= sim_time
         wf.States_T[wf.StartI, 3] = tmpM[:, 2]
+   
         vm_int[it] = wf.red_arr
         if sim_steps == 2
+            println(tmpM[:, 2])
             @info "5: TI of OP1, turbine 2: $(turbines(wf)[201, :].TI)"
         end
 
