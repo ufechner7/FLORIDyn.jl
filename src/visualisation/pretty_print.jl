@@ -253,34 +253,48 @@ end
 """
     turbines(T::Dict) -> DataFrame
 
-Create a DataFrame from a dictionary containing turbine state data.
+Create a DataFrame from a dictionary containing turbine state data with operating point and turbine identifiers.
 
 # Arguments
 - `T::Dict`: Dictionary containing turbine data with keys:
-  - `"States_T"` or `:States_T`: Matrix of turbine states (time_steps × n_turbines)  
-  - `"Names_T"` or `:Names_T`: Vector of turbine names/identifiers
+  - `"States_T"` or `:States_T`: Matrix of turbine states (nT*nOP × n_state_variables)
+  - `"Names_T"` or `:Names_T`: Vector of turbine state names
+  - `"nT"` or `:nT`: Number of turbines 
+  - `"nOP"` or `:nOP`: Number of operating points
 
 # Returns
-- `DataFrame`: DataFrame with turbine names as column headers and state values as rows
+- `DataFrame`: DataFrame with columns:
+  - `:OP`: Operating point number (1 to nOP, repeated for each turbine)
+  - `:Turbine`: Turbine number (1 to nT, each repeated nOP times)
+  - Additional columns for each turbine state name from dictionary
+
+# Data Structure
+The DataFrame rows are organized with all operating points for turbine 1, 
+followed by all operating points for turbine 2, etc:
+- Rows 1 to nOP: Turbine 1, OP 1 to nOP
+- Rows nOP+1 to 2×nOP: Turbine 2, OP 1 to nOP  
+- ...and so on
 
 # Notes
 - Both string keys (`"States_T"`) and symbol keys (`:States_T`) are accepted
-- The number of columns in `States_T` must match the length of `Names_T`
-- Each column in the resulting DataFrame represents one turbine's time series data
+- The `States_T` matrix should have dimensions (nT*nOP) × n_state_variables
+- Input data is already in the correct row order for the long format
 
 # Throws
 - `ArgumentError`: If required keys are missing or data is empty
-- `DimensionMismatch`: If dimensions of states and names don't match
+- `DimensionMismatch`: If dimensions don't match expected structure
 
 # Example
 ```julia
 # Example with MAT file data format
 T = Dict(
-    "States_T" => [0.33 -0.1 0.0; 0.33 -0.099 0.01],  # 2 time steps × 3 turbines
-    "Names_T" => ["a", "yaw", "TI"]                     # Turbine state names
+    "States_T" => [0.33 0.0 0.06; 0.33 0.0 0.06; ...],  # (nT*nOP) × 3 matrix
+    "Names_T" => ["a", "yaw", "TI"],                      # State variable names
+    "nT" => 3,                                            # Number of turbines  
+    "nOP" => 2                                            # Number of operating points
 )
 df = turbines(T)
-# Returns a 2×3 DataFrame with columns: a, yaw, TI
+# Returns a 6×5 DataFrame with columns: OP, Turbine, a, yaw, TI
 ```
 """
 function turbines(T::Dict)
@@ -304,6 +318,26 @@ function turbines(T::Dict)
         throw(ArgumentError("Dictionary must contain key 'Names_T' (or :Names_T) with turbine names"))
     end
     
+    # Try to find nT (number of turbines)
+    n_turbines = nothing
+    if haskey(T, "nT")
+        n_turbines = Int(T["nT"])
+    elseif haskey(T, :nT)
+        n_turbines = Int(T[:nT])
+    else
+        throw(ArgumentError("Dictionary must contain key 'nT' (or :nT) with number of turbines"))
+    end
+    
+    # Try to find nOP (number of operating points)
+    n_ops = nothing
+    if haskey(T, "nOP")
+        n_ops = Int(T["nOP"])
+    elseif haskey(T, :nOP)
+        n_ops = Int(T[:nOP])
+    else
+        throw(ArgumentError("Dictionary must contain key 'nOP' (or :nOP) with number of operating points"))
+    end
+    
     # Validate inputs
     if isempty(states_t) || isempty(names_t)
         throw(ArgumentError("Dictionary must have non-empty States_T and Names_T to create DataFrame"))
@@ -311,15 +345,31 @@ function turbines(T::Dict)
     
     # Check dimensions match
     if size(states_t, 2) != length(names_t)
-        throw(DimensionMismatch("Number of turbines in States_T ($(size(states_t, 2))) must match length of Names_T ($(length(names_t)))"))
+        throw(DimensionMismatch("Number of state variables in States_T ($(size(states_t, 2))) must match length of Names_T ($(length(names_t)))"))
     end
     
-    # Create DataFrame with turbine names as columns
+    # Check that States_T has the expected number of rows
+    expected_rows = n_turbines * n_ops
+    if size(states_t, 1) != expected_rows
+        throw(DimensionMismatch("States_T should have $(expected_rows) rows (nT×nOP = $(n_turbines)×$(n_ops)), but has $(size(states_t, 1)) rows"))
+    end
+    
+    # Create DataFrame
     df = DataFrame()
     
-    # Add each turbine's states as a column
-    for (i, turbine_name) in enumerate(names_t)
-        df[!, Symbol(turbine_name)] = states_t[:, i]
+    # Create OP column: repeats 1:nOP for each turbine
+    op_col = repeat(1:n_ops, n_turbines)
+    
+    # Create Turbine column: each turbine number repeated nOP times
+    turbine_col = repeat(1:n_turbines, inner=n_ops)
+    
+    # Add identifier columns to DataFrame
+    df[!, :OP] = op_col
+    df[!, :Turbine] = turbine_col
+    
+    # Add each state variable as a column (data is already in the correct order)
+    for (i, state_name) in enumerate(names_t)
+        df[!, Symbol(state_name)] = states_t[:, i]
     end
     
     return df

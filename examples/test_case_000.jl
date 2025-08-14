@@ -29,9 +29,9 @@ sim.n_sim_steps = 195
 # compare wf.windfield with Matlab before running floridyn
 
 turbines_wf = wf.turbines
-p = plot(1:length(turbines_init.yaw), [turbines_wf.TI, turbines_init.TI]; 
-         ylabel="TI", labels=["wf (Julia)", "Init"], fig="turbines(wf), turbines(Init)")
-display(p)
+# p = plot(1:length(turbines_init.yaw), [turbines_wf.TI, turbines_init.TI]; 
+#          ylabel="TI", labels=["wf (Julia)", "Init"], fig="turbines(wf), turbines(Init)")
+# display(p)
 
 # println("Relative error (turbines): ", round(rel_err(turbines_wf, turbines_ref)*100, digits=2), " %")
 df1, df2 = compare_dataframes(turbines_wf, turbines_init)
