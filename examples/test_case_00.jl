@@ -41,9 +41,13 @@ vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 
 turbines_wf = wf.turbines
-p = plot(1:length(turbines_ref.yaw), [turbines_wf.TI, turbines_ref.TI]; 
-         ylabel="TI", labels=["wf (Julia)", "Reference"], fig="turbines(wf), turbines(T_ref)")
-display(p)
+
+function plot_dfs(df1, df2)
+    p = plot(1:length(df1.yaw), [df1.TI, df2.TI]; 
+             ylabel="TI", labels=["wf (Julia)", "Init"], fig="turbines(wf), turbines(Init)")
+    display(p)
+end
+plot_dfs(turbines_ref, turbines_wf)
 
 # println("Relative error (turbines): ", round(rel_err(turbines_wf, turbines_ref)*100, digits=2), " %")
 df1, df2 = compare_dataframes(turbines_wf, turbines_ref)
