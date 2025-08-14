@@ -5,6 +5,33 @@ using FLORIDyn, Test
 using Dates
 
 @testset verbose=true "High-Resolution Time Functions" begin
+    @testset "compare_dataframes" begin
+        using DataFrames
+        # Identical DataFrames
+        df1 = DataFrame(a=[1.0, 2.0, 3.0], b=[4.0, 5.0, 6.0])
+        df2 = DataFrame(a=[1.0, 2.0, 3.0], b=[4.0, 5.0, 6.0])
+        d1, d2 = compare_dataframes(df1, df2)
+        @test nrow(d1) == 0
+        @test nrow(d2) == 0
+
+        # One row differs
+        df3 = DataFrame(a=[1.0, 2.1, 3.0], b=[4.0, 5.0, 6.0])
+        d1, d2 = compare_dataframes(df1, df3, tol=0.05)
+        @test nrow(d1) == 1
+        @test nrow(d2) == 1
+        @test d1[1, :] == df1[2, :]
+        @test d2[1, :] == df3[2, :]
+
+        # Multiple rows differ
+        df4 = DataFrame(a=[1.1, 2.1, 3.0], b=[4.0, 5.1, 6.0])
+        d1, d2 = compare_dataframes(df1, df4, tol=0.05)
+        @test nrow(d1) == 2
+        @test nrow(d2) == 2
+
+        # Different shape throws error
+        df5 = DataFrame(a=[1.0, 2.0], b=[4.0, 5.0])
+        @test_throws ArgumentError compare_dataframes(df1, df5)
+    end
     
     @testset "now_microseconds" begin
         # Test that the function returns a string

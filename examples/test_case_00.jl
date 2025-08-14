@@ -21,28 +21,6 @@ end
 
 using DataFrames
 
-"""
-    compare_dataframes(df1::DataFrame, df2::DataFrame; tol=1e-6)
-
-Compares two DataFrames (same shape, only numeric values) and returns
-two DataFrames containing rows that differ by more than `tol` in any column.
-"""
-function compare_dataframes(df1::DataFrame, df2::DataFrame; tol=1e-6)
-    # Check shapes
-    if size(df1) != size(df2)
-        throw(ArgumentError("DataFrames must have the same dimensions"))
-    end
-    
-    # Convert to matrices for fast element-wise subtraction
-    diff = abs.(Matrix(df1) .- Matrix(df2))
-    
-    # Find rows with any value differing by more than tol
-    rows_diff = vec([any(row .> tol) for row in eachrow(diff)])
-    
-    # Filter differing rows from both DataFrames
-    return df1[rows_diff, :], df2[rows_diff, :]
-end
-
 # Load vis settings from YAML file
 vis = Vis(vis_file)
 
