@@ -43,8 +43,17 @@ vis.online = false
 turbines_wf = wf.turbines
 
 function plot_dfs(df1, df2)
-    p = plot(1:length(df1.yaw), [df1.TI, df2.TI]; 
-             ylabel="TI", labels=["wf (Julia)", "Init"], fig="turbines(wf), turbines(Init)")
+    turbine_dfs1 = [df for df in groupby(df1, :Turbine)]
+    turbine_dfs2 = [df for df in groupby(df2, :Turbine)]
+    
+    # Create vectors for each turbine plot (each containing two lines: Julia and Ref)
+    turbine_plots = [[collect(turbine_dfs1[i].TI), collect(turbine_dfs2[i].TI)] for i in 1:9]
+    ylabels = ["TI Turbine $i" for i in 1:9]
+    labels = [["Julia", "Ref"] for i in 1:9]
+    
+    p = plotx(collect(turbine_dfs1[1].OP), turbine_plots...; 
+              xlabel="Operating Point", ylabels=ylabels, labels=labels, 
+              fig="Turbine TI Comparison")
     display(p)
 end
 plot_dfs(turbines_ref, turbines_wf)
