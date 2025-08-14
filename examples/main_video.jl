@@ -52,3 +52,8 @@ vis.online = true
 cleanup_video_folder()
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 nothing
+
+# With Bumper:
+#  88.343513 seconds (10.41 G allocations: 825.498 GiB, 29.10% gc time, 2.40% compilation time)
+# Without Bumper:
+#  85.383338 seconds (11.82 G allocations: 873.189 GiB, 29.14% gc time, 1 lock conflict, 1.41% compilation time)
