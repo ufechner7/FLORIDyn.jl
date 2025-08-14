@@ -52,8 +52,8 @@ function plot_dfs(df1, df2)
     labels = [["Julia", "Ref"] for i in 1:9]
     
     p = plotx(collect(turbine_dfs1[1].OP), turbine_plots...; 
-              xlabel="Operating Point", ylabels=ylabels, labels=labels, 
-              fig="Turbine TI Comparison")
+              xlabel="Operating Point", ylabels=ylabels, labels=labels, ysize=10,
+              fig="Turbine TI Comparison", bottom=0.02)
     display(p)
 end
 plot_dfs(turbines_ref, turbines_wf)
