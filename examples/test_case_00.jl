@@ -49,7 +49,7 @@ function plot_dfs(df1, df2)
     # Create vectors for each turbine plot (each containing two lines: Julia and Ref)
     turbine_plots = [[collect(turbine_dfs1[i].TI), collect(turbine_dfs2[i].TI)] for i in 1:9]
     ylabels = ["TI Turbine $i" for i in 1:9]
-    labels = [["Julia", "Ref"] for i in 1:9]
+    labels = [["Julia", "Ref"] for _ in 1:9]
     
     p = plotx(collect(turbine_dfs1[1].OP), turbine_plots...; 
               xlabel="Operating Point", ylabels=ylabels, labels=labels, ysize=10,
