@@ -72,7 +72,7 @@ D = [178.4, 178.4]
 nT = 2
 
 t = @benchmark T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = runFLORIS(set, LocationT_multi, States_WF, States_T_multi, D, 
-                                                        paramFLORIS, windshear)
+                                                        paramFLORIS, windshear; alloc)
 
 time = mean(t.times)/1e9
 rel_time = time * 301 / 0.115  # Relative to the total time of 0.115 seconds
