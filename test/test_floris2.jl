@@ -27,8 +27,7 @@ paramFLORIS = FLORIDyn.Floris(
     rotor_points = 50
 )
 windshear = WindShear(0.08, 1.0)
-# allocate placeholder for benchmarking allocations (not used here)
-alloc = nothing
+
 # single turbine case: default alloc, returns nothing for TI, Ueff, weight
 T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, LocationT, States_WF, 
                                                     States_T, D, paramFLORIS, windshear)
