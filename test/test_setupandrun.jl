@@ -125,6 +125,235 @@ function structs_equal(a::T, b::T; prn=true) where T
     return result
 end
 
+"""
+    compare_windFarms(wf1::WindFarm, wf2::WindFarm; detailed=true, tolerance=1e-10) -> Bool
+
+Compare two WindFarm objects and print detailed differences between them.
+
+This function provides a comprehensive comparison of WindFarm objects, showing
+differences in dimensions, field values, and data content with optional tolerance
+for floating-point comparisons.
+
+# Arguments
+- `wf1::WindFarm`: First WindFarm object to compare
+- `wf2::WindFarm`: Second WindFarm object to compare  
+- `detailed::Bool=true`: Whether to show detailed field-by-field comparison
+- `tolerance::Float64=1e-10`: Tolerance for floating-point comparisons
+
+# Returns
+- `Bool`: `true` if WindFarms are equal (within tolerance), `false` otherwise
+
+# Examples
+```julia
+wf1 = WindFarm(nT=3, nOP=100, ...)
+wf2 = WindFarm(nT=3, nOP=100, ...)
+
+# Basic comparison
+are_equal = compare_windFarms(wf1, wf2)
+
+# Comparison with custom tolerance  
+are_equal = compare_windFarms(wf1, wf2, tolerance=1e-8)
+
+# Silent comparison
+are_equal = compare_windFarms(wf1, wf2, detailed=false)
+```
+"""
+function compare_windFarms(wf1::WindFarm, wf2::WindFarm; detailed=true, tolerance=1e-10)
+    if detailed
+        println("=" ^ 60)
+        println("WindFarm Comparison")
+        println("=" ^ 60)
+    end
+    
+    all_equal = true
+    
+    # Compare basic dimensions
+    if detailed
+        println("\n📊 Basic Dimensions:")
+        println("  Field                WF1        WF2        Equal")
+        println("  " * "-" ^ 45)
+    end
+    
+    basic_fields = [:nT, :nOP]
+    for field in basic_fields
+        val1 = getfield(wf1, field)
+        val2 = getfield(wf2, field)
+        equal = (val1 == val2)
+        all_equal &= equal
+        
+        if detailed
+            status = equal ? "✓" : "✗"
+            println(sprintf("  %-15s %10s %10s   %s", string(field), val1, val2, status))
+        end
+    end
+    
+    # Compare matrix/vector dimensions
+    if detailed
+        println("\n📏 Matrix/Vector Dimensions:")
+        println("  Field                WF1 Size      WF2 Size      Equal")
+        println("  " * "-" ^ 55)
+    end
+    
+    matrix_fields = [:States_WF, :States_OP, :States_T, :posBase, :posNac, :D, :StartI, :red_arr]
+    for field in matrix_fields
+        val1 = getfield(wf1, field)
+        val2 = getfield(wf2, field)
+        size1 = size(val1)
+        size2 = size(val2)
+        equal = (size1 == size2)
+        all_equal &= equal
+        
+        if detailed
+            status = equal ? "✓" : "✗"
+            println(sprintf("  %-15s %-12s %-12s   %s", string(field), string(size1), string(size2), status))
+        end
+    end
+    
+    # Compare vector lengths for nested structures
+    if detailed
+        println("\n📋 Vector Lengths:")
+        println("  Field                WF1 Length   WF2 Length   Equal")
+        println("  " * "-" ^ 50)
+    end
+    
+    vector_fields = [:Names_T, :Names_WF, :Names_OP, :intOPs, :Weight, :dep]
+    for field in vector_fields
+        val1 = getfield(wf1, field)
+        val2 = getfield(wf2, field)
+        len1 = length(val1)
+        len2 = length(val2)
+        equal = (len1 == len2)
+        all_equal &= equal
+        
+        if detailed
+            status = equal ? "✓" : "✗"
+            println(sprintf("  %-15s %10d %10d     %s", string(field), len1, len2, status))
+        end
+    end
+    
+    # Compare string vectors (names)
+    if detailed
+        println("\n🏷️  Name Vectors:")
+    end
+    
+    name_fields = [:Names_T, :Names_WF, :Names_OP]
+    for field in name_fields
+        val1 = getfield(wf1, field)
+        val2 = getfield(wf2, field)
+        equal = (val1 == val2)
+        all_equal &= equal
+        
+        if detailed && !equal
+            println("  $(field) differs:")
+            println("    WF1: $(val1)")
+            println("    WF2: $(val2)")
+        elseif detailed
+            println("  $(field): ✓ ($(length(val1)) elements)")
+        end
+    end
+    
+    # Compare numerical matrices with tolerance
+    if detailed
+        println("\n🔢 Numerical Data (tolerance=$(tolerance)):")
+    end
+    
+    numerical_fields = [:States_WF, :States_OP, :States_T, :posBase, :posNac, :D, :StartI, :red_arr]
+    for field in numerical_fields
+        val1 = getfield(wf1, field)
+        val2 = getfield(wf2, field)
+        
+        if size(val1) == size(val2)
+            if isempty(val1) && isempty(val2)
+                equal = true
+            else
+                max_diff = maximum(abs.(val1 .- val2))
+                equal = max_diff <= tolerance
+            end
+            all_equal &= equal
+            
+            if detailed
+                if equal
+                    println("  $(field): ✓")
+                else
+                    println("  $(field): ✗ (max difference: $(max_diff))")
+                end
+            end
+        end
+    end
+    
+    # Compare nested structures  
+    if detailed
+        println("\n🎯 Nested Structures:")
+    end
+    
+    # Compare intOPs
+    intops_equal = true
+    if length(wf1.intOPs) == length(wf2.intOPs)
+        for i in 1:length(wf1.intOPs)
+            if size(wf1.intOPs[i]) != size(wf2.intOPs[i])
+                intops_equal = false
+                break
+            elseif !isempty(wf1.intOPs[i]) && maximum(abs.(wf1.intOPs[i] .- wf2.intOPs[i])) > tolerance
+                intops_equal = false
+                break
+            end
+        end
+    else
+        intops_equal = false
+    end
+    all_equal &= intops_equal
+    
+    if detailed
+        status = intops_equal ? "✓" : "✗"
+        println("  intOPs: $(status)")
+    end
+    
+    # Compare Weight
+    weight_equal = (wf1.Weight == wf2.Weight)
+    all_equal &= weight_equal
+    
+    if detailed
+        status = weight_equal ? "✓" : "✗"
+        println("  Weight: $(status)")
+    end
+    
+    # Compare dep
+    dep_equal = (wf1.dep == wf2.dep)
+    all_equal &= dep_equal
+    
+    if detailed
+        status = dep_equal ? "✓" : "✗"
+        println("  dep: $(status)")
+    end
+    
+    # Final summary
+    if detailed
+        println("\n" * "=" ^ 60)
+        if all_equal
+            println("🎉 WindFarms are EQUAL")
+        else
+            println("⚠️  WindFarms are DIFFERENT")
+        end
+        println("=" ^ 60)
+    end
+    
+    return all_equal
+end
+
+# Helper function for formatting (simple sprintf replacement)
+function sprintf(fmt, args...)
+    # Simple implementation for the format strings we use
+    if fmt == "  %-15s %10s %10s   %s"
+        return "  $(rpad(args[1], 15)) $(lpad(string(args[2]), 10)) $(lpad(string(args[3]), 10))   $(args[4])"
+    elseif fmt == "  %-15s %-12s %-12s   %s"
+        return "  $(rpad(args[1], 15)) $(rpad(args[2], 12)) $(rpad(args[3], 12))   $(args[4])"
+    elseif fmt == "  %-15s %10d %10d     %s"
+        return "  $(rpad(args[1], 15)) $(lpad(string(args[2]), 10)) $(lpad(string(args[3]), 10))     $(args[4])"
+    else
+        return string(args...)
+    end
+end
+
  @testset "setUpTmpWFAndRun_basic" begin
     settings_file = "data/2021_9T_Data.yaml"
     # get the settings for the wind field, simulator and controller
@@ -177,9 +406,59 @@ end
     # create settings struct
     set = Settings(wind, sim, con)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+    wf.dep = findTurbineGroups(wf, floridyn)
+    wf.intOPs = interpolateOPs(wf)
     sim.n_sim_steps = 2
     wf1 = convert_wf_dict2windfarm(wf_dict)
     wf_old = deepcopy(wf)
-    # M, wf = setUpTmpWFAndRun(set, wf, floris, wind)
+    M, wf = setUpTmpWFAndRun(set, wf, floris, wind)
 end
+
+@testset "compare_windFarms_function" begin
+    # Test with the converted WindFarm and a copy
+    wf_converted = convert_wf_dict2windfarm(wf_dict)
+    wf_copy = deepcopy(wf_converted)
+    
+    # Test identical WindFarms
+    @test compare_windFarms(wf_converted, wf_copy, detailed=false) == true
+    
+    # Test with slight modification
+    wf_modified = deepcopy(wf_converted)
+    wf_modified.nT = 10  # Change number of turbines
+    
+    @test compare_windFarms(wf_converted, wf_modified, detailed=false) == false
+    
+    # Test with floating-point difference within tolerance
+    wf_float_diff = deepcopy(wf_converted)
+    if !isempty(wf_float_diff.States_WF)
+        wf_float_diff.States_WF[1,1] += 1e-12  # Very small difference
+    end
+    
+    @test compare_windFarms(wf_converted, wf_float_diff, detailed=false, tolerance=1e-10) == true
+    @test compare_windFarms(wf_converted, wf_float_diff, detailed=false, tolerance=1e-14) == false
+    
+    # Test with name differences
+    wf_name_diff = deepcopy(wf_converted)
+    if !isempty(wf_name_diff.Names_T)
+        wf_name_diff.Names_T[1] = "different_name"
+    end
+    
+    @test compare_windFarms(wf_converted, wf_name_diff, detailed=false) == false
+    
+    # Test detailed output (just verify it runs without error)
+    println("\nTesting detailed comparison output:")
+    compare_windFarms(wf_converted, wf_copy, detailed=true)
+    
+    # Example usage in practice
+    println("\n" * "="^50)
+    println("EXAMPLE USAGE:")
+    println("="^50)
+    println("# Quick comparison (silent)")
+    println("are_equal = compare_windFarms(wf1, wf2, detailed=false)")
+    println()
+    println("# Detailed comparison with custom tolerance")  
+    println("are_equal = compare_windFarms(wf1, wf2, detailed=true, tolerance=1e-8)")
+    println("="^50)
+end
+
 nothing
