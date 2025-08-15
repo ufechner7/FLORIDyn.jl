@@ -97,9 +97,9 @@ function convert_wf_dict2windfarm(wf_dict::Dict{String, Any})
         States_WF = wf_dict["States_WF"],
         States_OP = wf_dict["States_OP"], 
         States_T = wf_dict["States_T"],
-        posBase = wf_dict["posBase"]',  # Transpose to get (2 or 3) × nT matrix
-        posNac = wf_dict["posNac"]',   # Transpose to get (2 or 3) × nT matrix  
-        D = vec(wf_dict["D"]),         # Ensure it's a vector
+        posBase = wf_dict["posBase"],
+        posNac = wf_dict["posNac"],
+        D = vec(wf_dict["D"]),
         StartI = Int.(wf_dict["StartI"]),
         intOPs = intOPs_vec,
         Weight = weight_vec,
@@ -378,7 +378,7 @@ end
     @test wf_converted.Names_T == ["a", "yaw", "TI"]
     @test wf_converted.Names_WF == ["wind_vel", "wind_dir", "TI0", "OP_ori"] 
     @test wf_converted.Names_OP == ["x0", "y0", "z0", "x1", "y1", "z1"]
-    @test size(wf_converted.posBase) == (3, 9)
+    @test size(wf_converted.posBase) == (9, 3)
     @test length(wf_converted.D) == 9
     @test length(wf_converted.intOPs) == 9
     @test length(wf_converted.Weight) == 9
@@ -411,7 +411,8 @@ end
     sim.n_sim_steps = 2
     wf1 = convert_wf_dict2windfarm(wf_dict)
     wf_old = deepcopy(wf)
-    M, wf = setUpTmpWFAndRun(set, wf, floris, wind)
+    M, wf = setUpTmpWFAndRun(set, wf1, floris, wind)
+    # compare_windFarms(wf1, wf_old; detailed=true)
 end
 
 @testset "compare_windFarms_function" begin
@@ -446,19 +447,19 @@ end
     @test compare_windFarms(wf_converted, wf_name_diff, detailed=false) == false
     
     # Test detailed output (just verify it runs without error)
-    println("\nTesting detailed comparison output:")
-    compare_windFarms(wf_converted, wf_copy, detailed=true)
+    # println("\nTesting detailed comparison output:")
+    # compare_windFarms(wf_converted, wf_copy, detailed=true)
     
-    # Example usage in practice
-    println("\n" * "="^50)
-    println("EXAMPLE USAGE:")
-    println("="^50)
-    println("# Quick comparison (silent)")
-    println("are_equal = compare_windFarms(wf1, wf2, detailed=false)")
-    println()
-    println("# Detailed comparison with custom tolerance")  
-    println("are_equal = compare_windFarms(wf1, wf2, detailed=true, tolerance=1e-8)")
-    println("="^50)
+    # # Example usage in practice
+    # println("\n" * "="^50)
+    # println("EXAMPLE USAGE:")
+    # println("="^50)
+    # println("# Quick comparison (silent)")
+    # println("are_equal = compare_windFarms(wf1, wf2, detailed=false)")
+    # println()
+    # println("# Detailed comparison with custom tolerance")  
+    # println("are_equal = compare_windFarms(wf1, wf2, detailed=true, tolerance=1e-8)")
+    # println("="^50)
 end
 
 nothing
