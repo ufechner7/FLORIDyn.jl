@@ -35,10 +35,14 @@ suppress_error_files = [
 ]
 
 function get_test_files()
-    """Get all test_*.jl files from the test directory"""
+    """Get all test_*.jl files from the test directory, excluding helper and empty files"""
     test_dir = @__DIR__
     files = readdir(test_dir)
-    test_files = filter(f -> startswith(f, "test_") && endswith(f, ".jl"), files)
+    
+    # Files to exclude from the menu (helper files, empty files, benchmark files)
+    excluded_files = ["test_helpers.jl", "test_init.jl", "test_floris2.jl"]
+    
+    test_files = filter(f -> startswith(f, "test_") && endswith(f, ".jl") && !(f in excluded_files), files)
     return sort(test_files)
 end
 
