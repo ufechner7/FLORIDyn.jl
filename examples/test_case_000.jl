@@ -36,7 +36,6 @@ function plot_dfs(df1, df2)
 end
 plot_dfs(turbines_init, turbines_wf)
 
-# println("Relative error (turbines): ", round(rel_err(turbines_wf, turbines_ref)*100, digits=2), " %")
 df1, df2 = compare_dataframes(turbines_wf, turbines_init)
 println("Number of differing rows found: ", size(df1, 1), " out of ", size(turbines_wf, 1))
 
