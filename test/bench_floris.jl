@@ -5,6 +5,7 @@ using FLORIDyn, Test, BenchmarkTools, Parameters
 
 @with_kw mutable struct AllocsF
     n::Int64 = 0      # number of floris calls
+    pre::Int64 = 0    # allocated memory of pre-allocation
     expr1::Int64 = 0  # allocated memory of first expression
     expr2::Int64 = 0  # allocated memory of first expression
     expr3::Int64 = 0  # allocated memory of first expression

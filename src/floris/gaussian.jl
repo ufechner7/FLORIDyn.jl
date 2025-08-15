@@ -567,20 +567,25 @@ function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, flor
 
     # Pre-allocate arrays that are reused in the loop
     nRP = size(RPl, 1)
-    tmp_RPs = similar(RPl)
-    cw_y = Vector{Float64}(undef, nRP)
-    cw_z = Vector{Float64}(undef, nRP)
-    phi_cw = Vector{Float64}(undef, nRP)
-    r_cw = Vector{Float64}(undef, nRP)
-    core = Vector{Bool}(undef, nRP)
-    nw = Vector{Bool}(undef, nRP)
-    fw = Vector{Bool}(undef, nRP)
-    tmp_RPs_r = Vector{Float64}(undef, nRP)
-    gaussAbs = Vector{Float64}(undef, nRP)
-    gaussWght = Vector{Float64}(undef, nRP)
-    exp_y = Vector{Float64}(undef, nRP)
-    exp_z = Vector{Float64}(undef, nRP)
-    not_core = Vector{Bool}(undef, nRP)
+    a = @allocated begin
+        tmp_RPs = similar(RPl)
+        cw_y = Vector{Float64}(undef, nRP)
+        cw_z = Vector{Float64}(undef, nRP)
+        phi_cw = Vector{Float64}(undef, nRP)
+        r_cw = Vector{Float64}(undef, nRP)
+        core = Vector{Bool}(undef, nRP)
+        nw = Vector{Bool}(undef, nRP)
+        fw = Vector{Bool}(undef, nRP)
+        tmp_RPs_r = Vector{Float64}(undef, nRP)
+        gaussAbs = Vector{Float64}(undef, nRP)
+        gaussWght = Vector{Float64}(undef, nRP)
+        exp_y = Vector{Float64}(undef, nRP)
+        exp_z = Vector{Float64}(undef, nRP)
+        not_core = Vector{Bool}(undef, nRP)
+    end
+    if ! isnothing(alloc)
+        alloc.pre += a
+    end
 
     a = @allocated for iT in 1:(nT - 1)
 
