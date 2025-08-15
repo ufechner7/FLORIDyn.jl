@@ -1036,7 +1036,8 @@ applying control strategies and updating turbine states over time.
 
 """
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
-                          vis::Vis, floridyn::FloriDyn, floris::Floris; rmt_plot_fn=nothing, msr=VelReduction)
+                          vis::Vis, floridyn::FloriDyn, floris::Floris; rmt_plot_fn=nothing, 
+                          msr=VelReduction, debug=nothing)
     alloc = Allocations()
     nT      = wf.nT
     sim_steps    = sim.n_sim_steps
@@ -1066,9 +1067,10 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         a = @allocated wf.dep = findTurbineGroups(wf, floridyn)
         alloc.findTurbineGroups += a
         a = @allocated wf.intOPs = interpolateOPs(wf)
-        if sim_steps == 1
+        if sim_steps == 1 && ! isnothing(debug)
             # correct
             # println("interpolateOPs: $(wf.intOPs)")
+            debug[1] = deepcopy(wf)
         end
         alloc.interpolateOPs += a
         a = @allocated tmpM, wf = setUpTmpWFAndRun(set, wf, floris, wind)

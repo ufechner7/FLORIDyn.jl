@@ -17,7 +17,7 @@ wf_dict_01 = vars["T"]
 
 
 @testset "runfloridyn_basic" begin
-    global wf, wf_ref, wf_ref_01
+    global wf, wf_ref, wf_ref_01, wf_debug
     settings_file = "data/2021_9T_Data.yaml"
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -28,7 +28,8 @@ wf_dict_01 = vars["T"]
     sim.n_sim_steps = 1
     wf_ref = convert_wf_dict2windfarm(wf_dict)
     @test compare_windFarms(wf, wf_ref; detailed=false)
-    wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
+    wf_debug = [WindFarm()]
+    wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris; debug=wf_debug)
     # TODO compare wf after after one simulation step
     wf_ref_01 = convert_wf_dict2windfarm(wf_dict_01)
     if !compare_windFarms(wf, wf_ref_01; detailed=false, tolerance=1e-6)
