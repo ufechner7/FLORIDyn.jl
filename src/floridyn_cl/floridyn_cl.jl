@@ -319,10 +319,9 @@ end
 
 Compute interpolation weights and indices for operational points affecting each turbine.
 
-This function determines the optimal interpolation strategy for each turbine by identifying 
-the closest operational points from influencing upstream turbines. It computes weights and 
-indices that enable smooth interpolation of wind field states and turbine conditions at 
-arbitrary turbine positions.
+This function is a convenience wrapper around [`interpolateOPs!`](@ref) that handles 
+buffer allocation automatically. For performance-critical code or repeated calls, 
+consider using the non-allocating version directly.
 
 # Arguments
 - `wf::WindFarm`: Wind farm object containing turbine dependencies, operational point states, and positional data
@@ -374,58 +373,18 @@ where:
 - The function handles variable numbers of influencing turbines per target turbine
 - Interpolation indices are global across the entire operational point matrix
 - This preprocessing enables efficient interpolation during simulation time steps
+- This function internally uses the non-allocating [`interpolateOPs!`](@ref) implementation
 """
 function interpolateOPs(wf::WindFarm)
     @assert length(wf.dep) > 0 "No dependencies found! Ensure `findTurbineGroups` was called first."
-    intOPs = Vector{Matrix{Float64}}(undef,wf.nT)  # Cell equivalent in Julia
-
-    for iT in 1:wf.nT  # For every turbine
-        intOPs[iT] = zeros(length(wf.dep[iT]), 4)
-
-        for iiT in 1:length(wf.dep[iT])  # for every influencing turbine
-            iiaT = wf.dep[iT][iiT]       # actual turbine index
-
-            # Compute distances from OPs of turbine iiaT to current turbine
-            start_idx    = wf.StartI[iiaT]
-            OP_positions = wf.States_OP[start_idx:(start_idx +wf.nOP - 1), 1:2]
-            turb_pos     = wf.posBase[iT, 1:2]
-
-            # Euclidean distances to the turbine position
-            dist = sqrt.(sum((OP_positions .- turb_pos').^2, dims=2))
-            dist = vec(dist)  # make it a flat vector
-
-            # Indices of sorted distances
-            sorted_indices = sortperm(dist)
-
-            if sorted_indices[1] == 1
-                # Closest is first OP (unlikely)
-                intOPs[iT][iiT, :] = [start_idx, 1.0, start_idx + 1, 0.0]
-            elseif sorted_indices[1] == wf.nOP
-                # Closest is last OP (possible)
-                intOPs[iT][iiT, :] = [start_idx + wf.nOP - 2, 0.0, start_idx + wf.nOP - 1, 1.0]
-            else
-                # Use two closest OPs for interpolation
-                indOP1 = start_idx - 1 + sorted_indices[1]
-                indOP2 = start_idx - 1 + sorted_indices[2]
-
-                a = wf.States_OP[indOP1, 1:2]
-                b = wf.States_OP[indOP2, 1:2]
-                c = wf.posBase[iT, 1:2]
-
-                ab = b .- a
-                ac = c .- a
-                d  = dot(ab, ac) / dot(ab, ab)
-                d  = clamp(d, 0.0, 1.0)
-
-                r1 = 1.0 - d
-                r2 = d
-
-                intOPs[iT][iiT, :] = [indOP1, r1, indOP2, r2]
-            end
-        end
-    end
-
-    return intOPs
+    
+    # Pre-allocate output and buffers
+    intOPs = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
+    dist_buffer = zeros(wf.nOP)
+    sorted_indices_buffer = zeros(Int, wf.nOP)
+    
+    # Call the non-allocating version
+    return interpolateOPs!(intOPs, wf, dist_buffer, sorted_indices_buffer)
 end
 
 """
