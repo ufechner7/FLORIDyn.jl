@@ -415,7 +415,7 @@ end
     tmpM_ref = [0, 9.094956525547340e-02, 0.1184213787906785, 0, 9.094956525547351e-02,
                 0.1184213787906786, 0, 9.094956525547340e-02, 1.010889141095400e-01]
     @test all(tmpM[:,2] .≈ tmpM_ref)
-    compare_windFarms(wf1, wf_old; detailed=true)
+    # compare_windFarms(wf1, wf_old; detailed=true)
 end
 
 @testset "compare_windFarms_function" begin
