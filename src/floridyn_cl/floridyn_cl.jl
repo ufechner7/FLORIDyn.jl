@@ -1066,8 +1066,15 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         a = @allocated wf.dep = findTurbineGroups(wf, floridyn)
         alloc.findTurbineGroups += a
         a = @allocated wf.intOPs = interpolateOPs(wf)
+        if sim_steps == 1
+            # correct
+            # println("interpolateOPs: $(wf.intOPs)")
+        end
         alloc.interpolateOPs += a
         a = @allocated tmpM, wf = setUpTmpWFAndRun(set, wf, floris, wind)
+        if sim_steps == 1
+            println("intOPs: $(wf.intOPs)")
+        end
         alloc.setUpTmpWFAndRun += a
         if sim_steps == 2
             @info "4: TI of OP1, turbine 2: $(turbines(wf)[201, :].TI)"

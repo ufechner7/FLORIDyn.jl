@@ -33,7 +33,7 @@ wf_dict_01 = vars["T"]
     wf_ref_01 = convert_wf_dict2windfarm(wf_dict_01)
     if !compare_windFarms(wf, wf_ref_01; detailed=false, tolerance=1e-6)
         @warn "WindFarm does not match reference after simulation step"
-        compare_windFarms(wf, wf_ref_01; detailed=true, tolerance=1e-6)
+        # compare_windFarms(wf, wf_ref_01; detailed=true, tolerance=1e-6)
     end
     @test size(md) == (9, 6) # from Matlab
     # @test minimum(md.ForeignReduction) ≈ 72.56141032518147 # Matlab: 73.8438

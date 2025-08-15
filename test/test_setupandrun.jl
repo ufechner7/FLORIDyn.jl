@@ -4,13 +4,52 @@
 using FLORIDyn, Test, Statistics, MAT, DataFrames
 
 matlab_file   = "test/data/input_setUpTmpWFAndRun_2_steps.mat"
+after_interpolateOPs_T_file = "test/data/after_interpolateOPs_T.mat"
 vars = matread(matlab_file)
+vars_after_interpolateOPs_T = matread(after_interpolateOPs_T_file)
 wf_dict = vars["T"]
+wf_dict_ref = vars_after_interpolateOPs_T["T"]
 
 if !isdefined(Main, :TestHelpers)
     include("test_helpers.jl")
 end
 using .TestHelpers
+
+@testset "compare_windFarms_function" begin
+    # Test with the converted WindFarm and a copy
+    wf_converted = convert_wf_dict2windfarm(wf_dict)
+    wf_copy = deepcopy(wf_converted)
+    
+    # Test identical WindFarms
+    @test compare_windFarms(wf_converted, wf_copy, detailed=false) == true
+    
+    # Test with slight modification
+    wf_modified = deepcopy(wf_converted)
+    wf_modified.nT = 10  # Change number of turbines
+    
+    @test compare_windFarms(wf_converted, wf_modified, detailed=false) == false
+    
+    # Test with floating-point difference within tolerance
+    wf_float_diff = deepcopy(wf_converted)
+    if !isempty(wf_float_diff.States_WF)
+        wf_float_diff.States_WF[1,1] += 1e-12  # Very small difference
+    end
+    
+    @test compare_windFarms(wf_converted, wf_float_diff, detailed=false, tolerance=1e-10) == true
+    @test compare_windFarms(wf_converted, wf_float_diff, detailed=false, tolerance=1e-14) == false
+    
+    # Test with name differences
+    wf_name_diff = deepcopy(wf_converted)
+    if !isempty(wf_name_diff.Names_T)
+        wf_name_diff.Names_T[1] = "different_name"
+    end
+    
+    @test compare_windFarms(wf_converted, wf_name_diff, detailed=false) == false
+    
+    # Test detailed output (just verify it runs without error)
+    # println("\nTesting detailed comparison output:")
+    # compare_windFarms(wf_converted, wf_copy, detailed=true)
+end
 
 @testset "setUpTmpWFAndRun_basic" begin
     settings_file = "data/2021_9T_Data.yaml"
@@ -56,8 +95,8 @@ end
     @test ops_df isa DataFrame
     @test size(ops_df) == (1800, 6)  # 1800 states, 6 OP variables
 end
- @testset "setUpTmpWFAndRun_vs_matlab" begin
-    global wf1, wf_old, floris
+@testset "setUpTmpWFAndRun_vs_matlab" begin
+    global wf1, wf_old, wf, floris
     settings_file = "data/2021_9T_Data.yaml"
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -76,51 +115,19 @@ end
     # compare_windFarms(wf1, wf_old; detailed=true)
 end
 
-@testset "compare_windFarms_function" begin
-    # Test with the converted WindFarm and a copy
-    wf_converted = convert_wf_dict2windfarm(wf_dict)
-    wf_copy = deepcopy(wf_converted)
-    
-    # Test identical WindFarms
-    @test compare_windFarms(wf_converted, wf_copy, detailed=false) == true
-    
-    # Test with slight modification
-    wf_modified = deepcopy(wf_converted)
-    wf_modified.nT = 10  # Change number of turbines
-    
-    @test compare_windFarms(wf_converted, wf_modified, detailed=false) == false
-    
-    # Test with floating-point difference within tolerance
-    wf_float_diff = deepcopy(wf_converted)
-    if !isempty(wf_float_diff.States_WF)
-        wf_float_diff.States_WF[1,1] += 1e-12  # Very small difference
-    end
-    
-    @test compare_windFarms(wf_converted, wf_float_diff, detailed=false, tolerance=1e-10) == true
-    @test compare_windFarms(wf_converted, wf_float_diff, detailed=false, tolerance=1e-14) == false
-    
-    # Test with name differences
-    wf_name_diff = deepcopy(wf_converted)
-    if !isempty(wf_name_diff.Names_T)
-        wf_name_diff.Names_T[1] = "different_name"
-    end
-    
-    @test compare_windFarms(wf_converted, wf_name_diff, detailed=false) == false
-    
-    # Test detailed output (just verify it runs without error)
-    # println("\nTesting detailed comparison output:")
-    # compare_windFarms(wf_converted, wf_copy, detailed=true)
-    
-    # # Example usage in practice
-    # println("\n" * "="^50)
-    # println("EXAMPLE USAGE:")
-    # println("="^50)
-    # println("# Quick comparison (silent)")
-    # println("are_equal = compare_windFarms(wf1, wf2, detailed=false)")
-    # println()
-    # println("# Detailed comparison with custom tolerance")  
-    # println("are_equal = compare_windFarms(wf1, wf2, detailed=true, tolerance=1e-8)")
-    # println("="^50)
+@testset "setUpTmpWFAndRun_vs_matlab_ii" begin
+    global wf, wf_ref, floris
+    settings_file = "data/2021_9T_Data.yaml"
+    # get the settings for the wind field, simulator and controller
+    wind, sim, con, floris, floridyn, ta = setup(settings_file)
+    # create settings struct
+    set = Settings(wind, sim, con)
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+    sim.n_sim_steps = 1
+    wf_ref = convert_wf_dict2windfarm(wf_dict_ref)
+    tmpM, wf = setUpTmpWFAndRun(set, wf_ref, floris, wind)
+    # compare_windFarms(wf1, wf_old; detailed=true)
 end
+
 
 nothing
