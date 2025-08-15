@@ -147,8 +147,8 @@ using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
         @test size(md) == (2709, 6) # from Matlab
-        @test minimum(md.ForeignReduction) ≈ 72.56141032518147 # Matlab: 73.8438
-        @test mean(md.ForeignReduction)    ≈ 98.54433712619702 # Matlab: 98.
+        @test minimum(md.ForeignReduction) ≈ 73.84377823619309 # Matlab: 73.8438
+        @test mean(md.ForeignReduction)    ≈ 98.29024352199988 # Matlab: 98.
         
     end
     @testset "runFLORIDyn - online" begin
