@@ -1051,9 +1051,6 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
     buffers = FLORIDyn.IterateOPsBuffers(wf)
     for it in 1:sim_steps
         sim.sim_step = it
-        if sim_steps == 2
-            @info "1: TI of OP1, turbine 2: $(turbines(wf)[201, :].TI)"
-        end
 
         # ========== PREDICTION ==========
         a = @allocated iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn, buffers)
@@ -1067,12 +1064,10 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         a = @allocated wf.dep = findTurbineGroups(wf, floridyn)
         alloc.findTurbineGroups += a
         if sim_steps == 1 && ! isnothing(debug)
-            # println("interpolateOPs: $(wf.intOPs)")
             debug[2] = deepcopy(wf)
         end        
         a = @allocated wf.intOPs = interpolateOPs(wf)
         if sim_steps == 1 && ! isnothing(debug)
-            # println("interpolateOPs: $(wf.intOPs)")
             debug[1] = deepcopy(wf)
         end
         alloc.interpolateOPs += a
@@ -1081,19 +1076,12 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
             # println("intOPs: $(wf.intOPs)")
         end
         alloc.setUpTmpWFAndRun += a
-        if sim_steps == 2
-            @info "4: TI of OP1, turbine 2: $(turbines(wf)[201, :].TI)"
-        end
 
         ma[(it-1)*nT+1 : it*nT, 2:4] .= tmpM
         ma[(it-1)*nT+1 : it*nT, 1]   .= sim_time
         wf.States_T[wf.StartI, 3] = tmpM[:, 2]
    
         vm_int[it] = wf.red_arr
-        if sim_steps == 2
-            println(tmpM[:, 2])
-            @info "5: TI of OP1, turbine 2: $(turbines(wf)[201, :].TI)"
-        end
 
         # ========== wind field corrections ==========
         a = @allocated wf, wind = correctVel(set.cor_vel_mode, set, wf, wind, sim_time, floris, tmpM)
