@@ -96,7 +96,6 @@ end
     @test size(ops_df) == (1800, 6)  # 1800 states, 6 OP variables
 end
 @testset "setUpTmpWFAndRun_vs_matlab" begin
-    global wf1, wf_old, wf, floris
     settings_file = "data/2021_9T_Data.yaml"
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
