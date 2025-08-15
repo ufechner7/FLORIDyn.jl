@@ -565,75 +565,163 @@ function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, flor
         alloc.expr2 += a
     end
 
+    # Pre-allocate arrays that are reused in the loop
+    nRP = size(RPl, 1)
+    tmp_RPs = similar(RPl)
+    cw_y = Vector{Float64}(undef, nRP)
+    cw_z = Vector{Float64}(undef, nRP)
+    phi_cw = Vector{Float64}(undef, nRP)
+    r_cw = Vector{Float64}(undef, nRP)
+    core = Vector{Bool}(undef, nRP)
+    nw = Vector{Bool}(undef, nRP)
+    fw = Vector{Bool}(undef, nRP)
+    tmp_RPs_r = Vector{Float64}(undef, nRP)
+    gaussAbs = Vector{Float64}(undef, nRP)
+    gaussWght = Vector{Float64}(undef, nRP)
+    exp_y = Vector{Float64}(undef, nRP)
+    exp_z = Vector{Float64}(undef, nRP)
+    not_core = Vector{Bool}(undef, nRP)
+
     a = @allocated for iT in 1:(nT - 1)
 
         tmp_phi = size(states_wf,2) == 4 ? angSOWFA2world(states_wf[iT, 4]) :
                                            angSOWFA2world(states_wf[iT, 2])
 
-        tmp_RPs = RPl .- location_t[iT, :]'
-        R_phi = [cos(tmp_phi)  sin(tmp_phi)  0.0;
-                -sin(tmp_phi)  cos(tmp_phi)  0.0;
-                 0.0           0.0           1.0]
-
-        tmp_RPs = (R_phi * tmp_RPs')'
+        # Use pre-allocated array instead of creating new one
+        for i in 1:nRP
+            for j in 1:3
+                tmp_RPs[i, j] = RPl[i, j] - location_t[iT, j]
+            end
+        end
+        
+        cos_phi = cos(tmp_phi)
+        sin_phi = sin(tmp_phi)
+        
+        # Apply rotation matrix manually to avoid allocation
+        for i in 1:nRP
+            x = tmp_RPs[i, 1]
+            y = tmp_RPs[i, 2]
+            z = tmp_RPs[i, 3]
+            tmp_RPs[i, 1] = cos_phi * x + sin_phi * y
+            tmp_RPs[i, 2] = -sin_phi * x + cos_phi * y
+            tmp_RPs[i, 3] = z
+        end
 
         if tmp_RPs[1, 1] <= 10
             continue
         end
 
-        a = states_t[iT, 1]
+        a_val = states_t[iT, 1]
         yaw_deg = states_t[iT, 2]
         yaw = -deg2rad(yaw_deg)
         TI = states_t[iT, 3]
-        Ct = calcCt(a, yaw_deg)
+        Ct = calcCt(a_val, yaw_deg)
         TI0 = states_wf[iT, 3]
 
         sig_y, sig_z, C_T, x_0, delta, pc_y, pc_z = getVars(
             tmp_RPs, Ct, yaw, TI, TI0, floris, d_rotor[iT]
         )
 
-        cw_y = tmp_RPs[:, 2] .- delta[:, 1]
-        cw_z = tmp_RPs[:, 3] .- delta[:, 2]
-        phi_cw = atan.(cw_z, cw_y)
-        r_cw = sqrt.(cw_y.^2 .+ cw_z.^2)
+        # Use pre-allocated arrays
+        @inbounds for i in 1:nRP
+            delta_y = ndims(delta) > 1 ? delta[i, 1] : (isa(delta, AbstractVector) ? delta[i] : delta)
+            delta_z = ndims(delta) > 1 ? delta[i, 2] : 0.0
+            
+            cw_y[i] = tmp_RPs[i, 2] - delta_y
+            cw_z[i] = tmp_RPs[i, 3] - delta_z
+            phi_cw[i] = atan(cw_z[i], cw_y[i])
+            r_cw[i] = sqrt(cw_y[i]^2 + cw_z[i]^2)
+            
+            pc_y_val = isa(pc_y, AbstractArray) ? pc_y[i] : pc_y
+            pc_z_val = isa(pc_z, AbstractArray) ? pc_z[i] : pc_z
+            pc_y_half_cos = 0.5 * pc_y_val * cos(phi_cw[i])
+            pc_z_half_sin = 0.5 * pc_z_val * sin(phi_cw[i])
+            core[i] = (r_cw[i] < sqrt(pc_y_half_cos^2 + pc_z_half_sin^2)) || (tmp_RPs[i, 1] == 0.0)
+            
+            x_0_val = isa(x_0, AbstractArray) ? x_0[i] : x_0
+            nw[i] = tmp_RPs[i, 1] < x_0_val
+            fw[i] = !nw[i]
+        end
 
-        core = (r_cw .< sqrt.((0.5 .* pc_y .* cos.(phi_cw)).^2 .+
-                              (0.5 .* pc_z .* sin.(phi_cw)).^2)) .|
-               (tmp_RPs[:, 1] .== 0.0)
+        # Initialize arrays
+        fill!(tmp_RPs_r, 0.0)
+        fill!(gaussAbs, 0.0)
+        fill!(gaussWght, 1.0)
+        
+        sqrt_1_minus_CT = sqrt(1 - C_T)
+        @inbounds for i in 1:nRP
+            if core[i]
+                tmp_RPs_r[i] = 1 - sqrt_1_minus_CT
+            end
+            
+            if nw[i]
+                gaussAbs[i] = 1 - sqrt_1_minus_CT
+            elseif fw[i]
+                sig_y_val = isa(sig_y, AbstractArray) ? sig_y[i] : sig_y
+                sig_z_val = isa(sig_z, AbstractArray) ? sig_z[i] : sig_z
+                gaussAbs[i] = 1 - sqrt(1 - C_T * cos(yaw) / (8 * sig_y_val * sig_z_val / d_rotor[iT]^2))
+            end
+        end
 
-        nw = tmp_RPs[:, 1] .< x_0
-
-        tmp_RPs_r = zeros(size(RPw))
-        tmp_RPs_r[core] .= 1 .- sqrt(1 .- C_T)
-
-        fw = .!nw
-        gaussAbs = zeros(size(RPw))
-        gaussAbs[nw] .= 1 .- sqrt(1 .- C_T)
-        gaussAbs[fw] .= 1 .- sqrt.(1 .- C_T .* cos(yaw) ./ (8 .* sig_y[fw] .* sig_z[fw] ./ d_rotor[iT]^2))
-
-        gaussWght = ones(size(RPw))
-        not_core = .!core
-        if any(not_core)
-            exp_y = @. exp(-0.5 * ((cw_y[not_core] - cos(phi_cw[not_core]) .* pc_y[not_core] * 0.5) ./ sig_y[not_core])^2)
-            exp_z = @. exp(-0.5 * ((cw_z[not_core] - sin(phi_cw[not_core]) .* pc_z[not_core] * 0.5) ./ sig_z[not_core])^2)
-
-            gaussWght[not_core] .= exp_y .* exp_z
-            tmp_RPs_r[not_core] .= gaussAbs[not_core] .* gaussWght[not_core]
+        # Handle not_core calculations
+        @inbounds for i in 1:nRP
+            not_core[i] = !core[i]
+        end
+        
+        any_not_core = false
+        @inbounds for i in 1:nRP
+            if not_core[i]
+                any_not_core = true
+                break
+            end
+        end
+        
+        if any_not_core
+            @inbounds for i in 1:nRP
+                if not_core[i]
+                    sig_y_val = isa(sig_y, AbstractArray) ? sig_y[i] : sig_y
+                    sig_z_val = isa(sig_z, AbstractArray) ? sig_z[i] : sig_z
+                    pc_y_val = isa(pc_y, AbstractArray) ? pc_y[i] : pc_y
+                    pc_z_val = isa(pc_z, AbstractArray) ? pc_z[i] : pc_z
+                    
+                    y_term = (cw_y[i] - cos(phi_cw[i]) * pc_y_val * 0.5) / sig_y_val
+                    z_term = (cw_z[i] - sin(phi_cw[i]) * pc_z_val * 0.5) / sig_z_val
+                    exp_y[i] = exp(-0.5 * y_term^2)
+                    exp_z[i] = exp(-0.5 * z_term^2)
+                    gaussWght[i] = exp_y[i] * exp_z[i]
+                    tmp_RPs_r[i] = gaussAbs[i] * gaussWght[i]
+                end
+            end
         end
 
         T_weight[iT] = sum(gaussWght)
-        T_red_arr[iT] = 1 .- dot(RPw, tmp_RPs_r)
+        T_red_arr[iT] = 1 - dot(RPw, tmp_RPs_r)
 
-        # Added TI
+        # Added TI - calculate mean manually to avoid allocation
+        mean_x = 0.0
+        @inbounds for i in 1:nRP
+            mean_x += tmp_RPs[i, 1]
+        end
+        mean_x /= nRP
+        
         T_addedTI_tmp = floris.k_fa * (
-            a^floris.k_fb *
+            a_val^floris.k_fb *
             TI0^floris.k_fc *
-            (mean(tmp_RPs[:, 1]) / d_rotor[iT])^floris.k_fd
+            (mean_x / d_rotor[iT])^floris.k_fd
         )
 
         TIexp = floris.TIexp
-        exp_y = @. exp(-0.5 * ((cw_y - cos(phi_cw) .* pc_y * 0.5) ./ (TIexp .* sig_y))^2)
-        exp_z = @. exp(-0.5 * ((cw_z - sin(phi_cw) .* pc_z * 0.5) ./ (TIexp .* sig_z))^2)
+        @inbounds for i in 1:nRP
+            sig_y_val = isa(sig_y, AbstractArray) ? sig_y[i] : sig_y
+            sig_z_val = isa(sig_z, AbstractArray) ? sig_z[i] : sig_z
+            pc_y_val = isa(pc_y, AbstractArray) ? pc_y[i] : pc_y
+            pc_z_val = isa(pc_z, AbstractArray) ? pc_z[i] : pc_z
+            
+            y_term = (cw_y[i] - cos(phi_cw[i]) * pc_y_val * 0.5) / (TIexp * sig_y_val)
+            z_term = (cw_z[i] - sin(phi_cw[i]) * pc_z_val * 0.5) / (TIexp * sig_z_val)
+            exp_y[i] = exp(-0.5 * y_term^2)
+            exp_z[i] = exp(-0.5 * z_term^2)
+        end
 
         T_aTI_arr[iT] = T_addedTI_tmp * dot(RPw, exp_y .* exp_z)
     end
