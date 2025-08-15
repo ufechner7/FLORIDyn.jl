@@ -391,7 +391,7 @@ function interpolateOPs(wf::WindFarm)
             turb_pos     = wf.posBase[iT, 1:2]
 
             # Euclidean distances to the turbine position
-            dist = sqrt.(sum((OP_positions' .- turb_pos).^2, dims=2))
+            dist = sqrt.(sum((OP_positions .- turb_pos').^2, dims=2))
             dist = vec(dist)  # make it a flat vector
 
             # Indices of sorted distances
@@ -399,14 +399,14 @@ function interpolateOPs(wf::WindFarm)
 
             if sorted_indices[1] == 1
                 # Closest is first OP (unlikely)
-                intOPs[iT][iiT, :] = [wf.StartI[iiaT], 1.0,wf.StartI[iiaT] + 1, 0.0]
+                intOPs[iT][iiT, :] = [start_idx, 1.0, start_idx + 1, 0.0]
             elseif sorted_indices[1] == wf.nOP
                 # Closest is last OP (possible)
-                intOPs[iT][iiT, :] = [wf.StartI[iiaT] + wf.nOP - 2, 0.0, wf.StartI[iiaT] + wf.nOP - 1, 1.0]
+                intOPs[iT][iiT, :] = [start_idx + wf.nOP - 2, 0.0, start_idx + wf.nOP - 1, 1.0]
             else
                 # Use two closest OPs for interpolation
-                indOP1 = wf.StartI[iiaT] - 1 + sorted_indices[1]
-                indOP2 = wf.StartI[iiaT] - 1 + sorted_indices[2]
+                indOP1 = start_idx - 1 + sorted_indices[1]
+                indOP2 = start_idx - 1 + sorted_indices[2]
 
                 a = wf.States_OP[indOP1, 1:2]
                 b = wf.States_OP[indOP2, 1:2]

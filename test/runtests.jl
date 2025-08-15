@@ -52,6 +52,7 @@ all_test_files = [
     "test_vel.jl",
     "test_iterate.jl",
     "test_floridyn_cl.jl",
+    "test_runfloridyn.jl",
     "test_floris.jl",
     "test_correction.jl",
     "test_controller.jl",

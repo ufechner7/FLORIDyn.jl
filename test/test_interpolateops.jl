@@ -26,7 +26,7 @@ wf_dict_02 = vars_after_interpolateOPs_T["T"]
 @testset "interpolateOPs_basic" begin
     global wf, wf_ref_02
     wf = convert_wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
-    wf.intOPs = interpolateOPs(wf)
+    wf.intOPs = interpolateOPs(wf)            # line 378ff in floridyn_cl.jl
 
     wf_ref_02 = convert_wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
     if !compare_windFarms(wf_ref_02, wf; detailed=false, tolerance=1e-6)
@@ -35,7 +35,7 @@ wf_dict_02 = vars_after_interpolateOPs_T["T"]
         println("Calculated: ", wf.intOPs); println()
         println("Reference: ", wf_ref_02.intOPs)
     end
-    @test_broken compare_windFarms(wf_ref_02, wf; detailed=false, tolerance=1e-6)
+    @test compare_windFarms(wf_ref_02, wf; detailed=false, tolerance=1e-6)
 end
 
 
