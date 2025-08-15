@@ -23,6 +23,7 @@ prepareSimulation
 perturbationOfTheWF!
 setUpTmpWFAndRun
 interpolateOPs
+interpolateOPs!
 iterateOPs!
 angSOWFA2world
 runFLORIDyn
