@@ -313,7 +313,20 @@ function compare_windFarms(wf1::WindFarm, wf2::WindFarm; detailed=true, toleranc
     end
     
     # Compare Weight
-    weight_equal = (wf1.Weight == wf2.Weight)
+    weight_equal = true
+    if length(wf1.Weight) == length(wf2.Weight)
+        for i in 1:length(wf1.Weight)
+            if length(wf1.Weight[i]) != length(wf2.Weight[i])
+                weight_equal = false
+                break
+            elseif !isempty(wf1.Weight[i]) && maximum(abs.(wf1.Weight[i] .- wf2.Weight[i])) > tolerance
+                weight_equal = false
+                break
+            end
+        end
+    else
+        weight_equal = false
+    end
     all_equal &= weight_equal
     
     if detailed
