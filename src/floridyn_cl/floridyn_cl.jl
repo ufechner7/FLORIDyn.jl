@@ -621,7 +621,7 @@ The function supports optional wind field interpolation via coefficient matrices
 @views function setUpTmpWFAndRun(set::Settings, wf::WindFarm, floris::Floris, wind::Wind)
     # Initialize outputs
     M = zeros(wf.nT, 3)
-    wf.Weight = Vector{Vector{Float64}}(undef,wf.nT)
+    wf.Weight = [Float64[] for _ in 1:wf.nT]
     wf.red_arr = ones(wf.nT,wf.nT)
 
     for iT in 1:wf.nT
@@ -789,7 +789,7 @@ function setUpTmpWFAndRun!(M_buffer::Matrix{Float64}, wf::WindFarm, set::Setting
                            plot_OP_buffer::Matrix{Float64}; alloc=nothing)
     # Reuse the provided M_buffer instead of allocating new
     M_buffer .= 0.0  # Clear the buffer
-    wf.Weight = Vector{Vector{Float64}}(undef,wf.nT)
+    wf.Weight = [Float64[] for _ in 1:wf.nT]
     wf.red_arr = ones(wf.nT, wf.nT)  # Initialize if not already allocated
 
     if !isnothing(alloc)
