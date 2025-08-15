@@ -8,16 +8,20 @@ if !isdefined(Main, :TestHelpers)
 end
 using .TestHelpers
 
-matlab_file   = "test/data/after_init_simulation_T.mat"
+matlab_file   = "test/data/after_prepare_simulation_T.mat"
 vars = matread(matlab_file)
 wf_dict = vars["T"]
 matlab_file   = "test/data/after_one_step_T.mat"
 vars = matread(matlab_file)
 wf_dict_01 = vars["T"]
 
+after_interpolateOPs_T_file = "test/data/after_interpolateOPs_T.mat"
+vars_after_interpolateOPs_T = matread(after_interpolateOPs_T_file)
+wf_dict_02 = vars_after_interpolateOPs_T["T"]
 
-@testset "runfloridyn_basic" begin
-    global wf, wf_ref, wf_ref_01, wf_debug
+
+@testset "runfloridyn_vs_matlab" begin
+    global wf, wf_ref, wf_ref_01, wf_ref_02, wf_debug
     settings_file = "data/2021_9T_Data.yaml"
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -26,16 +30,22 @@ wf_dict_01 = vars["T"]
     vis = Vis(online=false, save=false, rel_v_min=20.0, up_int = 4)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     sim.n_sim_steps = 1
-    wf_ref = convert_wf_dict2windfarm(wf_dict)
+    wf_ref = convert_wf_dict2windfarm(wf_dict) # after_prepare_simulation_T
     @test compare_windFarms(wf, wf_ref; detailed=false)
     wf_debug = [WindFarm()]
     wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris; debug=wf_debug)
-    # TODO compare wf after after one simulation step
-    wf_ref_01 = convert_wf_dict2windfarm(wf_dict_01)
-    if !compare_windFarms(wf, wf_ref_01; detailed=false, tolerance=1e-6)
-        @warn "WindFarm does not match reference after simulation step"
-        # compare_windFarms(wf, wf_ref_01; detailed=true, tolerance=1e-6)
+    # TODO compare wf after after interpolateOPs
+    wf_ref_02 = convert_wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
+    if !compare_windFarms(wf_ref_02, wf_debug[1]; detailed=false, tolerance=1e-6)
+        @warn "WindFarm does not match reference after interpolateOPs"
+        compare_windFarms(wf_ref_02, wf_debug[1]; detailed=true, tolerance=1e-6)
     end
+
+    # wf_ref_01 = convert_wf_dict2windfarm(wf_dict_01)
+    # if !compare_windFarms(wf, wf_ref_01; detailed=false, tolerance=1e-6)
+    #     @warn "WindFarm does not match reference after simulation step"
+    #     # compare_windFarms(wf, wf_ref_01; detailed=true, tolerance=1e-6)
+    # end
     @test size(md) == (9, 6) # from Matlab
     # @test minimum(md.ForeignReduction) ≈ 72.56141032518147 # Matlab: 73.8438
     # @test mean(md.ForeignReduction)    ≈ 98.54433712619702 # Matlab: 98.
