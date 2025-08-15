@@ -138,7 +138,6 @@ using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
         @test ! structs_equal(wf_old, wf; prn=false)
     end
     @testset "runFLORIDyn" begin
-        global md
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
         wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -153,7 +152,6 @@ using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
         
     end
     @testset "runFLORIDyn - online" begin
-        global md
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
         wind, sim, con, floris, floridyn, ta = setup(settings_file)
