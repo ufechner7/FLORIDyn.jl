@@ -126,7 +126,7 @@ end
     sim.n_sim_steps = 1
     wf_ref = convert_wf_dict2windfarm(wf_dict_ref)
     tmpM, wf = setUpTmpWFAndRun(set, wf_ref, floris, wind)
-    # compare_windFarms(wf1, wf_old; detailed=true)
+    @test_broken compare_windFarms(wf1, wf_old; detailed=false)
 end
 
 
