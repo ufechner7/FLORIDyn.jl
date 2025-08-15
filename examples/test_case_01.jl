@@ -69,7 +69,7 @@ println("Relative error (Z): ", round(rel_err(A, B)*100, digits=2), " %")
 
 plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
 plot_flow_field(wf, X_ref, Y_ref, Z_ref, vis; msr=VelReduction, plt, fig="Z_ref")
-# plot_measurements(wf, md, vis; separated=true, plt)
+plot_measurements(wf, md, vis; separated=true, plt)
 
 v_min = minimum(Z[:, :, msr])
 v_max = maximum(Z[:, :, msr])
