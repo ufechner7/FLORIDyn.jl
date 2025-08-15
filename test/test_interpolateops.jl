@@ -25,10 +25,10 @@ wf_dict_02 = vars_after_interpolateOPs_T["T"]
 
 @testset "interpolateOPs_basic" begin
     global wf, wf_ref_02
-    wf = convert_wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
+    wf = wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
     wf.intOPs = interpolateOPs(wf)            # line 378ff in floridyn_cl.jl
 
-    wf_ref_02 = convert_wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
+    wf_ref_02 = wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
     if !compare_windFarms(wf_ref_02, wf; detailed=false, tolerance=1e-6)
         @warn "WindFarm does not match reference after interpolateOPs"
         # compare_windFarms(wf_ref_02, wf; detailed=true, tolerance=1e-6)
@@ -42,8 +42,8 @@ end
     global wf_no_alloc, wf_ref_02_copy
     
     # Start with the same initial state as the allocating version
-    wf_no_alloc = convert_wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
-    wf_ref_02_copy = convert_wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T (reference)
+    wf_no_alloc = wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
+    wf_ref_02_copy = wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T (reference)
     
     # Pre-allocate buffers for the non-allocating version
     intOPs = [zeros(length(wf_no_alloc.dep[iT]), 4) for iT in 1:wf_no_alloc.nT]
@@ -71,8 +71,8 @@ end
     global wf_alloc, wf_no_alloc_comp
     
     # Test with the same starting wind farm state
-    wf_alloc = convert_wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
-    wf_no_alloc_comp = convert_wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T (copy)
+    wf_alloc = wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
+    wf_no_alloc_comp = wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T (copy)
     
     # Run allocating version
     wf_alloc.intOPs = interpolateOPs(wf_alloc)
@@ -100,8 +100,8 @@ end
     global wf_buffer_test1, wf_buffer_test2
     
     # Create two different wind farm states
-    wf_buffer_test1 = convert_wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
-    wf_buffer_test2 = convert_wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T (copy)
+    wf_buffer_test1 = wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
+    wf_buffer_test2 = wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T (copy)
     
     # Pre-allocate buffers once
     max_nT = max(wf_buffer_test1.nT, wf_buffer_test2.nT)
@@ -121,8 +121,8 @@ end
     wf_buffer_test2.intOPs = result2
     
     # Both should match the reference
-    wf_ref_buffer1 = convert_wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
-    wf_ref_buffer2 = convert_wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
+    wf_ref_buffer1 = wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
+    wf_ref_buffer2 = wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
     
     @test compare_windFarms(wf_ref_buffer1, wf_buffer_test1; detailed=false, tolerance=1e-6)
     @test compare_windFarms(wf_ref_buffer2, wf_buffer_test2; detailed=false, tolerance=1e-6)

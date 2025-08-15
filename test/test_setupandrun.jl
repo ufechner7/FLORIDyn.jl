@@ -17,7 +17,7 @@ using .TestHelpers
 
 @testset "compare_windFarms_function" begin
     # Test with the converted WindFarm and a copy
-    wf_converted = convert_wf_dict2windfarm(wf_dict)
+    wf_converted = wf_dict2windfarm(wf_dict)
     wf_copy = deepcopy(wf_converted)
     
     # Test identical WindFarms
@@ -67,7 +67,7 @@ end
 
 @testset "wf_dict_to_windfarm_conversion" begin
     # Test the conversion function with MAT file data
-    wf_converted = convert_wf_dict2windfarm(wf_dict)
+    wf_converted = wf_dict2windfarm(wf_dict)
     
     @test wf_converted isa WindFarm
     @test wf_converted.nT == 9
@@ -103,7 +103,7 @@ end
     set = Settings(wind, sim, con)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     sim.n_sim_steps = 2
-    wf1 = convert_wf_dict2windfarm(wf_dict)
+    wf1 = wf_dict2windfarm(wf_dict)
     tmpM, wf = setUpTmpWFAndRun(set, wf1, floris, wind)
     tmpM_ref = [0, 9.094956525547340e-02, 0.1184213787906785, 0, 9.094956525547351e-02,
                 0.1184213787906786, 0, 9.094956525547340e-02, 1.010889141095400e-01]

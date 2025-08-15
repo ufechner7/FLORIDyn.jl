@@ -34,20 +34,20 @@ wf_dict_03 = vars_before_interpolateOPs_T["T"]
     vis = Vis(online=false, save=false, rel_v_min=20.0, up_int = 4)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     sim.n_sim_steps = 1
-    wf_ref = convert_wf_dict2windfarm(wf_dict) # after_prepare_simulation_T
+    wf_ref = wf_dict2windfarm(wf_dict) # after_prepare_simulation_T
     @test compare_windFarms(wf, wf_ref; detailed=false)
     wf_debug = [WindFarm(), WindFarm()]
     wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris; debug=wf_debug)
 
-    wf_ref_03 = convert_wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
+    wf_ref_03 = wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
     if !compare_windFarms(wf_ref_03, wf_debug[2]; detailed=false, tolerance=1e-6)
         @warn "WindFarm does not match reference before interpolateOPs"
     end
 
-    wf_ref_02 = convert_wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
+    wf_ref_02 = wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
     @test compare_windFarms(wf_ref_02, wf_debug[1]; detailed=false, tolerance=1e-6)
 
-    wf_ref_01 = convert_wf_dict2windfarm(wf_dict_01)
+    wf_ref_01 = wf_dict2windfarm(wf_dict_01)
     @test compare_windFarms(wf, wf_ref_01; detailed=false, tolerance=1e-6)
     @test size(md) == (9, 6) # from Matlab
     # @test minimum(md.ForeignReduction) ≈ 72.56141032518147 # Matlab: 73.8438

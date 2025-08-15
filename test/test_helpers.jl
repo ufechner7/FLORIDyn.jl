@@ -4,10 +4,10 @@
 module TestHelpers
 using FLORIDyn, DataFrames, MAT
 
-export convert_wf_dict2windfarm, structs_equal, compare_windFarms, sprintf
+export wf_dict2windfarm, structs_equal, compare_windFarms
 
 """
-    convert_wf_dict2windfarm(wf_dict::Dict{String, Any}) -> WindFarm
+    wf_dict2windfarm(wf_dict::Dict{String, Any}) -> WindFarm
 
 Convert MATLAB wf_dict to Julia WindFarm type.
 
@@ -42,7 +42,7 @@ and different array orientations that result from MATLAB to Julia conversion.
 # Load MAT file and convert
 vars = matread("wind_farm_data.mat")
 wf_dict = vars["wf"]
-wf = convert_wf_dict2windfarm(wf_dict)
+wf = wf_dict2windfarm(wf_dict)
 
 # Access as DataFrames
 turbine_data = wf.turbines
@@ -56,7 +56,7 @@ ops_data = wf.ops
 - Converts MATLAB row vectors to Julia column vectors for names
 - Ensures all nested structures are properly typed for WindFarm constructor
 """
-function convert_wf_dict2windfarm(wf_dict::Dict{String, Any})
+function wf_dict2windfarm(wf_dict::Dict{String, Any})
     # Extract and convert the complex nested structures
     nT = Int(wf_dict["nT"])
     nOP = Int(wf_dict["nOP"])
