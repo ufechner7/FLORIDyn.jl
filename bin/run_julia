@@ -51,7 +51,7 @@ fi
 # 0.24s multithreaded 
 
 # ON LAPTOP, Ryzen 7840U, performance mode on power
-# 115s on laptop multithreaded 4.0x advantage
-# 516s on laptop single threaded 
+# 101s on laptop multithreaded 4.4x advantage
+# 443s on laptop single threaded 
 # 1.51s single threaded
 # 0.30s multithreaded
