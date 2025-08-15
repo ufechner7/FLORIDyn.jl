@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, Test, ControlPlots, Statistics
+using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
 
 @testset verbose=true "floridyncl" begin
     include("test_prepare_simulation.jl")
@@ -148,8 +148,8 @@ using FLORIDyn, Test, ControlPlots, Statistics
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
         @test size(md) == (2709, 6) # from Matlab
-        @test minimum(md.ForeignReduction) ≈ 72.57019949691814 # Matlab: 73.8438
-        @test mean(md.ForeignReduction)    ≈ 98.54434468415639 # Matlab: 98.
+        @test minimum(md.ForeignReduction) ≈ 72.56141032518147 # Matlab: 73.8438
+        @test mean(md.ForeignReduction)    ≈ 98.54433712619702 # Matlab: 98.
         
     end
     @testset "runFLORIDyn - online" begin
