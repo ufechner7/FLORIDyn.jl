@@ -67,26 +67,31 @@ function convert_wf_dict2windfarm(wf_dict::Dict{String, Any})
     dep_vec = Vector{Vector{Int}}()
     
     for i in 1:nT
-        push!(intOPs_vec, wf_dict["intOPs"][i])
-        
-        # Convert weight (may be empty matrix, scalar, or vector)
-        w = wf_dict["weight"][i]
-        if isempty(w)
-            push!(weight_vec, Float64[])
-        elseif isa(w, Number)  # Handle scalar case
-            push!(weight_vec, [Float64(w)])
-        else
-            push!(weight_vec, vec(Float64.(w)))
+        if  "intOPs" in keys(wf_dict)
+            push!(intOPs_vec, wf_dict["intOPs"][i])
         end
         
-        # Convert dep (may be empty matrix, scalar, or vector)
-        d = wf_dict["dep"][i]
-        if isempty(d)
-            push!(dep_vec, Int[])
-        elseif isa(d, Number)  # Handle scalar case
-            push!(dep_vec, [Int(d)])
-        else
-            push!(dep_vec, vec(Int.(d)))
+        # Convert weight (may be empty matrix, scalar, or vector)
+        if  "weight" in keys(wf_dict)
+            w = wf_dict["weight"][i]
+            if isempty(w)
+                push!(weight_vec, Float64[])
+            elseif isa(w, Number)  # Handle scalar case
+                push!(weight_vec, [Float64(w)])
+            else
+                push!(weight_vec, vec(Float64.(w)))
+            end
+        end
+        if  "dep" in keys(wf_dict)
+            # Convert dep (may be empty matrix, scalar, or vector)
+            d = wf_dict["dep"][i]
+            if isempty(d)
+                push!(dep_vec, Int[])
+            elseif isa(d, Number)  # Handle scalar case
+                push!(dep_vec, [Int(d)])
+            else
+                push!(dep_vec, vec(Int.(d)))
+            end
         end
     end
     
