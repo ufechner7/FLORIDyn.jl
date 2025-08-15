@@ -19,9 +19,13 @@ after_interpolateOPs_T_file = "test/data/after_interpolateOPs_T.mat"
 vars_after_interpolateOPs_T = matread(after_interpolateOPs_T_file)
 wf_dict_02 = vars_after_interpolateOPs_T["T"]
 
+before_interpolateOPs_T_file = "test/data/before_interpolateOPs_T.mat"
+vars_before_interpolateOPs_T = matread(before_interpolateOPs_T_file)
+wf_dict_03 = vars_before_interpolateOPs_T["T"]
+
 
 @testset "runfloridyn_vs_matlab" begin
-    global wf, wf_ref, wf_ref_01, wf_ref_02, wf_debug
+    global wf, wf_ref, wf_ref_03, wf_debug
     settings_file = "data/2021_9T_Data.yaml"
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -32,9 +36,14 @@ wf_dict_02 = vars_after_interpolateOPs_T["T"]
     sim.n_sim_steps = 1
     wf_ref = convert_wf_dict2windfarm(wf_dict) # after_prepare_simulation_T
     @test compare_windFarms(wf, wf_ref; detailed=false)
-    wf_debug = [WindFarm()]
+    wf_debug = [WindFarm(), WindFarm()]
     wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris; debug=wf_debug)
-    # TODO compare wf after after interpolateOPs
+
+    wf_ref_03 = convert_wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
+    if !compare_windFarms(wf_ref_03, wf_debug[2]; detailed=false, tolerance=1e-6)
+        @warn "WindFarm does not match reference before interpolateOPs"
+    end
+
     wf_ref_02 = convert_wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
     if !compare_windFarms(wf_ref_02, wf_debug[1]; detailed=false, tolerance=1e-6)
         @warn "WindFarm does not match reference after interpolateOPs"

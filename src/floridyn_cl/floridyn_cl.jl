@@ -1066,16 +1066,19 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         # ========== Get FLORIS reductions ==========
         a = @allocated wf.dep = findTurbineGroups(wf, floridyn)
         alloc.findTurbineGroups += a
+        if sim_steps == 1 && ! isnothing(debug)
+            # println("interpolateOPs: $(wf.intOPs)")
+            debug[2] = deepcopy(wf)
+        end        
         a = @allocated wf.intOPs = interpolateOPs(wf)
         if sim_steps == 1 && ! isnothing(debug)
-            # correct
             # println("interpolateOPs: $(wf.intOPs)")
             debug[1] = deepcopy(wf)
         end
         alloc.interpolateOPs += a
         a = @allocated tmpM, wf = setUpTmpWFAndRun(set, wf, floris, wind)
         if sim_steps == 1
-            println("intOPs: $(wf.intOPs)")
+            # println("intOPs: $(wf.intOPs)")
         end
         alloc.setUpTmpWFAndRun += a
         if sim_steps == 2
