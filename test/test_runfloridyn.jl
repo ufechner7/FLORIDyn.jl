@@ -11,9 +11,13 @@ using .TestHelpers
 matlab_file   = "test/data/after_init_simulation_T.mat"
 vars = matread(matlab_file)
 wf_dict = vars["T"]
+matlab_file   = "test/data/after_one_step_T.mat"
+vars = matread(matlab_file)
+wf_dict_01 = vars["T"]
+
 
 @testset "runfloridyn_basic" begin
-    global wf, wf_ref
+    global wf, wf_ref, wf_ref_01
     settings_file = "data/2021_9T_Data.yaml"
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -26,7 +30,8 @@ wf_dict = vars["T"]
     @test compare_windFarms(wf, wf_ref; detailed=false)
     wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
     # TODO compare wf after after one simulation step
-    
+    wf_ref_01 = convert_wf_dict2windfarm(wf_dict_01)
+    # @test compare_windFarms(wf, wf_ref_01; detailed=false)
     @test size(md) == (9, 6) # from Matlab
     # @test minimum(md.ForeignReduction) ≈ 72.56141032518147 # Matlab: 73.8438
     # @test mean(md.ForeignReduction)    ≈ 98.54433712619702 # Matlab: 98.
