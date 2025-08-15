@@ -6,10 +6,10 @@ using FLORIDyn, TerminalPager, MAT, ControlPlots, DistributedNext, LinearAlgebra
 
 settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"
-input_file    = "test/data/input_T_2_steps.mat"
+input_file    = "test/data/input_T_195_steps.mat"
 T_ref = matread(input_file)["T"]
 turbines_ref = (turbines(T_ref))  # Creates a 1800×3 DataFrame with turbine states
-matlab_file   = "test/data/flowfield_xyz_2_steps.mat"
+matlab_file   = "test/data/flowfield_xyz_195_steps.mat"
 vars = matread(matlab_file)
 X_ref = vars["X"]
 Y_ref = vars["Y"]
@@ -29,14 +29,14 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-sim.n_sim_steps = 2
+sim.n_sim_steps = 195
 
 vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 
 turbines_wf = wf.turbines
 
-function plot_dfs(df1, df2; fig=nothing, max_op=3)
+function plot_dfs(df1, df2; fig=nothing, max_op=195)
     # Filter dataframes to keep only rows where OP <= max_op
     df1_filtered = filter(row -> row.OP <= max_op, df1)
     df2_filtered = filter(row -> row.OP <= max_op, df2)
