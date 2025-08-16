@@ -8,6 +8,7 @@ using FLORIDyn, Test, Statistics, LinearAlgebra
 
 Create a working wind farm setup for testing iterateOPs! functionality.
 Uses the standard test configuration to ensure physical validity.
+Returns the wind farm, simulation parameters, and pre-allocated buffers.
 """
 function create_test_setup()
     settings_file = "data/2021_9T_Data.yaml"
@@ -15,18 +16,21 @@ function create_test_setup()
     set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     
-    return wf, sim, floris, floridyn, set
+    # Create pre-allocated buffers for the new iterateOPs! function
+    buffers = IterateOPsBuffers(wf)
+    
+    return wf, sim, floris, floridyn, set, buffers
 end
 
 @testset verbose=true "iterateOPs! Unit Tests" begin
     
     @testset "Basic Functionality" begin
         @testset "Function Execution" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             wf_original = deepcopy(wf)
             
             # Test that function executes without error
-            @test_nowarn iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+            @test_nowarn iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
             
             # Test that wind farm states are potentially modified
             # Note: Due to circular shifting, some states may appear unchanged
@@ -39,17 +43,17 @@ end
             @test !any(isnan.(wf.States_WF))
             
             # Test return value
-            result = iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+            result = iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
             @test result === nothing
         end
         
         @testset "State Matrix Dimensions" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             original_size_op = size(wf.States_OP)
             original_size_t = size(wf.States_T)
             original_size_wf = size(wf.States_WF)
             
-            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
             
             # Dimensions should remain unchanged
             @test size(wf.States_OP) == original_size_op
@@ -58,9 +62,9 @@ end
         end
         
         @testset "State Value Validity" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             
-            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
             
             # Check that no NaN or Inf values are produced
             @test !any(isnan.(wf.States_OP))
@@ -74,12 +78,12 @@ end
     
     @testset "State Advancement" begin
         @testset "Downstream Position Changes" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             
             # Store initial downstream positions
             initial_dw_pos = copy(wf.States_OP[:, 4])
             
-            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
             
             # Some downstream positions should change due to advection
             # (accounting for circular shifting and complex wake dynamics)
@@ -96,14 +100,14 @@ end
         end
         
         @testset "World Coordinate Updates" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             
             # Store initial world coordinates
             initial_x = copy(wf.States_OP[:, 1])
             initial_y = copy(wf.States_OP[:, 2])
             initial_z = copy(wf.States_OP[:, 3])
             
-            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
             
             # Check that some coordinates change
             x_changes = abs.(wf.States_OP[:, 1] - initial_x)
@@ -118,7 +122,7 @@ end
     
     @testset "Temporal Behavior" begin
         @testset "Circular Shift Operation" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             
             # Create unique identifiers for tracking
             marker_values = collect(1:size(wf.States_OP, 1)) * 1000.0
@@ -127,7 +131,7 @@ end
             # Store values at turbine start positions 
             preserved_markers = wf.States_OP[wf.StartI[:], end]
             
-            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
             
             # Values at start indices should be preserved (circular shift restores them)
             current_markers = wf.States_OP[wf.StartI[:], end]
@@ -135,11 +139,11 @@ end
         end
         
         @testset "Multiple Iterations Stability" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             
             # Run multiple iterations
             for i in 1:3
-                @test_nowarn iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+                @test_nowarn iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
                 
                 # Check state validity after each iteration
                 @test !any(isnan.(wf.States_OP))
@@ -151,9 +155,9 @@ end
     
     @testset "Spatial Ordering" begin
         @testset "Downstream Position Ordering" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             
-            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
             
             # Check that downstream positions are ordered for each turbine
             for iT in 1:wf.nT
@@ -168,14 +172,14 @@ end
     
     @testset "Physical Consistency" begin
         @testset "Conservation Properties" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             
             # Count initial dimensions
             initial_op_count = size(wf.States_OP, 1)
             initial_t_count = size(wf.States_T, 1)
             initial_wf_count = size(wf.States_WF, 1)
             
-            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
             
             # Dimensions should be conserved
             @test size(wf.States_OP, 1) == initial_op_count
@@ -184,11 +188,11 @@ end
         end
         
         @testset "Reasonable Movement Magnitudes" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             
             initial_positions = copy(wf.States_OP[:, 1:3])
             
-            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
             
             final_positions = wf.States_OP[:, 1:3]
             movement = final_positions - initial_positions
@@ -203,11 +207,11 @@ end
     
     @testset "Edge Cases and Robustness" begin
         @testset "Repeated Execution" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             
             # Run multiple times to test stability
             for i in 1:5
-                @test_nowarn iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+                @test_nowarn iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
                 
                 # Ensure ordering is maintained
                 for iT in 1:wf.nT
@@ -220,14 +224,14 @@ end
         end
         
         @testset "Type Consistency" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             
             # Store original types
             original_op_type = typeof(wf.States_OP)
             original_t_type = typeof(wf.States_T)
             original_wf_type = typeof(wf.States_WF)
             
-            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
             
             # Types should remain the same
             @test typeof(wf.States_OP) == original_op_type
@@ -238,7 +242,7 @@ end
     
     @testset "Algorithm Implementation Details" begin
         @testset "Downwind Step Calculation" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             
             # Test that the downwind step is calculated based on wind speed and time
             initial_dw = copy(wf.States_OP[:, 4])
@@ -246,7 +250,7 @@ end
             time_step = sim.time_step
             advection_factor = sim.dyn.advection
             
-            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
             
             # The relationship is complex due to circular shifting, but we can verify
             # that changes are proportional to wind speed and time step
@@ -259,14 +263,14 @@ end
         end
         
         @testset "Coordinate Transformation" begin
-            wf, sim, floris, floridyn, set = create_test_setup()
+            wf, sim, floris, floridyn, set, buffers = create_test_setup()
             
             # Check that world coordinates are updated based on wind direction
             initial_x = copy(wf.States_OP[:, 1])
             initial_y = copy(wf.States_OP[:, 2])
             wind_dirs = copy(wf.States_WF[:, 2])
             
-            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn)
+            iterateOPs!(IterateOPs_basic(), wf, sim, floris, floridyn, buffers)
             
             # Movement should occur in world coordinates
             x_movement = abs.(wf.States_OP[:, 1] - initial_x)
@@ -281,12 +285,13 @@ end
     @testset "Regression Tests" begin
         @testset "Comparison with Reference Implementation" begin
             # This test ensures that our function produces consistent results
-            wf1, sim, floris, floridyn, set = create_test_setup()
+            wf1, sim, floris, floridyn, set, buffers1 = create_test_setup()
             wf2 = deepcopy(wf1)
+            buffers2 = IterateOPsBuffers(wf2)  # Create separate buffers for second test
             
             # Run the same operation on both copies
-            iterateOPs!(IterateOPs_basic(), wf1, sim, floris, floridyn)
-            iterateOPs!(IterateOPs_basic(), wf2, sim, floris, floridyn)
+            iterateOPs!(IterateOPs_basic(), wf1, sim, floris, floridyn, buffers1)
+            iterateOPs!(IterateOPs_basic(), wf2, sim, floris, floridyn, buffers2)
             
             # Results should be identical
             @test wf1.States_OP ≈ wf2.States_OP
@@ -296,12 +301,13 @@ end
         
         @testset "Deterministic Behavior" begin
             # Test that the function is deterministic for the same inputs
-            wf_base, sim, floris, floridyn, set = create_test_setup()
+            wf_base, sim, floris, floridyn, set, _ = create_test_setup()
             
             results = []
             for i in 1:3
                 wf_test = deepcopy(wf_base)
-                iterateOPs!(IterateOPs_basic(), wf_test, sim, floris, floridyn)
+                buffers_test = IterateOPsBuffers(wf_test)
+                iterateOPs!(IterateOPs_basic(), wf_test, sim, floris, floridyn, buffers_test)
                 push!(results, copy(wf_test.States_OP))
             end
             
@@ -311,3 +317,4 @@ end
         end
     end
 end
+nothing
