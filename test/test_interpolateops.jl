@@ -26,7 +26,11 @@ wf_dict_02 = vars_after_interpolateOPs_T["T"]
 @testset "interpolateOPs_basic" begin
     global wf, wf_ref_02
     wf = wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
-    wf.intOPs = interpolateOPs(wf)            # line 378ff in floridyn_cl.jl
+    # Create buffers for interpolateOPs!
+    intOPs_buffers = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
+    dist_buffer = zeros(wf.nOP)
+    sorted_indices_buffer = zeros(Int, wf.nOP)
+    wf.intOPs = interpolateOPs!(intOPs_buffers, wf, dist_buffer, sorted_indices_buffer)            # line 378ff in floridyn_cl.jl
 
     wf_ref_02 = wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
     if !compare_windFarms(wf_ref_02, wf; detailed=false, tolerance=1e-6)
@@ -74,8 +78,11 @@ end
     wf_alloc = wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
     wf_no_alloc_comp = wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T (copy)
     
-    # Run allocating version
-    wf_alloc.intOPs = interpolateOPs(wf_alloc)
+    # Run allocating version (now using non-allocating version)
+    intOPs_buffers_alloc = [zeros(length(wf_alloc.dep[iT]), 4) for iT in 1:wf_alloc.nT]
+    dist_buffer_alloc = zeros(wf_alloc.nOP)
+    sorted_indices_buffer_alloc = zeros(Int, wf_alloc.nOP)
+    wf_alloc.intOPs = interpolateOPs!(intOPs_buffers_alloc, wf_alloc, dist_buffer_alloc, sorted_indices_buffer_alloc)
     
     # Run non-allocating version
     intOPs = [zeros(length(wf_no_alloc_comp.dep[iT]), 4) for iT in 1:wf_no_alloc_comp.nT]
