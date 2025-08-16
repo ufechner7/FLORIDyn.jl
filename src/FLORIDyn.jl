@@ -5,12 +5,26 @@
 $(DocStringExtensions.README)
 """
 module FLORIDyn
-module Revert
-         macro allocated(ex)
-           # esc(:((@timed $ex).bytes))
-           esc(:($ex; 0))
-         end
-       end
+using Logging
+
+function is_debug_logging_enabled()
+    return Logging.min_enabled_level(current_logger()) <= Logging.Debug
+end
+
+if is_debug_logging_enabled()
+    @eval module Revert
+            macro allocated(ex)
+            esc(:((@timed $ex).bytes))
+            end
+        end
+else
+    @eval module Revert
+            macro allocated(ex)
+            esc(:($ex; 0))
+            end
+        end
+end
+
 
 using PrecompileTools: @setup_workload, @compile_workload
 using LaTeXStrings

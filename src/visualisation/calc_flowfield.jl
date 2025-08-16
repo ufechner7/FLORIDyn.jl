@@ -83,6 +83,80 @@ function create_thread_buffers(wf::WindFarm, nth::Int)
 end
 
 """
+    update_thread_buffers!(buffers::ThreadBuffers, wf::WindFarm) -> Nothing
+
+Update wind field states in all thread-local wind farm buffers without allocating memory.
+
+This function efficiently updates the wind field states (`States_WF`) and optional interpolation 
+coefficients (`C_Vel`, `C_Dir`) in all thread-local WindFarm objects to match the current 
+wind conditions from the master WindFarm object. This is useful when wind conditions change 
+during simulation and the thread buffers need to be synchronized.
+
+# Arguments
+- `buffers::ThreadBuffers`: Thread-local buffers containing WindFarm copies for each thread
+- `wf::WindFarm`: Master WindFarm object with updated wind field states
+
+# Performance Notes
+- Uses in-place assignment (`.=`) to avoid memory allocations
+- Only updates wind-related fields, preserving other thread-specific modifications
+- Updates all threads' buffers to maintain consistency
+- Handles optional interpolation coefficient matrices when present
+
+# Fields Updated
+- `States_WF`: Wind field states matrix (velocity, direction, turbulence intensity)
+- `C_Vel`: Velocity interpolation coefficients (if present in WindFarm type)  
+- `C_Dir`: Direction interpolation coefficients (if present in WindFarm type)
+
+# Example
+```julia
+# Create thread buffers
+buffers = create_thread_buffers(wf, nthreads())
+
+# ... wind conditions change ...
+
+# Update all thread buffers with new wind states (non-allocating)
+update_thread_buffers!(buffers, wf)
+
+# Continue with flow field computation using updated buffers
+Z = getMeasurementsP(buffers, X, Y, nM, zh, wf, set, floris, wind)
+```
+
+# See Also
+- [`create_thread_buffers`](@ref): Create initial thread-local buffers
+- [`getMeasurementsP`](@ref): Parallel flow field computation using thread buffers
+"""
+function update_thread_buffers!(buffers::ThreadBuffers, wf::WindFarm)
+    # Update wind field states in all thread-local WindFarm objects
+    for tid in 1:length(buffers.thread_buffers)
+        thread_wf = buffers.thread_buffers[tid]
+        
+        # Update wind field states matrix (non-allocating in-place assignment)
+        # Note: Only update the original turbine portion, not the extra grid point
+        original_size = size(wf.States_WF)
+        thread_wf.States_WF[1:original_size[1], 1:original_size[2]] .= wf.States_WF
+        
+        # Update optional interpolation coefficient matrices if they exist
+        if hasfield(typeof(wf), :C_Vel) && isdefined(wf, :C_Vel)
+            if hasfield(typeof(thread_wf), :C_Vel) && isdefined(thread_wf, :C_Vel)
+                # Only update the original turbine portion
+                original_nT = wf.nT
+                thread_wf.C_Vel[1:original_nT, :] .= wf.C_Vel
+            end
+        end
+        
+        if hasfield(typeof(wf), :C_Dir) && isdefined(wf, :C_Dir)
+            if hasfield(typeof(thread_wf), :C_Dir) && isdefined(thread_wf, :C_Dir)
+                # Only update the original turbine portion
+                original_nT = wf.nT
+                thread_wf.C_Dir[1:original_nT, :] .= wf.C_Dir
+            end
+        end
+    end
+    
+    return nothing
+end
+
+"""
     getMeasurements(mx::Matrix, my::Matrix, nM::Int, zh::Real, wf::WindFarm, set::Settings, 
                     floris::Floris, wind::Wind) -> Array{Float64,3}
 
