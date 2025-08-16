@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 module TestHelpers
-using FLORIDyn, DataFrames, MAT
+using FLORIDyn, DataFrames, MAT, Printf
 
 export wf_dict2windfarm, structs_equal, compare_windFarms
 
@@ -357,17 +357,4 @@ function compare_windFarms(wf1::WindFarm, wf2::WindFarm; detailed=true, toleranc
     return all_equal
 end
 
-# Helper function for formatting (simple sprintf replacement)
-function sprintf(fmt, args...)
-    # Simple implementation for the format strings we use
-    if fmt == "  %-15s %10s %10s   %s"
-        return "  $(rpad(args[1], 15)) $(lpad(string(args[2]), 10)) $(lpad(string(args[3]), 10))   $(args[4])"
-    elseif fmt == "  %-15s %-12s %-12s   %s"
-        return "  $(rpad(args[1], 15)) $(rpad(args[2], 12)) $(rpad(args[3], 12))   $(args[4])"
-    elseif fmt == "  %-15s %10d %10d     %s"
-        return "  $(rpad(args[1], 15)) $(lpad(string(args[2]), 10)) $(lpad(string(args[3]), 10))     $(args[4])"
-    else
-        return string(args...)
-    end
-# Formatting helper removed; use string interpolation or Printf.@sprintf instead.
-end
+end # module TestHelpers
