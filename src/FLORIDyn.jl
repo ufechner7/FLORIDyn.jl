@@ -328,6 +328,49 @@ ops_data = wf.ops               # DataFrame with operating point states
     Names_OP::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the operating points
 end
 
+"""
+    create_unified_buffers(wf::WindFarm) -> UnifiedBuffers
+
+Create a unified buffer struct containing all arrays needed by interpolateOPs! and setUpTmpWFAndRun!.
+
+# Arguments
+- `wf::WindFarm`: Wind farm object to determine buffer sizes
+
+# Returns
+- `UnifiedBuffers`: Struct containing all pre-allocated buffers
+"""
+function create_unified_buffers(wf::WindFarm)
+    # For interpolateOPs!
+    dist_buffer = zeros(wf.nOP)
+    sorted_indices_buffer = zeros(Int, wf.nOP)
+    
+    # For setUpTmpWFAndRun!
+    nT_with_grid = wf.nT + 1  # Original turbines + 1 grid point
+    max_deps = wf.nT + 1  # Grid point depends on all original turbines
+    
+    M_buffer = zeros(nT_with_grid, 3)
+    iTWFState_buffer = zeros(size(wf.States_WF, 2))
+    tmp_Tpos_buffer = zeros(max_deps, 3)
+    tmp_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
+    tmp_Tst_buffer = zeros(max_deps, size(wf.States_T, 2))
+    dists_buffer = zeros(max_deps)
+    plot_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
+    plot_OP_buffer = zeros(max_deps, 2)
+    
+    return UnifiedBuffers(
+        dist_buffer,
+        sorted_indices_buffer,
+        M_buffer,
+        iTWFState_buffer,
+        tmp_Tpos_buffer,
+        tmp_WF_buffer,
+        tmp_Tst_buffer,
+        dists_buffer,
+        plot_WF_buffer,
+        plot_OP_buffer
+    )
+end
+
 include("visualisation/structs_measurements.jl")
 include("settings.jl")
 

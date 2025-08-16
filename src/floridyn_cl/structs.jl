@@ -247,3 +247,33 @@ for applications where accuracy is prioritized over computational speed.
 """
 struct IterateOPs_weighted <: IterateOPs_model end
 
+"""
+    UnifiedBuffers
+
+Unified buffer struct containing all arrays needed by interpolateOPs! and setUpTmpWFAndRun!.
+
+# Fields
+- `dist_buffer::Vector{Float64}`: Distance calculations for interpolateOPs!
+- `sorted_indices_buffer::Vector{Int}`: Sorted indices for interpolateOPs!
+- `M_buffer::Matrix{Float64}`: Main result buffer for setUpTmpWFAndRun!
+- `iTWFState_buffer::Vector{Float64}`: Turbine wind field state buffer
+- `tmp_Tpos_buffer::Matrix{Float64}`: Temporary turbine position buffer
+- `tmp_WF_buffer::Matrix{Float64}`: Temporary wind field buffer
+- `tmp_Tst_buffer::Matrix{Float64}`: Temporary turbine state buffer
+- `dists_buffer::Vector{Float64}`: Distance buffer for setUpTmpWFAndRun!
+- `plot_WF_buffer::Matrix{Float64}`: Wind field plotting buffer
+- `plot_OP_buffer::Matrix{Float64}`: Observation point plotting buffer
+"""
+struct UnifiedBuffers
+    dist_buffer::Vector{Float64}
+    sorted_indices_buffer::Vector{Int}
+    M_buffer::Matrix{Float64}
+    iTWFState_buffer::Vector{Float64}
+    tmp_Tpos_buffer::Matrix{Float64}
+    tmp_WF_buffer::Matrix{Float64}
+    tmp_Tst_buffer::Matrix{Float64}
+    dists_buffer::Vector{Float64}
+    plot_WF_buffer::Matrix{Float64}
+    plot_OP_buffer::Matrix{Float64}
+end
+

@@ -28,78 +28,7 @@ struct ThreadBuffers
     }}
 end
 
-"""
-    UnifiedBuffers
-
-Unified buffer struct containing all arrays needed by interpolateOPs! and setUpTmpWFAndRun!.
-
-# Fields
-- `dist_buffer::Vector{Float64}`: Distance calculations for interpolateOPs!
-- `sorted_indices_buffer::Vector{Int}`: Sorted indices for interpolateOPs!
-- `M_buffer::Matrix{Float64}`: Main result buffer for setUpTmpWFAndRun!
-- `iTWFState_buffer::Vector{Float64}`: Turbine wind field state buffer
-- `tmp_Tpos_buffer::Matrix{Float64}`: Temporary turbine position buffer
-- `tmp_WF_buffer::Matrix{Float64}`: Temporary wind field buffer
-- `tmp_Tst_buffer::Matrix{Float64}`: Temporary turbine state buffer
-- `dists_buffer::Vector{Float64}`: Distance buffer for setUpTmpWFAndRun!
-- `plot_WF_buffer::Matrix{Float64}`: Wind field plotting buffer
-- `plot_OP_buffer::Matrix{Float64}`: Observation point plotting buffer
-"""
-struct UnifiedBuffers
-    dist_buffer::Vector{Float64}
-    sorted_indices_buffer::Vector{Int}
-    M_buffer::Matrix{Float64}
-    iTWFState_buffer::Vector{Float64}
-    tmp_Tpos_buffer::Matrix{Float64}
-    tmp_WF_buffer::Matrix{Float64}
-    tmp_Tst_buffer::Matrix{Float64}
-    dists_buffer::Vector{Float64}
-    plot_WF_buffer::Matrix{Float64}
-    plot_OP_buffer::Matrix{Float64}
-end
-
-"""
-    create_unified_buffers(wf::WindFarm) -> UnifiedBuffers
-
-Create a unified buffer struct containing all arrays needed by interpolateOPs! and setUpTmpWFAndRun!.
-
-# Arguments
-- `wf::WindFarm`: Wind farm object to determine buffer sizes
-
-# Returns
-- `UnifiedBuffers`: Struct containing all pre-allocated buffers
-"""
-function create_unified_buffers(wf::WindFarm)
-    # For interpolateOPs!
-    dist_buffer = zeros(wf.nOP)
-    sorted_indices_buffer = zeros(Int, wf.nOP)
-    
-    # For setUpTmpWFAndRun!
-    nT_with_grid = wf.nT + 1  # Original turbines + 1 grid point
-    max_deps = wf.nT + 1  # Grid point depends on all original turbines
-    
-    M_buffer = zeros(nT_with_grid, 3)
-    iTWFState_buffer = zeros(size(wf.States_WF, 2))
-    tmp_Tpos_buffer = zeros(max_deps, 3)
-    tmp_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
-    tmp_Tst_buffer = zeros(max_deps, size(wf.States_T, 2))
-    dists_buffer = zeros(max_deps)
-    plot_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
-    plot_OP_buffer = zeros(max_deps, 2)
-    
-    return UnifiedBuffers(
-        dist_buffer,
-        sorted_indices_buffer,
-        M_buffer,
-        iTWFState_buffer,
-        tmp_Tpos_buffer,
-        tmp_WF_buffer,
-        tmp_Tst_buffer,
-        dists_buffer,
-        plot_WF_buffer,
-        plot_OP_buffer
-    )
-end
+# UnifiedBuffers struct and create_unified_buffers function are defined in floridyn_cl/structs.jl
 
 """
     create_thread_buffers(wf::WindFarm, nth::Int) -> ThreadBuffers
@@ -295,7 +224,7 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         GP.States_T[end, :] .= 0.0
         
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
-        interpolateOPs!(GP.intOPs, GP, unified_buffers.dist_buffer, unified_buffers.sorted_indices_buffer)
+        interpolateOPs!(GP.intOPs, GP, unified_buffers)
 
         tmpM, _ = setUpTmpWFAndRun!(unified_buffers.M_buffer, GP, set, floris, wind,
                                    unified_buffers.iTWFState_buffer, unified_buffers.tmp_Tpos_buffer, 
@@ -436,7 +365,7 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         end
         
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
-        interpolateOPs!(GP.intOPs, GP, unified_buffers.dist_buffer, unified_buffers.sorted_indices_buffer)
+        interpolateOPs!(GP.intOPs, GP, unified_buffers)
 
         a = @allocated tmpM, _ = setUpTmpWFAndRun!(unified_buffers.M_buffer, GP, set, floris, wind,
                                    unified_buffers.iTWFState_buffer, unified_buffers.tmp_Tpos_buffer, 

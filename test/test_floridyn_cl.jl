@@ -123,11 +123,10 @@ using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf.dep = findTurbineGroups(wf, floridyn)
-        # Create buffers for interpolateOPs!
+        # Create unified buffers for interpolateOPs!
         intOPs_buffers = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
-        dist_buffer = zeros(wf.nOP)
-        sorted_indices_buffer = zeros(Int, wf.nOP)
-        wf.intOPs = interpolateOPs!(intOPs_buffers, wf, dist_buffer, sorted_indices_buffer)
+        unified_buffers = create_unified_buffers(wf)
+        wf.intOPs = interpolateOPs!(intOPs_buffers, wf, unified_buffers)
         @test length(wf.intOPs) == wf.nT
     end
     @testset "setUpTmpWFAndRun" begin
@@ -138,11 +137,10 @@ using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf.dep = findTurbineGroups(wf, floridyn)
-        # Create buffers for interpolateOPs!
+        # Create unified buffers for interpolateOPs!
         intOPs_buffers = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
-        dist_buffer = zeros(wf.nOP)
-        sorted_indices_buffer = zeros(Int, wf.nOP)
-        wf.intOPs = interpolateOPs!(intOPs_buffers, wf, dist_buffer, sorted_indices_buffer)
+        unified_buffers = create_unified_buffers(wf)
+        wf.intOPs = interpolateOPs!(intOPs_buffers, wf, unified_buffers)
         wf_old = deepcopy(wf)
         M, wf = setUpTmpWFAndRun(set, wf, floris, wind)
         @test ! structs_equal(wf_old, wf; prn=false)

@@ -26,11 +26,10 @@ wf_dict_02 = vars_after_interpolateOPs_T["T"]
 @testset "interpolateOPs_basic" begin
     global wf, wf_ref_02
     wf = wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
-    # Create buffers for interpolateOPs!
+    # Create unified buffers for interpolateOPs!
+    unified_buffers = create_unified_buffers(wf)
     intOPs_buffers = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
-    dist_buffer = zeros(wf.nOP)
-    sorted_indices_buffer = zeros(Int, wf.nOP)
-    wf.intOPs = interpolateOPs!(intOPs_buffers, wf, dist_buffer, sorted_indices_buffer)
+    wf.intOPs = interpolateOPs!(intOPs_buffers, wf, unified_buffers)
 
     wf_ref_02 = wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
     if !compare_windFarms(wf_ref_02, wf; detailed=false, tolerance=1e-6)
@@ -51,11 +50,10 @@ end
     
     # Pre-allocate buffers for the non-allocating version
     intOPs = [zeros(length(wf_no_alloc.dep[iT]), 4) for iT in 1:wf_no_alloc.nT]
-    dist_buffer = zeros(wf_no_alloc.nOP)
-    sorted_indices_buffer = zeros(Int, wf_no_alloc.nOP)
+    unified_buffers = create_unified_buffers(wf_no_alloc)
     
     # Call the non-allocating version
-    result = interpolateOPs!(intOPs, wf_no_alloc, dist_buffer, sorted_indices_buffer)
+    result = interpolateOPs!(intOPs, wf_no_alloc, unified_buffers)
     
     # Assign the result to the wind farm object (same way as the allocating version)
     wf_no_alloc.intOPs = result
@@ -80,16 +78,14 @@ end
     
     # Run allocating version (now using non-allocating version)
     intOPs_buffers_alloc = [zeros(length(wf_alloc.dep[iT]), 4) for iT in 1:wf_alloc.nT]
-    dist_buffer_alloc = zeros(wf_alloc.nOP)
-    sorted_indices_buffer_alloc = zeros(Int, wf_alloc.nOP)
-    wf_alloc.intOPs = interpolateOPs!(intOPs_buffers_alloc, wf_alloc, dist_buffer_alloc, sorted_indices_buffer_alloc)
+    unified_buffers_alloc = create_unified_buffers(wf_alloc)
+    wf_alloc.intOPs = interpolateOPs!(intOPs_buffers_alloc, wf_alloc, unified_buffers_alloc)
     
     # Run non-allocating version
     intOPs = [zeros(length(wf_no_alloc_comp.dep[iT]), 4) for iT in 1:wf_no_alloc_comp.nT]
-    dist_buffer = zeros(wf_no_alloc_comp.nOP)
-    sorted_indices_buffer = zeros(Int, wf_no_alloc_comp.nOP)
+    unified_buffers = create_unified_buffers(wf_no_alloc_comp)
     
-    wf_no_alloc_comp.intOPs = interpolateOPs!(intOPs, wf_no_alloc_comp, dist_buffer, sorted_indices_buffer)
+    wf_no_alloc_comp.intOPs = interpolateOPs!(intOPs, wf_no_alloc_comp, unified_buffers)
     
     # Compare results between both versions
     @test compare_windFarms(wf_alloc, wf_no_alloc_comp; detailed=false, tolerance=1e-14)
@@ -116,15 +112,14 @@ end
     
     intOPs1 = [zeros(length(wf_buffer_test1.dep[iT]), 4) for iT in 1:wf_buffer_test1.nT]
     intOPs2 = [zeros(length(wf_buffer_test2.dep[iT]), 4) for iT in 1:wf_buffer_test2.nT]
-    dist_buffer = zeros(max_nOP)
-    sorted_indices_buffer = zeros(Int, max_nOP)
+    unified_buffers = create_unified_buffers(wf_buffer_test1)  # Both use same wind farm structure
     
     # Run first calculation
-    result1 = interpolateOPs!(intOPs1, wf_buffer_test1, dist_buffer, sorted_indices_buffer)
+    result1 = interpolateOPs!(intOPs1, wf_buffer_test1, unified_buffers)
     wf_buffer_test1.intOPs = result1
     
     # Run second calculation with same buffers (simulating reuse)
-    result2 = interpolateOPs!(intOPs2, wf_buffer_test2, dist_buffer, sorted_indices_buffer)
+    result2 = interpolateOPs!(intOPs2, wf_buffer_test2, unified_buffers)
     wf_buffer_test2.intOPs = result2
     
     # Both should match the reference

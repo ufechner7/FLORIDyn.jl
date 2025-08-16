@@ -316,41 +316,43 @@ end
 
 """
     interpolateOPs!(intOPs::Vector{Matrix{Float64}}, wf::WindFarm, 
-                   dist_buffer::Vector{Float64}, sorted_indices_buffer::Vector{Int})
+                   unified_buffers::UnifiedBuffers)
 
-Compute interpolation weights and indices for operational points affecting each turbine using pre-allocated buffers.
+Compute interpolation weights and indices for operational points affecting each turbine using a unified buffer.
 
 This function performs interpolation calculations while avoiding 
-memory allocations by reusing pre-allocated buffer arrays. This is critical for performance 
-when called repeatedly in loops, such as in flow field calculations.
+memory allocations by reusing pre-allocated buffer arrays from a unified buffer struct. 
+This is critical for performance when called repeatedly in loops, such as in flow field calculations.
 
 # Arguments
 - `intOPs::Vector{Matrix{Float64}}`: Pre-allocated vector of matrices to store interpolation results
 - `wf::WindFarm`: Wind farm object containing turbine positions and operational point data
-- `dist_buffer::Vector{Float64}`: Buffer for distance calculations (length ≥ wf.nOP)
-- `sorted_indices_buffer::Vector{Int}`: Buffer for sorting indices (length ≥ wf.nOP)
+- `unified_buffers::UnifiedBuffers`: Unified buffer struct containing pre-allocated arrays including:
+  - `dist_buffer`: Buffer for distance calculations (length ≥ wf.nOP)
+  - `sorted_indices_buffer`: Buffer for sorting indices (length ≥ wf.nOP)
 
 # Returns
 - `intOPs::Vector{Matrix{Float64}}`: Results filled in-place
 
 # Performance Notes
-- All temporary arrays are reused from pre-allocated buffers
+- All temporary arrays are reused from the unified buffer struct
 - No memory allocations occur during execution
 - Suitable for use in hot loops and parallel contexts
 
 # Example
 ```julia
-# Pre-allocate buffers
+# Create unified buffers
+unified_buffers = create_unified_buffers(wf)
+
+# Pre-allocate interpolation matrices
 intOPs = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
-dist_buffer = zeros(wf.nOP)
-sorted_indices_buffer = zeros(Int, wf.nOP)
 
 # Non-allocating interpolation
-interpolateOPs!(intOPs, wf, dist_buffer, sorted_indices_buffer)
+interpolateOPs!(intOPs, wf, unified_buffers)
 ```
 """
 function interpolateOPs!(intOPs::Vector{Matrix{Float64}}, wf::WindFarm, 
-                        dist_buffer::Vector{Float64}, sorted_indices_buffer::Vector{Int})
+                        unified_buffers::UnifiedBuffers)
     @assert length(wf.dep) > 0 "No dependencies found! Ensure `findTurbineGroups` was called first."
 
     for iT in 1:wf.nT  # For every turbine
@@ -363,7 +365,7 @@ function interpolateOPs!(intOPs::Vector{Matrix{Float64}}, wf::WindFarm,
             turb_pos_y = wf.posBase[iT, 2]
 
             # Compute Euclidean distances to the turbine position (non-allocating)
-            @views dist = dist_buffer[1:wf.nOP]
+            @views dist = unified_buffers.dist_buffer[1:wf.nOP]
             for i in 1:wf.nOP
                 op_idx = start_idx + i - 1
                 dx = wf.States_OP[op_idx, 1] - turb_pos_x
@@ -372,7 +374,7 @@ function interpolateOPs!(intOPs::Vector{Matrix{Float64}}, wf::WindFarm,
             end
 
             # Sort indices by distance (reuse buffer)
-            @views sorted_indices = sorted_indices_buffer[1:wf.nOP]
+            @views sorted_indices = unified_buffers.sorted_indices_buffer[1:wf.nOP]
             for i in 1:wf.nOP
                 sorted_indices[i] = i
             end
@@ -935,10 +937,10 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
     plot_state = nothing  # Initialize animation state
     
     buffers = FLORIDyn.IterateOPsBuffers(wf)
+    # Create unified buffers for all operations
+    unified_buffers = create_unified_buffers(wf)
     # Create buffers for interpolateOPs! (will be resized as needed)
     intOPs_buffers = [Matrix{Float64}(undef, 0, 4) for _ in 1:wf.nT]
-    dist_buffer = zeros(wf.nOP)
-    sorted_indices_buffer = zeros(Int, wf.nOP)
     
     for it in 1:sim_steps
         sim.sim_step = it
@@ -964,7 +966,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
                     intOPs_buffers[iT] = zeros(length(wf.dep[iT]), 4)
                 end
             end
-            wf.intOPs = interpolateOPs!(intOPs_buffers, wf, dist_buffer, sorted_indices_buffer)
+            wf.intOPs = interpolateOPs!(intOPs_buffers, wf, unified_buffers)
         end
         if sim_steps == 1 && ! isnothing(debug)
             debug[1] = deepcopy(wf)
