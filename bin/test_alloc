@@ -6,7 +6,7 @@
 # This script runs Julia with allocation tracking enabled and generates .mem files
 
 # Default file to run
-MAIN_FILE="examples/main_video.jl"
+MAIN_FILE="examples_dev/mwe_04.jl"
 
 if [[ $(basename $(pwd)) == "bin" ]]; then
     cd ..
@@ -61,7 +61,7 @@ if [ "$mem_count" -gt 0 ]; then
     echo "3. Higher numbers indicate more memory allocation"
     echo ""
     echo "Find highest allocating lines with:"
-    echo "  ./bin/analyze_mem_files"
+    echo "  ./bin/analyze_alloc"
     echo ""
     echo "To clean up .mem files when done:"
     echo "  ./bin/clean_mem_files"

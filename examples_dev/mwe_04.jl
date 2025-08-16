@@ -3,7 +3,10 @@
 
 # This script is used to identify memory allocations
 using FLORIDyn, TerminalPager, DistributedNext
-if Threads.nthreads() == 1; using ControlPlots; end
+if Threads.nthreads() == 1; 
+    @info "Running in single-threaded mode, using ControlPlots directly"
+    using ControlPlots; 
+end
 
 settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"
@@ -27,7 +30,7 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-sim.n_sim_steps = 5
+sim.n_sim_steps = 2
 
 vis.online = true
 # Clean up any existing PNG files in video folder before starting
@@ -36,4 +39,5 @@ cleanup_video_folder()
 nothing
 
 # Memory allocation statistics on laptop, battery
-# Baseline: 2.654642 seconds (137.13 M allocations: 12.567 GiB, 30.04% gc time) 
+# Baseline: 1.455825 seconds (54.85 M allocations: 5.027 GiB, 35.61% gc time)
+# 219.869886 seconds (61.49 M allocations: 5.326 GiB, 0.26% gc time, 6.08% compilation time)
