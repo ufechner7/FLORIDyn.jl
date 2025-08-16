@@ -610,10 +610,9 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
           -sin(tmp_yaw)  cos(tmp_yaw)  0.0;
            0.0           0.0           1.0]
 
-    a = @allocated RPl = (R * (RPl .* d_rotor[end])')' .+ location_t[end, :]'
-    if ! isnothing(alloc)
-        alloc.expr1 += a
-    end
+    # Reduce allocations in coordinate transformation by avoiding intermediate transpose
+    scaled_RPl = RPl .* d_rotor[end]  # Scale rotor points
+    RPl = (R * scaled_RPl')' .+ location_t[end, :]'
 
     a = @allocated if length(d_rotor) == 1
         redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ location_t[3])
