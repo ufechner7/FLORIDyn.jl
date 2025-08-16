@@ -64,6 +64,73 @@ function States()
 end
 
 """
+    RunFLORISBuffers
+
+A mutable struct containing pre-allocated arrays for the [`runFLORIS`](@ref) function to eliminate memory allocations 
+during wind farm wake calculations.
+
+# Fields
+- `tmp_RPs::Matrix{Float64}`: Temporary matrix for computation of rotor position coordinates (n_wt × 3)
+- `cw_y::Vector{Float64}`: Centerline wake deflection in y-direction for each turbine
+- `cw_z::Vector{Float64}`: Centerline wake deflection in z-direction for each turbine  
+- `phi_cw::Vector{Float64}`: Angular position of centerline wake for each turbine
+- `r_cw::Vector{Float64}`: Radial distance of centerline wake for each turbine
+- `core::Vector{Bool}`: Boolean mask indicating if point is within wake core for each turbine
+- `nw::Vector{Bool}`: Boolean mask for near-wake region calculations for each turbine
+- `fw::Vector{Bool}`: Boolean mask for far-wake region calculations for each turbine
+- `tmp_RPs_r::Vector{Float64}`: Temporary vector for radial distance calculations
+- `gaussAbs::Vector{Float64}`: Absolute values for Gaussian wake calculations
+- `gaussWght::Vector{Float64}`: Gaussian weight factors for wake superposition
+- `exp_y::Vector{Float64}`: Exponential terms for y-direction Gaussian calculations
+- `exp_z::Vector{Float64}`: Exponential terms for z-direction Gaussian calculations
+- `not_core::Vector{Bool}`: Boolean mask for points outside the wake core
+
+# Constructor
+    RunFLORISBuffers(n_wt::Int)
+
+Create pre-allocated buffers for `n_wt` wind turbines.
+
+# Notes
+All arrays are sized for `n_wt` turbines to avoid memory allocations during simulation loops.
+This significantly improves performance for repeated wake calculations.
+"""
+mutable struct RunFLORISBuffers
+    tmp_RPs::Matrix{Float64}
+    cw_y::Vector{Float64}
+    cw_z::Vector{Float64}
+    phi_cw::Vector{Float64}
+    r_cw::Vector{Float64}
+    core::Vector{Bool}
+    nw::Vector{Bool}
+    fw::Vector{Bool}
+    tmp_RPs_r::Vector{Float64}
+    gaussAbs::Vector{Float64}
+    gaussWght::Vector{Float64}
+    exp_y::Vector{Float64}
+    exp_z::Vector{Float64}
+    not_core::Vector{Bool}
+end
+
+function RunFLORISBuffers(n_wt::Int)
+    return RunFLORISBuffers(
+        Matrix{Float64}(undef, n_wt, 3),  # tmp_RPs
+        Vector{Float64}(undef, n_wt),     # cw_y
+        Vector{Float64}(undef, n_wt),     # cw_z
+        Vector{Float64}(undef, n_wt),     # phi_cw
+        Vector{Float64}(undef, n_wt),     # r_cw
+        Vector{Bool}(undef, n_wt),        # core
+        Vector{Bool}(undef, n_wt),        # nw
+        Vector{Bool}(undef, n_wt),        # fw
+        Vector{Float64}(undef, n_wt),     # tmp_RPs_r
+        Vector{Float64}(undef, n_wt),     # gaussAbs
+        Vector{Float64}(undef, n_wt),     # gaussWght
+        Vector{Float64}(undef, n_wt),     # exp_y
+        Vector{Float64}(undef, n_wt),     # exp_z
+        Vector{Bool}(undef, n_wt)         # not_core
+    )
+end
+
+"""
     centerline(states_op, states_t, states_wf, floris, d_rotor) -> Matrix{Float64}
 
 Compute the centerline wake properties for a wind farm simulation.
@@ -368,7 +435,7 @@ Returns the tuple
 - [1] Experimental and theoretical study of wind turbine wakes in yawed conditions - M. Bastankhah and F. Porté-Agel
 - [2] Design and analysis of a spatially heterogeneous wake - A. Farrell, J. King et al.
 """
-function getVars(rps::Union{Matrix, Adjoint}, c_t, yaw, ti, ti0, floris::Floris, d_rotor)
+function getVars(rps::Union{Matrix, Adjoint, SubArray}, c_t, yaw, ti, ti0, floris::Floris, d_rotor)
     # Unpack parameters
     k_a   = floris.k_a
     k_b   = floris.k_b
@@ -439,7 +506,7 @@ function getVars(rps::Union{Matrix, Adjoint}, c_t, yaw, ti, ti0, floris::Floris,
 end
 
 """
-    runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, 
+    runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
               floris::Floris, windshear::Union{Matrix, WindShear})
 
 Execute the FLORIS (FLOw Redirection and Induction in Steady State) wake model simulation for wind farm analysis.
@@ -449,6 +516,7 @@ velocity reductions, turbulence intensity additions, and effective wind speeds a
 It accounts for wake interactions, rotor discretization, wind shear effects, and turbulence propagation.
 
 # Arguments
+- `buffers::RunFLORISBuffers`: Pre-allocated buffer arrays to eliminate memory allocations during computation (see [`RunFLORISBuffers`](@ref))
 - `set::Settings`: Simulation settings containing configuration options for wind shear modeling
 - `location_t`: Matrix of turbine positions [x, y, z] coordinates for each turbine [m]
 - `states_wf`: Wind field state matrix containing velocity, direction, and turbulence data
@@ -521,7 +589,7 @@ The function implements several key wake modeling equations:
 - Bastankhah, M. and Porté-Agel, F. (2016). Experimental and theoretical study of wind turbine wakes in yawed conditions
 - Niayifar, A. and Porté-Agel, F. (2016). Analytical modeling of wind farms: A new approach for power prediction
 """
-function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, 
+function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, 
                    windshear::Union{Matrix, WindShear}; alloc=nothing)
     a = @allocated if d_rotor[end] > 0
         RPl, RPw = discretizeRotor(floris.rotor_points)
@@ -568,20 +636,29 @@ function runFLORIS(set::Settings, location_t, states_wf, states_t, d_rotor, flor
     # Pre-allocate arrays that are reused in the loop
     nRP = size(RPl, 1)
     a = @allocated begin
-        tmp_RPs = similar(RPl)
-        cw_y = Vector{Float64}(undef, nRP)
-        cw_z = Vector{Float64}(undef, nRP)
-        phi_cw = Vector{Float64}(undef, nRP)
-        r_cw = Vector{Float64}(undef, nRP)
-        core = Vector{Bool}(undef, nRP)
-        nw = Vector{Bool}(undef, nRP)
-        fw = Vector{Bool}(undef, nRP)
-        tmp_RPs_r = Vector{Float64}(undef, nRP)
-        gaussAbs = Vector{Float64}(undef, nRP)
-        gaussWght = Vector{Float64}(undef, nRP)
-        exp_y = Vector{Float64}(undef, nRP)
-        exp_z = Vector{Float64}(undef, nRP)
-        not_core = Vector{Bool}(undef, nRP)
+        # Ensure buffers are properly sized
+        if size(buffers.tmp_RPs, 1) < nRP
+            error("Buffer tmp_RPs is too small: expected at least $(nRP) rows, got $(size(buffers.tmp_RPs, 1))")
+        end
+        if length(buffers.cw_y) < nRP
+            error("Buffer arrays are too small: expected at least $(nRP) elements, got $(length(buffers.cw_y))")
+        end
+        
+        # Use views of pre-allocated buffers to match the current discretization size exactly
+        tmp_RPs = view(buffers.tmp_RPs, 1:nRP, :)
+        cw_y = view(buffers.cw_y, 1:nRP)
+        cw_z = view(buffers.cw_z, 1:nRP)
+        phi_cw = view(buffers.phi_cw, 1:nRP)
+        r_cw = view(buffers.r_cw, 1:nRP)
+        core = view(buffers.core, 1:nRP)
+        nw = view(buffers.nw, 1:nRP)
+        fw = view(buffers.fw, 1:nRP)
+        tmp_RPs_r = view(buffers.tmp_RPs_r, 1:nRP)
+        gaussAbs = view(buffers.gaussAbs, 1:nRP)
+        gaussWght = view(buffers.gaussWght, 1:nRP)
+        exp_y = view(buffers.exp_y, 1:nRP)
+        exp_z = view(buffers.exp_z, 1:nRP)
+        not_core = view(buffers.not_core, 1:nRP)
     end
     if ! isnothing(alloc)
         alloc.pre += a

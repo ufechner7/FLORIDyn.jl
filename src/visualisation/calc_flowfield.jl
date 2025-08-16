@@ -20,6 +20,75 @@ end
 # UnifiedBuffers struct and create_unified_buffers function are defined in floridyn_cl/structs.jl
 
 """
+    create_thread_buffers(wf::WindFarm, nth::Int, floris::Floris) -> ThreadBuffers
+
+Create thread-local buffers for parallel flow field computation with FLORIS parameters.
+
+This function pre-allocates all necessary data structures for each thread to avoid
+race conditions and memory allocations during the parallel computation loop.
+
+# Arguments
+- `wf::WindFarm`: Original wind farm object to use as template
+- `nth::Int`: Number of threads to create buffers for
+- `floris::Floris`: FLORIS parameters for creating proper FLORIS buffers
+
+# Returns
+- `ThreadBuffers`: Struct containing all thread-local buffers
+
+# Performance Notes
+- Each thread gets its own copy of the WindFarm structure
+- Pre-allocates all arrays to minimize allocations during computation
+- Sets up dependency structure for virtual turbines at grid points
+"""
+function create_thread_buffers(wf::WindFarm, nth::Int, floris::Floris)
+    # Create thread-local buffers to avoid race conditions
+    thread_buffers = [deepcopy(wf) for _ in 1:nth]
+    
+    # Pre-allocate arrays for each thread buffer
+    original_nT = wf.nT
+    
+    # Pre-allocate unified buffers for each thread
+    thread_unified_buffers = Vector{UnifiedBuffers}(undef, nth)
+    
+    for tid in 1:nth
+        GP = thread_buffers[tid]
+        GP.nT = original_nT + 1  # Original turbines + 1 grid point
+        
+        # Pre-allocate dependency structure
+        GP.dep = Vector{Vector{Int64}}(undef, GP.nT)
+        for i in 1:original_nT
+            GP.dep[i] = Int64[]  # Original turbines are independent (no dependencies)
+        end
+        GP.dep[end] = collect(1:original_nT)  # Grid point depends on all original turbines
+        
+        # Pre-allocate extended arrays (with proper bounds checking)
+        if !isempty(wf.StartI)
+            GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
+        else
+            # Handle case where StartI is empty (testing scenario)
+            GP.StartI = reshape([1], 1, 1)  # Minimal valid StartI for testing
+        end
+        GP.posBase = vcat(wf.posBase, zeros(1, 3))  # Will be updated for each grid point
+        GP.posNac = vcat(wf.posNac, zeros(1, 3))   # Will be updated for each grid point
+        GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
+        GP.D = vcat(wf.D, [0.0])  # Grid point has 0 diameter
+        
+        # Ensure all necessary fields are copied to avoid shared references
+        if hasfield(typeof(wf), :intOPs)
+            GP.intOPs = deepcopy(wf.intOPs)
+        end
+        
+        # Pre-allocate buffers for non-allocating interpolateOPs!
+        GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
+        
+        # Create unified buffers with proper FLORIS parameters for this thread
+        thread_unified_buffers[tid] = create_unified_buffers(wf, floris)
+    end
+    
+    return ThreadBuffers(thread_buffers, thread_unified_buffers)
+end
+
+"""
     create_thread_buffers(wf::WindFarm, nth::Int) -> ThreadBuffers
 
 Create thread-local buffers for parallel flow field computation.
@@ -60,8 +129,13 @@ function create_thread_buffers(wf::WindFarm, nth::Int)
         end
         GP.dep[end] = collect(1:original_nT)  # Grid point depends on all original turbines
         
-        # Pre-allocate extended arrays
-        GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
+        # Pre-allocate extended arrays (with proper bounds checking)
+        if !isempty(wf.StartI)
+            GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
+        else
+            # Handle case where StartI is empty (testing scenario)
+            GP.StartI = reshape([1], 1, 1)  # Minimal valid StartI for testing
+        end
         GP.posBase = vcat(wf.posBase, zeros(1, 3))  # Will be updated for each grid point
         GP.posNac = vcat(wf.posNac, zeros(1, 3))   # Will be updated for each grid point
         GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
@@ -75,8 +149,8 @@ function create_thread_buffers(wf::WindFarm, nth::Int)
         # Pre-allocate buffers for non-allocating interpolateOPs!
         GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
         
-        # Create unified buffers directly for this thread
-        thread_unified_buffers[tid] = create_unified_buffers(wf)
+        # Create unified buffers with larger default for better compatibility
+        thread_unified_buffers[tid] = create_unified_buffers(wf, 50)
     end
     
     return ThreadBuffers(thread_buffers, thread_unified_buffers)
@@ -501,8 +575,8 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; 
             GC.enable(false)
         end
         try
-            # Create thread-local buffers using the new function
-            a = @allocated buffers = create_thread_buffers(wf, nthreads() + 1)
+            # Create thread-local buffers using the new function with FLORIS parameters
+            a = @allocated buffers = create_thread_buffers(wf, nthreads() + 1, floris)
             if ! isnothing(alloc)
                 alloc.gmp_buffers += a
             end

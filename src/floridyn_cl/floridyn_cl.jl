@@ -524,7 +524,16 @@ The function supports optional wind field interpolation via coefficient matrices
 
         if isempty(wf.dep[iT])
             # Single turbine case
+            # Create temporary buffers for this call
+            if wf.D[iT] > 0
+                RPl, _ = discretizeRotor(floris.rotor_points)
+                n_points = size(RPl, 1)
+            else
+                n_points = 1
+            end
+            temp_buffers = RunFLORISBuffers(n_points)
             T_red_arr, _, _ = runFLORIS(
+                temp_buffers,
                 set,
                 (wf.posBase[iT,:] +wf.posNac[iT,:])',
                 iTWFState',
@@ -583,7 +592,15 @@ The function supports optional wind field interpolation via coefficient matrices
         end
 
         # Run FLORIS                
-        T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, tmp_Tpos, tmp_WF, tmp_Tst, tmp_D, floris, wind.shear)
+        # Create temporary buffers for this call
+        if tmp_D[end] > 0
+            RPl, _ = discretizeRotor(floris.rotor_points)
+            n_points = size(RPl, 1)
+        else
+            n_points = 1
+        end
+        temp_buffers = RunFLORISBuffers(n_points)
+        T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(temp_buffers, set, tmp_Tpos, tmp_WF, tmp_Tst, tmp_D, floris, wind.shear)
 
         T_red = prod(T_red_arr)
         wf.red_arr[iT, vcat(wf.dep[iT], iT)] = T_red_arr
@@ -677,7 +694,6 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
         alloc.m += 1
     end
 
-
     a = @allocated for iT in 1:wf.nT # for1 loop
         # Reuse iTWFState_buffer instead of allocating
         ub.iTWFState_buffer .= wf.States_WF[wf.StartI[iT], :]
@@ -691,8 +707,9 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
         end
 
         if isempty(wf.dep[iT])
-            # Single turbine case
+            # Single turbine case - use pre-allocated FLORIS buffers
             T_red_arr, _, _ = runFLORIS(
+                ub.floris_buffers,
                 set,
                 (wf.posBase[iT,:] +wf.posNac[iT,:])',
                 ub.iTWFState_buffer',
@@ -764,11 +781,11 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
             alloc.for3 += a
         end
 
-        # Run FLORIS using the buffer views
+        # Run FLORIS using the buffer views and pre-allocated FLORIS buffers
         tmp_Tpos_view = @view ub.tmp_Tpos_buffer[1:tmp_nT, :]
         tmp_WF_view = @view ub.tmp_WF_buffer[1:tmp_nT, :]
         tmp_Tst_view = @view ub.tmp_Tst_buffer[1:tmp_nT, :]
-        a = @allocated T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, wind.shear)
+        a = @allocated T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(ub.floris_buffers, set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, wind.shear)
         if !isnothing(alloc)
             alloc.n += 1
             alloc.floris += a
@@ -926,8 +943,8 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
     plot_state = nothing  # Initialize animation state
     
     buffers = FLORIDyn.IterateOPsBuffers(wf)
-    # Create unified buffers for all operations
-    unified_buffers = create_unified_buffers(wf)
+    # Create unified buffers for all operations with FLORIS parameters
+    unified_buffers = create_unified_buffers(wf, floris)
     # Create buffers for interpolateOPs! (will be resized as needed)
     intOPs_buffers = [Matrix{Float64}(undef, 0, 4) for _ in 1:wf.nT]
     
@@ -1019,6 +1036,31 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         [:Time, :ForeignReduction, :AddedTurbulence, :EffWindSpeed, :FreeWindSpeed, :PowerGen]
     )
     mi = hcat(md.Time, hcat(vm_int...)')
-    @debug "Allocations: $alloc"
+    println("Allocations: $alloc")
     return wf, md, mi
+end
+
+# Method dispatch for create_unified_buffers with Floris objects
+"""
+    create_unified_buffers(wf::WindFarm, floris::Floris) -> UnifiedBuffers
+
+Create unified buffers with FLORIS-specific rotor discretization.
+
+# Arguments
+- `wf::WindFarm`: Wind farm object to determine buffer sizes  
+- `floris::Floris`: FLORIS parameters to determine rotor discretization buffer size
+
+# Returns
+- `UnifiedBuffers`: Struct containing all pre-allocated buffers with proper FLORIS buffers
+"""
+function create_unified_buffers(wf::WindFarm, floris::Floris)
+    # Calculate rotor discretization points if wind farm has turbines
+    n_rotor_points = if wf.D[end] > 0
+        RPl, _ = discretizeRotor(floris.rotor_points)
+        size(RPl, 1)
+    else
+        1
+    end
+    
+    return create_unified_buffers(wf, n_rotor_points)
 end

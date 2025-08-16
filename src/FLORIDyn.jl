@@ -350,17 +350,22 @@ ops_data = wf.ops               # DataFrame with operating point states
 end
 
 """
-    create_unified_buffers(wf::WindFarm) -> UnifiedBuffers
+    create_unified_buffers(wf::WindFarm, rotor_points=50) -> UnifiedBuffers
 
 Create a unified buffer struct containing all arrays needed by interpolateOPs! and setUpTmpWFAndRun!.
 
 # Arguments
 - `wf::WindFarm`: Wind farm object to determine buffer sizes
+- `rotor_points`: Number of rotor discretization points for FLORIS buffers (defaults to 50)
 
 # Returns
-- `UnifiedBuffers`: Struct containing all pre-allocated buffers
+- `UnifiedBuffers`: Struct containing all pre-allocated buffers including FLORIS computation buffers
+
+# Note
+For optimal performance, use the version that accepts a Floris object to automatically 
+determine the correct rotor discretization size.
 """
-function create_unified_buffers(wf::WindFarm)
+function create_unified_buffers(wf::WindFarm, rotor_points=50)
     # For interpolateOPs!
     dist_buffer = zeros(wf.nOP)
     sorted_indices_buffer = zeros(Int, wf.nOP)
@@ -378,6 +383,16 @@ function create_unified_buffers(wf::WindFarm)
     plot_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
     plot_OP_buffer = zeros(max_deps, 2)
     
+    # Create FLORIS buffers with specified number of rotor points
+    n_floris_points = max(rotor_points, 1)
+    
+    # Try to create RunFLORISBuffers if available, otherwise use nothing
+    floris_buffers = try
+        RunFLORISBuffers(n_floris_points)
+    catch
+        nothing
+    end
+    
     return UnifiedBuffers(
         dist_buffer,
         sorted_indices_buffer,
@@ -388,9 +403,13 @@ function create_unified_buffers(wf::WindFarm)
         tmp_Tst_buffer,
         dists_buffer,
         plot_WF_buffer,
-        plot_OP_buffer
+        plot_OP_buffer,
+        floris_buffers
     )
 end
+
+# Method dispatch for Floris objects - defined later after Floris is loaded
+# This will be defined in floridyn_cl.jl after all includes are processed
 
 include("visualisation/structs_measurements.jl")
 include("settings.jl")
