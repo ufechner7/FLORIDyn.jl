@@ -678,7 +678,7 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
     end
 
 
-    a = @allocated for iT in 1:wf.nT
+    a = @allocated for iT in 1:wf.nT # for1 loop
         # Reuse iTWFState_buffer instead of allocating
         ub.iTWFState_buffer .= wf.States_WF[wf.StartI[iT], :]
 
@@ -690,16 +690,14 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
             ub.iTWFState_buffer[2] = dot(wf.C_Dir[iT, :],wf.States_WF[:, 2])
         end
 
-        # @assert !isempty(wf.dep[iT])
-
         if isempty(wf.dep[iT])
             # Single turbine case
             T_red_arr, _, _ = runFLORIS(
                 set,
                 (wf.posBase[iT,:] +wf.posNac[iT,:])',
                 ub.iTWFState_buffer',
-               wf.States_T[wf.StartI[iT], :]',
-               wf.D[iT],
+                wf.States_T[wf.StartI[iT], :]',
+                wf.D[iT],
                 floris,
                 wind.shear
             )
@@ -731,9 +729,7 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
             alloc.if1 += a
         end
 
-        # @assert tmp_nT > 1
-
-        @allocated for iiT in 1:(tmp_nT - 1)
+        a = @allocated for iiT in 1:(tmp_nT - 1)
             OP1_i = Int(wf.intOPs[iT][iiT, 1])  # Index OP 1
             OP1_r = wf.intOPs[iT][iiT, 2]       # Ratio OP 1
             OP2_i = Int(wf.intOPs[iT][iiT, 3])  # Index OP 2
