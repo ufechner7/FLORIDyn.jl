@@ -10,5 +10,12 @@ fi
 
 export JULIA_PKG_SERVER_REGISTRY_PREFERENCE=eager
 
+julia -e 'using Pkg;
+globaldependencies() = keys(Pkg.project().dependencies)
+if ! ("TerminalPager" in globaldependencies()); Pkg.add("TerminalPager"); end;
+if ! ("Timers" in globaldependencies()); Pkg.add("Timers"); end;
+if ! ("ControlPlots" in globaldependencies()); Pkg.add("ControlPlots"); end;
+if ! ("TestEnv" in globaldependencies()); Pkg.add("TestEnv"); end'
+
 julia -e 'using Pkg; Pkg.update()'
 julia --project -e 'using Pkg; Pkg.update()'

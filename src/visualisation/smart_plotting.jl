@@ -17,16 +17,16 @@ sequential plotting based on the number of available threads and processes.
 # Returns
 - nothing
 """
-function plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt=nothing)
+function plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt=nothing, fig=nothing)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Use parallel plotting with remote worker
-        @spawnat 2 Main.rmt_plot_flow_field(wf, X, Y, Z, vis; msr)
+        @spawnat 2 Main.rmt_plot_flow_field(wf, X, Y, Z, vis; msr, fig)
     else
         # Use sequential plotting
         if plt === nothing
             error("plt argument is required for sequential plotting")
         end
-        plotFlowField(plt, wf, X, Y, Z, vis; msr)
+        plotFlowField(plt, wf, X, Y, Z, vis; msr, fig)
     end
     nothing
 end

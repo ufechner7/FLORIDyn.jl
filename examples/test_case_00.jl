@@ -4,11 +4,6 @@
 # Testcase for bug https://github.com/ufechner7/FLORIDyn.jl/issues/35
 using FLORIDyn, TerminalPager, MAT, ControlPlots, DistributedNext, LinearAlgebra, Statistics, DataFrames
 
-if !isdefined(Main, :TestHelpers)
-    include("../test/test_helpers.jl")
-end
-using .TestHelpers
-
 settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"
 input_file    = "test/data/input_T_195_steps.mat"
@@ -27,9 +22,6 @@ end
 # Load vis settings from YAML file
 vis = Vis(vis_file)
 
-# Automatic parallel/threading setup
-include("remote_plotting.jl")
-
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
@@ -40,7 +32,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 sim.n_sim_steps = 195
 
 # Run initial conditions
-wf = initSimulation(wf, sim)
+# wf = initSimulation(wf, sim)
 
 # TODO
 # compare wf.windfield with Matlab before running floridyn
@@ -49,30 +41,26 @@ vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 
 turbines_wf = wf.turbines
-# plot(1:length(turbines_ref.yaw), [turbines_wf.TI, turbines_ref.TI])
+
+function plot_dfs(df1, df2)
+    turbine_dfs1 = [df for df in groupby(df1, :Turbine)]
+    turbine_dfs2 = [df for df in groupby(df2, :Turbine)]
+    
+    # Create vectors for each turbine plot (each containing two lines: Julia and Ref)
+    turbine_plots = [[collect(turbine_dfs1[i].TI), collect(turbine_dfs2[i].TI)] for i in 1:9]
+    ylabels = ["TI Turbine $i" for i in 1:9]
+    labels = [["Julia", "Ref"] for _ in 1:9]
+    
+    p = plotx(collect(turbine_dfs1[1].OP), turbine_plots...; 
+              xlabel="Operating Point", ylabels=ylabels, labels=labels, ysize=10,
+              fig="Turbine TI Comparison", bottom=0.02)
+    display(p)
+end
+plot_dfs(turbines_ref, turbines_wf)
 
 # println("Relative error (turbines): ", round(rel_err(turbines_wf, turbines_ref)*100, digits=2), " %")
 df1, df2 = compare_dataframes(turbines_wf, turbines_ref)
 println("Number of differing rows found: ", size(df1, 1), " out of ", size(turbines_wf, 1))
 
-@time Z, X, Y    = calcFlowField(set, wf, wind, floris; plt)
-
-msr = 1
-A = Z_ref[:,:,msr]
-B = Z[:,:,msr]
-
-Z_ref[:,:,msr] .= A'
-
-A = Z_ref[:,:,msr]
-
-println("Relative error (Z): ", round(rel_err(A, B)*100, digits=2), " %")
-
-plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
-plot_flow_field(wf, X_ref, Y_ref, Z_ref, vis; msr=VelReduction, plt, fig="Z_ref")
-plot_measurements(wf, md, vis; separated=true, plt)
-
-v_min = minimum(Z[:, :, msr])
-v_max = maximum(Z[:, :, msr])
-println("v_min: $v_min, v_max: $v_max")
 
 nothing

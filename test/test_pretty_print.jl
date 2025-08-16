@@ -41,8 +41,8 @@ end
             
             @test df isa DataFrame
             @test size(df, 1) == 4  # 4 states per turbine
-            @test size(df, 2) == 3  # 3 turbines
-            @test names(df) == ["T1", "T2", "T3"]
+            @test size(df, 2) == 5  # OP + Turbine + 3 turbines = 5 columns
+            @test names(df) == ["OP", "Turbine", "T1", "T2", "T3"]
             @test eltype(df.T1) == Float64
         end
         
@@ -50,18 +50,20 @@ end
             wf = create_test_windfarm(nT=1, nStates=5)
             df = FLORIDyn.turbines(wf)
             
-            @test size(df) == (5, 1)
-            @test names(df) == ["T1"]
+            @test size(df) == (5, 3)  # OP + Turbine + 1 turbine = 3 columns
+            @test names(df) == ["OP", "Turbine", "T1"]
         end
         
         @testset "Many turbines" begin
             wf = create_test_windfarm(nT=10, nStates=6)
             df = FLORIDyn.turbines(wf)
             
-            @test size(df) == (6, 10)
-            @test length(names(df)) == 10
-            @test names(df)[1] == "T1"
-            @test names(df)[10] == "T10"
+            @test size(df) == (6, 12)  # OP + Turbine + 10 turbines = 12 columns
+            @test length(names(df)) == 12
+            @test names(df)[1] == "OP"
+            @test names(df)[2] == "Turbine"
+            @test names(df)[3] == "T1"
+            @test names(df)[12] == "T10"
         end
         
         @testset "Error handling" begin
@@ -224,7 +226,7 @@ end
             
             @test df_prop == df_func
             @test df_prop isa DataFrame
-            @test size(df_prop) == (4, 3)
+            @test size(df_prop) == (4, 5)  # OP + Turbine + 3 turbines = 5 columns
         end
         
         @testset "wf.windfield property" begin
@@ -325,12 +327,12 @@ end
             wf_df = wf.windfield  
             ops_df = wf.ops
             
-            @test size(turb_df) == (7, 5)
+            @test size(turb_df) == (7, 7)  # OP + Turbine + 5 turbines = 7 columns
             @test size(wf_df) == (20, 4)
             @test size(ops_df) == (50, 3)
             
             # Test column names
-            @test names(turb_df) == ["T1", "T2", "T3", "T4", "T5"]
+            @test names(turb_df) == ["OP", "Turbine", "T1", "T2", "T3", "T4", "T5"]
             @test names(wf_df) == ["WF_1", "WF_2", "WF_3", "WF_4"]
             @test names(ops_df) == ["OP_1", "OP_2", "OP_3"]
         end
@@ -339,17 +341,21 @@ end
             wf = create_test_windfarm()
             
             # Individual columns
+            @test wf.turbines.OP isa Vector{Int}
+            @test wf.turbines.Turbine isa Vector{Int}
             @test wf.turbines.T1 isa Vector{Float64}
             @test wf.windfield.WF_1 isa Vector{Float64}
             @test wf.ops.OP_1 isa Vector{Float64}
             
             # Specific indexing
             @test wf.turbines[1, "T2"] isa Float64
+            @test wf.turbines[1, "OP"] isa Int
+            @test wf.turbines[1, "Turbine"] isa Int
             @test wf.windfield[2, "WF_2"] isa Float64
             @test wf.ops[3, "OP_3"] isa Float64
             
             # Row access
-            @test size(wf.turbines[1, :]) == (3,)  # 3 turbines
+            @test size(wf.turbines[1, :]) == (5,)  # OP + Turbine + 3 turbines = 5
             @test size(wf.windfield[1, :]) == (2,) # 2 wf variables  
             @test size(wf.ops[1, :]) == (3,)       # 3 op variables
         end

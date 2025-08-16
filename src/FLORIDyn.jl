@@ -5,10 +5,18 @@
 $(DocStringExtensions.README)
 """
 module FLORIDyn
+module Revert
+         macro allocated(ex)
+           # esc(:((@timed $ex).bytes))
+           esc(:($ex; 0))
+         end
+       end
 
 using PrecompileTools: @setup_workload, @compile_workload
 using LaTeXStrings
 import DocStringExtensions, LoggingExtras
+import Base: show
+using .Revert: @allocated
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
 using Statistics, StaticArrays, Pkg, DistributedNext, Dates
@@ -47,11 +55,11 @@ export getYaw
 export discretizeRotor, calcCt, States
 export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimulation
 export runFLORIS, init_states, getUadv
-export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, interpolateOPs, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
+export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
-export run_floridyn, plot_flow_field, plot_measurements, close_all
+export run_floridyn, plot_flow_field, plot_measurements, close_all, turbines
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
-export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_results, find_floridyn_runs
+export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_results, find_floridyn_runs, compare_dataframes
 export isdelftblue, Measurement, parse_measurements
 export FlowField, parse_flow_fields
 

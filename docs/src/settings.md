@@ -167,38 +167,46 @@ when running the script `main_all.jl`.
 
 ```yaml
 vis:
-  online: false          # Enable/disable online visualization during simulation
+  show_plots: true       # Enable/disable showing plots during simulation
+  log_debug: false       # Enable/disable logging of debug information
   save: true             # Enable/disable saving of plots to disk
+  save_results: true     # Enable/disable saving of simulation results as .jld2 files
   print_filenames: false # If true, print the names of the saved files
   video_folder: "video"  # Relative video folder path 
   output_folder: "out"   # Relative output folder path
-  unique_output_folder: true  
-  flow_fields:           # List of flow field visualizations to be created
-    - name: "flow_field_vel_reduction"    # Flow field relative wind speed
-      online: false
-      create_video: false
+  unique_output_folder: true # If true, a unique output folder is created for each simulation run
+  skip_flow_fields: false    # When true, do not create flow field visualizations
+  skip_measurements: false   # When true, do not create measurement visualizations
+  flow_fields:               # List of flow field visualizations to be created
+    - name: "flow_field_vel_reduction"    # Flow field relative wind speed (video)
+      online: true
+      create_video: true
       skip: true
-    - name: "flow_field_added_turbulence" # Flow field added turbulence
+    - name: "flow_field_vel_reduction"    # Flow field relative wind speed (plot)
       online: false
       create_video: false
+      skip: false      
+    - name: "flow_field_added_turbulence" # Flow field added turbulence
+      online: true
+      create_video: true
       skip: true
     - name: "flow_field_eff_wind_speed"   # Flow field effective wind speed
       online: false
       create_video: false
-      skip: true
-  measurements:          # List of measurement plots to be created
+      skip: false
+  measurements:           # List of measurement plots to be created
     - name: "msr_vel_reduction"     # Measurement relative wind speed
       separated: true
-      skip: true
+      skip: false
     - name: "msr_vel_reduction"     # Measurement relative wind speed
       separated: false
-      skip: true
+      skip: false
     - name: "msr_added_turbulence"  # Measurement added turbulence
       separated: false
-      skip: true
+      skip: false
     - name: "msr_added_turbulence"  # Measurement added turbulence
       separated: true
-      skip: true
+      skip: false
     - name: "msr_eff_wind_speed"    # Measurement effective wind speed
       separated: false
       skip: false

@@ -7,7 +7,8 @@
 # Minimal example of how to run a simulation using FLORIDyn.jl
 using Timers
 tic()
-using FLORIDyn, TerminalPager, DistributedNext, ControlPlots
+using FLORIDyn, TerminalPager, DistributedNext 
+if Threads.nthreads() == 1; using ControlPlots; end
 toc()
 
 settings_file = "data/2021_9T_Data.yaml"

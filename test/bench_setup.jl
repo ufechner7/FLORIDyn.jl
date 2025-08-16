@@ -10,7 +10,11 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 set = Settings(wind, sim, con)
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 wf.dep = findTurbineGroups(wf, floridyn)
-wf.intOPs = interpolateOPs(wf)
+# Create buffers for interpolateOPs!
+intOPs_buffers = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
+dist_buffer = zeros(wf.nOP)
+sorted_indices_buffer = zeros(Int, wf.nOP)
+wf.intOPs = interpolateOPs!(intOPs_buffers, wf, dist_buffer, sorted_indices_buffer)
 wf_old = deepcopy(wf)
 @btime setUpTmpWFAndRun(set, wf, floris, wind)
 nothing

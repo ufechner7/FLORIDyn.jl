@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, Test, ControlPlots, Statistics
+using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
 
 @testset verbose=true "floridyncl" begin
     include("test_prepare_simulation.jl")
@@ -110,7 +110,9 @@ using FLORIDyn, Test, ControlPlots, Statistics
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf_old = deepcopy(wf)
-        iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
+        # Create buffers for the new iterateOPs! function
+        buffers = IterateOPsBuffers(wf)
+        iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn, buffers)
         @test ! structs_equal(wf_old, wf; prn=false)
     end
     @testset "interpolateOPs" begin
@@ -121,7 +123,11 @@ using FLORIDyn, Test, ControlPlots, Statistics
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf.dep = findTurbineGroups(wf, floridyn)
-        wf.intOPs = interpolateOPs(wf)
+        # Create buffers for interpolateOPs!
+        intOPs_buffers = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
+        dist_buffer = zeros(wf.nOP)
+        sorted_indices_buffer = zeros(Int, wf.nOP)
+        wf.intOPs = interpolateOPs!(intOPs_buffers, wf, dist_buffer, sorted_indices_buffer)
         @test length(wf.intOPs) == wf.nT
     end
     @testset "setUpTmpWFAndRun" begin
@@ -132,13 +138,16 @@ using FLORIDyn, Test, ControlPlots, Statistics
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf.dep = findTurbineGroups(wf, floridyn)
-        wf.intOPs = interpolateOPs(wf)
+        # Create buffers for interpolateOPs!
+        intOPs_buffers = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
+        dist_buffer = zeros(wf.nOP)
+        sorted_indices_buffer = zeros(Int, wf.nOP)
+        wf.intOPs = interpolateOPs!(intOPs_buffers, wf, dist_buffer, sorted_indices_buffer)
         wf_old = deepcopy(wf)
         M, wf = setUpTmpWFAndRun(set, wf, floris, wind)
         @test ! structs_equal(wf_old, wf; prn=false)
     end
     @testset "runFLORIDyn" begin
-        global md
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
         wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -148,12 +157,11 @@ using FLORIDyn, Test, ControlPlots, Statistics
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
         @test size(md) == (2709, 6) # from Matlab
-        @test minimum(md.ForeignReduction) ≈ 72.57019949691814 # Matlab: 73.8438
-        @test mean(md.ForeignReduction)    ≈ 98.54434468415639 # Matlab: 98.
+        @test minimum(md.ForeignReduction) ≈ 73.84377823619309 # Matlab: 73.8438
+        @test mean(md.ForeignReduction)    ≈ 98.29024352199988 # Matlab: 98.
         
     end
     @testset "runFLORIDyn - online" begin
-        global md
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
         wind, sim, con, floris, floridyn, ta = setup(settings_file)

@@ -93,7 +93,8 @@ end
 - The `video/` directory is automatically created if it doesn't exist
 - This function requires a plotting package like ControlPlots.jl to be loaded and available as `plt`
 """
-function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis::Vis, t=nothing; msr::MSR=EffWind)
+function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis::Vis, 
+                       t=nothing; msr::MSR=EffWind, fig=nothing)
     @assert ! isnothing(plt) "plt is nothing function plotFlowField() of plot_flowfield.jl"
     # Use unit_test from vis
     use_unit_test = vis.unit_test
@@ -125,6 +126,9 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             figure_name = "Effective Wind Speed"
             lev_min = vis.v_min; lev_max = vis.v_max;
             label = "Wind speed [m/s]"
+        end
+        if !isnothing(fig)
+            figure_name = fig
         end
         title = figure_name
         
@@ -378,8 +382,8 @@ with `state=nothing`, effectively creating a single plot without animation suppo
 This method is provided for backward compatibility. For animation support, 
 use the new interface with explicit state management.
 """
-function plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=EffWind)
-    plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr)
+function plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=EffWind, fig=nothing)
+    plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr, fig)
     return nothing
 end
 
