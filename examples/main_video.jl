@@ -41,10 +41,6 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-
-# Run initial conditions until no more change happens (wrong comment in original code)
-wf = initSimulation(wf, sim)
-@info "Initial conditions done, starting simulation..."
 toc()
 
 vis.online = true
