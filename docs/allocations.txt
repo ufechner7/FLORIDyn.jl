@@ -1,0 +1,21 @@
+=== ALLOCATION SUMMARY BY FILE ===
+
+898.76 KB    14   lines ./src/windfield/windfield_direction.jl.65738
+898.76 KB    14   lines ./src/floris/discretization.jl.65738
+770.37 KB    12   lines ./src/controller/controller.jl.65738
+706.17 KB    11   lines ./src/correction/velocity.jl.65738
+577.78 KB    9    lines ./src/windfield/windfield_shear.jl.65738
+577.78 KB    9    lines ./src/correction/direction.jl.65738
+385.18 KB    6    lines ./src/correction/turbulence.jl.65738
+128.39 KB    2    lines ./src/windfield/windfield_velocity.jl.65738
+17.30 MB     276  lines ./src/floris/gaussian.jl.65738
+15.30 MB     244  lines ./src/floridyn_cl/floridyn_cl.jl.65738
+10.34 MB     165  lines ./src/floridyn_cl/prepare_simulation.jl.65738
+7.77 MB      124  lines ./src/visualisation/plot_flowfield.jl.65738
+5.77 MB      92   lines ./src/settings.jl.65738
+5.14 MB      82   lines ./src/visualisation/calc_flowfield.jl.65738
+4.01 MB      64   lines ./src/floridyn_cl/iterate.jl.65738
+2.70 MB      43   lines ./src/visualisation/pretty_print.jl.65738
+1.76 MB      28   lines ./src/windfield/windfield_turbulence.jl.65738
+1.76 MB      28   lines ./src/FLORIDyn.jl.65738
+1.19 MB      19   lines ./src/visualisation/structs_measurements.jl.65738
