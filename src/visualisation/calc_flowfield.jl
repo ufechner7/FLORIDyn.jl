@@ -29,6 +29,79 @@ struct ThreadBuffers
 end
 
 """
+    UnifiedBuffers
+
+Unified buffer struct containing all arrays needed by interpolateOPs! and setUpTmpWFAndRun!.
+
+# Fields
+- `dist_buffer::Vector{Float64}`: Distance calculations for interpolateOPs!
+- `sorted_indices_buffer::Vector{Int}`: Sorted indices for interpolateOPs!
+- `M_buffer::Matrix{Float64}`: Main result buffer for setUpTmpWFAndRun!
+- `iTWFState_buffer::Vector{Float64}`: Turbine wind field state buffer
+- `tmp_Tpos_buffer::Matrix{Float64}`: Temporary turbine position buffer
+- `tmp_WF_buffer::Matrix{Float64}`: Temporary wind field buffer
+- `tmp_Tst_buffer::Matrix{Float64}`: Temporary turbine state buffer
+- `dists_buffer::Vector{Float64}`: Distance buffer for setUpTmpWFAndRun!
+- `plot_WF_buffer::Matrix{Float64}`: Wind field plotting buffer
+- `plot_OP_buffer::Matrix{Float64}`: Observation point plotting buffer
+"""
+struct UnifiedBuffers
+    dist_buffer::Vector{Float64}
+    sorted_indices_buffer::Vector{Int}
+    M_buffer::Matrix{Float64}
+    iTWFState_buffer::Vector{Float64}
+    tmp_Tpos_buffer::Matrix{Float64}
+    tmp_WF_buffer::Matrix{Float64}
+    tmp_Tst_buffer::Matrix{Float64}
+    dists_buffer::Vector{Float64}
+    plot_WF_buffer::Matrix{Float64}
+    plot_OP_buffer::Matrix{Float64}
+end
+
+"""
+    create_unified_buffers(wf::WindFarm) -> UnifiedBuffers
+
+Create a unified buffer struct containing all arrays needed by interpolateOPs! and setUpTmpWFAndRun!.
+
+# Arguments
+- `wf::WindFarm`: Wind farm object to determine buffer sizes
+
+# Returns
+- `UnifiedBuffers`: Struct containing all pre-allocated buffers
+"""
+function create_unified_buffers(wf::WindFarm)
+    # For interpolateOPs!
+    dist_buffer = zeros(wf.nOP)
+    sorted_indices_buffer = zeros(Int, wf.nOP)
+    
+    # For setUpTmpWFAndRun!
+    nT_with_grid = wf.nT + 1  # Original turbines + 1 grid point
+    max_deps = wf.nT + 1  # Grid point depends on all original turbines
+    
+    M_buffer = zeros(nT_with_grid, 3)
+    iTWFState_buffer = zeros(size(wf.States_WF, 2))
+    tmp_Tpos_buffer = zeros(max_deps, 3)
+    tmp_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
+    tmp_Tst_buffer = zeros(max_deps, size(wf.States_T, 2))
+    dists_buffer = zeros(max_deps)
+    plot_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
+    plot_OP_buffer = zeros(max_deps, 2)
+    
+    return UnifiedBuffers(
+        dist_buffer,
+        sorted_indices_buffer,
+        M_buffer,
+        iTWFState_buffer,
+        tmp_Tpos_buffer,
+        tmp_WF_buffer,
+        tmp_Tst_buffer,
+        dists_buffer,
+        plot_WF_buffer,
+        plot_OP_buffer
+    )
+end
+
+"""
     create_thread_buffers(wf::WindFarm, nth::Int) -> ThreadBuffers
 
 Create thread-local buffers for parallel flow field computation.
@@ -55,7 +128,7 @@ function create_thread_buffers(wf::WindFarm, nth::Int)
     # Pre-allocate arrays for each thread buffer
     original_nT = wf.nT
     
-    # Pre-allocate computation buffers for each thread
+    # Pre-allocate computation buffers for each thread using unified buffers
     thread_comp_buffers = Vector{@NamedTuple{
         dist_buffer::Vector{Float64}, 
         sorted_indices_buffer::Vector{Int},
@@ -94,31 +167,21 @@ function create_thread_buffers(wf::WindFarm, nth::Int)
         
         # Pre-allocate buffers for non-allocating interpolateOPs!
         GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
-        dist_buffer = zeros(wf.nOP)
-        sorted_indices_buffer = zeros(Int, wf.nOP)
         
-        # Pre-allocate buffers for non-allocating setUpTmpWFAndRun!
-        max_deps = maximum(length(dep) for dep in GP.dep) + 1
-        M_buffer = zeros(GP.nT, 3)
-        iTWFState_buffer = zeros(size(wf.States_WF, 2))
-        tmp_Tpos_buffer = zeros(max_deps, 3)
-        tmp_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
-        tmp_Tst_buffer = zeros(max_deps, size(wf.States_T, 2))
-        dists_buffer = zeros(max_deps)
-        plot_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
-        plot_OP_buffer = zeros(max_deps, 2)
+        # Create unified buffers for this thread
+        unified_buffers = create_unified_buffers(wf)
         
         thread_comp_buffers[tid] = (
-            dist_buffer = dist_buffer,
-            sorted_indices_buffer = sorted_indices_buffer,
-            M_buffer = M_buffer,
-            iTWFState_buffer = iTWFState_buffer,
-            tmp_Tpos_buffer = tmp_Tpos_buffer,
-            tmp_WF_buffer = tmp_WF_buffer,
-            tmp_Tst_buffer = tmp_Tst_buffer,
-            dists_buffer = dists_buffer,
-            plot_WF_buffer = plot_WF_buffer,
-            plot_OP_buffer = plot_OP_buffer
+            dist_buffer = unified_buffers.dist_buffer,
+            sorted_indices_buffer = unified_buffers.sorted_indices_buffer,
+            M_buffer = unified_buffers.M_buffer,
+            iTWFState_buffer = unified_buffers.iTWFState_buffer,
+            tmp_Tpos_buffer = unified_buffers.tmp_Tpos_buffer,
+            tmp_WF_buffer = unified_buffers.tmp_WF_buffer,
+            tmp_Tst_buffer = unified_buffers.tmp_Tst_buffer,
+            dists_buffer = unified_buffers.dists_buffer,
+            plot_WF_buffer = unified_buffers.plot_WF_buffer,
+            plot_OP_buffer = unified_buffers.plot_OP_buffer
         )
     end
     
@@ -215,19 +278,9 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
     
     # Pre-allocate buffers for non-allocating interpolateOPs!
     GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
-    dist_buffer = zeros(wf.nOP)
-    sorted_indices_buffer = zeros(Int, wf.nOP)
     
-    # Pre-allocate buffers for non-allocating setUpTmpWFAndRun!
-    max_deps = maximum(length(dep) for dep in GP.dep) + 1
-    M_buffer = zeros(GP.nT, 3)
-    iTWFState_buffer = zeros(size(wf.States_WF, 2))
-    tmp_Tpos_buffer = zeros(max_deps, 3)
-    tmp_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
-    tmp_Tst_buffer = zeros(max_deps, size(wf.States_T, 2))
-    dists_buffer = zeros(max_deps)
-    plot_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
-    plot_OP_buffer = zeros(max_deps, 2)
+    # Create a single unified buffer struct containing all arrays
+    unified_buffers = create_unified_buffers(wf)
 
     # Single-threaded loop (can be parallelized with @threads or DistributedNext.@distributed)
     for iGP in 1:length(mx)
@@ -242,11 +295,13 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         GP.States_T[end, :] .= 0.0
         
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
-        interpolateOPs!(GP.intOPs, GP, dist_buffer, sorted_indices_buffer)
+        interpolateOPs!(GP.intOPs, GP, unified_buffers.dist_buffer, unified_buffers.sorted_indices_buffer)
 
-        tmpM, _ = setUpTmpWFAndRun!(M_buffer, GP, set, floris, wind,
-                                   iTWFState_buffer, tmp_Tpos_buffer, tmp_WF_buffer, tmp_Tst_buffer,
-                                   dists_buffer, plot_WF_buffer, plot_OP_buffer)
+        tmpM, _ = setUpTmpWFAndRun!(unified_buffers.M_buffer, GP, set, floris, wind,
+                                   unified_buffers.iTWFState_buffer, unified_buffers.tmp_Tpos_buffer, 
+                                   unified_buffers.tmp_WF_buffer, unified_buffers.tmp_Tst_buffer,
+                                   unified_buffers.dists_buffer, unified_buffers.plot_WF_buffer, 
+                                   unified_buffers.plot_OP_buffer)
         
         # Extract only the result for the grid point (last "turbine")
         @views gridPointResult = tmpM[end, :]
@@ -349,6 +404,20 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         GP = buffers.thread_buffers[tid]
         comp_buffers = buffers.thread_comp_buffers[tid]
         
+        # Create a single unified buffer struct from the named tuple
+        unified_buffers = UnifiedBuffers(
+            comp_buffers.dist_buffer,
+            comp_buffers.sorted_indices_buffer,
+            comp_buffers.M_buffer,
+            comp_buffers.iTWFState_buffer,
+            comp_buffers.tmp_Tpos_buffer,
+            comp_buffers.tmp_WF_buffer,
+            comp_buffers.tmp_Tst_buffer,
+            comp_buffers.dists_buffer,
+            comp_buffers.plot_WF_buffer,
+            comp_buffers.plot_OP_buffer
+        )
+        
         xGP = mx[iGP]
         yGP = my[iGP]
         
@@ -367,13 +436,13 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         end
         
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
-        interpolateOPs!(GP.intOPs, GP, comp_buffers.dist_buffer, comp_buffers.sorted_indices_buffer)
+        interpolateOPs!(GP.intOPs, GP, unified_buffers.dist_buffer, unified_buffers.sorted_indices_buffer)
 
-        a = @allocated tmpM, _ = setUpTmpWFAndRun!(comp_buffers.M_buffer, GP, set, floris, wind,
-                                   comp_buffers.iTWFState_buffer, comp_buffers.tmp_Tpos_buffer, 
-                                   comp_buffers.tmp_WF_buffer, comp_buffers.tmp_Tst_buffer,
-                                   comp_buffers.dists_buffer, comp_buffers.plot_WF_buffer, 
-                                   comp_buffers.plot_OP_buffer)
+        a = @allocated tmpM, _ = setUpTmpWFAndRun!(unified_buffers.M_buffer, GP, set, floris, wind,
+                                   unified_buffers.iTWFState_buffer, unified_buffers.tmp_Tpos_buffer, 
+                                   unified_buffers.tmp_WF_buffer, unified_buffers.tmp_Tst_buffer,
+                                   unified_buffers.dists_buffer, unified_buffers.plot_WF_buffer, 
+                                   unified_buffers.plot_OP_buffer)
 
         Threads.atomic_add!(gmp_alloc2, a)
         
