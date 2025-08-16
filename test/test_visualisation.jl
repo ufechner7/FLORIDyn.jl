@@ -4,7 +4,7 @@
 if !isdefined(Main, :Test)
     using Test
 end 
-using DataFrames  # Add DataFrames import for the new tests
+using DataFrames  # Required for turbines() function tests that use DataFrame functionality
 
 if ! isinteractive()
 if !isdefined(Main, :FLORIDyn)
