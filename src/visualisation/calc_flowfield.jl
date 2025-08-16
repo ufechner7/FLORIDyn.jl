@@ -386,18 +386,19 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
 end
 
 """
-    calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing)
+    calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing, alloc=nothing)
 
 Generate full flow field plot data by calculating measurements across a grid.
 
 This function creates a rectangular grid over the wind farm domain and calculates flow field
 properties at each grid point by treating them as virtual turbines. The computation can be
-performed in parallel if `set.parallel` is true, with automatic garbage collection management
+performed in parallel if `set.threading` is true, with automatic garbage collection management
 for thread safety.
 
 # Arguments
 - `set::Settings`: Settings object containing simulation parameters
-  - `set.parallel`: If true, uses parallel computation with multiple threads
+  - `set.threading`: If true, uses multi-threaded computation with `@threads`
+  - `set.parallel`: If true, enables parallel-specific optimizations
 - `wf::WindFarm`: Wind farm object containing turbine data
 - `wind::Wind`: Wind field configuration  
 - `floris::Floris`: FLORIS model parameters
@@ -406,6 +407,16 @@ for thread safety.
 - `plt=nothing`: Plot object for garbage collection control. If provided and `set.parallel` is true,
   automatically calls `plt.GC.enable(false)` before multithreading and `plt.GC.enable(true)` 
   after completion to prevent PyCall-related segmentation faults during parallel execution.
+- `alloc=nothing`: Optional allocation tracker for performance monitoring and memory profiling.
+  When provided, this should be an instance of the `Allocations` struct which tracks memory allocations 
+  across different parts of the flow field calculation process. The relevant fields include:
+  - `cff_X`: Allocations for X-coordinate grid creation
+  - `cff_Y`: Allocations for Y-coordinate grid creation  
+  - `getMeasurementsP`: Allocations from the measurements calculation
+  - `gmp_mx`: Allocations for measurement matrix creation
+  - `gmp_buffers`: Allocations for thread-local buffers
+  - `gmp_alloc2`: Allocations from setUpTmpWFAndRun! in threaded loops
+  This is useful for performance optimization and identifying memory allocation hotspots.
 
 # Returns
 - `Z::Array{Float64,3}`: 3D array of flow field measurements with dimensions `(ny, nx, 3)`
@@ -423,9 +434,16 @@ for thread safety.
 
 # Example
 ```julia
-# Calculate flow field with parallel computation and GC control
-set.parallel = true
+# Calculate flow field with threading and GC control
+set.threading = true
 Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+
+# Calculate with allocation tracking for performance monitoring
+alloc = Allocations()
+Z, X, Y = calcFlowField(set, wf, wind, floris; alloc=alloc)
+println("Memory allocated for X grid: \$(alloc.cff_X) bytes")
+println("Memory allocated for Y grid: \$(alloc.cff_Y) bytes")
+println("Total measurement allocations: \$(alloc.getMeasurementsP) bytes")
 
 # Extract velocity reduction field
 velocity_reduction = Z[:, :, 1]
@@ -435,8 +453,7 @@ wind_speed = Z[:, :, 3]
 ```
 
 # See Also
-- [`getMeasurements`](@ref): Single-threaded implementation
-- [`getMeasurementsP`](@ref): Multi-threaded implementation
+- [`getMeasurements`](@ref): Unified function for single and multi-threaded flow field computation
 - [`plotFlowField`](@ref): Visualization function for the generated data
 """
 function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing, alloc=nothing)

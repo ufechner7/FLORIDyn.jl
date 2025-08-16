@@ -1023,6 +1023,6 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         [:Time, :ForeignReduction, :AddedTurbulence, :EffWindSpeed, :FreeWindSpeed, :PowerGen]
     )
     mi = hcat(md.Time, hcat(vm_int...)')
-    @debug alloc
+    println("Memory allocations: $(alloc)")
     return wf, md, mi
 end

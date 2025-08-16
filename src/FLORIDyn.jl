@@ -7,8 +7,8 @@ $(DocStringExtensions.README)
 module FLORIDyn
 module Revert
          macro allocated(ex)
-           # esc(:((@timed $ex).bytes))
-           esc(:($ex; 0))
+           esc(:((@timed $ex).bytes))
+           # esc(:($ex; 0))
          end
        end
 
@@ -58,6 +58,7 @@ export runFLORIS, init_states, getUadv
 export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
 export run_floridyn, plot_flow_field, plot_measurements, close_all, turbines
+export Allocations
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
 export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_results, find_floridyn_runs, compare_dataframes
 export isdelftblue, Measurement, parse_measurements
