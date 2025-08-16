@@ -8,7 +8,13 @@ module FLORIDyn
 using Logging
 
 function is_debug_logging_enabled()
-    return Logging.min_enabled_level(current_logger()) <= Logging.Debug
+    # Check both the logger level AND environment variable
+    logger_debug = Logging.min_enabled_level(current_logger()) <= Logging.Debug
+    env_debug = haskey(ENV, "JULIA_DEBUG") && 
+                (ENV["JULIA_DEBUG"] == "all" || 
+                 contains(ENV["JULIA_DEBUG"], "FLORIDyn") ||
+                 contains(ENV["JULIA_DEBUG"], "Main"))
+    return logger_debug || env_debug
 end
 
 if is_debug_logging_enabled()
