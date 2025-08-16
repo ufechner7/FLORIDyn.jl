@@ -10,22 +10,11 @@ Thread-local buffers for parallel flow field computation.
 
 # Fields
 - `thread_buffers::Vector{WindFarm}`: Thread-local WindFarm objects for each thread
-- `thread_comp_buffers::Vector{NamedTuple}`: Computation buffers containing distance and sorting arrays
+- `thread_unified_buffers::Vector{UnifiedBuffers}`: Thread-local UnifiedBuffers for computation
 """
 struct ThreadBuffers
     thread_buffers::Vector{WindFarm}
-    thread_comp_buffers::Vector{@NamedTuple{
-        dist_buffer::Vector{Float64}, 
-        sorted_indices_buffer::Vector{Int},
-        M_buffer::Matrix{Float64},
-        iTWFState_buffer::Vector{Float64},
-        tmp_Tpos_buffer::Matrix{Float64},
-        tmp_WF_buffer::Matrix{Float64},
-        tmp_Tst_buffer::Matrix{Float64},
-        dists_buffer::Vector{Float64},
-        plot_WF_buffer::Matrix{Float64},
-        plot_OP_buffer::Matrix{Float64}
-    }}
+    thread_unified_buffers::Vector{UnifiedBuffers}
 end
 
 # UnifiedBuffers struct and create_unified_buffers function are defined in floridyn_cl/structs.jl
@@ -57,19 +46,8 @@ function create_thread_buffers(wf::WindFarm, nth::Int)
     # Pre-allocate arrays for each thread buffer
     original_nT = wf.nT
     
-    # Pre-allocate computation buffers for each thread using unified buffers
-    thread_comp_buffers = Vector{@NamedTuple{
-        dist_buffer::Vector{Float64}, 
-        sorted_indices_buffer::Vector{Int},
-        M_buffer::Matrix{Float64},
-        iTWFState_buffer::Vector{Float64},
-        tmp_Tpos_buffer::Matrix{Float64},
-        tmp_WF_buffer::Matrix{Float64},
-        tmp_Tst_buffer::Matrix{Float64},
-        dists_buffer::Vector{Float64},
-        plot_WF_buffer::Matrix{Float64},
-        plot_OP_buffer::Matrix{Float64}
-    }}(undef, nth)
+    # Pre-allocate unified buffers for each thread
+    thread_unified_buffers = Vector{UnifiedBuffers}(undef, nth)
     
     for tid in 1:nth
         GP = thread_buffers[tid]
@@ -97,24 +75,11 @@ function create_thread_buffers(wf::WindFarm, nth::Int)
         # Pre-allocate buffers for non-allocating interpolateOPs!
         GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
         
-        # Create unified buffers for this thread
-        unified_buffers = create_unified_buffers(wf)
-        
-        thread_comp_buffers[tid] = (
-            dist_buffer = unified_buffers.dist_buffer,
-            sorted_indices_buffer = unified_buffers.sorted_indices_buffer,
-            M_buffer = unified_buffers.M_buffer,
-            iTWFState_buffer = unified_buffers.iTWFState_buffer,
-            tmp_Tpos_buffer = unified_buffers.tmp_Tpos_buffer,
-            tmp_WF_buffer = unified_buffers.tmp_WF_buffer,
-            tmp_Tst_buffer = unified_buffers.tmp_Tst_buffer,
-            dists_buffer = unified_buffers.dists_buffer,
-            plot_WF_buffer = unified_buffers.plot_WF_buffer,
-            plot_OP_buffer = unified_buffers.plot_OP_buffer
-        )
+        # Create unified buffers directly for this thread
+        thread_unified_buffers[tid] = create_unified_buffers(wf)
     end
     
-    return ThreadBuffers(thread_buffers, thread_comp_buffers)
+    return ThreadBuffers(thread_buffers, thread_unified_buffers)
 end
 
 """
@@ -327,21 +292,7 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         # Get thread-local buffers
         tid = threadid()
         GP = buffers.thread_buffers[tid]
-        comp_buffers = buffers.thread_comp_buffers[tid]
-        
-        # Create a single unified buffer struct from the named tuple
-        unified_buffers = UnifiedBuffers(
-            comp_buffers.dist_buffer,
-            comp_buffers.sorted_indices_buffer,
-            comp_buffers.M_buffer,
-            comp_buffers.iTWFState_buffer,
-            comp_buffers.tmp_Tpos_buffer,
-            comp_buffers.tmp_WF_buffer,
-            comp_buffers.tmp_Tst_buffer,
-            comp_buffers.dists_buffer,
-            comp_buffers.plot_WF_buffer,
-            comp_buffers.plot_OP_buffer
-        )
+        unified_buffers = buffers.thread_unified_buffers[tid]
         
         xGP = mx[iGP]
         yGP = my[iGP]

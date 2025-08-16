@@ -7,8 +7,8 @@ $(DocStringExtensions.README)
 module FLORIDyn
 module Revert
          macro allocated(ex)
-           esc(:((@timed $ex).bytes))
-           # esc(:($ex; 0))
+           # esc(:((@timed $ex).bytes))
+           esc(:($ex; 0))
          end
        end
 
