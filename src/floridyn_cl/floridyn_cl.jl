@@ -851,13 +851,11 @@ Create unified buffers with FLORIS-specific rotor discretization.
 - `UnifiedBuffers`: Struct containing all pre-allocated buffers with proper FLORIS buffers
 """
 function create_unified_buffers(wf::WindFarm, floris::Floris)
-    # Calculate rotor discretization points if wind farm has turbines
-    n_rotor_points = if wf.D[end] > 0
-        RPl, _ = discretizeRotor(floris.rotor_points)
-        size(RPl, 1)
-    else
-        1
-    end
-    
+    # Always size FLORIS buffers to the model's rotor discretization.
+    # This ensures thread-local buffers are large enough for both real turbines
+    # (which use full discretization) and grid points (which may have D[end]==0).
+    RPl, _ = discretizeRotor(floris.rotor_points)
+    n_rotor_points = size(RPl, 1)
+
     return create_unified_buffers(wf, n_rotor_points)
 end
