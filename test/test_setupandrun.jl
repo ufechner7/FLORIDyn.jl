@@ -62,7 +62,7 @@ end
     # Create unified buffers for interpolateOPs!
     intOPs_buffers = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
     unified_buffers = create_unified_buffers(wf)
-    wf.intOPs = interpolateOPs!(intOPs_buffers, wf, unified_buffers)
+    wf.intOPs = interpolateOPs!(unified_buffers, intOPs_buffers, wf)
     wf_old = deepcopy(wf)
     M, wf = setUpTmpWFAndRun(set, wf, floris, wind)
     @test ! structs_equal(wf_old, wf; prn=false)

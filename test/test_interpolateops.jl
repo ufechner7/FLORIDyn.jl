@@ -29,7 +29,7 @@ wf_dict_02 = vars_after_interpolateOPs_T["T"]
     # Create unified buffers for interpolateOPs!
     unified_buffers = create_unified_buffers(wf)
     intOPs_buffers = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
-    wf.intOPs = interpolateOPs!(intOPs_buffers, wf, unified_buffers)
+    wf.intOPs = interpolateOPs!(unified_buffers, intOPs_buffers, wf)
 
     wf_ref_02 = wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
     if !compare_windFarms(wf_ref_02, wf; detailed=false, tolerance=1e-6)
@@ -53,7 +53,7 @@ end
     unified_buffers = create_unified_buffers(wf_no_alloc)
     
     # Call the non-allocating version
-    result = interpolateOPs!(intOPs, wf_no_alloc, unified_buffers)
+    result = interpolateOPs!(unified_buffers, intOPs, wf_no_alloc)
     
     # Assign the result to the wind farm object (same way as the allocating version)
     wf_no_alloc.intOPs = result
@@ -79,13 +79,13 @@ end
     # Run allocating version (now using non-allocating version)
     intOPs_buffers_alloc = [zeros(length(wf_alloc.dep[iT]), 4) for iT in 1:wf_alloc.nT]
     unified_buffers_alloc = create_unified_buffers(wf_alloc)
-    wf_alloc.intOPs = interpolateOPs!(intOPs_buffers_alloc, wf_alloc, unified_buffers_alloc)
+    wf_alloc.intOPs = interpolateOPs!(unified_buffers_alloc, intOPs_buffers_alloc, wf_alloc)
     
     # Run non-allocating version
     intOPs = [zeros(length(wf_no_alloc_comp.dep[iT]), 4) for iT in 1:wf_no_alloc_comp.nT]
     unified_buffers = create_unified_buffers(wf_no_alloc_comp)
     
-    wf_no_alloc_comp.intOPs = interpolateOPs!(intOPs, wf_no_alloc_comp, unified_buffers)
+    wf_no_alloc_comp.intOPs = interpolateOPs!(unified_buffers, intOPs, wf_no_alloc_comp)
     
     # Compare results between both versions
     @test compare_windFarms(wf_alloc, wf_no_alloc_comp; detailed=false, tolerance=1e-14)
@@ -115,11 +115,11 @@ end
     unified_buffers = create_unified_buffers(wf_buffer_test1)  # Both use same wind farm structure
     
     # Run first calculation
-    result1 = interpolateOPs!(intOPs1, wf_buffer_test1, unified_buffers)
+    result1 = interpolateOPs!(unified_buffers, intOPs1, wf_buffer_test1)
     wf_buffer_test1.intOPs = result1
     
     # Run second calculation with same buffers (simulating reuse)
-    result2 = interpolateOPs!(intOPs2, wf_buffer_test2, unified_buffers)
+    result2 = interpolateOPs!(unified_buffers, intOPs2, wf_buffer_test2)
     wf_buffer_test2.intOPs = result2
     
     # Both should match the reference

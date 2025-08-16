@@ -224,7 +224,7 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         GP.States_T[end, :] .= 0.0
         
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
-        interpolateOPs!(GP.intOPs, GP, unified_buffers)
+        interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
         tmpM, _ = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
         
@@ -361,7 +361,7 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         end
         
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
-        interpolateOPs!(GP.intOPs, GP, unified_buffers)
+        interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
         a = @allocated tmpM, _ = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
 

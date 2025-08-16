@@ -315,8 +315,7 @@ where:
 end
 
 """
-    interpolateOPs!(intOPs::Vector{Matrix{Float64}}, wf::WindFarm, 
-                   unified_buffers::UnifiedBuffers)
+    interpolateOPs!(unified_buffers::UnifiedBuffers, intOPs::Vector{Matrix{Float64}}, wf::WindFarm)
 
 Compute interpolation weights and indices for operational points affecting each turbine using a unified buffer.
 
@@ -348,11 +347,10 @@ unified_buffers = create_unified_buffers(wf)
 intOPs = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
 
 # Non-allocating interpolation
-interpolateOPs!(intOPs, wf, unified_buffers)
+interpolateOPs!(unified_buffers, intOPs, wf)
 ```
 """
-function interpolateOPs!(intOPs::Vector{Matrix{Float64}}, wf::WindFarm, 
-                        unified_buffers::UnifiedBuffers)
+function interpolateOPs!(unified_buffers::UnifiedBuffers, intOPs::Vector{Matrix{Float64}}, wf::WindFarm)
     @assert length(wf.dep) > 0 "No dependencies found! Ensure `findTurbineGroups` was called first."
 
     for iT in 1:wf.nT  # For every turbine
@@ -961,7 +959,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
                     intOPs_buffers[iT] = zeros(length(wf.dep[iT]), 4)
                 end
             end
-            wf.intOPs = interpolateOPs!(intOPs_buffers, wf, unified_buffers)
+            wf.intOPs = interpolateOPs!(unified_buffers, intOPs_buffers, wf)
         end
         if sim_steps == 1 && ! isnothing(debug)
             debug[1] = deepcopy(wf)
