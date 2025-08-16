@@ -226,11 +226,7 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
         interpolateOPs!(GP.intOPs, GP, unified_buffers)
 
-        tmpM, _ = setUpTmpWFAndRun!(unified_buffers.M_buffer, GP, set, floris, wind,
-                                   unified_buffers.iTWFState_buffer, unified_buffers.tmp_Tpos_buffer, 
-                                   unified_buffers.tmp_WF_buffer, unified_buffers.tmp_Tst_buffer,
-                                   unified_buffers.dists_buffer, unified_buffers.plot_WF_buffer, 
-                                   unified_buffers.plot_OP_buffer)
+        tmpM, _ = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
         
         # Extract only the result for the grid point (last "turbine")
         @views gridPointResult = tmpM[end, :]
@@ -367,11 +363,7 @@ function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::F
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
         interpolateOPs!(GP.intOPs, GP, unified_buffers)
 
-        a = @allocated tmpM, _ = setUpTmpWFAndRun!(unified_buffers.M_buffer, GP, set, floris, wind,
-                                   unified_buffers.iTWFState_buffer, unified_buffers.tmp_Tpos_buffer, 
-                                   unified_buffers.tmp_WF_buffer, unified_buffers.tmp_Tst_buffer,
-                                   unified_buffers.dists_buffer, unified_buffers.plot_WF_buffer, 
-                                   unified_buffers.plot_OP_buffer)
+        a = @allocated tmpM, _ = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
 
         Threads.atomic_add!(gmp_alloc2, a)
         

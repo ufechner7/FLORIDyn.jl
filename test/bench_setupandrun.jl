@@ -62,20 +62,8 @@ wf.intOPs = [
     zeros(0, 4)
 ]
 
-# Prepare buffers for setUpTmpWFAndRun!
-nT = wf.nT
-nOP = wf.nOP
-nWF = size(wf.States_WF, 2)
-nTst = size(wf.States_T, 2)
-
-M_buffer = zeros(nT, 3)
-iTWFState_buffer = zeros(nWF)
-tmp_Tpos_buffer = zeros(nT, 3)
-tmp_WF_buffer = zeros(nT, nWF)
-tmp_Tst_buffer = zeros(nT, nTst)
-dists_buffer = zeros(nT)
-plot_WF_buffer = zeros(nT, nWF)
-plot_OP_buffer = zeros(nT, 2)
+# Prepare unified buffers for setUpTmpWFAndRun!
+ub = create_unified_buffers(wf)
 
 alloc=Allocs()
 
@@ -83,14 +71,10 @@ iT = 1
 @assert !isempty(wf.intOPs[iT]) "wf.intOPs[$iT] is empty"
 
 # Run once to warm up
-setUpTmpWFAndRun!(M_buffer, wf, set, floris, wind,
-    iTWFState_buffer, tmp_Tpos_buffer, tmp_WF_buffer, tmp_Tst_buffer,
-    dists_buffer, plot_WF_buffer, plot_OP_buffer)
+setUpTmpWFAndRun!(ub, wf, set, floris, wind)
 
 # Benchmark
-bench = @benchmark setUpTmpWFAndRun!(M_buffer, wf, set, floris, wind,
-    iTWFState_buffer, tmp_Tpos_buffer, tmp_WF_buffer, tmp_Tst_buffer,
-    dists_buffer, plot_WF_buffer, plot_OP_buffer; alloc)
+bench = @benchmark setUpTmpWFAndRun!(ub, wf, set, floris, wind; alloc)
 
 mean_time = mean(bench.times) / 1e6  # ms
 allocs = mean(bench.memory) / 1024   # KiB
