@@ -369,5 +369,5 @@ function sprintf(fmt, args...)
     else
         return string(args...)
     end
-end
+# Formatting helper removed; use string interpolation or Printf.@sprintf instead.
 end
