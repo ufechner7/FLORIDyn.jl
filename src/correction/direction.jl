@@ -61,11 +61,12 @@ function getDataDir(set::Settings, wind::Wind, wf::WindFarm, t)
 end
 
 """
-    correctDir!(::Direction_All, set::Settings, wf::WindFarm, wind::Wind, t)
+    correctDir!(dir_buffer::Vector{Float64}, ::Direction_All, set::Settings, wf::WindFarm, wind::Wind, t)
 
 Apply direction correction to all turbines in the wind farm using the Direction_All strategy.
 
 # Arguments
+- `dir_buffer::Vector{Float64}`: Pre-allocated buffer for wind direction calculations (size: wf.nT)
 - `::Direction_All`: The direction correction strategy type that applies corrections to all turbines
 - `set::Settings`: Simulation settings containing the direction mode configuration
 - `wf::WindFarm`: Wind farm object containing turbine states and configuration (modified in-place)
@@ -109,9 +110,9 @@ current_direction = wind_farm.States_WF[1, 2]  # Updated direction for first tur
 - [`WindFarm`](@ref): Wind farm configuration structure
 - [`Wind`](@ref): Wind field data structure
 """
-function correctDir!(::Direction_All, set::Settings, wf::WindFarm, wind::Wind, t)
-    # Get Data
-    phi = getDataDir(set, wind, wf, t)
+function correctDir!(dir_buffer::Vector{Float64}, ::Direction_All, set::Settings, wf::WindFarm, wind::Wind, t)
+    # Get Data using provided buffer
+    phi = getDataDir!(dir_buffer, set, wind, wf, t)
     # Correct
     wf.States_WF[:, 2] .= phi[1]
     # OP Orientation = turbine wind direction
@@ -149,11 +150,13 @@ function getDataDir!(buffer::Vector{Float64}, set::Settings, wind::Wind, wf::Win
         # For RW_with_Mean mode, use regular function and copy to buffer
         phi = getWindDirT(set.dir_mode, wf.States_WF[wf.StartI, 2], wind.dir)
         if isa(phi, Number)
-            fill!(buffer, phi)
+            fill!(view(buffer, 1:wf.nT), phi)
         else
-            buffer[1:length(phi)] .= phi
+            # Take only the first wf.nT elements to match expected output size
+            n_copy = min(length(phi), wf.nT, length(buffer))
+            buffer[1:n_copy] .= phi[1:n_copy]
         end
-        return buffer
+        return view(buffer, 1:wf.nT)
     else
         # For interpolation mode, use buffered version
         return getWindDirT_buffered!(buffer, set.dir_mode, wind.dir, collect(1:wf.nT), t)

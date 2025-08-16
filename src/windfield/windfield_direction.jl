@@ -109,43 +109,6 @@ function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind_dir::AbstractMatr
 end
 
 """
-    getWindDirT(::Direction_Interpolation, wind_dir::AbstractMatrix, iT, t)
-
-# Direction_Interpolation 
-
-Returns the wind direction at the respective turbine(s).
-Uniform interpolation version - all turbines experience the same changes.
-
-Arguments:
-- wind_dir::Matrix: columns are time and phi (wind direction)
-- iT: single value or vector with turbine index/indices
-- t: time of request
-
-Returns:
-- phi: Vector of wind directions for each turbine in iT [°]
-"""
-function getWindDirT(::Direction_Interpolation, wind_dir::AbstractMatrix, iT, t)
-    times = wind_dir[:, 1]
-    phis = wind_dir[:, 2]
-
-    # Clamp t to bounds of times
-    if t < times[1]
-        @warn "The time $t is out of bounds, will use $(times[1]) instead."
-        t = times[1]
-    elseif t > times[end]
-        @warn "The time $t is out of bounds, will use $(times[end]) instead."
-        t = times[end]
-    end
-
-    # Linear interpolation (like interp1 in MATLAB)
-    itp = linear_interpolation(times, phis, extrapolation_bc=Flat())
-    phi_val = itp(t)
-
-    # Return phi for each turbine in iT (broadcasted)
-    return fill(phi_val, length(iT))
-end
-
-"""
     getWindDirT(::Direction_Interpolation_wErrorCov, wind_dir::WindDirMatrix, iT, t)
 
 Returns the wind direction at the respective turbine(s).
