@@ -263,6 +263,7 @@ Unified buffer struct containing all arrays needed by interpolateOPs! and setUpT
 - `dists_buffer::Vector{Float64}`: Distance buffer for setUpTmpWFAndRun!
 - `plot_WF_buffer::Matrix{Float64}`: Wind field plotting buffer
 - `plot_OP_buffer::Matrix{Float64}`: Observation point plotting buffer
+- `wind_dir_buffer::Vector{Float64}`: Wind direction buffer for getWindDirT! function
 - `floris_buffers`: Pre-allocated FLORIS computation buffers for wind wake calculations
 """
 struct UnifiedBuffers
@@ -276,6 +277,7 @@ struct UnifiedBuffers
     dists_buffer::Vector{Float64}
     plot_WF_buffer::Matrix{Float64}
     plot_OP_buffer::Matrix{Float64}
+    wind_dir_buffer::Vector{Float64}
     floris_buffers::Any  # Will be RunFLORISBuffers when FLORIS is available
 end
 

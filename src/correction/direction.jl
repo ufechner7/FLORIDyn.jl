@@ -120,3 +120,42 @@ function correctDir!(::Direction_All, set::Settings, wf::WindFarm, wind::Wind, t
     end
     return nothing
 end
+
+"""
+    correctDir!(ub::UnifiedBuffers, ::Direction_All, set::Settings, wf::WindFarm, wind::Wind, t)
+
+Buffered version of correctDir! that uses pre-allocated wind direction buffer.
+"""
+function correctDir!(ub::UnifiedBuffers, ::Direction_All, set::Settings, wf::WindFarm, wind::Wind, t)
+    # Get Data using buffered version
+    phi = getDataDir!(ub.wind_dir_buffer, set, wind, wf, t)
+    # Correct
+    wf.States_WF[:, 2] .= phi[1]
+    # OP Orientation = turbine wind direction
+    if size(wf.States_WF, 2) == 4
+       wf.States_WF[wf.StartI, 4] .= phi[1]
+    end
+    return nothing
+end
+
+"""
+    getDataDir!(buffer::Vector{Float64}, set::Settings, wind::Wind, wf::WindFarm, t)
+
+Buffered version of getDataDir that uses pre-allocated buffer for output.
+"""
+function getDataDir!(buffer::Vector{Float64}, set::Settings, wind::Wind, wf::WindFarm, t)
+    # Buffered version that reuses pre-allocated buffer
+    if wind.input_dir == "RW_with_Mean"
+        # For RW_with_Mean mode, use regular function and copy to buffer
+        phi = getWindDirT(set.dir_mode, wf.States_WF[wf.StartI, 2], wind.dir)
+        if isa(phi, Number)
+            fill!(buffer, phi)
+        else
+            buffer[1:length(phi)] .= phi
+        end
+        return buffer
+    else
+        # For interpolation mode, use buffered version
+        return getWindDirT_buffered!(buffer, set.dir_mode, wind.dir, collect(1:wf.nT), t)
+    end
+end

@@ -64,18 +64,18 @@ export TI_Influence, TI_None, TI_wGaspariAndCohn
 export IterateOPs_average, IterateOPs_basic, IterateOPs_buffer, IterateOPs_maximum, IterateOPs_weighted
 export Yaw_Constant, Yaw_InterpTurbine, Yaw_SOWFA
 
-export getWindDirT, getWindDirT_EnKF
+export getWindDirT, getWindDirT!, getWindDirT_buffered!, getWindDirT_EnKF
 export getWindShearT
 export getWindTiT
 export getWindSpeedT, getWindSpeedT_EnKF
-export getDataDir, getDataTI, getDataVel
+export getDataDir, getDataDir!, getDataTI, getDataVel
 export correctDir!
 export getYaw
 
 export discretizeRotor, calcCt, States
 export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimulation
 export runFLORIS, init_states, getUadv
-export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun!, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
+export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun!, setUpTmpWFAndRunWithCorrections!, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
 export run_floridyn, plot_flow_field, plot_measurements, close_all, turbines
 export Allocations
@@ -372,7 +372,7 @@ function create_unified_buffers(wf::WindFarm, rotor_points=50)
     
     # For setUpTmpWFAndRun!
     nT_with_grid = wf.nT + 1  # Original turbines + 1 grid point
-    max_deps = wf.nT + 1  # Grid point depends on all original turbines
+    max_deps = wf.nT  # Base buffer size on current nT
     
     M_buffer = zeros(nT_with_grid, 3)
     iTWFState_buffer = zeros(size(wf.States_WF, 2))
@@ -382,6 +382,9 @@ function create_unified_buffers(wf::WindFarm, rotor_points=50)
     dists_buffer = zeros(max_deps)
     plot_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
     plot_OP_buffer = zeros(max_deps, 2)
+    
+    # Wind direction buffer for getWindDirT! function - size for max dependencies
+    wind_dir_buffer = zeros(max_deps)
     
     # Create FLORIS buffers with specified number of rotor points
     n_floris_points = max(rotor_points, 1)
@@ -404,6 +407,7 @@ function create_unified_buffers(wf::WindFarm, rotor_points=50)
         dists_buffer,
         plot_WF_buffer,
         plot_OP_buffer,
+        wind_dir_buffer,
         floris_buffers
     )
 end

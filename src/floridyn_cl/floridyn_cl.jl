@@ -59,6 +59,39 @@ world_angle = angSOWFA2world(0.0)   # Returns 4.712388... (270° in radians)
 end
 
 """
+    setUpTmpWFAndRunWithCorrections!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, floris::Floris, wind::Wind, t; alloc=nothing)
+
+Enhanced version of setUpTmpWFAndRun! that also applies wind field corrections using buffered functions.
+
+This function combines the wind farm setup and simulation with optimized wind field corrections,
+reducing allocations by using pre-allocated buffers for direction calculations.
+
+# Arguments
+- `ub::UnifiedBuffers`: Unified buffer struct containing all pre-allocated arrays including wind_dir_buffer
+- `wf::WindFarm`: Wind farm object containing turbine data (modified in-place)
+- `set::Settings`: Settings object containing simulation parameters
+- `floris::Floris`: FLORIS model parameters for wake calculations
+- `wind::Wind`: Wind field configuration
+- `t`: Current simulation time for wind field corrections
+
+# Returns
+- `M::Matrix{Float64}`: Same as the input `ub.M_buffer`, filled with results
+- `wf::WindFarm`: Modified wind farm object with updated internal state and corrections applied
+"""
+function setUpTmpWFAndRunWithCorrections!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, floris::Floris, wind::Wind, t; alloc=nothing)
+    # First run the standard setup and simulation
+    M, wf = setUpTmpWFAndRun!(ub, wf, set, floris, wind; alloc=alloc)
+    
+    # Apply wind field corrections using buffered functions
+    # Note: Only apply corrections if the correction modes are not "None"
+    if !(set.cor_dir_mode isa Direction_None)
+        correctDir!(ub, set.cor_dir_mode, set, wf, wind, t)
+    end
+    
+    return M, wf
+end
+
+"""
     initSimulation(wf::Union{Nothing, WindFarm}, sim::Sim) -> Union{Nothing, WindFarm}
 
 Initialize or load a wind farm simulation state based on simulation settings.
