@@ -110,7 +110,9 @@ using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf_old = deepcopy(wf)
-        iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn)
+        # Create buffers for the new iterateOPs! function
+        buffers = IterateOPsBuffers(wf)
+        iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn, buffers)
         @test ! structs_equal(wf_old, wf; prn=false)
     end
     @testset "interpolateOPs" begin
