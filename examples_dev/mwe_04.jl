@@ -43,3 +43,4 @@ nothing
 # 219.869886 seconds (61.49 M allocations: 5.326 GiB, 0.26% gc time, 6.08% compilation time)
 
 # 1.203399 seconds (54.85 M allocations: 5.027 GiB, 33.68% gc time)
+# 1.125934 seconds (54.85 M allocations: 5.027 GiB, 30.31% gc time)
