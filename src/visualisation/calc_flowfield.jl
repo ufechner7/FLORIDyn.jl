@@ -270,21 +270,13 @@ wind_speed_field = mz[:, :, 3]
 - [`calcFlowField`](@ref): Higher-level function that uses this to create complete flow field data
 - [`setUpTmpWFAndRun`](@ref): Underlying simulation function used for each grid point
 """
-function getMeasurementsP(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind; alloc=nothing)
+function getMeasurementsP(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind; alloc=nothing)
     size_mx = size(mx)
     a = @allocated mz = zeros(size_mx[1], size_mx[2], nM)
     if ! isnothing(alloc)
         alloc.gmp_mx += a
     end
-
-    # for Julia 1.12 we need one extra thread
-    nth = nthreads() + 1
-    
-    # Create thread-local buffers using the new function
-    a = @allocated buffers = create_thread_buffers(wf, nth)
-    if ! isnothing(alloc)
-        alloc.gmp_buffers += a
-    end
+   
     gmp_alloc2 = Threads.Atomic{Int64}(0)
     
     # Parallel loop using @threads
@@ -435,7 +427,12 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; 
             GC.enable(false)
         end
         try
-            a = @allocated Z = getMeasurementsP(X, Y, nM, zh, wf, set, floris, wind; alloc)
+            # Create thread-local buffers using the new function
+            a = @allocated buffers = create_thread_buffers(wf, nthreads() + 1)
+            if ! isnothing(alloc)
+                alloc.gmp_buffers += a
+            end
+            a = @allocated Z = getMeasurementsP(buffers, X, Y, nM, zh, wf, set, floris, wind; alloc)
             if ! isnothing(alloc)
                 alloc.getMeasurementsP += a
             end
