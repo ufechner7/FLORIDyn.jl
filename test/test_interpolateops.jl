@@ -30,7 +30,7 @@ wf_dict_02 = vars_after_interpolateOPs_T["T"]
     intOPs_buffers = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
     dist_buffer = zeros(wf.nOP)
     sorted_indices_buffer = zeros(Int, wf.nOP)
-    wf.intOPs = interpolateOPs!(intOPs_buffers, wf, dist_buffer, sorted_indices_buffer)            # line 378ff in floridyn_cl.jl
+    wf.intOPs = interpolateOPs!(intOPs_buffers, wf, dist_buffer, sorted_indices_buffer)
 
     wf_ref_02 = wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
     if !compare_windFarms(wf_ref_02, wf; detailed=false, tolerance=1e-6)
