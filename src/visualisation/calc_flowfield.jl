@@ -41,50 +41,18 @@ race conditions and memory allocations during the parallel computation loop.
 - Sets up dependency structure for virtual turbines at grid points
 """
 function create_thread_buffers(wf::WindFarm, nth::Int, floris::Floris)
-    # Create thread-local buffers to avoid race conditions
-    thread_buffers = [deepcopy(wf) for _ in 1:nth]
-    
-    # Pre-allocate arrays for each thread buffer
-    original_nT = wf.nT
-    
-    # Pre-allocate unified buffers for each thread
+    # Pre-allocate unified buffers for each thread (contains GP)
     thread_unified_buffers = Vector{UnifiedBuffers}(undef, nth)
-    
+    thread_buffers = Vector{WindFarm}(undef, nth)
+
     for tid in 1:nth
-        GP = thread_buffers[tid]
-        GP.nT = original_nT + 1  # Original turbines + 1 grid point
-        
-        # Pre-allocate dependency structure
-        GP.dep = Vector{Vector{Int64}}(undef, GP.nT)
-        for i in 1:original_nT
-            GP.dep[i] = Int64[]  # Original turbines are independent (no dependencies)
-        end
-        GP.dep[end] = collect(1:original_nT)  # Grid point depends on all original turbines
-        
-        # Pre-allocate extended arrays (with proper bounds checking)
-        if !isempty(wf.StartI)
-            GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
-        else
-            # Handle case where StartI is empty (testing scenario)
-            GP.StartI = reshape([1], 1, 1)  # Minimal valid StartI for testing
-        end
-        GP.posBase = vcat(wf.posBase, zeros(1, 3))  # Will be updated for each grid point
-        GP.posNac = vcat(wf.posNac, zeros(1, 3))   # Will be updated for each grid point
-        GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
-        GP.D = vcat(wf.D, [0.0])  # Grid point has 0 diameter
-        
-        # Ensure all necessary fields are copied to avoid shared references
-        if hasfield(typeof(wf), :intOPs)
-            GP.intOPs = deepcopy(wf.intOPs)
-        end
-        
-        # Pre-allocate buffers for non-allocating interpolateOPs!
-        GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
-        
         # Create unified buffers with proper FLORIS parameters for this thread
-        thread_unified_buffers[tid] = create_unified_buffers(wf, floris)
+        ub = create_unified_buffers(wf, floris)
+        thread_unified_buffers[tid] = ub
+        # Use the prebuilt GP from unified buffers as the thread's WindFarm buffer
+        thread_buffers[tid] = ub.gp
     end
-    
+
     return ThreadBuffers(thread_buffers, thread_unified_buffers)
 end
 
@@ -109,50 +77,18 @@ race conditions and memory allocations during the parallel computation loop.
 - Sets up dependency structure for virtual turbines at grid points
 """
 function create_thread_buffers(wf::WindFarm, nth::Int)
-    # Create thread-local buffers to avoid race conditions
-    thread_buffers = [deepcopy(wf) for _ in 1:nth]
-    
-    # Pre-allocate arrays for each thread buffer
-    original_nT = wf.nT
-    
-    # Pre-allocate unified buffers for each thread
+    # Pre-allocate unified buffers for each thread (contains GP)
     thread_unified_buffers = Vector{UnifiedBuffers}(undef, nth)
-    
+    thread_buffers = Vector{WindFarm}(undef, nth)
+
     for tid in 1:nth
-        GP = thread_buffers[tid]
-        GP.nT = original_nT + 1  # Original turbines + 1 grid point
-        
-        # Pre-allocate dependency structure
-        GP.dep = Vector{Vector{Int64}}(undef, GP.nT)
-        for i in 1:original_nT
-            GP.dep[i] = Int64[]  # Original turbines are independent (no dependencies)
-        end
-        GP.dep[end] = collect(1:original_nT)  # Grid point depends on all original turbines
-        
-        # Pre-allocate extended arrays (with proper bounds checking)
-        if !isempty(wf.StartI)
-            GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
-        else
-            # Handle case where StartI is empty (testing scenario)
-            GP.StartI = reshape([1], 1, 1)  # Minimal valid StartI for testing
-        end
-        GP.posBase = vcat(wf.posBase, zeros(1, 3))  # Will be updated for each grid point
-        GP.posNac = vcat(wf.posNac, zeros(1, 3))   # Will be updated for each grid point
-        GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
-        GP.D = vcat(wf.D, [0.0])  # Grid point has 0 diameter
-        
-        # Ensure all necessary fields are copied to avoid shared references
-        if hasfield(typeof(wf), :intOPs)
-            GP.intOPs = deepcopy(wf.intOPs)
-        end
-        
-        # Pre-allocate buffers for non-allocating interpolateOPs!
-        GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
-        
-        # Create unified buffers with larger default for better compatibility
-        thread_unified_buffers[tid] = create_unified_buffers(wf, 50)
+        # Create unified buffers with default rotor discretization
+        ub = create_unified_buffers(wf, 50)
+        thread_unified_buffers[tid] = ub
+        # Use the prebuilt GP from unified buffers as the thread's WindFarm buffer
+        thread_buffers[tid] = ub.gp
     end
-    
+
     return ThreadBuffers(thread_buffers, thread_unified_buffers)
 end
 
@@ -292,37 +228,13 @@ wind_speed_field = mz[:, :, 3]
 - [`calcFlowField`](@ref): Higher-level function that uses this to create complete flow field data
 - [`setUpTmpWFAndRun!`](@ref): Underlying simulation function used for each grid point
 """
-function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
+function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind; buffers=nothing)
     size_mx = size(mx)
     mz = zeros(size_mx[1], size_mx[2], nM)
     
-    # Pre-allocate GP buffer once outside the loop
-    GP = deepcopy(wf)  # Create the buffer once
-    
-    # Pre-allocate arrays that will be modified for each grid point
-    # These will be reused and updated for each iteration
-    original_nT = wf.nT
-    GP.nT = original_nT + 1  # Original turbines + 1 grid point
-    
-    # Pre-allocate dependency structure
-    GP.dep = Vector{Vector{Int64}}(undef, GP.nT)
-    for i in 1:original_nT
-        GP.dep[i] = Int64[]  # Original turbines are independent (no dependencies)
-    end
-    GP.dep[end] = collect(1:original_nT)  # Grid point depends on all original turbines
-    
-    # Pre-allocate extended arrays
-    GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
-    GP.posBase = vcat(wf.posBase, zeros(1, 3))  # Will be updated for each grid point
-    GP.posNac = vcat(wf.posNac, zeros(1, 3))   # Will be updated for each grid point
-    GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
-    GP.D = vcat(wf.D, [0.0])  # Grid point has 0 diameter
-    
-    # Pre-allocate buffers for non-allocating interpolateOPs!
-    GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
-    
-    # Create a single unified buffer struct containing all arrays
+    # Create a single unified buffer struct containing all arrays, including GP buffer
     unified_buffers = create_unified_buffers(wf)
+    GP = unified_buffers.gp
 
     # Single-threaded loop (can be parallelized with @threads or DistributedNext.@distributed)
     for iGP in 1:length(mx)
@@ -337,7 +249,7 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         GP.States_T[end, :] .= 0.0
         
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
-        interpolateOPs!(unified_buffers, GP.intOPs, GP)
+    interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
         tmpM = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
         

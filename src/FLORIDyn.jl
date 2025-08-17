@@ -394,6 +394,26 @@ function create_unified_buffers(wf::WindFarm, rotor_points=50)
         nothing
     end
     
+    # Prepare a WindFarm buffer for grid-point computations (GP)
+    GP = deepcopy(wf)
+    original_nT = wf.nT
+    GP.nT = original_nT + 1
+    GP.dep = Vector{Vector{Int64}}(undef, GP.nT)
+    for i in 1:original_nT
+        GP.dep[i] = Int64[]
+    end
+    GP.dep[end] = collect(1:original_nT)
+    if !isempty(wf.StartI)
+        GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
+    else
+        GP.StartI = reshape([1], 1, 1)
+    end
+    GP.posBase = vcat(wf.posBase, zeros(1, 3))
+    GP.posNac = vcat(wf.posNac, zeros(1, 3))
+    GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
+    GP.D = vcat(wf.D, [0.0])
+    GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
+
     return UnifiedBuffers(
         dist_buffer,
         sorted_indices_buffer,
@@ -405,7 +425,8 @@ function create_unified_buffers(wf::WindFarm, rotor_points=50)
         dists_buffer,
         plot_WF_buffer,
         plot_OP_buffer,
-        floris_buffers
+        floris_buffers,
+        GP
     )
 end
 
