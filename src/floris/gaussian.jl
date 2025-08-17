@@ -164,31 +164,6 @@ function getVars!(sig_y::AbstractVector{<:Real},
 end
 
 """
-    getVars(rps::Union{Matrix, Adjoint, SubArray}, c_t, yaw, ti, ti0,
-            floris::Floris, d_rotor) -> Tuple{Vector, Vector, Vector, Vector, Vector, Vector, Vector}
-
-Allocating wrapper around getVars! for API compatibility.
-"""
-function getVars(rps::Union{Matrix, Adjoint, SubArray}, c_t, yaw, ti, ti0, floris::Floris, d_rotor)
-    n = size(rps, 1)
-    sig_y = Vector{Float64}(undef, n)
-    sig_z = Vector{Float64}(undef, n)
-    x_0_v = Vector{Float64}(undef, n)
-    delta = Matrix{Float64}(undef, n, 2)
-    pc_y  = Vector{Float64}(undef, n)
-    pc_z  = Vector{Float64}(undef, n)
-    getVars!(sig_y, sig_z, x_0_v, delta, pc_y, pc_z, rps, c_t, yaw, ti, ti0, floris, d_rotor)
-    # Return x_0 as scalar if inputs are scalars (for backward compatibility)
-    is_scalar_ct  = isa(c_t, Number)
-    is_scalar_yaw = isa(yaw, Number)
-    is_scalar_ti  = isa(ti, Number)
-    is_scalar_ti0 = isa(ti0, Number)
-    x_0 = (is_scalar_ct && is_scalar_yaw && is_scalar_ti && is_scalar_ti0) ? x_0_v[1] : x_0_v
-    return sig_y, sig_z, c_t, x_0, delta, pc_y, pc_z
-end
- 
-
-"""
     centerline(states_op, states_t, states_wf, floris, d_rotor) -> Matrix{Float64}
 
 Allocating wrapper around `centerline!` for API compatibility.
@@ -209,8 +184,14 @@ function centerline!(deflection::AbstractMatrix,
     TI   = states_t[:, 3]
     TI0  = states_wf[:, 3]
 
-    # Compute wake variables and copy deflection into output
-    _, _, _, _, delta, _, _ = getVars(rps, Ct, yaw, TI, TI0, floris, d_rotor)
+    # Compute wake variables in-place and copy deflection into output
+    sig_y = Vector{Float64}(undef, n)
+    sig_z = Vector{Float64}(undef, n)
+    x_0   = Vector{Float64}(undef, n)
+    delta = Matrix{Float64}(undef, n, 2)
+    pc_y  = Vector{Float64}(undef, n)
+    pc_z  = Vector{Float64}(undef, n)
+    getVars!(sig_y, sig_z, x_0, delta, pc_y, pc_z, rps, Ct, yaw, TI, TI0, floris, d_rotor)
     @inbounds begin
         deflection[:, 1] .= delta[:, 1]
         deflection[:, 2] .= delta[:, 2]
@@ -357,37 +338,8 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
 end
 
 """
-    getVars(rps::Union{Matrix, Adjoint}, c_t, yaw, ti, ti0, 
-            floris::Floris, d_rotor) -> Tuple{Vector, Vector, Vector, Vector, Vector, Vector, Vector}
-
-Compute and return variables related to the Gaussian wake model for wind turbines.
-
-In particular, it calculates the field width, the potential core data and
-the deflection. These values are needed for the calculation of the wake shape and speed 
-reduction. The values are based of the state of every individual OP.
-
-# Arguments
-- `rps`: Matrix of reference points where the variables are evaluated.
-- `c_t`: Thrust coefficient(s) for the turbine(s).
-- `yaw`: Yaw angle(s) of the turbine(s) in radians or degrees.
-- `ti`: Turbulence intensity at the reference points.
-- `ti0`: Ambient turbulence intensity.
-- `floris::Floris`: FLORIS model parameters containing Gaussian wake model parameters (see [`Floris`](@ref)).
-- `d_rotor`: Rotor diameter(s) of the turbine(s).
-
-# Returns
-Returns the tuple
-- sig_y::Vector: Gaussian variance in y direction (sqrt of)
-- sig_z::Vector: Gaussian variance in z direction (sqrt of)
-- c_t: Thrust coefficient, same as OP.Ct
-- x_0: Potential core length
-- delta: Deflection
-- pc_y: Potential core boundary in y dir
-- pc_z: Potential core boundary in z dir
-
-# SOURCES
-- [1] Experimental and theoretical study of wind turbine wakes in yawed conditions - M. Bastankhah and F. Porté-Agel
-- [2] Design and analysis of a spatially heterogeneous wake - A. Farrell, J. King et al.
+Gaussian wake variable computation is provided by the in-place function `getVars!`,
+which fills preallocated output arrays for sig_y, sig_z, x_0, delta, pc_y, pc_z.
 """
 
 """
@@ -616,28 +568,40 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
         Ct = calcCt(a_val, yaw_deg)
         TI0 = states_wf[iT, 3]
 
-        sig_y, sig_z, C_T, x_0, delta, pc_y, pc_z = getVars(
-            tmp_RPs, Ct, yaw, TI, TI0, floris, d_rotor[iT]
-        )
+        # Compute mean_x now, before tmp_RPs is reused for other data
+        mean_x = 0.0
+        @inbounds for i in 1:nRP
+            mean_x += tmp_RPs[i, 1]
+        end
+        mean_x /= nRP
+
+        # Compute wake variables using in-place API (allocate local outputs)
+        sig_y = Vector{Float64}(undef, nRP)
+        sig_z = Vector{Float64}(undef, nRP)
+        x_0   = Vector{Float64}(undef, nRP)
+        delta = Matrix{Float64}(undef, nRP, 2)
+        pc_y  = Vector{Float64}(undef, nRP)
+        pc_z  = Vector{Float64}(undef, nRP)
+        getVars!(sig_y, sig_z, x_0, delta, pc_y, pc_z, tmp_RPs, Ct, yaw, TI, TI0, floris, d_rotor[iT])
+        C_T = Ct
 
         # Use pre-allocated arrays
         @inbounds for i in 1:nRP
-            delta_y = ndims(delta) > 1 ? delta[i, 1] : (isa(delta, AbstractVector) ? delta[i] : delta)
-            delta_z = ndims(delta) > 1 ? delta[i, 2] : 0.0
+            delta_y = delta[i, 1]
+            delta_z = delta[i, 2]
             
             cw_y[i] = tmp_RPs[i, 2] - delta_y
             cw_z[i] = tmp_RPs[i, 3] - delta_z
             phi_cw[i] = atan(cw_z[i], cw_y[i])
             r_cw[i] = sqrt(cw_y[i]^2 + cw_z[i]^2)
             
-            pc_y_val = isa(pc_y, AbstractArray) ? pc_y[i] : pc_y
-            pc_z_val = isa(pc_z, AbstractArray) ? pc_z[i] : pc_z
+            pc_y_val = pc_y[i]
+            pc_z_val = pc_z[i]
             pc_y_half_cos = 0.5 * pc_y_val * cos(phi_cw[i])
             pc_z_half_sin = 0.5 * pc_z_val * sin(phi_cw[i])
             core[i] = (r_cw[i] < sqrt(pc_y_half_cos^2 + pc_z_half_sin^2)) || (tmp_RPs[i, 1] == 0.0)
             
-            x_0_val = isa(x_0, AbstractArray) ? x_0[i] : x_0
-            nw[i] = tmp_RPs[i, 1] < x_0_val
+            nw[i] = tmp_RPs[i, 1] < x_0[i]
             fw[i] = !nw[i]
         end
 
@@ -655,8 +619,8 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
             if nw[i]
                 gaussAbs[i] = 1 - sqrt_1_minus_CT
             elseif fw[i]
-                sig_y_val = isa(sig_y, AbstractArray) ? sig_y[i] : sig_y
-                sig_z_val = isa(sig_z, AbstractArray) ? sig_z[i] : sig_z
+                sig_y_val = sig_y[i]
+                sig_z_val = sig_z[i]
                 gaussAbs[i] = 1 - sqrt(1 - C_T * cos(yaw) / (8 * sig_y_val * sig_z_val / d_rotor[iT]^2))
             end
         end
@@ -677,10 +641,10 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
         if any_not_core
             @inbounds for i in 1:nRP
                 if not_core[i]
-                    sig_y_val = isa(sig_y, AbstractArray) ? sig_y[i] : sig_y
-                    sig_z_val = isa(sig_z, AbstractArray) ? sig_z[i] : sig_z
-                    pc_y_val = isa(pc_y, AbstractArray) ? pc_y[i] : pc_y
-                    pc_z_val = isa(pc_z, AbstractArray) ? pc_z[i] : pc_z
+                    sig_y_val = sig_y[i]
+                    sig_z_val = sig_z[i]
+                    pc_y_val = pc_y[i]
+                    pc_z_val = pc_z[i]
                     
                     y_term = (cw_y[i] - cos(phi_cw[i]) * pc_y_val * 0.5) / sig_y_val
                     z_term = (cw_z[i] - sin(phi_cw[i]) * pc_z_val * 0.5) / sig_z_val
@@ -695,13 +659,7 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
         T_weight[iT] = sum(gaussWght)
         T_red_arr[iT] = 1 - dot(RPw, tmp_RPs_r)
 
-        # Added TI - calculate mean manually to avoid allocation
-        mean_x = 0.0
-        @inbounds for i in 1:nRP
-            mean_x += tmp_RPs[i, 1]
-        end
-        mean_x /= nRP
-        
+    # Added TI
         T_addedTI_tmp = floris.k_fa * (
             a_val^floris.k_fb *
             TI0^floris.k_fc *
@@ -710,10 +668,10 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
 
         TIexp = floris.TIexp
         @inbounds for i in 1:nRP
-            sig_y_val = isa(sig_y, AbstractArray) ? sig_y[i] : sig_y
-            sig_z_val = isa(sig_z, AbstractArray) ? sig_z[i] : sig_z
-            pc_y_val = isa(pc_y, AbstractArray) ? pc_y[i] : pc_y
-            pc_z_val = isa(pc_z, AbstractArray) ? pc_z[i] : pc_z
+            sig_y_val = sig_y[i]
+            sig_z_val = sig_z[i]
+            pc_y_val = pc_y[i]
+            pc_z_val = pc_z[i]
             
             y_term = (cw_y[i] - cos(phi_cw[i]) * pc_y_val * 0.5) / (TIexp * sig_y_val)
             z_term = (cw_z[i] - sin(phi_cw[i]) * pc_z_val * 0.5) / (TIexp * sig_z_val)

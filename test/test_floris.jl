@@ -140,7 +140,16 @@ using FLORIDyn, Test
             rotor_points = 50
         )
 
-        sig_y, sig_z, C_T_out, x_0, delta, pc_y, pc_z = getVars(RPs, C_T, yaw, TI, TI0, floris, D)
+    # Use in-place API
+    n = size(RPs, 1)
+    sig_y = Vector{Float64}(undef, n)
+    sig_z = Vector{Float64}(undef, n)
+    x_0   = Vector{Float64}(undef, n)
+    delta = Matrix{Float64}(undef, n, 2)
+    pc_y  = Vector{Float64}(undef, n)
+    pc_z  = Vector{Float64}(undef, n)
+    getVars!(sig_y, sig_z, x_0, delta, pc_y, pc_z, RPs, C_T, yaw, TI, TI0, floris, D)
+    C_T_out = C_T
 
         @test length(sig_y) == 3
         @test length(sig_z) == 3
