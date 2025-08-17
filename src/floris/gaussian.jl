@@ -65,12 +65,12 @@ function FLORISBuffers(n_pts::Int)
     return FLORISBuffers(
         Matrix{Float64}(undef, n_pts, 3),  # tmp_RPs
         Matrix{Float64}(undef, n_pts, 3),  # rotor_pts
-    Vector{Float64}(undef, n_pts),     # sig_y
-    Vector{Float64}(undef, n_pts),     # sig_z
-    Vector{Float64}(undef, n_pts),     # x_0
-    Matrix{Float64}(undef, n_pts, 2),  # delta
-    Vector{Float64}(undef, n_pts),     # pc_y
-    Vector{Float64}(undef, n_pts),     # pc_z
+        Vector{Float64}(undef, n_pts),     # sig_y
+        Vector{Float64}(undef, n_pts),     # sig_z
+        Vector{Float64}(undef, n_pts),     # x_0
+        Matrix{Float64}(undef, n_pts, 2),  # delta
+        Vector{Float64}(undef, n_pts),     # pc_y
+        Vector{Float64}(undef, n_pts),     # pc_z
         Vector{Float64}(undef, n_pts),     # cw_y
         Vector{Float64}(undef, n_pts),     # cw_z
         Vector{Float64}(undef, n_pts),     # phi_cw
@@ -83,11 +83,11 @@ function FLORISBuffers(n_pts::Int)
         Vector{Float64}(undef, n_pts),     # gaussWght
         Vector{Float64}(undef, n_pts),     # exp_y
         Vector{Float64}(undef, n_pts),     # exp_z
-    Vector{Bool}(undef, n_pts),        # not_core
-    Float64[],                         # T_red_arr (size set per call)
-    Float64[],                         # T_aTI_arr (size set per call)
-    Float64[],                         # T_Ueff (size 0 or 1)
-    Float64[],                         # T_weight (size set per call)
+        Vector{Bool}(undef, n_pts),        # not_core
+        Float64[],                         # T_red_arr (size set per call)
+        Float64[],                         # T_aTI_arr (size set per call)
+        Float64[],                         # T_Ueff (size 0 or 1)
+        Float64[],                         # T_weight (size set per call)
     )
 end
 
