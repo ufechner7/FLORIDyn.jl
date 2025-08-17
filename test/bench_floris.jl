@@ -164,3 +164,5 @@ rel_time = time * 301 / 0.115  # Relative to the total time of 0.115 seconds
 println("Benchmark time: $time seconds, relative to 0.115s: $(round(rel_time * 100, digits=2)) %")
 println("Allocations: $(t.allocs), in total $(t.memory) bytes.")
 # Benchmark time: 1.29870531e-5 seconds, relative to 0.115s: 3.4 %
+
+println(alloc)
