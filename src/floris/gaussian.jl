@@ -871,7 +871,12 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
             exp_z[i] = exp(-0.5 * z_term^2)
         end
 
-        T_aTI_arr[iT] = T_addedTI_tmp * dot(RPw, exp_y .* exp_z)
+        # Avoid allocating a temporary from (exp_y .* exp_z) by manual accumulation
+        acc = 0.0
+        @inbounds for i in 1:nRP
+            acc = muladd(RPw[i], exp_y[i] * exp_z[i], acc)
+        end
+        T_aTI_arr[iT] = T_addedTI_tmp * acc
     end
 
     # Compute z for wind shear:
