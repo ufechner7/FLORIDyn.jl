@@ -82,7 +82,7 @@ function create_thread_buffers(wf::WindFarm, nth::Int, floris::Floris)
         GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
         
         # Create unified buffers with proper FLORIS parameters for this thread
-        thread_unified_buffers[tid] = create_unified_buffers(GP, floris)
+        thread_unified_buffers[tid] = create_unified_buffers(wf, floris)
     end
     
     return ThreadBuffers(thread_buffers, thread_unified_buffers)
@@ -150,7 +150,7 @@ function create_thread_buffers(wf::WindFarm, nth::Int)
         GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
         
         # Create unified buffers with larger default for better compatibility
-        thread_unified_buffers[tid] = create_unified_buffers(GP, 50)
+        thread_unified_buffers[tid] = create_unified_buffers(wf, 50)
     end
     
     return ThreadBuffers(thread_buffers, thread_unified_buffers)
@@ -322,7 +322,7 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
     GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
     
     # Create a single unified buffer struct containing all arrays
-    unified_buffers = create_unified_buffers(GP)
+    unified_buffers = create_unified_buffers(wf)
 
     # Single-threaded loop (can be parallelized with @threads or DistributedNext.@distributed)
     for iGP in 1:length(mx)
@@ -339,8 +339,7 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
         interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
-        # Use optimized version that includes wind field corrections with buffered functions
-        tmpM, _ = setUpTmpWFAndRunWithCorrections!(unified_buffers, GP, set, floris, wind, 0.0)
+        tmpM, _ = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
         
         # Extract only the result for the grid point (last "turbine")
         @views gridPointResult = tmpM[end, :]
@@ -455,8 +454,7 @@ function getMeasurementsP(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, 
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
         interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
-        # Use optimized version that includes wind field corrections with buffered functions
-        a = @allocated tmpM, _ = setUpTmpWFAndRunWithCorrections!(unified_buffers, GP, set, floris, wind, 0.0)
+        a = @allocated tmpM, _ = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
 
         Threads.atomic_add!(gmp_alloc2, a)
         
