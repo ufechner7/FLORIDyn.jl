@@ -591,15 +591,11 @@ The function implements several key wake modeling equations:
 """
 function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, 
                    windshear::Union{Matrix, WindShear}; alloc=nothing)
-    a = @allocated if d_rotor[end] > 0
+    if d_rotor[end] > 0
         RPl, RPw = discretizeRotor(floris.rotor_points)
     else
         RPl = [0.0 0.0 0.0]
         RPw = [1.0]
-    end
-    if ! isnothing(alloc)
-        alloc.if1 += a
-        alloc.n += 1
     end
     # Yaw rotation for last turbine
     tmp_yaw = deg2rad(states_t[end, 2])
@@ -623,7 +619,7 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
     scaled_RPl = @view buffers.tmp_RPs[1:nRP_local, :]
     RPl = (R * scaled_RPl')' .+ location_t[end, :]'
 
-    a = @allocated if length(d_rotor) == 1
+    if length(d_rotor) == 1
         # Avoid allocating RPl[:,3] and the broadcasted division by using a buffer
         nRP_local = size(RPl, 1)
         if length(buffers.tmp_RPs_r) < nRP_local
@@ -639,54 +635,40 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
         T_aTI_arr, T_Ueff, T_weight = nothing, nothing, nothing
         return T_red_arr, T_aTI_arr, T_Ueff, T_weight
     end
-    if ! isnothing(alloc)
-        alloc.if2 += a
-    end
 
     # Initialize outputs
-    a = @allocated begin
-        nT = length(d_rotor)
-        T_red_arr = ones(nT)
-        T_aTI_arr = zeros(nT - 1)
-        T_weight = zeros(nT - 1)
-    end
-    if ! isnothing(alloc)
-        alloc.expr2 += a
-    end
+    nT = length(d_rotor)
+    T_red_arr = ones(nT)
+    T_aTI_arr = zeros(nT - 1)
+    T_weight = zeros(nT - 1)
 
     # Pre-allocate arrays that are reused in the loop
     nRP = size(RPl, 1)
-    a = @allocated begin
-        # Ensure buffers are properly sized
-        if size(buffers.tmp_RPs, 1) < nRP
-            error("Buffer tmp_RPs is too small: expected at least $(nRP) rows, got $(size(buffers.tmp_RPs, 1))")
-        end
-        if length(buffers.cw_y) < nRP
-            error("Buffer arrays are too small: expected at least $(nRP) elements, got $(length(buffers.cw_y))")
-        end
-        
-        # Use views of pre-allocated buffers to match the current discretization size exactly
-        tmp_RPs = view(buffers.tmp_RPs, 1:nRP, :)
-        cw_y = view(buffers.cw_y, 1:nRP)
-        cw_z = view(buffers.cw_z, 1:nRP)
-        phi_cw = view(buffers.phi_cw, 1:nRP)
-        r_cw = view(buffers.r_cw, 1:nRP)
-        core = view(buffers.core, 1:nRP)
-        nw = view(buffers.nw, 1:nRP)
-        fw = view(buffers.fw, 1:nRP)
-        tmp_RPs_r = view(buffers.tmp_RPs_r, 1:nRP)
-        gaussAbs = view(buffers.gaussAbs, 1:nRP)
-        gaussWght = view(buffers.gaussWght, 1:nRP)
-        exp_y = view(buffers.exp_y, 1:nRP)
-        exp_z = view(buffers.exp_z, 1:nRP)
-        not_core = view(buffers.not_core, 1:nRP)
+    # Ensure buffers are properly sized
+    if size(buffers.tmp_RPs, 1) < nRP
+        error("Buffer tmp_RPs is too small: expected at least $(nRP) rows, got $(size(buffers.tmp_RPs, 1))")
     end
-    if ! isnothing(alloc)
-        alloc.pre += a
+    if length(buffers.cw_y) < nRP
+        error("Buffer arrays are too small: expected at least $(nRP) elements, got $(length(buffers.cw_y))")
     end
+    
+    # Use views of pre-allocated buffers to match the current discretization size exactly
+    tmp_RPs = view(buffers.tmp_RPs, 1:nRP, :)
+    cw_y = view(buffers.cw_y, 1:nRP)
+    cw_z = view(buffers.cw_z, 1:nRP)
+    phi_cw = view(buffers.phi_cw, 1:nRP)
+    r_cw = view(buffers.r_cw, 1:nRP)
+    core = view(buffers.core, 1:nRP)
+    nw = view(buffers.nw, 1:nRP)
+    fw = view(buffers.fw, 1:nRP)
+    tmp_RPs_r = view(buffers.tmp_RPs_r, 1:nRP)
+    gaussAbs = view(buffers.gaussAbs, 1:nRP)
+    gaussWght = view(buffers.gaussWght, 1:nRP)
+    exp_y = view(buffers.exp_y, 1:nRP)
+    exp_z = view(buffers.exp_z, 1:nRP)
+    not_core = view(buffers.not_core, 1:nRP)
 
-    a = @allocated for iT in 1:(nT - 1)
-
+    for iT in 1:(nT - 1)
         tmp_phi = size(states_wf,2) == 4 ? angSOWFA2world(states_wf[iT, 4]) :
                                            angSOWFA2world(states_wf[iT, 2])
 
@@ -828,21 +810,12 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
 
         T_aTI_arr[iT] = T_addedTI_tmp * dot(RPw, exp_y .* exp_z)
     end
-    if ! isnothing(alloc)
-        alloc.for1 += a
-    end
 
-    a = @allocated begin
-        redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ location_t[end, 3])
-        T_red_arr[end] = dot(RPw, redShear)
+    redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ location_t[end, 3])
+    T_red_arr[end] = dot(RPw, redShear)
 
-        T_red = prod(T_red_arr)
-        T_Ueff = states_wf[end, 1] * T_red
-    end
-
-    if ! isnothing(alloc)
-        alloc.expr3 += a
-    end
+    T_red = prod(T_red_arr)
+    T_Ueff = states_wf[end, 1] * T_red
 
     return T_red_arr, T_aTI_arr, T_Ueff, T_weight
 end
