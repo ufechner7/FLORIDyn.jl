@@ -388,7 +388,7 @@ function create_unified_buffers(wf::WindFarm, rotor_points=50)
     
     # Try to create RunFLORISBuffers if available, otherwise use nothing
     floris_buffers = try
-        RunFLORISBuffers(n_floris_points)
+    RunFLORISBuffers(n_floris_points)
     catch
         nothing
     end

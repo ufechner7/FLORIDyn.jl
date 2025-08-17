@@ -70,7 +70,8 @@ A mutable struct containing pre-allocated arrays for the [`runFLORIS`](@ref) fun
 during wind farm wake calculations.
 
 # Fields
-- `tmp_RPs::Matrix{Float64}`: Temporary matrix for computation of rotor position coordinates (n_wt × 3)
+- `tmp_RPs::Matrix{Float64}`: Temporary matrix for computation of intermediate coordinates (n_wt × 3)
+- `rotor_pts::Matrix{Float64}`: Buffer holding global rotor point coordinates of the last turbine (n_wt × 3)
 - `cw_y::Vector{Float64}`: Centerline wake deflection in y-direction for each turbine
 - `cw_z::Vector{Float64}`: Centerline wake deflection in z-direction for each turbine  
 - `phi_cw::Vector{Float64}`: Angular position of centerline wake for each turbine
@@ -96,6 +97,7 @@ This significantly improves performance for repeated wake calculations.
 """
 mutable struct RunFLORISBuffers
     tmp_RPs::Matrix{Float64}
+    rotor_pts::Matrix{Float64}
     cw_y::Vector{Float64}
     cw_z::Vector{Float64}
     phi_cw::Vector{Float64}
@@ -113,7 +115,8 @@ end
 
 function RunFLORISBuffers(n_wt::Int)
     return RunFLORISBuffers(
-        Matrix{Float64}(undef, n_wt, 3),  # tmp_RPs
+    Matrix{Float64}(undef, n_wt, 3),  # tmp_RPs
+    Matrix{Float64}(undef, n_wt, 3),  # rotor_pts
         Vector{Float64}(undef, n_wt),     # cw_y
         Vector{Float64}(undef, n_wt),     # cw_z
         Vector{Float64}(undef, n_wt),     # phi_cw
@@ -635,21 +638,40 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
           -sin(tmp_yaw)  cos(tmp_yaw)  0.0;
            0.0           0.0           1.0]
 
-    # Conservative allocation reduction: scale into buffer (no scaled_RPl alloc),
-    # then perform the original rotation+translation using matrix multiply
+    # Conservative allocation reduction: scale into rotor_pts buffer (no scaled_RPl alloc),
+    # then perform the rotation+translation in-place
     nRP_local = size(RPl, 1)
     # Safety: ensure buffers are large enough before writing to avoid OOB/segfaults
-    if size(buffers.tmp_RPs, 1) < nRP_local
-        error("RunFLORISBuffers.tmp_RPs too small: expected at least $(nRP_local) rows, got $(size(buffers.tmp_RPs, 1)).\n" *
+    if size(buffers.rotor_pts, 1) < nRP_local
+        error("RunFLORISBuffers.rotor_pts too small: expected at least $(nRP_local) rows, got $(size(buffers.rotor_pts, 1)).\n" *
               "Ensure create_unified_buffers(.., floris) used the same rotor discretization.")
     end
     @inbounds for i in 1:nRP_local
-        buffers.tmp_RPs[i, 1] = RPl[i, 1] * d_rotor[end]
-        buffers.tmp_RPs[i, 2] = RPl[i, 2] * d_rotor[end]
-        buffers.tmp_RPs[i, 3] = RPl[i, 3] * d_rotor[end]
+        buffers.rotor_pts[i, 1] = RPl[i, 1] * d_rotor[end]
+        buffers.rotor_pts[i, 2] = RPl[i, 2] * d_rotor[end]
+        buffers.rotor_pts[i, 3] = RPl[i, 3] * d_rotor[end]
     end
-    scaled_RPl = @view buffers.tmp_RPs[1:nRP_local, :]
-    RPl = (R * scaled_RPl')' .+ location_t[end, :]'
+    scaled_RPl = @view buffers.rotor_pts[1:nRP_local, :]
+    # In-place rotation + translation to avoid allocations from transpose/mul/broadcast
+    @inbounds begin
+        # Extract rotation matrix entries (StaticArrays, so this is cheap)
+        R11, R12, R13 = R[1,1], R[1,2], R[1,3]
+        R21, R22, R23 = R[2,1], R[2,2], R[2,3]
+        R31, R32, R33 = R[3,1], R[3,2], R[3,3]
+        # Extract translation components once
+        tx = location_t[end, 1]
+        ty = location_t[end, 2]
+        tz = location_t[end, 3]
+        for i in 1:nRP_local
+            x = scaled_RPl[i, 1]
+            y = scaled_RPl[i, 2]
+            z = scaled_RPl[i, 3]
+            scaled_RPl[i, 1] = R11*x + R12*y + R13*z + tx
+            scaled_RPl[i, 2] = R21*x + R22*y + R23*z + ty
+            scaled_RPl[i, 3] = R31*x + R32*y + R33*z + tz
+        end
+    end
+    RPl = scaled_RPl
 
     if length(d_rotor) == 1
         # Avoid allocating RPl[:,3] and the broadcasted division by using a buffer
@@ -658,8 +680,17 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
             error("RunFLORISBuffers.tmp_RPs_r too small: expected at least $(nRP_local) elements, got $(length(buffers.tmp_RPs_r)).\n" *
                   "Ensure create_unified_buffers(.., floris) used the same rotor discretization.")
         end
-        @inbounds for i in 1:nRP_local
-            buffers.tmp_RPs_r[i] = RPl[i, 3] / location_t[end, 3]
+        if set.shear_mode isa Shear_PowerLaw
+            # Power law expects z normalized by hub height; clamp to > 0
+            @inbounds for i in 1:nRP_local
+                val = RPl[i, 3] / location_t[end, 3]
+                buffers.tmp_RPs_r[i] = val > eps() ? val : eps()
+            end
+        else
+            # Interpolation expects absolute height in meters
+            @inbounds for i in 1:nRP_local
+                buffers.tmp_RPs_r[i] = RPl[i, 3]
+            end
         end
         z_view = @view buffers.tmp_RPs_r[1:nRP_local]
         redShear = getWindShearT(set.shear_mode, windshear, z_view)
@@ -843,7 +874,20 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
         T_aTI_arr[iT] = T_addedTI_tmp * dot(RPw, exp_y .* exp_z)
     end
 
-    redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ location_t[end, 3])
+    # Compute z for wind shear:
+    # - Power law expects normalized height (clamped positive)
+    # - Interpolation expects absolute height (meters)
+    if set.shear_mode isa Shear_PowerLaw
+        @inbounds for i in 1:nRP
+            val = RPl[i, 3] / location_t[end, 3]
+            tmp_RPs_r[i] = val > eps() ? val : eps()
+        end
+    else
+        @inbounds for i in 1:nRP
+            tmp_RPs_r[i] = RPl[i, 3]
+        end
+    end
+    redShear = getWindShearT(set.shear_mode, windshear, tmp_RPs_r)
     T_red_arr[end] = dot(RPw, redShear)
 
     T_red = prod(T_red_arr)

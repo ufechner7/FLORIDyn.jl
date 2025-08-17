@@ -43,3 +43,4 @@ nothing
 # 219.869886 seconds (61.49 M allocations: 5.326 GiB, 0.26% gc time, 6.08% compilation time)
 # Memory allocation statistics on desktop
 # 360.950426 seconds (58.65 M allocations: 4.438 GiB, 0.11% gc time, 3.07% compilation time)
+# 173.127742 seconds (55.33 M allocations: 4.326 GiB, 0.24% gc time, 4.82% compilation time)
