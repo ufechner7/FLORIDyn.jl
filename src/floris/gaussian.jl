@@ -445,6 +445,7 @@ function getVars(rps::Union{Matrix, Adjoint, SubArray}, c_t, yaw, ti, ti0, flori
     # States
     I = sqrt.(ti.^2 .+ ti0.^2)
     OPdw = rps[:, 1]
+    n = length(OPdw)
 
     # Core length x_0
     x_0 = (cos.(yaw) .* (1 .+ sqrt.(1 .- c_t)) ./ 
@@ -454,52 +455,83 @@ function getVars(rps::Union{Matrix, Adjoint, SubArray}, c_t, yaw, ti, ti0, flori
     k_y = k_a .* I .+ k_b
     k_z = k_y
 
-    # Helper zero array
-    zs = zeros(size(OPdw))
+    # Pre-allocate output arrays
+    sig_y = Vector{Float64}(undef, n)
+    sig_z = Vector{Float64}(undef, n)
+    deltaY = Vector{Float64}(undef, n)
+    delta = Matrix{Float64}(undef, n, 2)
+    pc_y = Vector{Float64}(undef, n)
+    pc_z = Vector{Float64}(undef, n)
 
-    # sig_y calculation (field width in y)
-    sig_y = max.(OPdw .- x_0, zs) .* k_y .+
-            min.(OPdw ./ x_0, zs .+ 1) .* cos.(yaw) .* d_rotor / sqrt(8)
+    # Pre-compute commonly used values
+    sqrt8 = sqrt(8)
+    sqrt2 = sqrt(2)
+    
+    # Handle scalar vs vector inputs
+    c_t_vec = isa(c_t, Number) ? fill(c_t, n) : c_t
+    yaw_vec = isa(yaw, Number) ? fill(yaw, n) : yaw
+    ti_vec = isa(ti, Number) ? fill(ti, n) : ti
+    ti0_vec = isa(ti0, Number) ? fill(ti0, n) : ti0
+    k_y_vec = isa(k_y, Number) ? fill(k_y, n) : k_y
+    k_z_vec = isa(k_z, Number) ? fill(k_z, n) : k_z
+    x_0_vec = isa(x_0, Number) ? fill(x_0, n) : x_0
+    
+    # sig_y and sig_z calculation (field width) - in-place operations
+    @inbounds for i in 1:n
+        # For sig_y
+        max_term = max(OPdw[i] - x_0_vec[i], 0.0)
+        min_term = min(OPdw[i] / x_0_vec[i], 1.0)
+        sig_y[i] = max_term * k_y_vec[i] + min_term * cos(yaw_vec[i]) * d_rotor / sqrt8
+        
+        # For sig_z (same pattern but k_z)
+        sig_z[i] = max_term * k_z_vec[i] + min_term * d_rotor / sqrt8
+    end
 
-    # sig_z calculation (field width in z)
-    sig_z = max.(OPdw .- x_0, zs) .* k_z .+
-            min.(OPdw ./ x_0, zs .+ 1) .* d_rotor / sqrt(8)
-
-    # Theta
+    # Theta calculation
     Theta = 0.3 .* yaw ./ cos.(yaw) .* (1 .- sqrt.(1 .- c_t .* cos.(yaw)))
+    Theta_vec = isa(Theta, Number) ? fill(Theta, n) : Theta
 
-    # Deflection delta - near wake
-    delta_nfw = Theta .* map((opdw, x0) -> min(opdw, x0), OPdw, x_0)
+    # Deflection calculations - optimized
+    @inbounds for i in 1:n
+        # Near wake deflection
+        delta_nfw = Theta_vec[i] * min(OPdw[i], x_0_vec[i])
+        
+        # Far wake deflection components
+        delta_fw_1 = Theta_vec[i] / 14.7 * sqrt(cos(yaw_vec[i]) / (k_y_vec[i] * k_z_vec[i] * c_t_vec[i])) * 
+                     (2.9 + 1.3 * sqrt(1 - c_t_vec[i]) - c_t_vec[i])
+        
+        # Intermediate term for delta_fw_2
+        term = 1.6 * sqrt((8 * sig_y[i] * sig_z[i]) / (d_rotor^2 * cos(yaw_vec[i])))
+        sqrt_ct = sqrt(c_t_vec[i])
+        arg = (1.6 + sqrt_ct) * (term - sqrt_ct) / ((1.6 - sqrt_ct) * (term + sqrt_ct))
+        delta_fw_2 = log(max(eps(), arg))
+        
+        # Blend factor
+        blend = 0.5 * sign(OPdw[i] - x_0_vec[i]) + 0.5
+        
+        # Total delta in y
+        deltaY[i] = delta_nfw + blend * delta_fw_1 * delta_fw_2 * d_rotor
+        
+        # Set delta matrix columns
+        delta[i, 1] = deltaY[i]
+        delta[i, 2] = 0.0  # delta_z is always 0
+    end
 
-    # delta_fw parts
-    delta_fw_1 = Theta ./ 14.7 .* sqrt.(cos.(yaw) ./ (k_y .* k_z .* c_t)) .* 
-                 (2.9 .+ 1.3 .* sqrt.(1 .- c_t) .- c_t)
-
-    # Intermediate term
-    term = 1.6 .* sqrt.((8 .* sig_y .* sig_z) ./ (d_rotor.^2 .* cos.(yaw)))
-    arg = (1.6 .+ sqrt.(c_t)) .* (term .- sqrt.(c_t)) ./ ((1.6 .- sqrt.(c_t)) .* (term .+ sqrt.(c_t)))
-    delta_fw_2 = log.(max.(eps(), arg))
-
-    # Condition mask: OPdw > x_0 => 1.0, else 0.0
-    mask = (OPdw .> x_0)
-    blend = 0.5 .* sign.(OPdw .- x_0) .+ 0.5
-
-    # Total delta in y
-    deltaY = delta_nfw .+ blend .* delta_fw_1 .* delta_fw_2 .* d_rotor
-    delta = hcat(deltaY, zeros(size(deltaY)))  # [delta_y, delta_z]
-
-    # Potential core
+    # Potential core calculations - in-place
     u_r_0 = (c_t .* cos.(yaw)) ./ 
             (2 .* (1 .- sqrt.(1 .- c_t .* cos.(yaw))) .* sqrt.(1 .- c_t))
-
-    pc_y = d_rotor .* cos.(yaw) .* sqrt.(u_r_0) .* max.(1 .- OPdw ./ x_0, zs)
-    pc_z = d_rotor .* sqrt.(u_r_0) .* max.(1 .- OPdw ./ x_0, zs)
-
-    # For points exactly at the rotor plane
-    rp = OPdw .== 0
-    if sum(rp) > 0
-        pc_y[rp] .= d_rotor .* cos.(yaw)
-        pc_z[rp] .= d_rotor
+    u_r_0_vec = isa(u_r_0, Number) ? fill(u_r_0, n) : u_r_0
+    
+    @inbounds for i in 1:n
+        ratio_term = max(1 - OPdw[i] / x_0_vec[i], 0.0)
+        pc_y[i] = d_rotor * cos(yaw_vec[i]) * sqrt(u_r_0_vec[i]) * ratio_term
+        pc_z[i] = d_rotor * sqrt(u_r_0_vec[i]) * ratio_term
+        
+        # Handle rotor plane case
+        if OPdw[i] == 0
+            pc_y[i] = d_rotor * cos(yaw_vec[i])
+            pc_z[i] = d_rotor
+        end
     end
 
     return sig_y, sig_z, c_t, x_0, delta, pc_y, pc_z

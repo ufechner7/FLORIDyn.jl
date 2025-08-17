@@ -39,3 +39,4 @@ cleanup_video_folder()
 nothing
 
 # 61.696510 seconds (7.74 G allocations: 619.266 GiB, 29.02% gc time, 6 lock conflicts, 1.70% compilation time)
+# 58.938590 seconds (7.00 G allocations: 595.492 GiB, 28.05% gc time, 7 lock conflicts, 2.15% compilation time)
