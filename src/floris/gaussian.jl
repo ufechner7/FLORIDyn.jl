@@ -4,96 +4,20 @@
 """
     calcCt(a, _) -> Number or Vector
 
-Calculate the thrust coefficient `ct` for a wind turbine based on the axial induction factor `a`.
-
-# Arguments
-- `a`: Axial induction factor, typically between 0 and 0.5 (can be a scalar or vector)
-- _: unused parameter
-
-# Returns
-- ` ct::Number`: The calculated thrust coefficient.
+Calculate the thrust coefficient ct = 4a(1-a).
 """
-@inline function calcCt(a, _)
-    ct = 4 .* a .* (1 .- a)
-    return ct
+@inline function calcCt(a::Number, _)::Float64
+    return 4 * a * (1 - a)
 end
 
-"""
-    States
-
-A mutable struct representing the state variables used in the Gaussian wake model. 
-This struct is intended to store and update the dynamic properties of the wake during simulation.
-
-# Fields
-- `T_names::Vector{String}`: Names of turbine state variables (e.g., "a", "yaw", "TI" for axial induction factor, yaw angle, and turbulence intensity)
-- `Turbine::Int`: Number of turbine state variables (length of T_names)
-- `OP_names::Vector{String}`: Names of observation point state variables (e.g., "x0", "y0", "z0", "x1", "y1", "z1" for 3D coordinates)
-- `OP::Int`: Number of observation point state variables (length of OP_names)
-- `WF_names::Vector{String}`: Names of wind field state variables (e.g., "wind_vel", "wind_dir", "TI0" for velocity, direction, and ambient turbulence)
-- `WF::Int`: Number of wind field state variables (length of WF_names)
-
-# Description
-This struct organizes the naming and counting of different types of state variables used in wind farm simulations:
-- Turbine states represent individual turbine properties and control settings
-- Observation point states track spatial coordinates for wake calculations
-- Wind field states capture environmental conditions affecting the entire wind farm
-"""
-mutable struct States
-    T_names::Vector{String}
-    Turbine::Int
-    OP_names::Vector{String}
-    OP::Int
-    WF_names::Vector{String}
-    WF::Int
-end
-
-function States()
-    # Turbine states
-    T_names = ["a", "yaw", "TI"]
-    Turbine = length(T_names)
-
-    # Observation point states
-    OP_names = ["x0", "y0", "z0", "x1", "y1", "z1"]
-    OP = length(OP_names)
-
-    # Wind field states
-    WF_names = ["wind_vel", "wind_dir", "TI0"]
-    WF = length(WF_names)
-
-    return States(T_names, Turbine, OP_names, OP, WF_names, WF)
+@inline function calcCt(a::AbstractArray, _)
+    return 4 .* a .* (1 .- a)
 end
 
 """
     RunFLORISBuffers
 
-A mutable struct containing pre-allocated arrays for the [`runFLORIS`](@ref) function to eliminate memory allocations 
-during wind farm wake calculations.
-
-# Fields
-- `tmp_RPs::Matrix{Float64}`: Temporary matrix for computation of intermediate coordinates (n_wt × 3)
-- `rotor_pts::Matrix{Float64}`: Buffer holding global rotor point coordinates of the last turbine (n_wt × 3)
-- `cw_y::Vector{Float64}`: Centerline wake deflection in y-direction for each turbine
-- `cw_z::Vector{Float64}`: Centerline wake deflection in z-direction for each turbine  
-- `phi_cw::Vector{Float64}`: Angular position of centerline wake for each turbine
-- `r_cw::Vector{Float64}`: Radial distance of centerline wake for each turbine
-- `core::Vector{Bool}`: Boolean mask indicating if point is within wake core for each turbine
-- `nw::Vector{Bool}`: Boolean mask for near-wake region calculations for each turbine
-- `fw::Vector{Bool}`: Boolean mask for far-wake region calculations for each turbine
-- `tmp_RPs_r::Vector{Float64}`: Temporary vector for radial distance calculations
-- `gaussAbs::Vector{Float64}`: Absolute values for Gaussian wake calculations
-- `gaussWght::Vector{Float64}`: Gaussian weight factors for wake superposition
-- `exp_y::Vector{Float64}`: Exponential terms for y-direction Gaussian calculations
-- `exp_z::Vector{Float64}`: Exponential terms for z-direction Gaussian calculations
-- `not_core::Vector{Bool}`: Boolean mask for points outside the wake core
-
-# Constructor
-    RunFLORISBuffers(n_wt::Int)
-
-Create pre-allocated buffers for `n_wt` wind turbines.
-
-# Notes
-All arrays are sized for `n_wt` turbines to avoid memory allocations during simulation loops.
-This significantly improves performance for repeated wake calculations.
+Pre-allocated buffers for the runFLORIS computation to minimize allocations.
 """
 mutable struct RunFLORISBuffers
     tmp_RPs::Matrix{Float64}
@@ -113,189 +37,216 @@ mutable struct RunFLORISBuffers
     not_core::Vector{Bool}
 end
 
-function RunFLORISBuffers(n_wt::Int)
+function RunFLORISBuffers(n_pts::Int)
     return RunFLORISBuffers(
-    Matrix{Float64}(undef, n_wt, 3),  # tmp_RPs
-    Matrix{Float64}(undef, n_wt, 3),  # rotor_pts
-        Vector{Float64}(undef, n_wt),     # cw_y
-        Vector{Float64}(undef, n_wt),     # cw_z
-        Vector{Float64}(undef, n_wt),     # phi_cw
-        Vector{Float64}(undef, n_wt),     # r_cw
-        Vector{Bool}(undef, n_wt),        # core
-        Vector{Bool}(undef, n_wt),        # nw
-        Vector{Bool}(undef, n_wt),        # fw
-        Vector{Float64}(undef, n_wt),     # tmp_RPs_r
-        Vector{Float64}(undef, n_wt),     # gaussAbs
-        Vector{Float64}(undef, n_wt),     # gaussWght
-        Vector{Float64}(undef, n_wt),     # exp_y
-        Vector{Float64}(undef, n_wt),     # exp_z
-        Vector{Bool}(undef, n_wt)         # not_core
+        Matrix{Float64}(undef, n_pts, 3),  # tmp_RPs
+        Matrix{Float64}(undef, n_pts, 3),  # rotor_pts
+        Vector{Float64}(undef, n_pts),     # cw_y
+        Vector{Float64}(undef, n_pts),     # cw_z
+        Vector{Float64}(undef, n_pts),     # phi_cw
+        Vector{Float64}(undef, n_pts),     # r_cw
+        Vector{Bool}(undef, n_pts),        # core
+        Vector{Bool}(undef, n_pts),        # nw
+        Vector{Bool}(undef, n_pts),        # fw
+        Vector{Float64}(undef, n_pts),     # tmp_RPs_r
+        Vector{Float64}(undef, n_pts),     # gaussAbs
+        Vector{Float64}(undef, n_pts),     # gaussWght
+        Vector{Float64}(undef, n_pts),     # exp_y
+        Vector{Float64}(undef, n_pts),     # exp_z
+        Vector{Bool}(undef, n_pts),        # not_core
     )
 end
 
 """
-    centerline(states_op, states_t, states_wf, floris, d_rotor) -> Matrix{Float64}
+    getVars!(sig_y, sig_z, x_0, delta, pc_y, pc_z, rps, c_t, yaw, ti, ti0, floris::Floris, d_rotor)
 
-Compute the centerline wake properties for a wind farm simulation.
+In-place version of getVars. Fills preallocated outputs for Gaussian wake variables
+without allocating temporaries. All output arrays must have length n = size(rps, 1);
+`delta` must be n×2.
 
-# Arguments
-- `states_op`: Operational states of the turbines (e.g., yaw, pitch, etc.).
-- `states_t`: Turbine-specific states (e.g., rotor speed, torque, etc.).
-- `states_wf`: Wind farm-level states (e.g., wind direction, wind speed, etc.).
-- `floris`: Parameters for the FLORIS wake model.
-- `d_rotor`: Rotor diameter or characteristic length scale.
-
-# Returns
-- The computed centerline wake properties `delta`, which includes the deflection in the y and z directions.
-
-# Notes
-This function is part of the Gaussian wake model implementation.
+Returns: nothing (writes into provided arrays).
 """
-function centerline(states_op, states_t, states_wf, floris, d_rotor)
-    N          = size(states_op, 1)                     # number of rows
-    Δ          = Matrix{Float64}(undef, N, 2)        # output
-    is8      = 1 / sqrt(8)
-    s2         = sqrt(2)
-    α, β       = floris.alpha, floris.beta
-    k_a, k_b   = floris.k_a, floris.k_b
+function getVars!(sig_y::AbstractVector{<:Real},
+                  sig_z::AbstractVector{<:Real},
+                  x_0::AbstractVector{<:Real},
+                  delta::AbstractMatrix{<:Real},
+                  pc_y::AbstractVector{<:Real},
+                  pc_z::AbstractVector{<:Real},
+                  rps::Union{Matrix, Adjoint, SubArray}, c_t, yaw, ti, ti0,
+                  floris::Floris, d_rotor)
+    # Parameters and constants
+    k_a   = floris.k_a
+    k_b   = floris.k_b
+    alpha = floris.alpha
+    beta  = floris.beta
+    invsqrt8 = 1 / sqrt(8)
+    sqrt2 = sqrt(2)
 
-    for i ∈ 1:N          # ← one tight SIMD loop
-        ############# 1. unpack state rows ####################################
-        a  = states_t[i, 1]
-        b  = states_t[i, 2]
-        c  = states_t[i, 3]
-        d  = states_wf[i, 3]
-        OP = states_op[i, 4]
+    n = size(rps, 1)
+    @assert length(sig_y) >= n && length(sig_z) >= n && length(x_0) >= n &&
+            size(delta, 1) >= n && size(delta, 2) >= 2 && length(pc_y) >= n && length(pc_z) >= n
 
-        ############# 2. basic derived quantities #############################
-        C_T     = calcCt(a, b)
-        yaw     = -deg2rad(b)
-        cosyaw  = cos(yaw)
-        I       = sqrt(c*c + d*d)
+    is_scalar_ct  = isa(c_t, Number)
+    is_scalar_yaw = isa(yaw, Number)
+    is_scalar_ti  = isa(ti, Number)
+    is_scalar_ti0 = isa(ti0, Number)
 
-        ############# 3. core length x₀ #######################################
-        x₀ = (cosyaw * (1 + sqrt(1 - C_T)) /
-             (s2 * (α * I + β * (1 - sqrt(1 - C_T))))) * d_rotor
-
-        ############# 4. wake expansion (σ_y / σ_z) ###########################
-        k_y     = k_a * I + k_b
-        k_z     = k_y                    # identical expression
-
-        diff    = OP - x₀
-        f1      = max(diff, 0.0)
-        f2      = min(OP / x₀, 1.0)
-
-        σ_y = f1 * k_y + f2 * cosyaw * d_rotor * is8
-        σ_z = f1 * k_z + f2 * d_rotor    * is8
-
-        ############# 5. deflection angles ####################################
-        Θ = 0.3 * yaw / cosyaw * (1 - sqrt(1 - C_T * cosyaw))
-
-        ############# 6. near‑field / far‑field pieces #########################
-        Δ_nfw = Θ * min(OP, x₀)
-
-        Δ_fw₁ = Θ / 14.7 * sqrt(cosyaw / (k_y * k_z * C_T)) *
-                (2.9 + 1.3 * sqrt(1 - C_T) - C_T)
-
-        num  = (1.6 + sqrt(C_T)) *
-               (1.6 * sqrt((8 * σ_y * σ_z) / (d_rotor^2 * cosyaw)) - sqrt(C_T))
-        den  = (1.6 - sqrt(C_T)) *
-               (1.6 * sqrt((8 * σ_y * σ_z) / (d_rotor^2 * cosyaw)) + sqrt(C_T))
-
-        # The real part of the complex logarithm is log(abs(ratio)), which is what we need.
-        Δ_fw₂ = real(log(complex(num / den, 0.0)))
-
-        factor = sign(OP - x₀) / 2 + 0.5        # 0, 0.5, or 1
-
-        Δy = Δ_nfw + factor * Δ_fw₁ * Δ_fw₂ * d_rotor
-
-        ############# 7. store result ##########################################
-        Δ[i, 1] = Δy
-        Δ[i, 2] = 0.0        # Δz was always zero in the original
+    # Prepare x_0: scalar fill when inputs are scalars, else per-point
+    if is_scalar_ct && is_scalar_yaw && is_scalar_ti && is_scalar_ti0
+        Ct = c_t; yw = yaw
+        I = sqrt(ti^2 + ti0^2)
+        cosyaw = cos(yw)
+        denom = sqrt2 * (alpha * I + beta * (1 - sqrt(1 - Ct)))
+        x0 = (cosyaw * (1 + sqrt(1 - Ct))) / denom * d_rotor
+        @inbounds fill!(x_0, x0)
+    else
+        @inbounds for i in 1:n
+            Ct_i  = is_scalar_ct  ? c_t  : c_t[i]
+            yaw_i = is_scalar_yaw ? yaw : yaw[i]
+            ti_i  = is_scalar_ti  ? ti  : ti[i]
+            ti0_i = is_scalar_ti0 ? ti0 : ti0[i]
+            I_i = sqrt(ti_i^2 + ti0_i^2)
+            cosyaw_i = cos(yaw_i)
+            denom = sqrt2 * (alpha * I_i + beta * (1 - sqrt(1 - Ct_i)))
+            x_0[i] = (cosyaw_i * (1 + sqrt(1 - Ct_i))) / denom * d_rotor
+        end
     end
 
-    return Δ
+    # Main loop
+    @inbounds for i in 1:n
+        Ct = is_scalar_ct ? c_t : c_t[i]
+        yaw_i = is_scalar_yaw ? yaw : yaw[i]
+        ti_i  = is_scalar_ti  ? ti  : ti[i]
+        ti0_i = is_scalar_ti0 ? ti0 : ti0[i]
+        I = sqrt(ti_i^2 + ti0_i^2)
+        OPdw = rps[i, 1]
+        cosyaw = cos(yaw_i)
+
+        k_y_i = k_a * I + k_b
+        k_z_i = k_y_i
+        x0_i = x_0[i]
+
+        # Field widths (Eq. 7.2)
+        max_term = max(OPdw - x0_i, 0.0)
+        min_term = min(OPdw / x0_i, 1.0)
+        sig_y_i = max_term * k_y_i + min_term * cosyaw * d_rotor * invsqrt8
+        sig_z_i = max_term * k_z_i + min_term * d_rotor * invsqrt8
+        sig_y[i] = sig_y_i
+        sig_z[i] = sig_z_i
+
+        # Deflection
+        Θ = 0.3 * yaw_i / cosyaw * (1 - sqrt(1 - Ct * cosyaw))
+        delta_nfw = Θ * min(OPdw, x0_i)
+        sqrt_ct = sqrt(Ct)
+        delta_fw_1 = Θ / 14.7 * sqrt(cosyaw / (k_y_i * k_z_i * Ct)) * (2.9 + 1.3 * sqrt(1 - Ct) - Ct)
+        term = 1.6 * sqrt((8 * sig_y_i * sig_z_i) / (d_rotor^2 * cosyaw))
+        num = (1.6 + sqrt_ct) * (term - sqrt_ct)
+        den = (1.6 - sqrt_ct) * (term + sqrt_ct)
+        arg = num / den
+        delta_fw_2 = log(max(arg, eps()))
+        blend = 0.5 * sign(OPdw - x0_i) + 0.5
+        delta[i, 1] = delta_nfw + blend * delta_fw_1 * delta_fw_2 * d_rotor
+        delta[i, 2] = 0.0
+
+        # Potential core
+        u_r_0 = (Ct * cosyaw) / (2 * (1 - sqrt(1 - Ct * cosyaw)) * sqrt(1 - Ct))
+        ratio_term = max(1 - OPdw / x0_i, 0.0)
+        sqrt_u = sqrt(u_r_0)
+        pc_y[i] = d_rotor * cosyaw * sqrt_u * ratio_term
+        pc_z[i] = d_rotor * sqrt_u * ratio_term
+        if OPdw == 0.0
+            pc_y[i] = d_rotor * cosyaw
+            pc_z[i] = d_rotor
+        end
+    end
+
+    return nothing
 end
 
 """
-    centerline!(deflection, states_op, states_t, states_wf, floris, d_rotor)
+    getVars(rps::Union{Matrix, Adjoint, SubArray}, c_t, yaw, ti, ti0,
+            floris::Floris, d_rotor) -> Tuple{Vector, Vector, Vector, Vector, Vector, Vector, Vector}
 
-In-place version of the `centerline` function that calculates the wake centerline deflection.
-
-This function computes the wake centerline deflection for each operational point without 
-allocating new memory for the result. The results are stored in the pre-allocated `deflection`
-matrix.
-
-# Arguments
-- `deflection::AbstractMatrix`: A pre-allocated matrix (`N × 2`) to store the deflection results (Δy, Δz).
-- `states_op`, `states_t`, `states_wf`: Matrices containing the operational point, turbine, and wind farm states.
-- `floris::Floris`: FLORIS model parameters.
-- `d_rotor::Real`: The rotor diameter.
-
-# Returns
-- `nothing`: The `deflection` matrix is modified in-place.
+Allocating wrapper around getVars! for API compatibility.
 """
-function centerline!(deflection::AbstractMatrix, states_op, states_t, states_wf, floris, d_rotor)
-    N = size(states_op, 1)
-    is8 = 1 / sqrt(8)
-    s2 = sqrt(2)
-    α, β = floris.alpha, floris.beta
-    k_a, k_b = floris.k_a, floris.k_b
+function getVars(rps::Union{Matrix, Adjoint, SubArray}, c_t, yaw, ti, ti0, floris::Floris, d_rotor)
+    n = size(rps, 1)
+    sig_y = Vector{Float64}(undef, n)
+    sig_z = Vector{Float64}(undef, n)
+    x_0_v = Vector{Float64}(undef, n)
+    delta = Matrix{Float64}(undef, n, 2)
+    pc_y  = Vector{Float64}(undef, n)
+    pc_z  = Vector{Float64}(undef, n)
+    getVars!(sig_y, sig_z, x_0_v, delta, pc_y, pc_z, rps, c_t, yaw, ti, ti0, floris, d_rotor)
+    # Return x_0 as scalar if inputs are scalars (for backward compatibility)
+    is_scalar_ct  = isa(c_t, Number)
+    is_scalar_yaw = isa(yaw, Number)
+    is_scalar_ti  = isa(ti, Number)
+    is_scalar_ti0 = isa(ti0, Number)
+    x_0 = (is_scalar_ct && is_scalar_yaw && is_scalar_ti && is_scalar_ti0) ? x_0_v[1] : x_0_v
+    return sig_y, sig_z, c_t, x_0, delta, pc_y, pc_z
+end
+ 
 
-    @inbounds for i in 1:N
-        # Unpack states
-        a = states_t[i, 1]
-        b = states_t[i, 2]
-        c = states_t[i, 3]
-        d = states_wf[i, 3]
-        OP = states_op[i, 4]
+"""
+    centerline(states_op, states_t, states_wf, floris, d_rotor) -> Matrix{Float64}
 
-        # Basic derived quantities
-        C_T = calcCt(a, b)
-        yaw = -deg2rad(b)
-        cosyaw = cos(yaw)
-        I = sqrt(c * c + d * d)
+Allocating wrapper around `centerline!` for API compatibility.
+"""
+function centerline!(deflection::AbstractMatrix,
+                     states_op,
+                     states_t,
+                     states_wf,
+                     floris::Floris,
+                     d_rotor)
+    n = size(states_op, 1)
+    @assert size(deflection, 1) >= n && size(deflection, 2) >= 2
 
-        # Core length x₀
-        x₀ = (cosyaw * (1 + sqrt(1 - C_T)) /
-             (s2 * (α * I + β * (1 - sqrt(1 - C_T))))) * d_rotor
+    # Build required inputs for getVars: use downstream distance in column 4
+    rps  = @view states_op[:, 4:4]    # n×1 view with OP downstream distances
+    Ct   = calcCt(states_t[:, 1], states_t[:, 2])
+    yaw  = -deg2rad.(states_t[:, 2])
+    TI   = states_t[:, 3]
+    TI0  = states_wf[:, 3]
 
-        # Wake expansion (σ_y / σ_z)
-        k_y = k_a * I + k_b
-        k_z = k_y
-
-        diff = OP - x₀
-        f1 = max(diff, 0.0)
-        f2 = min(OP / x₀, 1.0)
-
-        σ_y = f1 * k_y + f2 * cosyaw * d_rotor * is8
-        σ_z = f1 * k_z + f2 * d_rotor * is8
-
-        # Deflection angles
-        Θ = 0.3 * yaw / cosyaw * (1 - sqrt(1 - C_T * cosyaw))
-
-        # Near-field / far-field pieces
-        Δ_nfw = Θ * min(OP, x₀)
-
-        Δ_fw₁ = Θ / 14.7 * sqrt(cosyaw / (k_y * k_z * C_T)) *
-                (2.9 + 1.3 * sqrt(1 - C_T) - C_T)
-
-        num = (1.6 + sqrt(C_T)) *
-              (1.6 * sqrt((8 * σ_y * σ_z) / (d_rotor^2 * cosyaw)) - sqrt(C_T))
-        den = (1.6 - sqrt(C_T)) *
-              (1.6 * sqrt((8 * σ_y * σ_z) / (d_rotor^2 * cosyaw)) + sqrt(C_T))
-
-        # The real part of the complex logarithm is log(abs(ratio)), which is what we need.
-        Δ_fw₂ = real(log(complex(num / den, 0.0)))
-
-        factor = sign(OP - x₀) / 2 + 0.5
-
-        Δy = Δ_nfw + factor * Δ_fw₁ * Δ_fw₂ * d_rotor
-
-        # Store result in the pre-allocated matrix
-        deflection[i, 1] = Δy
-        deflection[i, 2] = 0.0  # Δz is always zero
+    # Compute wake variables and copy deflection into output
+    _, _, _, _, delta, _, _ = getVars(rps, Ct, yaw, TI, TI0, floris, d_rotor)
+    @inbounds begin
+        deflection[:, 1] .= delta[:, 1]
+        deflection[:, 2] .= delta[:, 2]
     end
+    return deflection
+end
+
+function centerline(states_op, states_t, states_wf, floris, d_rotor)
+    N = size(states_op, 1)
+    deflection = Matrix{Float64}(undef, N, 2)
+    centerline!(deflection, states_op, states_t, states_wf, floris, d_rotor)
+    return deflection
+end
+
+"""
+    States
+
+Lightweight container for names and counts of turbine, OP, and wind-field states.
+"""
+mutable struct States
+    T_names::Vector{String}
+    Turbine::Int
+    OP_names::Vector{String}
+    OP::Int
+    WF_names::Vector{String}
+    WF::Int
+end
+
+function States()
+    T_names = ["a", "yaw", "TI"]
+    Turbine = length(T_names)
+    OP_names = ["x0", "y0", "z0", "x1", "y1", "z1"]
+    OP = length(OP_names)
+    WF_names = ["wind_vel", "wind_dir", "TI0"]
+    WF = length(WF_names)
+    return States(T_names, Turbine, OP_names, OP, WF_names, WF)
 end
 
 """
@@ -438,123 +389,6 @@ Returns the tuple
 - [1] Experimental and theoretical study of wind turbine wakes in yawed conditions - M. Bastankhah and F. Porté-Agel
 - [2] Design and analysis of a spatially heterogeneous wake - A. Farrell, J. King et al.
 """
-function getVars(rps::Union{Matrix, Adjoint, SubArray}, c_t, yaw, ti, ti0, floris::Floris, d_rotor)
-    # Unpack parameters (scalars)
-    k_a   = floris.k_a
-    k_b   = floris.k_b
-    alpha = floris.alpha
-    beta  = floris.beta
-
-    n = size(rps, 1)
-
-    # Outputs (must allocate)
-    sig_y = Vector{Float64}(undef, n)
-    sig_z = Vector{Float64}(undef, n)
-    delta = Matrix{Float64}(undef, n, 2)
-    pc_y  = Vector{Float64}(undef, n)
-    pc_z  = Vector{Float64}(undef, n)
-
-    # Precompute constants
-    invsqrt8 = 1 / sqrt(8)
-    sqrt2 = sqrt(2)
-
-    # Decide whether x_0 is scalar (most common case) or per-point
-    is_scalar_ct  = isa(c_t, Number)
-    is_scalar_yaw = isa(yaw, Number)
-    is_scalar_ti  = isa(ti, Number)
-    is_scalar_ti0 = isa(ti0, Number)
-
-    x_0_scalar::Float64 = 0.0
-    x_0_vec::Vector{Float64} = Vector{Float64}()  # empty by default
-
-    # Prepare x_0
-    if is_scalar_ct && is_scalar_yaw && is_scalar_ti && is_scalar_ti0
-        # All scalar: single x_0 applies to all points
-        Ct = c_t
-        yw = yaw
-        I = sqrt(ti^2 + ti0^2)
-        cosyaw = cos(yw)
-        denom = sqrt2 * (alpha * I + beta * (1 - sqrt(1 - Ct)))
-        x_0_scalar = (cosyaw * (1 + sqrt(1 - Ct))) / denom * d_rotor
-    else
-        # Per-point x_0 vector
-        x_0_vec = Vector{Float64}(undef, n)
-        @inbounds for i in 1:n
-            Ct_i = is_scalar_ct ? c_t : c_t[i]
-            yaw_i = is_scalar_yaw ? yaw : yaw[i]
-            ti_i = is_scalar_ti ? ti : ti[i]
-            ti0_i = is_scalar_ti0 ? ti0 : ti0[i]
-            I_i = sqrt(ti_i^2 + ti0_i^2)
-            cosyaw_i = cos(yaw_i)
-            denom = sqrt2 * (alpha * I_i + beta * (1 - sqrt(1 - Ct_i)))
-            x_0_vec[i] = (cosyaw_i * (1 + sqrt(1 - Ct_i))) / denom * d_rotor
-        end
-    end
-
-    # Main per-point loop (no temporaries)
-    @inbounds for i in 1:n
-        x0_i = (length(x_0_vec) > 0) ? x_0_vec[i] : x_0_scalar
-
-        # Inputs at i
-    Ct = is_scalar_ct ? c_t : c_t[i]
-    yaw_i = is_scalar_yaw ? yaw : yaw[i]
-        cosyaw = cos(yaw_i)
-    ti_i = is_scalar_ti ? ti : ti[i]
-    ti0_i = is_scalar_ti0 ? ti0 : ti0[i]
-    I = sqrt(ti_i^2 + ti0_i^2)
-        OPdw = rps[i, 1]
-
-        # Wake expansion coefficients
-        k_y_i = k_a * I + k_b
-        k_z_i = k_y_i
-
-        # Field widths (Eq. 7.2)
-        max_term = max(OPdw - x0_i, 0.0)
-        min_term = min(OPdw / x0_i, 1.0)
-        sig_y_i = max_term * k_y_i + min_term * cosyaw * d_rotor * invsqrt8
-        sig_z_i = max_term * k_z_i + min_term * d_rotor * invsqrt8
-        sig_y[i] = sig_y_i
-        sig_z[i] = sig_z_i
-
-    # Deflection angle Θ (original formulation)
-    Θ = 0.3 * yaw_i / cos(yaw_i) * (1 - sqrt(1 - Ct * cos(yaw_i)))
-
-        # Near-wake deflection
-        delta_nfw = Θ * min(OPdw, x0_i)
-
-        # Far-wake pieces
-    sqrt_ct = sqrt(Ct)
-    delta_fw_1 = Θ / 14.7 * sqrt(cos(yaw_i) / (k_y_i * k_z_i * Ct)) * (2.9 + 1.3 * sqrt(1 - Ct) - Ct)
-
-    term = 1.6 * sqrt((8 * sig_y_i * sig_z_i) / (d_rotor^2 * cos(yaw_i)))
-        num = (1.6 + sqrt_ct) * (term - sqrt_ct)
-        den = (1.6 - sqrt_ct) * (term + sqrt_ct)
-        arg = num / den
-        delta_fw_2 = log(max(arg, eps()))
-
-        # Blend factor and total delta_y
-        blend = 0.5 * sign(OPdw - x0_i) + 0.5
-        delta_y = delta_nfw + blend * delta_fw_1 * delta_fw_2 * d_rotor
-        delta[i, 1] = delta_y
-        delta[i, 2] = 0.0
-
-        # Potential core dimensions
-    u_r_0 = (Ct * cos(yaw_i)) / (2 * (1 - sqrt(1 - Ct * cos(yaw_i))) * sqrt(1 - Ct))
-
-        ratio_term = max(1 - OPdw / x0_i, 0.0)
-    sqrt_u = sqrt(u_r_0)
-    pc_y[i] = d_rotor * cosyaw * sqrt_u * ratio_term
-    pc_z[i] = d_rotor * sqrt_u * ratio_term
-        if OPdw == 0.0
-            pc_y[i] = d_rotor * cosyaw
-            pc_z[i] = d_rotor
-        end
-    end
-
-    # Return c_t unchanged (likely scalar in current usage) and x_0 as scalar or vector
-    x_0 = (isempty(x_0_vec) ? x_0_scalar : x_0_vec)
-    return sig_y, sig_z, c_t, x_0, delta, pc_y, pc_z
-end
 
 """
     runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
