@@ -22,6 +22,13 @@ Pre-allocated buffers for the runFLORIS computation to minimize allocations.
 mutable struct RunFLORISBuffers
     tmp_RPs::Matrix{Float64}
     rotor_pts::Matrix{Float64}
+    # Preallocated arrays for getVars! outputs
+    sig_y::Vector{Float64}
+    sig_z::Vector{Float64}
+    x_0::Vector{Float64}
+    delta::Matrix{Float64}   # n×2
+    pc_y::Vector{Float64}
+    pc_z::Vector{Float64}
     cw_y::Vector{Float64}
     cw_z::Vector{Float64}
     phi_cw::Vector{Float64}
@@ -41,6 +48,12 @@ function RunFLORISBuffers(n_pts::Int)
     return RunFLORISBuffers(
         Matrix{Float64}(undef, n_pts, 3),  # tmp_RPs
         Matrix{Float64}(undef, n_pts, 3),  # rotor_pts
+    Vector{Float64}(undef, n_pts),     # sig_y
+    Vector{Float64}(undef, n_pts),     # sig_z
+    Vector{Float64}(undef, n_pts),     # x_0
+    Matrix{Float64}(undef, n_pts, 2),  # delta
+    Vector{Float64}(undef, n_pts),     # pc_y
+    Vector{Float64}(undef, n_pts),     # pc_z
         Vector{Float64}(undef, n_pts),     # cw_y
         Vector{Float64}(undef, n_pts),     # cw_z
         Vector{Float64}(undef, n_pts),     # phi_cw
@@ -340,11 +353,6 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
 end
 
 """
-Gaussian wake variable computation is provided by the in-place function `getVars!`,
-which fills preallocated output arrays for sig_y, sig_z, x_0, delta, pc_y, pc_z.
-"""
-
-"""
     runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
               floris::Floris, windshear::Union{Matrix, WindShear})
 
@@ -521,6 +529,12 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
     
     # Use views of pre-allocated buffers to match the current discretization size exactly
     tmp_RPs = view(buffers.tmp_RPs, 1:nRP, :)
+    sig_y = view(buffers.sig_y, 1:nRP)
+    sig_z = view(buffers.sig_z, 1:nRP)
+    x_0   = view(buffers.x_0, 1:nRP)
+    delta = view(buffers.delta, 1:nRP, :)
+    pc_y  = view(buffers.pc_y, 1:nRP)
+    pc_z  = view(buffers.pc_z, 1:nRP)
     cw_y = view(buffers.cw_y, 1:nRP)
     cw_z = view(buffers.cw_z, 1:nRP)
     phi_cw = view(buffers.phi_cw, 1:nRP)
@@ -577,13 +591,7 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
         end
         mean_x /= nRP
 
-        # Compute wake variables using in-place API (allocate local outputs)
-        sig_y = Vector{Float64}(undef, nRP)
-        sig_z = Vector{Float64}(undef, nRP)
-        x_0   = Vector{Float64}(undef, nRP)
-        delta = Matrix{Float64}(undef, nRP, 2)
-        pc_y  = Vector{Float64}(undef, nRP)
-        pc_z  = Vector{Float64}(undef, nRP)
+        # Compute wake variables using in-place API with preallocated buffers
         getVars!(sig_y, sig_z, x_0, delta, pc_y, pc_z, tmp_RPs, Ct, yaw, TI, TI0, floris, d_rotor[iT])
         C_T = Ct
 
