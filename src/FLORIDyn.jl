@@ -387,9 +387,9 @@ function create_unified_buffers(wf::WindFarm, rotor_points=50)
     # Create FLORIS buffers with specified number of rotor points
     n_floris_points = max(rotor_points, 1)
     
-    # Try to create RunFLORISBuffers if available, otherwise use nothing
+    # Try to create FLORISBuffers if available, otherwise use nothing
     floris_buffers = try
-    RunFLORISBuffers(n_floris_points)
+    FLORISBuffers(n_floris_points)
     catch
         nothing
     end

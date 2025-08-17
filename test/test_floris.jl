@@ -199,7 +199,7 @@ using FLORIDyn, Test
         )
         windshear = WindShear(0.08, 1.0)
         # Create buffers for the test
-        buffers = FLORIDyn.RunFLORISBuffers(50)  # Use 50 rotor points as defined in paramFLORIS
+        buffers = FLORIDyn.FLORISBuffers(50)  # Use 50 rotor points as defined in paramFLORIS
         T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(buffers, set::Settings, LocationT, States_WF, 
                                                            States_T, D, paramFLORIS, windshear)
         # Main.@infiltrate
@@ -217,7 +217,7 @@ using FLORIDyn, Test
                           0.33 0.0 0.06]
         D = [178.4, 178.4]
         # Create buffers for multi-turbine test
-        buffers_multi = FLORIDyn.RunFLORISBuffers(50)  # Use 50 rotor points as defined in paramFLORIS
+        buffers_multi = FLORIDyn.FLORISBuffers(50)  # Use 50 rotor points as defined in paramFLORIS
         T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = runFLORIS(buffers_multi, set, LocationT_multi, States_WF, States_T_multi, D, 
                                                                paramFLORIS, windshear)
         @test length(T_red_arr2) == 2

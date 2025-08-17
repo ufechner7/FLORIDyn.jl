@@ -102,7 +102,7 @@ else
 end
 
 # Create buffers once (this is the key performance optimization)
-buffers = FLORIDyn.RunFLORISBuffers(n_points)
+buffers = FLORIDyn.FLORISBuffers(n_points)
 println("  Created buffers for $n_points rotor discretization points")
 
 # Run once to get results for comparison

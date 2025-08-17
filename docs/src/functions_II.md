@@ -7,10 +7,10 @@ CurrentModule = FLORIDyn
 # FLORIS
 ```@docs
 calcCt
-centerline
+centerline!
 discretizeRotor
 init_states
-getVars
+getVars!
 getPower
 runFLORIS
 ```
@@ -21,7 +21,7 @@ initSimulation
 findTurbineGroups
 prepareSimulation
 perturbationOfTheWF!
-setUpTmpWFAndRun
+setUpTmpWFAndRun!
 interpolateOPs!
 iterateOPs!
 angSOWFA2world

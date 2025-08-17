@@ -2,13 +2,13 @@
 
 using FLORIDyn
 
-# Example of how to use the new RunFLORISBuffers for improved performance
+# Example of how to use the new FLORISBuffers for improved performance
 function example_usage()
-    println("=== RunFLORISBuffers Example ===")
+    println("=== FLORISBuffers Example ===")
     
     # Create a buffer for 10 rotor points (adjust based on your discretization)
     n_points = 10
-    buffers = FLORIDyn.RunFLORISBuffers(n_points)
+    buffers = FLORIDyn.FLORISBuffers(n_points)
     
     println("Created buffers for $n_points rotor points:")
     println("  tmp_RPs size: $(size(buffers.tmp_RPs))")
@@ -18,7 +18,7 @@ function example_usage()
     println("    Bool arrays: core, nw, fw, not_core")
     
     println("\nFor optimal performance:")
-    println("1. Create buffers once: buffers = RunFLORISBuffers(n_points)")
+    println("1. Create buffers once: buffers = FLORISBuffers(n_points)")
     println("2. Reuse in multiple calls: runFLORIS(buffers, set, location_t, states_wf, states_t, d_rotor, floris, windshear)")
     println("3. Or use backward-compatible wrapper: runFLORIS(set, location_t, states_wf, states_t, d_rotor, floris, windshear)")
     

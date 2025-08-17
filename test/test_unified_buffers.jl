@@ -73,7 +73,7 @@ using Test
         buffers = create_unified_buffers(wf, floris)
         @test typeof(buffers) == UnifiedBuffers
         @test !isnothing(buffers.floris_buffers)
-        @test typeof(buffers.floris_buffers) == FLORIDyn.RunFLORISBuffers
+        @test typeof(buffers.floris_buffers) == FLORIDyn.FLORISBuffers
         
         # Verify FLORIS buffer fields exist
         fb = buffers.floris_buffers

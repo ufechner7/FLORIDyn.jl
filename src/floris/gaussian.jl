@@ -15,11 +15,11 @@ end
 end
 
 """
-    RunFLORISBuffers
+    FLORISBuffers
 
 Pre-allocated buffers for the runFLORIS computation to minimize allocations.
 """
-mutable struct RunFLORISBuffers
+mutable struct FLORISBuffers
     tmp_RPs::Matrix{Float64}
     rotor_pts::Matrix{Float64}
     # Preallocated arrays for getVars! outputs
@@ -44,8 +44,8 @@ mutable struct RunFLORISBuffers
     not_core::Vector{Bool}
 end
 
-function RunFLORISBuffers(n_pts::Int)
-    return RunFLORISBuffers(
+function FLORISBuffers(n_pts::Int)
+    return FLORISBuffers(
         Matrix{Float64}(undef, n_pts, 3),  # tmp_RPs
         Matrix{Float64}(undef, n_pts, 3),  # rotor_pts
     Vector{Float64}(undef, n_pts),     # sig_y
@@ -353,7 +353,7 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
 end
 
 """
-    runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
+    runFLORIS(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
               floris::Floris, windshear::Union{Matrix, WindShear})
 
 Execute the FLORIS (FLOw Redirection and Induction in Steady State) wake model simulation for wind farm analysis.
@@ -363,7 +363,7 @@ velocity reductions, turbulence intensity additions, and effective wind speeds a
 It accounts for wake interactions, rotor discretization, wind shear effects, and turbulence propagation.
 
 # Arguments
-- `buffers::RunFLORISBuffers`: Pre-allocated buffer arrays to eliminate memory allocations during computation (see [`RunFLORISBuffers`](@ref))
+- `buffers::FLORISBuffers`: Pre-allocated buffer arrays to eliminate memory allocations during computation (see [`FLORISBuffers`](@ref))
 - `set::Settings`: Simulation settings containing configuration options for wind shear modeling
 - `location_t`: Matrix of turbine positions [x, y, z] coordinates for each turbine [m]
 - `states_wf`: Wind field state matrix containing velocity, direction, and turbulence data
@@ -436,7 +436,7 @@ The function implements several key wake modeling equations:
 - Bastankhah, M. and Porté-Agel, F. (2016). Experimental and theoretical study of wind turbine wakes in yawed conditions
 - Niayifar, A. and Porté-Agel, F. (2016). Analytical modeling of wind farms: A new approach for power prediction
 """
-function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, 
+function runFLORIS(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, 
                    windshear::Union{Matrix, WindShear}; alloc=nothing)
     if d_rotor[end] > 0
         RPl, RPw = discretizeRotor(floris.rotor_points)
@@ -455,7 +455,7 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
     nRP_local = size(RPl, 1)
     # Safety: ensure buffers are large enough before writing to avoid OOB/segfaults
     if size(buffers.rotor_pts, 1) < nRP_local
-        error("RunFLORISBuffers.rotor_pts too small: expected at least $(nRP_local) rows, got $(size(buffers.rotor_pts, 1)).\n" *
+        error("FLORISBuffers.rotor_pts too small: expected at least $(nRP_local) rows, got $(size(buffers.rotor_pts, 1)).\n" *
               "Ensure create_unified_buffers(.., floris) used the same rotor discretization.")
     end
     @inbounds for i in 1:nRP_local
@@ -489,7 +489,7 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
         # Avoid allocating RPl[:,3] and the broadcasted division by using a buffer
         nRP_local = size(RPl, 1)
         if length(buffers.tmp_RPs_r) < nRP_local
-            error("RunFLORISBuffers.tmp_RPs_r too small: expected at least $(nRP_local) elements, got $(length(buffers.tmp_RPs_r)).\n" *
+            error("FLORISBuffers.tmp_RPs_r too small: expected at least $(nRP_local) elements, got $(length(buffers.tmp_RPs_r)).\n" *
                   "Ensure create_unified_buffers(.., floris) used the same rotor discretization.")
         end
         if set.shear_mode isa Shear_PowerLaw

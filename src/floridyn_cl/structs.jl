@@ -276,7 +276,7 @@ struct UnifiedBuffers
     dists_buffer::Vector{Float64}
     plot_WF_buffer::Matrix{Float64}
     plot_OP_buffer::Matrix{Float64}
-    floris_buffers::Any  # Will be RunFLORISBuffers when FLORIS is available
+    floris_buffers::Any  # Will be FLORISBuffers when FLORIS is available
     gp::Any              # Optional WindFarm buffer for grid-point computations
 end
 
