@@ -64,7 +64,7 @@ end
     unified_buffers = create_unified_buffers(wf)
     wf.intOPs = interpolateOPs!(unified_buffers, intOPs_buffers, wf)
     wf_old = deepcopy(wf)
-    M, wf = setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
+    M, wf = setUpTmpWFAndRun(set, wf, floris, wind)
     @test ! structs_equal(wf_old, wf; prn=false)
 end
 
@@ -107,9 +107,7 @@ end
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     sim.n_sim_steps = 2
     wf1 = wf_dict2windfarm(wf_dict)
-    # Create unified buffers for setUpTmpWFAndRun!
-    unified_buffers = create_unified_buffers(wf1)
-    tmpM, wf = setUpTmpWFAndRun!(unified_buffers, wf1, set, floris, wind)
+    tmpM, wf = setUpTmpWFAndRun(set, wf1, floris, wind)
     tmpM_ref = [0, 9.094956525547340e-02, 0.1184213787906785, 0, 9.094956525547351e-02,
                 0.1184213787906786, 0, 9.094956525547340e-02, 1.010889141095400e-01]
     @test all(tmpM[:,2] .≈ tmpM_ref)
