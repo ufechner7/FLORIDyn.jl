@@ -481,13 +481,17 @@ function runFLORIS(buffers::FLORISBuffers, set::Settings, location_t, states_wf,
         end
         z_view = @view buffers.tmp_RPs_r[1:nRP_local]
         redShear = getWindShearT(set.shear_mode, windshear, z_view)
-        T_red_scalar = dot(@view(RPw[1:nRP_local]), redShear)
+        # Avoid allocating a view for RPw in the dot product
+        acc = 0.0
+        @inbounds for i in 1:nRP_local
+            acc = muladd(RPw[i], redShear[i], acc)
+        end
+        T_red_scalar = acc
         # Persist result into buffers as 1-length arrays (optional use by callers)
         resize!(buffers.T_red_arr, 1); buffers.T_red_arr[1] = T_red_scalar
         resize!(buffers.T_aTI_arr, 0)
         resize!(buffers.T_Ueff, 0)
         resize!(buffers.T_weight, 0)
-        # return T_red_scalar, nothing, nothing, nothing
         return nothing
     end
 
