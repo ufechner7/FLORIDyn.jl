@@ -294,6 +294,63 @@ mutable struct FLORISBuffers
     T_weight::Vector{Float64}
 end
 
+"""
+    WindFarm
+
+A mutable struct representing a wind farm. Fields can be specified using keyword arguments.
+
+This struct supports convenient DataFrame access through property syntax:
+- `wf.turbines`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with turbine state data (columns: turbine state names)
+- `wf.windfield`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with wind field data (columns: wind field variables)  
+- `wf.ops`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with operating point data (columns: operating point variables)
+
+# Fields
+- `nT::Int64`: Number of turbines
+- `nOP::Int64`: Number of operating points
+- `States_WF::Matrix{Float64}`: States of the wind farm (states × wind field variables)
+- `States_OP::Matrix{Float64}`: States of the operating points (states × operating point variables)
+- `States_T::Matrix{Float64}`: States of the turbines (states × turbines variables)
+- `posBase::Matrix{Float64}`: Base positions of the turbines (2 × nT matrix: [x-coords; y-coords])
+- `posNac::Matrix{Float64}`: Positions of the nacelles
+- `D::Vector{Float64}`: Diameters of the turbines
+- `StartI::Matrix{Int}`: Start indices for each turbine
+- `intOPs::Vector{Matrix{Float64}}`: Interpolated operating points
+- `Weight::Vector{Vector{Float64}}`: Weights for the operating points
+- `dep::Vector{Vector{Int}}`: Dependencies between turbines
+- `red_arr::Matrix{Float64}`: Reduced array for each turbine
+- `Names_T::Vector{String}`: Names of the turbine state variables
+- `Names_WF::Vector{String}`: Names of the wind field variables
+- `Names_OP::Vector{String}`: Names of the operating point variables
+
+# Examples
+```julia
+# Create a wind farm
+wf = WindFarm(nT=3, nOP=100, ...)
+
+# Access data as DataFrames
+turbine_data = wf.turbines      # DataFrame with turbine states
+windfield_data = wf.windfield   # DataFrame with wind field states
+ops_data = wf.ops               # DataFrame with operating point states
+```
+"""
+@kwdef mutable struct WindFarm
+    nT::Int64 = 0                                               # Number of turbines
+    nOP::Int64 = 0                                              # Number of operating points
+    States_WF::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)   # States of the wind farm
+    States_OP::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)   # States of the operating points
+    States_T::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)    # States of the turbines
+    posBase::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)     # Base positions of the turbines
+    posNac::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)      # Positions of the nacelles
+    D::Vector{Float64} = Vector{Float64}(undef, 0)              # Diameters of the turbines
+    StartI::Matrix{Int} = Matrix{Int}(undef, 0, 0)              # Start indices for each turbine
+    intOPs::Vector{Matrix{Float64}} = Vector{Matrix{Float64}}() # Interpolated operating points
+    Weight::Vector{Vector{Float64}} = Vector{Vector{Float64}}() # Weights
+    dep::Vector{Vector{Int}} = Vector{Vector{Int}}()            # Dependencies between turbines
+    red_arr::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)     # Reduced array for each turbine
+    Names_T::Vector{String} = Vector{String}(undef, 0)          # Names of the states of the turbines
+    Names_WF::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the wind farm
+    Names_OP::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the operating points
+end
 
 """
     UnifiedBuffers
@@ -325,6 +382,6 @@ struct UnifiedBuffers
     plot_WF_buffer::Matrix{Float64}
     plot_OP_buffer::Matrix{Float64}
     floris_buffers::FLORISBuffers  # Will be FLORISBuffers when FLORIS is available
-    gp::Any              # Optional WindFarm buffer for grid-point computations
+    gp::WindFarm                   # Optional WindFarm buffer for grid-point computations
 end
 
