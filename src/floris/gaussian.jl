@@ -439,104 +439,120 @@ Returns the tuple
 - [2] Design and analysis of a spatially heterogeneous wake - A. Farrell, J. King et al.
 """
 function getVars(rps::Union{Matrix, Adjoint, SubArray}, c_t, yaw, ti, ti0, floris::Floris, d_rotor)
-    # Unpack parameters
+    # Unpack parameters (scalars)
     k_a   = floris.k_a
     k_b   = floris.k_b
     alpha = floris.alpha
     beta  = floris.beta
 
-    # States
-    I = sqrt.(ti.^2 .+ ti0.^2)
-    OPdw = rps[:, 1]
-    n = length(OPdw)
+    n = size(rps, 1)
 
-    # Core length x_0
-    x_0 = (cos.(yaw) .* (1 .+ sqrt.(1 .- c_t)) ./ 
-          (sqrt(2) .* (alpha .* I .+ beta .* (1 .- sqrt.(1 .- c_t))))) .* d_rotor
-
-    # Compute k_y and k_z
-    k_y = k_a .* I .+ k_b
-    k_z = k_y
-
-    # Pre-allocate output arrays
+    # Outputs (must allocate)
     sig_y = Vector{Float64}(undef, n)
     sig_z = Vector{Float64}(undef, n)
-    deltaY = Vector{Float64}(undef, n)
     delta = Matrix{Float64}(undef, n, 2)
-    pc_y = Vector{Float64}(undef, n)
-    pc_z = Vector{Float64}(undef, n)
+    pc_y  = Vector{Float64}(undef, n)
+    pc_z  = Vector{Float64}(undef, n)
 
-    # Pre-compute commonly used values
-    sqrt8 = sqrt(8)
+    # Precompute constants
+    invsqrt8 = 1 / sqrt(8)
     sqrt2 = sqrt(2)
-    
-    # Handle scalar vs vector inputs
-    c_t_vec = isa(c_t, Number) ? fill(c_t, n) : c_t
-    yaw_vec = isa(yaw, Number) ? fill(yaw, n) : yaw
-    ti_vec = isa(ti, Number) ? fill(ti, n) : ti
-    ti0_vec = isa(ti0, Number) ? fill(ti0, n) : ti0
-    k_y_vec = isa(k_y, Number) ? fill(k_y, n) : k_y
-    k_z_vec = isa(k_z, Number) ? fill(k_z, n) : k_z
-    x_0_vec = isa(x_0, Number) ? fill(x_0, n) : x_0
-    
-    # sig_y and sig_z calculation (field width) - in-place operations
-    @inbounds for i in 1:n
-        # For sig_y
-        max_term = max(OPdw[i] - x_0_vec[i], 0.0)
-        min_term = min(OPdw[i] / x_0_vec[i], 1.0)
-        sig_y[i] = max_term * k_y_vec[i] + min_term * cos(yaw_vec[i]) * d_rotor / sqrt8
-        
-        # For sig_z (same pattern but k_z)
-        sig_z[i] = max_term * k_z_vec[i] + min_term * d_rotor / sqrt8
+
+    # Decide whether x_0 is scalar (most common case) or per-point
+    is_scalar_ct  = isa(c_t, Number)
+    is_scalar_yaw = isa(yaw, Number)
+    is_scalar_ti  = isa(ti, Number)
+    is_scalar_ti0 = isa(ti0, Number)
+
+    x_0_scalar::Float64 = 0.0
+    x_0_vec::Vector{Float64} = Vector{Float64}()  # empty by default
+
+    # Prepare x_0
+    if is_scalar_ct && is_scalar_yaw && is_scalar_ti && is_scalar_ti0
+        # All scalar: single x_0 applies to all points
+        Ct = c_t
+        yw = yaw
+        I = sqrt(ti^2 + ti0^2)
+        cosyaw = cos(yw)
+        denom = sqrt2 * (alpha * I + beta * (1 - sqrt(1 - Ct)))
+        x_0_scalar = (cosyaw * (1 + sqrt(1 - Ct))) / denom * d_rotor
+    else
+        # Per-point x_0 vector
+        x_0_vec = Vector{Float64}(undef, n)
+        @inbounds for i in 1:n
+            Ct_i = is_scalar_ct ? c_t : c_t[i]
+            yaw_i = is_scalar_yaw ? yaw : yaw[i]
+            ti_i = is_scalar_ti ? ti : ti[i]
+            ti0_i = is_scalar_ti0 ? ti0 : ti0[i]
+            I_i = sqrt(ti_i^2 + ti0_i^2)
+            cosyaw_i = cos(yaw_i)
+            denom = sqrt2 * (alpha * I_i + beta * (1 - sqrt(1 - Ct_i)))
+            x_0_vec[i] = (cosyaw_i * (1 + sqrt(1 - Ct_i))) / denom * d_rotor
+        end
     end
 
-    # Theta calculation
-    Theta = 0.3 .* yaw ./ cos.(yaw) .* (1 .- sqrt.(1 .- c_t .* cos.(yaw)))
-    Theta_vec = isa(Theta, Number) ? fill(Theta, n) : Theta
-
-    # Deflection calculations - optimized
+    # Main per-point loop (no temporaries)
     @inbounds for i in 1:n
-        # Near wake deflection
-        delta_nfw = Theta_vec[i] * min(OPdw[i], x_0_vec[i])
-        
-        # Far wake deflection components
-        delta_fw_1 = Theta_vec[i] / 14.7 * sqrt(cos(yaw_vec[i]) / (k_y_vec[i] * k_z_vec[i] * c_t_vec[i])) * 
-                     (2.9 + 1.3 * sqrt(1 - c_t_vec[i]) - c_t_vec[i])
-        
-        # Intermediate term for delta_fw_2
-        term = 1.6 * sqrt((8 * sig_y[i] * sig_z[i]) / (d_rotor^2 * cos(yaw_vec[i])))
-        sqrt_ct = sqrt(c_t_vec[i])
-        arg = (1.6 + sqrt_ct) * (term - sqrt_ct) / ((1.6 - sqrt_ct) * (term + sqrt_ct))
-        delta_fw_2 = log(max(eps(), arg))
-        
-        # Blend factor
-        blend = 0.5 * sign(OPdw[i] - x_0_vec[i]) + 0.5
-        
-        # Total delta in y
-        deltaY[i] = delta_nfw + blend * delta_fw_1 * delta_fw_2 * d_rotor
-        
-        # Set delta matrix columns
-        delta[i, 1] = deltaY[i]
-        delta[i, 2] = 0.0  # delta_z is always 0
-    end
+        x0_i = (length(x_0_vec) > 0) ? x_0_vec[i] : x_0_scalar
 
-    # Potential core calculations - in-place
-    u_r_0 = (c_t .* cos.(yaw)) ./ 
-            (2 .* (1 .- sqrt.(1 .- c_t .* cos.(yaw))) .* sqrt.(1 .- c_t))
-    u_r_0_vec = isa(u_r_0, Number) ? fill(u_r_0, n) : u_r_0
-    
-    @inbounds for i in 1:n
-        ratio_term = max(1 - OPdw[i] / x_0_vec[i], 0.0)
-        pc_y[i] = d_rotor * cos(yaw_vec[i]) * sqrt(u_r_0_vec[i]) * ratio_term
-        pc_z[i] = d_rotor * sqrt(u_r_0_vec[i]) * ratio_term
-        
-        # Handle rotor plane case
-        if OPdw[i] == 0
-            pc_y[i] = d_rotor * cos(yaw_vec[i])
+        # Inputs at i
+    Ct = is_scalar_ct ? c_t : c_t[i]
+    yaw_i = is_scalar_yaw ? yaw : yaw[i]
+        cosyaw = cos(yaw_i)
+    ti_i = is_scalar_ti ? ti : ti[i]
+    ti0_i = is_scalar_ti0 ? ti0 : ti0[i]
+    I = sqrt(ti_i^2 + ti0_i^2)
+        OPdw = rps[i, 1]
+
+        # Wake expansion coefficients
+        k_y_i = k_a * I + k_b
+        k_z_i = k_y_i
+
+        # Field widths (Eq. 7.2)
+        max_term = max(OPdw - x0_i, 0.0)
+        min_term = min(OPdw / x0_i, 1.0)
+        sig_y_i = max_term * k_y_i + min_term * cosyaw * d_rotor * invsqrt8
+        sig_z_i = max_term * k_z_i + min_term * d_rotor * invsqrt8
+        sig_y[i] = sig_y_i
+        sig_z[i] = sig_z_i
+
+    # Deflection angle Θ (original formulation)
+    Θ = 0.3 * yaw_i / cos(yaw_i) * (1 - sqrt(1 - Ct * cos(yaw_i)))
+
+        # Near-wake deflection
+        delta_nfw = Θ * min(OPdw, x0_i)
+
+        # Far-wake pieces
+    sqrt_ct = sqrt(Ct)
+    delta_fw_1 = Θ / 14.7 * sqrt(cos(yaw_i) / (k_y_i * k_z_i * Ct)) * (2.9 + 1.3 * sqrt(1 - Ct) - Ct)
+
+    term = 1.6 * sqrt((8 * sig_y_i * sig_z_i) / (d_rotor^2 * cos(yaw_i)))
+        num = (1.6 + sqrt_ct) * (term - sqrt_ct)
+        den = (1.6 - sqrt_ct) * (term + sqrt_ct)
+        arg = num / den
+        delta_fw_2 = log(max(arg, eps()))
+
+        # Blend factor and total delta_y
+        blend = 0.5 * sign(OPdw - x0_i) + 0.5
+        delta_y = delta_nfw + blend * delta_fw_1 * delta_fw_2 * d_rotor
+        delta[i, 1] = delta_y
+        delta[i, 2] = 0.0
+
+        # Potential core dimensions
+    u_r_0 = (Ct * cos(yaw_i)) / (2 * (1 - sqrt(1 - Ct * cos(yaw_i))) * sqrt(1 - Ct))
+
+        ratio_term = max(1 - OPdw / x0_i, 0.0)
+    sqrt_u = sqrt(u_r_0)
+    pc_y[i] = d_rotor * cosyaw * sqrt_u * ratio_term
+    pc_z[i] = d_rotor * sqrt_u * ratio_term
+        if OPdw == 0.0
+            pc_y[i] = d_rotor * cosyaw
             pc_z[i] = d_rotor
         end
     end
 
+    # Return c_t unchanged (likely scalar in current usage) and x_0 as scalar or vector
+    x_0 = (isempty(x_0_vec) ? x_0_scalar : x_0_vec)
     return sig_y, sig_z, c_t, x_0, delta, pc_y, pc_z
 end
 
