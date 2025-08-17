@@ -129,7 +129,7 @@ using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
         wf.intOPs = interpolateOPs!(unified_buffers, intOPs_buffers, wf)
         @test length(wf.intOPs) == wf.nT
     end
-    @testset "setUpTmpWFAndRun" begin
+    @testset "setUpTmpWFAndRun!" begin
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
         wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -142,7 +142,7 @@ using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
         unified_buffers = create_unified_buffers(wf)
         wf.intOPs = interpolateOPs!(unified_buffers, intOPs_buffers, wf)
         wf_old = deepcopy(wf)
-        M, wf = setUpTmpWFAndRun(set, wf, floris, wind)
+        M = setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
         @test ! structs_equal(wf_old, wf; prn=false)
     end
     @testset "runFLORIDyn" begin

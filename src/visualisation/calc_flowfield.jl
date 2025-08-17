@@ -290,7 +290,7 @@ wind_speed_field = mz[:, :, 3]
 
 # See Also
 - [`calcFlowField`](@ref): Higher-level function that uses this to create complete flow field data
-- [`setUpTmpWFAndRun`](@ref): Underlying simulation function used for each grid point
+- [`setUpTmpWFAndRun!`](@ref): Underlying simulation function used for each grid point
 """
 function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
     size_mx = size(mx)
@@ -339,7 +339,7 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
         interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
-        tmpM, _ = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
+        tmpM = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
         
         # Extract only the result for the grid point (last "turbine")
         @views gridPointResult = tmpM[end, :]
@@ -416,7 +416,7 @@ wind_speed_field = mz[:, :, 3]
 
 # See Also
 - [`calcFlowField`](@ref): Higher-level function that uses this to create complete flow field data
-- [`setUpTmpWFAndRun`](@ref): Underlying simulation function used for each grid point
+- [`setUpTmpWFAndRun!`](@ref): Underlying simulation function used for each grid point
 """
 function getMeasurementsP(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind; alloc=nothing)
     size_mx = size(mx)
@@ -454,7 +454,7 @@ function getMeasurementsP(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, 
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
         interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
-        a = @allocated tmpM, _ = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
+        a = @allocated tmpM = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
 
         Threads.atomic_add!(gmp_alloc2, a)
         

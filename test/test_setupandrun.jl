@@ -82,7 +82,7 @@ using .TestHelpers
         @test ops_df isa DataFrame
         @test size(ops_df) == (1800, 6)  # 1800 states, 6 OP variables
     end
-    
+
     @testset "setUpTmpWFAndRun_basic" begin
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
@@ -96,7 +96,7 @@ using .TestHelpers
         unified_buffers = create_unified_buffers(wf)
         wf.intOPs = interpolateOPs!(unified_buffers, intOPs_buffers, wf)
         wf_old = deepcopy(wf)
-        M, wf = setUpTmpWFAndRun(set, wf, floris, wind)
+        M = setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
         @test ! structs_equal(wf_old, wf; prn=false)
     end
 
@@ -109,10 +109,12 @@ using .TestHelpers
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         sim.n_sim_steps = 2
         wf1 = wf_dict2windfarm(wf_dict)
-        tmpM, wf = setUpTmpWFAndRun(set, wf1, floris, wind)
+        # Create unified buffers for the non-allocating version
+        unified_buffers = create_unified_buffers(wf1)
+        tmpM = setUpTmpWFAndRun!(unified_buffers, wf1, set, floris, wind)
         tmpM_ref = [0, 9.094956525547340e-02, 0.1184213787906785, 0, 9.094956525547351e-02,
                     0.1184213787906786, 0, 9.094956525547340e-02, 1.010889141095400e-01]
-        @test all(tmpM[:,2] .≈ tmpM_ref)
+        @test all(tmpM[1:length(tmpM_ref),2] .≈ tmpM_ref)
     end
 end
 nothing
