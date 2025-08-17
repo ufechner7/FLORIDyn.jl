@@ -28,7 +28,9 @@ end
 vis = Vis(vis_file)
 
 # Automatic parallel/threading setup
-include("../examples/remote_plotting.jl")
+if !isdefined(Main, :init_plotting)
+    include("../examples/remote_plotting.jl")
+end
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -47,7 +49,7 @@ wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, flori
 
 turbines_wf = wf.turbines
 
-@testset "Flow Field Comparison" begin
+@testset verbose=true "Flow Field Comparison" begin
 
     df1, df2 = compare_dataframes(turbines_wf, turbines_ref)
     # println("Number of differing rows found: ", size(df1, 1), " out of ", size(turbines_wf, 1))

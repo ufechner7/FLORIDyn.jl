@@ -60,6 +60,7 @@ all_test_files = [
     "test_high_res_time.jl",
     "test_visualisation.jl",
     "test_measurements.jl",
+    "test_flowfield.jl",
     "test_pretty_print.jl",
     "test_copy_functions.jl",
     "test_setupandrun.jl",
