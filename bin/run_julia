@@ -45,13 +45,9 @@ else
 fi
 
 # ON DESKTOP Ryzen 7 7850X
-# 70s for 300 iterations with threading=true and parallel=true enabled 5.0x advantage
-# 347s for 300 iterations with threading=false and parallel=false
-# 1.18s single threaded
-# 0.24s multithreaded 
+#  52s for 300 iterations with threading=true and parallel=true enabled 6.0x advantage
+# 313s for 300 iterations with threading=false and parallel=false
 
 # ON LAPTOP, Ryzen 7840U, performance mode on power
-# 101s on laptop multithreaded 4.4x advantage
+#  81s on laptop multithreaded 4.4x advantage
 # 443s on laptop single threaded 
-# 1.51s single threaded
-# 0.30s multithreaded
