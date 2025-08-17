@@ -361,10 +361,7 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
         if wind.input_dir == "RW_with_Mean"
             phi_s = wind.dir.Init[iT]
         else
-            # Use buffered version for Direction_Interpolation mode
-            dir_buffer = Vector{Float64}(undef, 1)
-            phi_result = getWindDirT_buffered!(dir_buffer, set.dir_mode, wind.dir, iT, startTime)
-            phi_s = phi_result[1]
+            phi_s = getWindDirT(set.dir_mode, wind.dir, iT, startTime)
         end
 
         ti = getWindTiT(set.turb_mode, wind.ti, iT, startTime)

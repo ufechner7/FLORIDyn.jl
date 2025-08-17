@@ -59,8 +59,7 @@ FLORIDyn.set_rng(MersenneTwister(1234))
 
     @testset "getWindDirT_EnKF(Direction_Interpolation(), ...)" begin
         dir_mode = Direction_Interpolation()
-        buffer = Vector{Float64}(undef, 1)
-        phi = getWindDirT!(buffer, dir_mode, WindDir, 1, 0.5)
+        phi = getWindDirT(dir_mode, WindDir, 1, 0.5)
         @test phi[1] ≈ 11.0
     end
 

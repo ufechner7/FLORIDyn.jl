@@ -42,9 +42,8 @@ wind = FLORIDyn.Wind(
         )
         sim_time = 20000  # dummy input
 
-        # Call the function with buffer
-        dir_buffer = Vector{Float64}(undef, wf.nT)
-        correctDir!(dir_buffer, set.cor_dir_mode, set, wf, wind, sim_time)
+        # Call the function
+        correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
 
         # Validate
         @test all(wf.States_WF[:, 2] .== 255.0)

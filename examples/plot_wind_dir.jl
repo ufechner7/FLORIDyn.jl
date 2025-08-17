@@ -42,8 +42,6 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 times = Float64[]
 wind_directions = Vector{Float64}[]
 turbines = 1:wf.nT
-# Pre-allocate buffer for wind direction calculations
-dir_buffer = Vector{Float64}(undef, wf.nT)
 
 for time in sim.start_time:sim.time_step:sim.end_time
     local wind_direction
@@ -51,8 +49,8 @@ for time in sim.start_time:sim.time_step:sim.end_time
     
     # Calculate wind direction at current time
     # Try to get time-varying wind direction using the direction model
-    wind_dir_vec = getWindDirT_buffered!(dir_buffer, set.dir_mode, wind.dir, turbines, time)
-    wind_direction = copy(wind_dir_vec)  # Copy for storage (since buffer is reused)
+    wind_dir_vec = getWindDirT(set.dir_mode, wind.dir, turbines, time)
+    wind_direction = wind_dir_vec  # Vector for all requested turbines
     
     # Store the data
     push!(times, rel_time)

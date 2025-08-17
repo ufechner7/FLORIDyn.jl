@@ -151,9 +151,7 @@ using FLORIDyn, Test, LinearAlgebra
     wind.input_dir = "RW_with_Mean"
     set = Settings(wind, sim, con)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-    # Always use wf.nT size buffer
-    dir_buffer = Vector{Float64}(undef, wf.nT)
-    phi = getDataDir!(dir_buffer, set, wind, wf, t)
+    phi = getDataDir(set, wind, wf, t)
 
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
     t = 0.0

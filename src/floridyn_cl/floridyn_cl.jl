@@ -787,10 +787,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         # ========== wind field corrections ==========
         a = @allocated wf, wind = correctVel(set.cor_vel_mode, set, wf, wind, sim_time, floris, tmpM)
         alloc.correctVel += a
-        a = @allocated begin
-            dir_buffer = Vector{Float64}(undef, wf.nT)
-            correctDir!(dir_buffer, set.cor_dir_mode, set, wf, wind, sim_time)
-        end
+        a = @allocated correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
         alloc.correctDir += a
         a = @allocated correctTI!(set.cor_turb_mode, set, wf, wind, sim_time)
         alloc.correctTI += a
