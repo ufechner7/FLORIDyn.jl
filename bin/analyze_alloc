@@ -83,16 +83,22 @@ find . -name "*.mem" -exec grep -H "^[[:space:]]*[0-9]" {} \; | \
     }
     END {
         for (file in file_total) {
-            if (file_total[file] >= 1048576) {
-                size = sprintf("%.2f MB", file_total[file]/1048576)
-            } else if (file_total[file] >= 1024) {
-                size = sprintf("%.2f KB", file_total[file]/1024)
-            } else {
-                size = sprintf("%s B", file_total[file])
-            }
-            printf "%-12s %-4s lines %s\n", size, file_count[file], file
+            printf "%s %s %s\n", file_total[file], file_count[file], file
         }
-    }' | sort -nr
+    }' | sort -nr | \
+    awk '{
+        bytes = $1
+        count = $2
+        file = $3
+        if (bytes >= 1048576) {
+            size = sprintf("%.2f MB", bytes/1048576)
+        } else if (bytes >= 1024) {
+            size = sprintf("%.2f KB", bytes/1024)
+        } else {
+            size = sprintf("%s B", bytes)
+        }
+        printf "%-12s %-4s lines %s\n", size, count, file
+    }'
 
 echo ""
 echo "=== USAGE ==="
