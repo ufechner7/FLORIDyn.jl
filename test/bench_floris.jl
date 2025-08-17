@@ -55,17 +55,8 @@ paramFLORIS = FLORIDyn.Floris(
 )
 windshear = WindShear(0.08, 1.0)
 
-# Test with buffer-based version (fixed method signature)
-# Create buffers for single turbine test
-n_points_single = if D > 0
-    RPl_single, _ = FLORIDyn.discretizeRotor(paramFLORIS.rotor_points)
-    size(RPl_single, 1)
-else
-    1
-end
-buffers_single = FLORIDyn.RunFLORISBuffers(n_points_single)
-
-T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(buffers_single, set, LocationT, States_WF, 
+# Test backward compatibility (wrapper function)
+T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, LocationT, States_WF, 
                                                     States_T, D, paramFLORIS, windshear; alloc)
 @test T_red_arr ≈ 0.9941836044148462
 @test isnothing(T_aTI_arr)
@@ -84,27 +75,15 @@ nT = 2
 
 println("\n=== Performance Comparison ===")
 
-# Benchmark 1: Buffer-based version (creating buffers each call)
-println("\n1. Buffer-based version (creating buffers each call):")
+# Benchmark 1: Backward-compatible version (auto-creates buffers)
+println("\n1. Backward-compatible version (auto-creates buffers each call):")
 
-# Determine buffer size based on rotor discretization for multi-turbine test
-if D[end] > 0
-    RPl_multi, _ = FLORIDyn.discretizeRotor(paramFLORIS.rotor_points)
-    n_points_multi = size(RPl_multi, 1)
-else
-    n_points_multi = 1
-end
-
-# Run once to get results for comparison - creating buffers each time (less efficient)
-buffers_temp1 = FLORIDyn.RunFLORISBuffers(n_points_multi)
-T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = runFLORIS(buffers_temp1, set, LocationT_multi, States_WF, States_T_multi, D, 
+# Run once to get results for comparison
+T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = runFLORIS(set, LocationT_multi, States_WF, States_T_multi, D, 
                                                         paramFLORIS, windshear; alloc)
 
-t_wrapper = @benchmark begin
-    buffers_temp = FLORIDyn.RunFLORISBuffers($n_points_multi)
-    runFLORIS(buffers_temp, $set, $LocationT_multi, $States_WF, $States_T_multi, $D, 
-                                 $paramFLORIS, $windshear; alloc=$alloc)
-end
+t_wrapper = @benchmark runFLORIS(set, LocationT_multi, States_WF, States_T_multi, D, 
+                                 paramFLORIS, windshear; alloc)
 
 time_wrapper = mean(t_wrapper.times)/1e9
 rel_time_wrapper = time_wrapper * 301 / 0.115  # Relative to the total time of 0.115 seconds
@@ -131,8 +110,8 @@ T_red_arr3, T_aTI_arr3, T_Ueff3, T_weight3 = runFLORIS(buffers, set, LocationT_m
                                                         paramFLORIS, windshear; alloc)
 
 # Benchmark with pre-allocated buffers
-t_buffered = @benchmark runFLORIS($buffers, $set, $LocationT_multi, $States_WF, $States_T_multi, $D, 
-                                  $paramFLORIS, $windshear; alloc=$alloc)
+t_buffered = @benchmark runFLORIS(buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
+                                  paramFLORIS, windshear; alloc)
 
 time_buffered = mean(t_buffered.times)/1e9
 rel_time_buffered = time_buffered * 301 / 0.115
