@@ -98,11 +98,12 @@ using FLORIDyn, Test
         )
 
         D = 178.4000 
-        result = centerline(States_OP, States_T, States_WF, paramFLORIS, D)
+    result = zeros(size(States_OP,1), 2)
+    centerline!(result, States_OP, States_T, States_WF, paramFLORIS, D)
 
         # # Check output size
-        @test size(result) == (200, 2)
-        @test result == zeros(200, 2)
+    @test size(result) == (200, 2)
+    @test result == zeros(200, 2)
     end 
     @testset "getVars" begin
         # Define dummy test parameters

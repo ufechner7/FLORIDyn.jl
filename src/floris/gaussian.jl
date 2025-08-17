@@ -164,47 +164,49 @@ function getVars!(sig_y::AbstractVector{<:Real},
 end
 
 """
-    centerline(states_op, states_t, states_wf, floris, d_rotor) -> Matrix{Float64}
+    centerline!(deflection::AbstractMatrix,
+                states_op, states_t, states_wf, floris::Floris, d_rotor)
 
-Allocating wrapper around `centerline!` for API compatibility.
+Compute the cross-wind wake deflection at the observation points in-place.
+
+Fills `deflection[:, 1:2]` with the y- and z-deflection using the Gaussian model.
+Inputs are the state matrices as used throughout FLORIDyn. The rotor diameter `d_rotor`
+is a scalar for the current turbine.
+
+See also: [`getVars!`](@ref)
 """
 function centerline!(deflection::AbstractMatrix,
-                     states_op,
-                     states_t,
-                     states_wf,
-                     floris::Floris,
-                     d_rotor)
+                     states_op, states_t, states_wf, floris::Floris, d_rotor)
     n = size(states_op, 1)
-    @assert size(deflection, 1) >= n && size(deflection, 2) >= 2
+    # Prepare minimal RPs matrix: only downstream distance (OPdw) is needed (col 1)
+    RPs = Matrix{Float64}(undef, n, 3)
+    @inbounds begin
+        for i in 1:n
+            RPs[i, 1] = states_op[i, 4]  # downstream distance in wake coords
+            RPs[i, 2] = 0.0
+            RPs[i, 3] = 0.0
+        end
+    end
 
-    # Build required inputs for getVars: use downstream distance in column 4
-    rps  = @view states_op[:, 4:4]    # n×1 view with OP downstream distances
-    Ct   = calcCt(states_t[:, 1], states_t[:, 2])
-    yaw  = -deg2rad.(states_t[:, 2])
-    TI   = states_t[:, 3]
-    TI0  = states_wf[:, 3]
+    # States (vectorised)
+    Ct  = calcCt(states_t[:, 1], states_t[:, 2])
+    yaw = -deg2rad.(states_t[:, 2])
+    TI  = states_t[:, 3]
+    TI0 = states_wf[:, 3]
 
-    # Compute wake variables in-place and copy deflection into output
+    # Temporary outputs we don't need to keep
     sig_y = Vector{Float64}(undef, n)
     sig_z = Vector{Float64}(undef, n)
     x_0   = Vector{Float64}(undef, n)
-    delta = Matrix{Float64}(undef, n, 2)
     pc_y  = Vector{Float64}(undef, n)
     pc_z  = Vector{Float64}(undef, n)
-    getVars!(sig_y, sig_z, x_0, delta, pc_y, pc_z, rps, Ct, yaw, TI, TI0, floris, d_rotor)
-    @inbounds begin
-        deflection[:, 1] .= delta[:, 1]
-        deflection[:, 2] .= delta[:, 2]
-    end
+
+    # Compute deflection into provided matrix
+    getVars!(sig_y, sig_z, x_0, deflection, pc_y, pc_z, RPs, Ct, yaw, TI, TI0, floris, d_rotor)
     return deflection
 end
 
-function centerline(states_op, states_t, states_wf, floris, d_rotor)
-    N = size(states_op, 1)
-    deflection = Matrix{Float64}(undef, N, 2)
-    centerline!(deflection, states_op, states_t, states_wf, floris, d_rotor)
-    return deflection
-end
+ 
 
 """
     States
@@ -319,9 +321,9 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
         # Init turbine states
         states_t[rangeOPs, :] .= init_turb[iT, :]'
 
-        # Crosswind position
-        states_op[rangeOPs, 5:6] = centerline(states_op[rangeOPs, :], states_t[rangeOPs, :],
-                                              states_wf[rangeOPs, :], floris, wf.D[iT])
+    # Crosswind position (in-place)
+    centerline!(@view(states_op[rangeOPs, 5:6]), states_op[rangeOPs, :], states_t[rangeOPs, :],
+            states_wf[rangeOPs, :], floris, wf.D[iT])
 
         # Convert wind dir in fitting radians
         phi_w = angSOWFA2world.(states_wf[rangeOPs, 2])
