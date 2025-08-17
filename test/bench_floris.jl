@@ -60,12 +60,12 @@ Quick correctness check: single-turbine call using preallocated buffers.
 """
 # Create buffers for single-turbine case (use floris.rotor_points)
 buffers_st = FLORIDyn.FLORISBuffers(paramFLORIS.rotor_points)
-T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(buffers_st, set, LocationT, States_WF, 
-                                                    States_T, D, paramFLORIS, windshear; alloc)
-@test T_red_arr ≈ 0.9941836044148462
-@test isnothing(T_aTI_arr)
-@test isnothing(T_Ueff)
-@test isnothing(T_weight)
+runFLORIS(buffers_st, set, LocationT, States_WF, 
+          States_T, D, paramFLORIS, windshear; alloc)
+@test buffers_st.T_red_arr[1] ≈ 0.9941836044148462
+@test isempty(buffers_st.T_aTI_arr)
+@test isempty(buffers_st.T_Ueff)
+@test isempty(buffers_st.T_weight)
 
 # Additional test: Check that runFLORIS handles multiple turbines (dummy example)
 LocationT_multi = [600.0 2400.0 119.0;
@@ -90,6 +90,7 @@ T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = begin
     tmp_buffers = FLORIDyn.FLORISBuffers(n_points)
     runFLORIS(tmp_buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
               paramFLORIS, windshear; alloc)
+    tmp_buffers.T_red_arr, tmp_buffers.T_aTI_arr, tmp_buffers.T_Ueff, tmp_buffers.T_weight
 end
 
 t_wrapper = @benchmark begin
@@ -121,8 +122,9 @@ buffers = FLORIDyn.FLORISBuffers(n_points)
 println("  Created buffers for $n_points rotor discretization points")
 
 # Run once to get results for comparison
-T_red_arr3, T_aTI_arr3, T_Ueff3, T_weight3 = runFLORIS(buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
-                                                        paramFLORIS, windshear; alloc)
+runFLORIS(buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
+          paramFLORIS, windshear; alloc)
+T_red_arr3, T_aTI_arr3, T_Ueff3, T_weight3 = buffers.T_red_arr, buffers.T_aTI_arr, buffers.T_Ueff, buffers.T_weight
 
 # Benchmark with pre-allocated buffers
 t_buffered = @benchmark runFLORIS(buffers, set, LocationT_multi, States_WF, States_T_multi, D, 

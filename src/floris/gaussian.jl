@@ -18,6 +18,18 @@ end
     FLORISBuffers
 
 Pre-allocated buffers for the runFLORIS computation to minimize allocations.
+
+This struct also persists result arrays so callers can read outputs without
+allocations. After calling `runFLORIS`, the following fields contain results:
+
+- `T_red_arr::Vector{Float64}`: Per-turbine velocity reduction factors. For a
+    single-turbine run, length is 1 and `T_red_arr[1]` is the scalar reduction.
+- `T_aTI_arr::Vector{Float64}`: Added turbulence intensity from upstream wakes.
+    For N turbines, length is `max(N-1, 0)`. Empty for single-turbine runs.
+- `T_Ueff::Vector{Float64}`: Effective wind speed at the last turbine as a
+    length-1 vector (multi-turbine case). Empty for single-turbine runs.
+- `T_weight::Vector{Float64}`: Gaussian weight factors used for wake overlap.
+    For N turbines, length is `max(N-1, 0)`. Empty for single-turbine runs.
 """
 mutable struct FLORISBuffers
     tmp_RPs::Matrix{Float64}
@@ -42,6 +54,11 @@ mutable struct FLORISBuffers
     exp_y::Vector{Float64}
     exp_z::Vector{Float64}
     not_core::Vector{Bool}
+    # Result arrays (persisted in buffers to avoid fresh allocations)
+    T_red_arr::Vector{Float64}
+    T_aTI_arr::Vector{Float64}
+    T_Ueff::Vector{Float64}    # length 1 when set
+    T_weight::Vector{Float64}
 end
 
 function FLORISBuffers(n_pts::Int)
@@ -66,7 +83,11 @@ function FLORISBuffers(n_pts::Int)
         Vector{Float64}(undef, n_pts),     # gaussWght
         Vector{Float64}(undef, n_pts),     # exp_y
         Vector{Float64}(undef, n_pts),     # exp_z
-        Vector{Bool}(undef, n_pts),        # not_core
+    Vector{Bool}(undef, n_pts),        # not_core
+    Float64[],                         # T_red_arr (size set per call)
+    Float64[],                         # T_aTI_arr (size set per call)
+    Float64[],                         # T_Ueff (size 0 or 1)
+    Float64[],                         # T_weight (size set per call)
     )
 end
 
@@ -353,8 +374,8 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
 end
 
 """
-    runFLORIS(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
-              floris::Floris, windshear::Union{Matrix, WindShear})
+        runFLORIS(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
+                            floris::Floris, windshear::Union{Matrix, WindShear})
 
 Execute the FLORIS (FLOw Redirection and Induction in Steady State) wake model simulation for wind farm analysis.
 
@@ -373,11 +394,11 @@ It accounts for wake interactions, rotor discretization, wind shear effects, and
 - `windshear`: Wind shear profile data for vertical wind speed variation modeling, either a matrix or of type [`WindShear`](@ref)
 
 # Returns
-A tuple `(T_red_arr, T_aTI_arr, T_Ueff, T_weight)` containing:
-- `T_red_arr::Vector{Float64}`: Velocity reduction factors for each turbine [-]
-- `T_aTI_arr::Union{Vector{Float64}, Nothing}`: Added turbulence intensity from upstream wakes [%]
-- `T_Ueff::Union{Float64, Nothing}`: Effective wind speed at the last turbine location [m/s]
-- `T_weight::Union{Vector{Float64}, Nothing}`: Gaussian weight factors for wake overlap calculations [-]
+- `nothing`. Results are written into fields of `buffers`:
+    - `buffers.T_red_arr`
+    - `buffers.T_aTI_arr`
+    - `buffers.T_Ueff`
+    - `buffers.T_weight`
 
 # Description
 The function performs the following computational steps:
@@ -441,8 +462,8 @@ function runFLORIS(buffers::FLORISBuffers, set::Settings, location_t, states_wf,
     if d_rotor[end] > 0
         RPl, RPw = discretizeRotor(floris.rotor_points)
     else
-        RPl = [0.0 0.0 0.0]
-        RPw = [1.0]
+        RPl = SA[0.0 0.0 0.0]
+        RPw = SA[1.0]
     end
     # Yaw rotation for last turbine
     tmp_yaw = deg2rad(states_t[end, 2])
@@ -506,16 +527,27 @@ function runFLORIS(buffers::FLORISBuffers, set::Settings, location_t, states_wf,
         end
         z_view = @view buffers.tmp_RPs_r[1:nRP_local]
         redShear = getWindShearT(set.shear_mode, windshear, z_view)
-        T_red_arr = dot(@view(RPw[1:nRP_local]), redShear)
-        T_aTI_arr, T_Ueff, T_weight = nothing, nothing, nothing
-        return T_red_arr, T_aTI_arr, T_Ueff, T_weight
+        T_red_scalar = dot(@view(RPw[1:nRP_local]), redShear)
+        # Persist result into buffers as 1-length arrays (optional use by callers)
+        resize!(buffers.T_red_arr, 1); buffers.T_red_arr[1] = T_red_scalar
+        resize!(buffers.T_aTI_arr, 0)
+        resize!(buffers.T_Ueff, 0)
+        resize!(buffers.T_weight, 0)
+        # return T_red_scalar, nothing, nothing, nothing
+        return nothing
     end
 
-    # Initialize outputs
+    # Initialize outputs in buffers
     nT = length(d_rotor)
-    T_red_arr = ones(nT)
-    T_aTI_arr = zeros(nT - 1)
-    T_weight = zeros(nT - 1)
+    resize!(buffers.T_red_arr, nT); fill!(buffers.T_red_arr, 1.0)
+    resize!(buffers.T_aTI_arr, max(nT - 1, 0))
+    if nT > 1
+        fill!(buffers.T_aTI_arr, 0.0)
+    end
+    resize!(buffers.T_weight, max(nT - 1, 0))
+    if nT > 1
+        fill!(buffers.T_weight, 0.0)
+    end
 
     # Pre-allocate arrays that are reused in the loop
     nRP = size(RPl, 1)
@@ -666,8 +698,8 @@ function runFLORIS(buffers::FLORISBuffers, set::Settings, location_t, states_wf,
             end
         end
 
-        T_weight[iT] = sum(gaussWght)
-        T_red_arr[iT] = 1 - dot(RPw, tmp_RPs_r)
+    buffers.T_weight[iT] = sum(gaussWght)
+    buffers.T_red_arr[iT] = 1 - dot(RPw, tmp_RPs_r)
 
     # Added TI
         T_addedTI_tmp = floris.k_fa * (
@@ -694,7 +726,7 @@ function runFLORIS(buffers::FLORISBuffers, set::Settings, location_t, states_wf,
         @inbounds for i in 1:nRP
             acc = muladd(RPw[i], exp_y[i] * exp_z[i], acc)
         end
-        T_aTI_arr[iT] = T_addedTI_tmp * acc
+    buffers.T_aTI_arr[iT] = T_addedTI_tmp * acc
     end
 
     # Compute z for wind shear:
@@ -711,12 +743,14 @@ function runFLORIS(buffers::FLORISBuffers, set::Settings, location_t, states_wf,
         end
     end
     redShear = getWindShearT(set.shear_mode, windshear, tmp_RPs_r)
-    T_red_arr[end] = dot(RPw, redShear)
+    buffers.T_red_arr[end] = dot(RPw, redShear)
 
-    T_red = prod(T_red_arr)
-    T_Ueff = states_wf[end, 1] * T_red
+    T_red = prod(buffers.T_red_arr)
+    T_Ueff_scalar = states_wf[end, 1] * T_red
+    resize!(buffers.T_Ueff, 1); buffers.T_Ueff[1] = T_Ueff_scalar
 
-    return T_red_arr, T_aTI_arr, T_Ueff, T_weight
+    # return buffers.T_red_arr, buffers.T_aTI_arr, buffers.T_Ueff, buffers.T_weight
+    nothing
 end
 
 """

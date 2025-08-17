@@ -483,7 +483,7 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
 
         if isempty(wf.dep[iT])
             # Single turbine case - use pre-allocated FLORIS buffers
-            T_red_arr, _, _ = runFLORIS(
+            runFLORIS(
                 ub.floris_buffers,
                 set,
                 (wf.posBase[iT,:] +wf.posNac[iT,:])',
@@ -493,8 +493,10 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
                 floris,
                 wind.shear
             )
-            ub.M_buffer[iT, :] = [T_red_arr, 0, T_red_arr * wf.States_WF[wf.StartI[iT], 1]]
-            wf.red_arr[iT, iT] = T_red_arr
+            # Buffers now hold a length-1 vector for the single-turbine reduction
+            T_red_scalar = ub.floris_buffers.T_red_arr[1]
+            ub.M_buffer[iT, :] = [T_red_scalar, 0, T_red_scalar * wf.States_WF[wf.StartI[iT], 1]]
+            wf.red_arr[iT, iT] = T_red_scalar
             continue
         end
 
@@ -560,11 +562,8 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
         tmp_Tpos_view = @view ub.tmp_Tpos_buffer[1:tmp_nT, :]
         tmp_WF_view = @view ub.tmp_WF_buffer[1:tmp_nT, :]
         tmp_Tst_view = @view ub.tmp_Tst_buffer[1:tmp_nT, :]
-        a = @allocated T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(ub.floris_buffers, set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, wind.shear)
-        if !isnothing(alloc)
-            alloc.n += 1
-            alloc.floris += a
-        end
+    runFLORIS(ub.floris_buffers, set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, wind.shear)
+    T_red_arr, T_aTI_arr, T_weight = ub.floris_buffers.T_red_arr, ub.floris_buffers.T_aTI_arr, ub.floris_buffers.T_weight
 
         a = @allocated begin
             T_red = prod(T_red_arr)
@@ -576,6 +575,8 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
             alloc.begin1 += a
         end
 
+        # Prefer T_Ueff from buffers when available; else compute fallback for special cases
+        T_Ueff = nothing
         a = @allocated if wf.D[end] <= 0
             # Reuse buffers for distance and plotting calculations
             dists_view = @view ub.dists_buffer[1:(tmp_nT - 1)]
@@ -613,8 +614,16 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
         if !isnothing(alloc)
             alloc.if2 += a
         end
+        # Choose T_Ueff: prefer buffer value if present, else fallback to computed or ambient
+        if !isempty(ub.floris_buffers.T_Ueff)
+            T_Ueff_s = ub.floris_buffers.T_Ueff[1]
+        elseif T_Ueff === nothing
+            T_Ueff_s = T_red * ub.iTWFState_buffer[1]
+        else
+            T_Ueff_s = T_Ueff
+        end
 
-        ub.M_buffer[iT, :] = [T_red, T_addedTI, T_Ueff]
+        ub.M_buffer[iT, :] = [T_red, T_addedTI, T_Ueff_s]
 
         wS = sum(wf.Weight[iT])
         if wS > 0

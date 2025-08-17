@@ -136,3 +136,12 @@ UnifiedBuffers
 IterateOPsBuffers
 FLORISBuffers
 ```
+
+The `FLORISBuffers` type also holds result arrays populated by `runFLORIS`:
+
+- `T_red_arr`: per-turbine velocity reduction factors; for single-turbine runs
+	access `T_red_arr[1]`.
+- `T_aTI_arr`: added turbulence intensity (length N-1 for N turbines).
+- `T_Ueff`: effective wind speed at the last turbine as a length-1 vector
+	(empty for single-turbine runs).
+- `T_weight`: Gaussian weights for wake overlap (length N-1 for N turbines).

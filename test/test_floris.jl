@@ -200,13 +200,13 @@ using FLORIDyn, Test
         windshear = WindShear(0.08, 1.0)
         # Create buffers for the test
         buffers = FLORIDyn.FLORISBuffers(50)  # Use 50 rotor points as defined in paramFLORIS
-        T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(buffers, set::Settings, LocationT, States_WF, 
-                                                           States_T, D, paramFLORIS, windshear)
-        # Main.@infiltrate
-        @test T_red_arr ≈ 0.9941836044148462
-        @test isnothing(T_aTI_arr)
-        @test isnothing(T_Ueff)
-        @test isnothing(T_weight)
+    runFLORIS(buffers, set::Settings, LocationT, States_WF, 
+          States_T, D, paramFLORIS, windshear)
+    # Validate buffer-populated outputs
+    @test buffers.T_red_arr[1] ≈ 0.9941836044148462
+    @test isempty(buffers.T_aTI_arr)
+    @test isempty(buffers.T_Ueff)
+    @test isempty(buffers.T_weight)
 
         # Additional test: Check that runFLORIS handles multiple turbines (dummy example)
         LocationT_multi = [600.0 2400.0 119.0;
@@ -218,13 +218,12 @@ using FLORIDyn, Test
         D = [178.4, 178.4]
         # Create buffers for multi-turbine test
         buffers_multi = FLORIDyn.FLORISBuffers(50)  # Use 50 rotor points as defined in paramFLORIS
-        T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = runFLORIS(buffers_multi, set, LocationT_multi, States_WF, States_T_multi, D, 
-                                                               paramFLORIS, windshear)
-        @test length(T_red_arr2) == 2
-        @test length(T_red_arr2) == 2
-        @test length(T_aTI_arr2) == 1
-        @test length(T_Ueff2) == 1
-        @test length(T_weight2) == 1 
+    runFLORIS(buffers_multi, set, LocationT_multi, States_WF, States_T_multi, D, 
+          paramFLORIS, windshear)
+    @test length(buffers_multi.T_red_arr) == 2
+    @test length(buffers_multi.T_aTI_arr) == 1
+    @test length(buffers_multi.T_Ueff) == 1
+    @test length(buffers_multi.T_weight) == 1 
     end
 
     @testset "getUadv" begin
