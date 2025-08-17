@@ -36,22 +36,28 @@ function discretizeRotor(n_rp::Int)
     dltR = 1 / n
     nC = N1 * n^2
 
-    # m_rp matrix: nC rows, 3 columns
-    # Columns:
-    # m_rp[:, 1] corresponds to RPs(:,1) in MATLAB, but unused in original code (remains zeros)
-    m_rp = zeros(nC, 3)
+    # m_rp matrix: nC rows, 3 columns (initialize to zeros without creating a view)
+    m_rp = Array{Float64}(undef, nC, 3)
+    fill!(m_rp, 0.0)
 
-    for i in 1:n
+    @inbounds for i in 1:n
         nR = (2 * i - 1) * N1
-        i_e = sum(((2 .* (1:i) .- 1) .* N1))
+        # Sum of first i odd numbers = i^2, scaled by N1
+        i_e = N1 * i^2
         i_s = i_e - nR + 1
 
-        phi = (1:nR) .* (2 * π) ./ nR
-        m_rp[i_s:i_e, 2] .= 0.5 .* cos.(phi) .* dltR .* (0.5 + (i - 1))
-        m_rp[i_s:i_e, 3] .= 0.5 .* sin.(phi) .* dltR .* (0.5 + (i - 1))
-    end
+        radius = 0.5 * dltR * (0.5 + (i - 1))
+        step = 2π / nR
+        for k in 0:(nR - 1)
+            idx = i_s + k
+            ang = (k + 1) * step
+            m_rp[idx, 2] = radius * cos(ang)
+            m_rp[idx, 3] = radius * sin(ang)
+        end
+  end
 
-    w = fill(1 / nC, nC)
+  w = Vector{Float64}(undef, nC)
+  fill!(w, 1 / nC)
 
     return m_rp, w
 end
