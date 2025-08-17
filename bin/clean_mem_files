@@ -7,6 +7,11 @@
 
 echo "Cleaning up .mem files..."
 
+# Change to repo root if running from bin directory
+if [[ $(basename $(pwd)) == "bin" ]]; then
+    cd ..
+fi
+
 # Count .mem files before deletion
 mem_count=$(find . -name "*.mem" -type f | wc -l)
 
