@@ -55,8 +55,12 @@ paramFLORIS = FLORIDyn.Floris(
 )
 windshear = WindShear(0.08, 1.0)
 
-# Test backward compatibility (wrapper function)
-T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, LocationT, States_WF, 
+"""
+Quick correctness check: single-turbine call using preallocated buffers.
+"""
+# Create buffers for single-turbine case (use floris.rotor_points)
+buffers_st = FLORIDyn.FLORISBuffers(paramFLORIS.rotor_points)
+T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(buffers_st, set, LocationT, States_WF, 
                                                     States_T, D, paramFLORIS, windshear; alloc)
 @test T_red_arr ≈ 0.9941836044148462
 @test isnothing(T_aTI_arr)
@@ -75,23 +79,34 @@ nT = 2
 
 println("\n=== Performance Comparison ===")
 
-# Benchmark 1: Backward-compatible version (auto-creates buffers)
-println("\n1. Backward-compatible version (auto-creates buffers each call):")
+# Benchmark 1: Allocate fresh buffers each call (allocating path)
+println("\n1. Allocate fresh buffers each call (allocating path):")
 
 # Run once to get results for comparison
-T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = runFLORIS(set, LocationT_multi, States_WF, States_T_multi, D, 
-                                                        paramFLORIS, windshear; alloc)
+T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = begin
+    # Determine rotor discretization size for buffer creation
+    RPl, _ = FLORIDyn.discretizeRotor(paramFLORIS.rotor_points)
+    n_points = size(RPl, 1)
+    tmp_buffers = FLORIDyn.FLORISBuffers(n_points)
+    runFLORIS(tmp_buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
+              paramFLORIS, windshear; alloc)
+end
 
-t_wrapper = @benchmark runFLORIS(set, LocationT_multi, States_WF, States_T_multi, D, 
-                                 paramFLORIS, windshear; alloc)
+t_wrapper = @benchmark begin
+    RPl, _ = FLORIDyn.discretizeRotor($paramFLORIS.rotor_points)
+    n_points = size(RPl, 1)
+    tmp_buffers = FLORIDyn.FLORISBuffers(n_points)
+    runFLORIS(tmp_buffers, $set, $LocationT_multi, $States_WF, $States_T_multi, $D, 
+              $paramFLORIS, $windshear; alloc=$alloc)
+end
 
 time_wrapper = mean(t_wrapper.times)/1e9
 rel_time_wrapper = time_wrapper * 301 / 0.115  # Relative to the total time of 0.115 seconds
 println("  Time: $time_wrapper seconds, relative to 0.115s: $(round(rel_time_wrapper * 100, digits=2)) %")
 println("  Allocations: $(t_wrapper.allocs), Memory: $(t_wrapper.memory) bytes")
 
-# Benchmark 2: New buffer-based version (pre-allocated buffers)
-println("\n2. New buffer-based version (pre-allocated buffers):")
+# Benchmark 2: Pre-allocated buffers (reused, zero-alloc path)
+println("\n2. Pre-allocated buffers (reused, zero-alloc path):")
 
 # Determine buffer size based on rotor discretization
 if D[end] > 0
@@ -130,11 +145,11 @@ println("  Allocation reduction: $(round(alloc_reduction, digits=1))%")
 
 # Verify results are identical
 @test T_red_arr2 ≈ T_red_arr3
-println("\n✓ Results are identical between wrapper and buffered versions")
+println("\n✓ Results are identical between allocating and preallocated versions")
 
 println("\nRecommendation:")
-println("  For single calls: Use runFLORIS(set, location_t, states_wf, states_t, d_rotor, floris, windshear)")
-println("  For repeated calls: Pre-allocate buffers and use runFLORIS(buffers, set, location_t, states_wf, states_t, d_rotor, floris, windshear)")
+println("  For single calls: Allocate buffers on the fly: FLORISBuffers(n_points) → runFLORIS(buffers, ...)")
+println("  For repeated calls: Pre-allocate once and reuse: runFLORIS(buffers, set, location_t, states_wf, states_t, d_rotor, floris, windshear)")
 
 t = t_buffered  # Use the optimized version for final reporting
 
