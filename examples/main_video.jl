@@ -38,4 +38,4 @@ cleanup_video_folder()
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 nothing
 
-#  66.826362 seconds (8.18 G allocations: 752.342 GiB, 30.41% gc time, 8 lock conflicts)
+# 61.696510 seconds (7.74 G allocations: 619.266 GiB, 29.02% gc time, 6 lock conflicts, 1.70% compilation time)

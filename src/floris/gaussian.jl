@@ -607,14 +607,35 @@ function runFLORIS(buffers::RunFLORISBuffers, set::Settings, location_t, states_
           -sin(tmp_yaw)  cos(tmp_yaw)  0.0;
            0.0           0.0           1.0]
 
-    a = @allocated RPl = (R * (RPl .* d_rotor[end])')' .+ location_t[end, :]'
-    if ! isnothing(alloc)
-        alloc.expr1 += a
+    # Conservative allocation reduction: scale into buffer (no scaled_RPl alloc),
+    # then perform the original rotation+translation using matrix multiply
+    nRP_local = size(RPl, 1)
+    # Safety: ensure buffers are large enough before writing to avoid OOB/segfaults
+    if size(buffers.tmp_RPs, 1) < nRP_local
+        error("RunFLORISBuffers.tmp_RPs too small: expected at least $(nRP_local) rows, got $(size(buffers.tmp_RPs, 1)).\n" *
+              "Ensure create_unified_buffers(.., floris) used the same rotor discretization.")
     end
+    @inbounds for i in 1:nRP_local
+        buffers.tmp_RPs[i, 1] = RPl[i, 1] * d_rotor[end]
+        buffers.tmp_RPs[i, 2] = RPl[i, 2] * d_rotor[end]
+        buffers.tmp_RPs[i, 3] = RPl[i, 3] * d_rotor[end]
+    end
+    scaled_RPl = @view buffers.tmp_RPs[1:nRP_local, :]
+    RPl = (R * scaled_RPl')' .+ location_t[end, :]'
 
     a = @allocated if length(d_rotor) == 1
-        redShear = getWindShearT(set.shear_mode, windshear, RPl[:, 3] ./ location_t[3])
-        T_red_arr = RPw' * redShear
+        # Avoid allocating RPl[:,3] and the broadcasted division by using a buffer
+        nRP_local = size(RPl, 1)
+        if length(buffers.tmp_RPs_r) < nRP_local
+            error("RunFLORISBuffers.tmp_RPs_r too small: expected at least $(nRP_local) elements, got $(length(buffers.tmp_RPs_r)).\n" *
+                  "Ensure create_unified_buffers(.., floris) used the same rotor discretization.")
+        end
+        @inbounds for i in 1:nRP_local
+            buffers.tmp_RPs_r[i] = RPl[i, 3] / location_t[end, 3]
+        end
+        z_view = @view buffers.tmp_RPs_r[1:nRP_local]
+        redShear = getWindShearT(set.shear_mode, windshear, z_view)
+        T_red_arr = dot(@view(RPw[1:nRP_local]), redShear)
         T_aTI_arr, T_Ueff, T_weight = nothing, nothing, nothing
         return T_red_arr, T_aTI_arr, T_Ueff, T_weight
     end
