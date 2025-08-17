@@ -44,3 +44,4 @@ nothing
 # 53.558160 seconds (6.56 G allocations: 440.155 GiB, 26.71% gc time, 7 lock conflicts, 2.30% compilation time)
 # 53.987984 seconds (6.41 G allocations: 434.649 GiB, 26.72% gc time, 6 lock conflicts, 2.27% compilation time)
 # 52.597644 seconds (6.29 G allocations: 431.973 GiB, 26.46% gc time, 9 lock conflicts, 2.59% compilation time)
+# 51.488868 seconds (5.92 G allocations: 420.076 GiB, 27.73% gc time, 10 lock conflicts, 2.48% compilation time)
