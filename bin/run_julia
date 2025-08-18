@@ -49,5 +49,5 @@ fi
 # 313s for 300 iterations with threading=false and parallel=false
 
 # ON LAPTOP, Ryzen 7840U, performance mode on power
-#  63s on laptop multithreaded 4.9x advantage
+#  58s on laptop multithreaded 4.9x advantage
 # 386s on laptop single threaded 
