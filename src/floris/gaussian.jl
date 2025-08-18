@@ -46,13 +46,52 @@ function FLORISBuffers(n_pts::Int)
 end
 
 """
-    getVars!(sig_y, sig_z, x_0, delta, pc_y, pc_z, rps, c_t, yaw, ti, ti0, floris::Floris, d_rotor)
+        getVars!(sig_y, sig_z, x_0, delta, pc_y, pc_z, rps, c_t, yaw, ti, ti0, floris::Floris, d_rotor)
 
-In-place version of getVars. Fills preallocated outputs for Gaussian wake variables
-without allocating temporaries. All output arrays must have length n = size(rps, 1);
-`delta` must be n×2.
+Compute Gaussian wake widths, deflection, potential-core radii, and onset distance at observation points, in-place.
 
-Returns: nothing (writes into provided arrays).
+## Output parameters
+- `sig_y::AbstractVector{<:Real}` (length n): Lateral Gaussian width σ_y at each point [m]
+- `sig_z::AbstractVector{<:Real}` (length n): Vertical Gaussian width σ_z at each point [m]
+- `x_0::AbstractVector{<:Real}` (length n): Onset distance of the far-wake x₀ [m]
+- `delta::AbstractMatrix{<:Real}` (length n×2): Deflection components `[Δy, Δz]` [m]
+- `pc_y::AbstractVector{<:Real}` (length n): Potential-core radius in y at each point [m]
+- `pc_z::AbstractVector{<:Real}` (length n): Potential-core radius in z at each point [m]
+
+## Input parameters
+- `rps::AbstractMatrix` (n×3): Observation points in wake-aligned frame; columns are `[x_downstream, y_cross, z_cross]` [m]
+- `c_t::Union{Number,AbstractVector}`: Thrust coefficient Ct (scalar or length n) [-]
+- `yaw::Union{Number,AbstractVector}`: Yaw misalignment (scalar or length n) [rad]
+- `ti::Union{Number,AbstractVector}`: Local turbulence intensity TI at turbine (scalar or length n) [-]
+- `ti0::Union{Number,AbstractVector}`: Ambient turbulence intensity TI₀ (scalar or length n) [-]
+- `floris::Floris`: FLORIS Gaussian model parameters; see [`Floris`](@ref)
+- `d_rotor::Real`: Rotor diameter D [m]
+
+Behavior
+- Supports scalar or per-point values for `c_t`, `yaw`, `ti`, `ti0`; scalars are broadcast to all points.
+- Uses `floris.k_a`, `floris.k_b`, `floris.alpha`, `floris.beta` to compute per-point
+    `x₀`, `σ_y`, `σ_z`, deflection `Δy` (here `Δz` is set to 0), and potential-core radii `pc_y`, `pc_z`.
+- No heap allocations beyond the provided outputs; results are written in-place and the function returns `nothing`.
+
+Notes
+- Only `rps[:, 1]` (downstream distance) is used by this implementation; `rps[:, 2:3]` are ignored.
+- `delta` must have at least 2 columns; only columns 1:2 are written.
+- Units: distances in meters, angles in radians, intensities and `Ct` are dimensionless.
+
+Example
+```julia
+n = size(RPs, 1)
+sig_y = similar(RPs[:, 1])
+sig_z = similar(RPs[:, 1])
+x0    = similar(RPs[:, 1])
+delta = zeros(n, 2)
+pc_y  = similar(RPs[:, 1])
+pc_z  = similar(RPs[:, 1])
+getVars!(sig_y, sig_z, x0, delta, pc_y, pc_z, RPs, Ct, yaw, TI, TI0, floris, D)
+```
+
+Returns
+- `nothing` — all results are written into the provided arrays.
 """
 function getVars!(sig_y::AbstractVector{<:Real},
                   sig_z::AbstractVector{<:Real},
