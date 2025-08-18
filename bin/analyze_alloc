@@ -9,6 +9,7 @@
 if [[ $(basename $(pwd)) == "bin" ]]; then
     cd ..
 fi
+cd src
 
 # Check if .mem files exist
 mem_count=$(find . -name "*.mem" -type f | wc -l)
@@ -29,21 +30,21 @@ TOP_N=${1:-20}
 echo "=== TOP $TOP_N MEMORY ALLOCATIONS ==="
 echo ""
 
-# Find all lines with allocations, sort by allocation size (descending)
-# Format: filename:line_number:allocation_bytes:source_code
+# Parse top allocations safely: filename:line:content where content starts with bytes
 find . -name "*.mem" -exec grep -Hn "^[[:space:]]*[0-9]" {} \; | \
-    sed 's/:/ /' | \
-    awk '{
-        # Extract allocation number (first number on the line)
-        match($0, /[0-9]+/, arr)
-        if (arr[0] > 0) {
-            # Get filename without .mem extension and line number
-            gsub(/\.mem$/, "", $1)
-            # Print: allocation_bytes filename:line_number rest_of_line
-            printf "%s %s:%s", arr[0], $1, $2
-            # Print the rest of the line (source code)
-            for(i=3; i<=NF; i++) printf " %s", $i
-            printf "\n"
+    awk -F: '{
+        file=$1; line=$2;
+        # Rejoin the rest of the fields as content (could contain colons)
+        content=$3; for(i=4;i<=NF;i++) content=content":"$i;
+        # Extract bytes from beginning of content
+        if (match(content, /^[[:space:]]*([0-9]+)/, m)) {
+            bytes=m[1]+0;
+            if (bytes>0) {
+                gsub(/\.mem$/, "", file);
+                # Extract source code without the leading byte count
+                code=content; sub(/^[[:space:]]*[0-9]+[[:space:]]*/, "", code);
+                printf "%d %s:%s %s\n", bytes, file, line, code;
+            }
         }
     }' | \
     sort -nr | \
@@ -59,7 +60,6 @@ find . -name "*.mem" -exec grep -Hn "^[[:space:]]*[0-9]" {} \; | \
         } else {
             size = sprintf("%s B", bytes)
         }
-        
         printf "%-12s %s", size, file_line
         # Print the rest (source code)
         for(i=3; i<=NF; i++) printf " %s", $i
@@ -70,20 +70,23 @@ echo ""
 echo "=== ALLOCATION SUMMARY BY FILE ==="
 echo ""
 
-# Summary by file
+# Summary by file (sum leading bytes per line)
 find . -name "*.mem" -exec grep -H "^[[:space:]]*[0-9]" {} \; | \
-    sed 's/:/ /' | \
-    awk '{
-        match($0, /[0-9]+/, arr)
-        if (arr[0] > 0) {
-            gsub(/\.mem$/, "", $1)
-            file_total[$1] += arr[0]
-            file_count[$1]++
+    awk -F: '{
+        file=$1;
+        content=$2; for(i=3;i<=NF;i++) content=content":"$i;
+        if (match(content, /^[[:space:]]*([0-9]+)/, m)) {
+            bytes=m[1]+0;
+            if (bytes>0) {
+                gsub(/\.mem$/, "", file);
+                file_total[file] += bytes;
+                file_count[file]++;
+            }
         }
     }
     END {
         for (file in file_total) {
-            printf "%s %s %s\n", file_total[file], file_count[file], file
+            printf "%d %d %s\n", file_total[file], file_count[file], file
         }
     }' | sort -nr | \
     awk '{
