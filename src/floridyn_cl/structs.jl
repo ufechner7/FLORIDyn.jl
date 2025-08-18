@@ -250,10 +250,10 @@ struct IterateOPs_weighted <: IterateOPs_model end
 """
     FLORISBuffers
 
-Pre-allocated buffers for the runFLORIS computation to minimize allocations.
+Pre-allocated buffers for the runFLORIS! computation to minimize allocations.
 
 This struct also persists result arrays so callers can read outputs without
-allocations. After calling `runFLORIS`, the following fields contain results:
+allocations. After calling `runFLORIS!`, the following fields contain results:
 
 - `T_red_arr::Vector{Float64}`: Per-turbine velocity reduction factors. For a
     single-turbine run, length is 1 and `T_red_arr[1]` is the scalar reduction.

@@ -367,7 +367,7 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
 end
 
 """
-        runFLORIS(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
+        runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
                             floris::Floris, windshear::Union{Matrix, WindShear})
 
 Execute the FLORIS (FLOw Redirection and Induction in Steady State) wake model simulation for wind farm analysis.
@@ -376,8 +376,10 @@ This function performs a comprehensive wake analysis using the Gaussian wake mod
 velocity reductions, turbulence intensity additions, and effective wind speeds at turbine locations.
 It accounts for wake interactions, rotor discretization, wind shear effects, and turbulence propagation.
 
-# Arguments
-- `buffers::FLORISBuffers`: Pre-allocated buffer arrays to eliminate memory allocations during computation (see [`FLORISBuffers`](@ref))
+# Output parameters
+- `buffers::FLORISBuffers`: Pre-allocated buffer arrays and outputs (see [`FLORISBuffers`](@ref))
+
+# Input parameters
 - `set::Settings`: Simulation settings containing configuration options for wind shear modeling
 - `location_t`: Matrix of turbine positions [x, y, z] coordinates for each turbine [m]
 - `states_wf`: Wind field state matrix containing velocity, direction, and turbulence data
@@ -450,7 +452,7 @@ The function implements several key wake modeling equations:
 - Bastankhah, M. and Porté-Agel, F. (2016). Experimental and theoretical study of wind turbine wakes in yawed conditions
 - Niayifar, A. and Porté-Agel, F. (2016). Analytical modeling of wind farms: A new approach for power prediction
 """
-function runFLORIS(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, 
+function runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, 
                    windshear::Union{Matrix, WindShear}; alloc=nothing)
     if d_rotor[end] > 0
         RPl, RPw = discretizeRotor(floris.rotor_points)

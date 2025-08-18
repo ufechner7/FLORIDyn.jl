@@ -32,14 +32,14 @@ Quick correctness check: single-turbine call using preallocated buffers.
 """
 # Create buffers for single-turbine case (use floris.rotor_points)
 buffers_st = FLORIDyn.FLORISBuffers(paramFLORIS.rotor_points)
-runFLORIS(buffers_st, set, LocationT, States_WF, 
+runFLORIS!(buffers_st, set, LocationT, States_WF, 
           States_T, D, paramFLORIS, windshear)
 @test buffers_st.T_red_arr[1] ≈ 0.9941836044148462
 @test isempty(buffers_st.T_aTI_arr)
 @test isempty(buffers_st.T_Ueff)
 @test isempty(buffers_st.T_weight)
 
-# Additional test: Check that runFLORIS handles multiple turbines (dummy example)
+# Additional test: Check that runFLORIS! handles multiple turbines (dummy example)
 LocationT_multi = [600.0 2400.0 119.0;
                     1200.0 2600.0 119.0] 
 States_WF = [8.2  255.0  0.062  255.0;
@@ -60,7 +60,7 @@ T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = begin
     RPl, _ = FLORIDyn.discretizeRotor(paramFLORIS.rotor_points)
     n_points = size(RPl, 1)
     tmp_buffers = FLORIDyn.FLORISBuffers(n_points)
-    runFLORIS(tmp_buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
+    runFLORIS!(tmp_buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
               paramFLORIS, windshear)
     tmp_buffers.T_red_arr, tmp_buffers.T_aTI_arr, tmp_buffers.T_Ueff, tmp_buffers.T_weight
 end
@@ -69,7 +69,7 @@ t_wrapper = @benchmark begin
     RPl, _ = FLORIDyn.discretizeRotor($paramFLORIS.rotor_points)
     n_points = size(RPl, 1)
     tmp_buffers = FLORIDyn.FLORISBuffers(n_points)
-    runFLORIS(tmp_buffers, $set, $LocationT_multi, $States_WF, $States_T_multi, $D, 
+    runFLORIS!(tmp_buffers, $set, $LocationT_multi, $States_WF, $States_T_multi, $D, 
               $paramFLORIS, $windshear)
 end
 
@@ -94,12 +94,12 @@ buffers = FLORIDyn.FLORISBuffers(n_points)
 println("  Created buffers for $n_points rotor discretization points")
 
 # Run once to get results for comparison
-runFLORIS(buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
+runFLORIS!(buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
           paramFLORIS, windshear)
 T_red_arr3, T_aTI_arr3, T_Ueff3, T_weight3 = buffers.T_red_arr, buffers.T_aTI_arr, buffers.T_Ueff, buffers.T_weight
 
 # Benchmark with pre-allocated buffers
-t_buffered = @benchmark runFLORIS(buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
+t_buffered = @benchmark runFLORIS!(buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
                                   paramFLORIS, windshear)
 
 time_buffered = mean(t_buffered.times)/1e9
@@ -122,8 +122,8 @@ println("  Allocation reduction: $(round(alloc_reduction, digits=1))%")
 println("\n✓ Results are identical between allocating and preallocated versions")
 
 println("\nRecommendation:")
-println("  For single calls: Allocate buffers on the fly: FLORISBuffers(n_points) → runFLORIS(buffers, ...)")
-println("  For repeated calls: Pre-allocate once and reuse: runFLORIS(buffers, set, location_t, states_wf, states_t, d_rotor, floris, windshear)")
+println("  For single calls: Allocate buffers on the fly: FLORISBuffers(n_points) → runFLORIS!(buffers, ...)")
+println("  For repeated calls: Pre-allocate once and reuse: runFLORIS!(buffers, set, location_t, states_wf, states_t, d_rotor, floris, windshear)")
 
 t = t_buffered  # Use the optimized version for final reporting
 

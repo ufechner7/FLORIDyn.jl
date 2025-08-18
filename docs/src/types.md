@@ -137,7 +137,7 @@ IterateOPsBuffers
 FLORISBuffers
 ```
 
-The `FLORISBuffers` type also holds result arrays populated by `runFLORIS`:
+The `FLORISBuffers` type also holds result arrays populated by `runFLORIS!`:
 
 - `T_red_arr`: per-turbine velocity reduction factors; for single-turbine runs
 	access `T_red_arr[1]`.

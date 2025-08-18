@@ -29,14 +29,14 @@ paramFLORIS = FLORIDyn.Floris(
 windshear = WindShear(0.08, 1.0)
 
 # single turbine case: default alloc, returns nothing for TI, Ueff, weight
-T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, LocationT, States_WF, 
+T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS!(set, LocationT, States_WF, 
                                                    States_T, D, paramFLORIS, windshear)
 @test T_red_arr ≈ 0.9941836044148462
 @test isnothing(T_aTI_arr)
 @test isnothing(T_Ueff)
 @test isnothing(T_weight)
 
-# Additional test: Check that runFLORIS handles multiple turbines (dummy example)
+# Additional test: Check that runFLORIS! handles multiple turbines (dummy example)
 LocationT_multi = [600.0 2400.0 119.0;
                     1200.0 2600.0 119.0] 
 nStates_WF = [8.2  255.0  0.062  255.0;
@@ -46,7 +46,7 @@ nStates_T = [0.33 0.0 0.06;
 D = [178.4, 178.4]
 nT = 2
 
-T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, LocationT_multi, nStates_WF, 
+T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS!(set, LocationT_multi, nStates_WF, 
                                                    nStates_T, D, paramFLORIS, windshear)
 println(T_aTI_arr)
 @test sum(T_aTI_arr) > 1e-6

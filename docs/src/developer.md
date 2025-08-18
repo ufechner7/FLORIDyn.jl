@@ -141,7 +141,7 @@ Analyzing memory allocations...
 === TOP 20 MEMORY ALLOCATIONS ===
 
 190.67 MB    ./windfield/windfield_shear.jl.61012:74 shear = z_norm .^ wind_shear.alpha
-93.94 MB     ./floridyn_cl/floridyn_cl.jl.61012:492 runFLORIS(
+93.94 MB     ./floridyn_cl/floridyn_cl.jl.61012:492 runFLORIS!(
 5.57 MB      ./floridyn_cl/floridyn_cl.jl.61012:604 T_addedTI = sqrt(sum(T_aTI_arr .^ 2))
 4.48 MB      ./floridyn_cl/floridyn_cl.jl.61012:681 wf.Weight[iT] = wf.Weight[iT] ./ wS
 3.48 MB      ./visualisation/calc_flowfield.jl.61012:246 GP.posNac[end, :] = [0.0, 0.0, zh] # Update grid point nacelle position

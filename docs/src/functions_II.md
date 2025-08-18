@@ -12,10 +12,10 @@ discretizeRotor
 init_states
 getVars!
 getPower
-runFLORIS
+runFLORIS!
 ```
 
-Note: `runFLORIS` is allocation-free and returns nothing. Read results from the
+Note: `runFLORIS!` is allocation-free and returns nothing. Read results from the
 `FLORISBuffers` you passed in (fields `T_red_arr`, `T_aTI_arr`, `T_Ueff`, `T_weight`).
 
 # FLORIDyn
