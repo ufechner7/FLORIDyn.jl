@@ -33,7 +33,7 @@ Quick correctness check: single-turbine call using preallocated buffers.
 # Create buffers for single-turbine case (use floris.rotor_points)
 buffers_st = FLORIDyn.FLORISBuffers(paramFLORIS.rotor_points)
 runFLORIS(buffers_st, set, LocationT, States_WF, 
-          States_T, D, paramFLORIS, windshear; alloc)
+          States_T, D, paramFLORIS, windshear)
 @test buffers_st.T_red_arr[1] ≈ 0.9941836044148462
 @test isempty(buffers_st.T_aTI_arr)
 @test isempty(buffers_st.T_Ueff)
