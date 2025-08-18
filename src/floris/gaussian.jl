@@ -50,7 +50,7 @@ end
 
 Compute Gaussian wake widths, deflection, potential-core radii, and onset distance at observation points, in-place.
 
-## Output parameters
+# Output Arguments
 - `sig_y::AbstractVector{<:Real}` (length n): Lateral Gaussian width σ_y at each point [m]
 - `sig_z::AbstractVector{<:Real}` (length n): Vertical Gaussian width σ_z at each point [m]
 - `x_0::AbstractVector{<:Real}` (length n): Onset distance of the far-wake x₀ [m]
@@ -58,7 +58,7 @@ Compute Gaussian wake widths, deflection, potential-core radii, and onset distan
 - `pc_y::AbstractVector{<:Real}` (length n): Potential-core radius in y at each point [m]
 - `pc_z::AbstractVector{<:Real}` (length n): Potential-core radius in z at each point [m]
 
-## Input parameters
+# Input Arguments
 - `rps::AbstractMatrix` (n×3): Observation points in wake-aligned frame; columns are `[x_downstream, y_cross, z_cross]` [m]
 - `c_t::Union{Number,AbstractVector}`: Thrust coefficient Ct (scalar or length n) [-]
 - `yaw::Union{Number,AbstractVector}`: Yaw misalignment (scalar or length n) [rad]
@@ -194,11 +194,33 @@ end
     centerline!(deflection::AbstractMatrix,
                 states_op, states_t, states_wf, floris::Floris, d_rotor)
 
-Compute the cross-wind wake deflection at the observation points in-place.
+Compute the cross-wind wake deflection at the observation points in-place using the Gaussian wake model.
 
-Fills `deflection[:, 1:2]` with the y- and z-deflection using the Gaussian model.
-Inputs are the state matrices as used throughout FLORIDyn. The rotor diameter `d_rotor`
-is a scalar for the current turbine.
+This function calculates the lateral (y) and vertical (z) deflection of the wake centerline 
+due to yaw misalignment and other effects. The results are written directly into the provided 
+deflection matrix without allocating temporary arrays.
+
+# Output Arguments
+- `deflection::AbstractMatrix` (size n×2): Wake deflection components filled in-place
+  - Column 1: Lateral deflection Δy `[m]`  
+  - Column 2: Vertical deflection Δz `[m]` (always zero in current implementation)
+
+# Input Arguments
+- `states_op::AbstractMatrix` (size n×k): Operational point states where n is number of points
+  - Column 4 contains downstream distance in wake-aligned coordinates `[m]`
+- `states_t::AbstractMatrix`: Turbine state matrix containing:
+  - Column 1: Axial induction factor a `[-]`
+  - Column 2: Yaw angle `[degrees]`
+  - Column 3: Local turbulence intensity TI `[-]`
+- `states_wf::AbstractMatrix`: Wind field state matrix containing:
+  - Column 3: Ambient turbulence intensity TI₀ `[-]`
+- `floris::Floris`: FLORIS model parameters for wake calculations (see [`Floris`](@ref))
+- `d_rotor::Real`: Rotor diameter D `[m]`
+
+# Notes
+- Only `states_op[:, 4]` (downstream distance) is used from the operational points
+- The function internally converts yaw angles from degrees to radians with sign correction
+- Thrust coefficient is calculated from axial induction factor using `calcCt`
 
 See also: [`getVars!`](@ref)
 """
@@ -376,10 +398,10 @@ This function performs a comprehensive wake analysis using the Gaussian wake mod
 velocity reductions, turbulence intensity additions, and effective wind speeds at turbine locations.
 It accounts for wake interactions, rotor discretization, wind shear effects, and turbulence propagation.
 
-# Output parameters
+# Output Arguments
 - `buffers::FLORISBuffers`: Pre-allocated buffer arrays and outputs (see [`FLORISBuffers`](@ref))
 
-# Input parameters
+# Input Arguments
 - `set::Settings`: Simulation settings containing configuration options for wind shear modeling
 - `location_t`: Matrix of turbine positions [x, y, z] coordinates for each turbine [m]
 - `states_wf`: Wind field state matrix containing velocity, direction, and turbulence data
