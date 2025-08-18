@@ -604,10 +604,23 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
                 OP1_i_f, OP1_r, OP2_i_f, OP2_r = wf.intOPs[iT][iiT, :]
                 OP1_i = Int(round(OP1_i_f))
                 OP2_i = Int(round(OP2_i_f))
-                OPi_l = OP1_r * wf.States_OP[OP1_i, :] + OP2_r * wf.States_OP[OP2_i, :]
-                plot_OP_view[iiT, :] = OPi_l[1:2]
-                plot_WF_view[iiT, :] = OP1_r * wf.States_WF[OP1_i, :] + OP2_r * wf.States_WF[OP2_i, :]
-                dists_view[iiT] = norm(OPi_l[1:2] .- wf.posBase[iT,1:2])
+                @inbounds begin
+                    # Interpolate OP position (only x,y needed)
+                    x = OP1_r * wf.States_OP[OP1_i, 1] + OP2_r * wf.States_OP[OP2_i, 1]
+                    y = OP1_r * wf.States_OP[OP1_i, 2] + OP2_r * wf.States_OP[OP2_i, 2]
+                    plot_OP_view[iiT, 1] = x
+                    plot_OP_view[iiT, 2] = y
+
+                    # Interpolate wind-field states into plotting buffer (in-place)
+                    for j in 1:size(wf.States_WF, 2)
+                        plot_WF_view[iiT, j] = OP1_r * wf.States_WF[OP1_i, j] + OP2_r * wf.States_WF[OP2_i, j]
+                    end
+
+                    # Distance from OP position to turbine base (2D)
+                    dx = x - wf.posBase[iT, 1]
+                    dy = y - wf.posBase[iT, 2]
+                    dists_view[iiT] = sqrt(dx * dx + dy * dy)
+                end
             end
 
             I = sortperm(dists_view)
@@ -615,13 +628,17 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
                 Ufree = plot_WF_view[I[1], 1]
                 T_Ueff = T_red * Ufree
             else
-                a = plot_OP_view[I[1], :]'
-                b = plot_OP_view[I[2], :]'
-                c =wf.posBase[iT, 1:2]'
-                d = clamp((dot(b - a, c - a)) / dot(b - a, b - a), 0.0, 1.0)
-                r1, r2 = 1.0 - d, d
-                Ufree = r1 * plot_WF_view[I[1], 1] + r2 * plot_WF_view[I[2], 1]
-                T_Ueff = T_red * Ufree
+                @inbounds begin
+                    a_x = plot_OP_view[I[1], 1]; a_y = plot_OP_view[I[1], 2]
+                    b_x = plot_OP_view[I[2], 1]; b_y = plot_OP_view[I[2], 2]
+                    c_x = wf.posBase[iT, 1];     c_y = wf.posBase[iT, 2]
+                    ab_x = b_x - a_x; ab_y = b_y - a_y
+                    ac_x = c_x - a_x; ac_y = c_y - a_y
+                    d = clamp((ab_x * ac_x + ab_y * ac_y) / (ab_x * ab_x + ab_y * ab_y), 0.0, 1.0)
+                    r1 = 1.0 - d; r2 = d
+                    Ufree = r1 * plot_WF_view[I[1], 1] + r2 * plot_WF_view[I[2], 1]
+                    T_Ueff = T_red * Ufree
+                end
             end
         end
         if !isnothing(alloc)
