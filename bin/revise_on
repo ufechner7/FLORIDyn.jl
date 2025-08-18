@@ -3,6 +3,23 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Usage:
-# source ./bin/revise_on
+#   source ./bin/revise_on
 
+# Turn on Revise for the current shell
 export USE_REVISE=true
+
+# Persist in ~/.bashrc if it exists (append or update idempotently)
+if [[ -f "$HOME/.bashrc" ]]; then
+	if grep -qE '^[[:space:]]*export[[:space:]]+USE_REVISE=' "$HOME/.bashrc"; then
+		# Update existing definition to true
+		sed -i -E 's|^[[:space:]]*export[[:space:]]+USE_REVISE=.*|export USE_REVISE=true|' "$HOME/.bashrc"
+		echo "Updated USE_REVISE in ~/.bashrc to true"
+	else
+		{
+			echo ""
+			echo "# Added by FLORIDyn revise_on on $(date -Iseconds)"
+			echo "export USE_REVISE=true"
+		} >> "$HOME/.bashrc"
+		echo "Appended export USE_REVISE=true to ~/.bashrc"
+	fi
+fi

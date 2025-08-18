@@ -3,6 +3,23 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Usage:
-# source ./bin/revise_off
+#   source ./bin/revise_off
 
+# Turn off Revise for the current shell
 export USE_REVISE=false
+
+# Persist in ~/.bashrc if it exists (append or update idempotently)
+if [[ -f "$HOME/.bashrc" ]]; then
+	if grep -qE '^[[:space:]]*export[[:space:]]+USE_REVISE=' "$HOME/.bashrc"; then
+		# Update existing definition to false
+		sed -i -E 's|^[[:space:]]*export[[:space:]]+USE_REVISE=.*|export USE_REVISE=false|' "$HOME/.bashrc"
+		echo "Updated USE_REVISE in ~/.bashrc to false"
+	else
+		{
+			echo ""
+			echo "# Added by FLORIDyn revise_off on $(date -Iseconds)"
+			echo "export USE_REVISE=false"
+		} >> "$HOME/.bashrc"
+		echo "Appended export USE_REVISE=false to ~/.bashrc"
+	fi
+fi
