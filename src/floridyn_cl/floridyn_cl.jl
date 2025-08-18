@@ -470,11 +470,7 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
         wf.red_arr = ones(wf.nT, wf.nT)
     end
 
-    if !isnothing(alloc)
-        alloc.m += 1
-    end
-
-    a = @allocated for iT in 1:wf.nT # for1 loop
+     for iT in 1:wf.nT # for1 loop
         # Reuse iTWFState_buffer instead of allocating (avoid row slice)
         @inbounds begin
             src_row = wf.StartI[iT]
@@ -546,17 +542,13 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
             end
         end
 
-        a = @allocated tmp_D = if wf.D[end] > 0
+        tmp_D = if wf.D[end] > 0
             vcat(wf.D[wf.dep[iT]], wf.D[iT])
         else
             wf.D
         end
 
-        if !isnothing(alloc)
-            alloc.if1 += a
-        end
-
-        a = @allocated for iiT in 1:(tmp_nT - 1)
+        for iiT in 1:(tmp_nT - 1)
             OP1_i = Int(wf.intOPs[iT][iiT, 1])  # Index OP 1
             OP1_r = wf.intOPs[iT][iiT, 2]       # Ratio OP 1
             OP2_i = Int(wf.intOPs[iT][iiT, 3])  # Index OP 2
@@ -600,30 +592,21 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
             ub.tmp_Tpos_buffer[iiT, 3] -= OP6
         end
 
-        if !isnothing(alloc)
-            alloc.for3 += a
-        end
-
         # Run FLORIS using the buffer views and pre-allocated FLORIS buffers
         tmp_Tpos_view = @view ub.tmp_Tpos_buffer[1:tmp_nT, :]
         tmp_WF_view = @view ub.tmp_WF_buffer[1:tmp_nT, :]
-    tmp_Tst_view = @view ub.tmp_Tst_buffer[1:tmp_nT, :]
-    runFLORIS(ub.floris_buffers, set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, wind.shear)
-    T_red_arr, T_aTI_arr, T_weight = ub.floris_buffers.T_red_arr, ub.floris_buffers.T_aTI_arr, ub.floris_buffers.T_weight
+        tmp_Tst_view = @view ub.tmp_Tst_buffer[1:tmp_nT, :]
+        runFLORIS(ub.floris_buffers, set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, wind.shear)
+        T_red_arr, T_aTI_arr, T_weight = ub.floris_buffers.T_red_arr, ub.floris_buffers.T_aTI_arr, ub.floris_buffers.T_weight
 
-        a = @allocated begin
-            T_red = prod(T_red_arr)
-            wf.red_arr[iT, vcat(wf.dep[iT], iT)] = T_red_arr
-            T_addedTI = sqrt(sum(T_aTI_arr .^ 2))
-            wf.Weight[iT] = T_weight
-        end
-        if !isnothing(alloc)
-            alloc.begin1 += a
-        end
+        T_red = prod(T_red_arr)
+        wf.red_arr[iT, vcat(wf.dep[iT], iT)] = T_red_arr
+        T_addedTI = sqrt(sum(T_aTI_arr .^ 2))
+        wf.Weight[iT] = T_weight
 
         # Prefer T_Ueff from buffers when available; else compute fallback for special cases
         T_Ueff = nothing
-        a = @allocated if wf.D[end] <= 0
+        if wf.D[end] <= 0
             # Reuse buffers for distance and plotting calculations
             dists_view = @view ub.dists_buffer[1:(tmp_nT - 1)]
             plot_WF_view = @view ub.plot_WF_buffer[1:(tmp_nT - 1), :]
@@ -680,9 +663,6 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
                 end
             end
         end
-        if !isnothing(alloc)
-            alloc.if2 += a
-        end
         # Choose T_Ueff: prefer buffer value if present, else fallback to computed or ambient
         if !isempty(ub.floris_buffers.T_Ueff)
             T_Ueff_s = ub.floris_buffers.T_Ueff[1]
@@ -692,9 +672,9 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
             T_Ueff_s = T_Ueff
         end
 
-    ub.M_buffer[iT, 1] = T_red
-    ub.M_buffer[iT, 2] = T_addedTI
-    ub.M_buffer[iT, 3] = T_Ueff_s
+        ub.M_buffer[iT, 1] = T_red
+        ub.M_buffer[iT, 2] = T_addedTI
+        ub.M_buffer[iT, 3] = T_Ueff_s
 
         wS = sum(wf.Weight[iT])
         if wS > 0
@@ -702,9 +682,6 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
         else
             wf.Weight[iT] .= 0.0
         end
-    end
-    if !isnothing(alloc)
-        alloc.for1 += a
     end
 
     return ub.M_buffer

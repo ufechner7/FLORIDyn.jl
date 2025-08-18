@@ -79,7 +79,8 @@ suppress_error_files = [
     "test_tit.jl", 
     "test_vel.jl",
     "test_iterate.jl",
-    "test_floridyn_cl.jl"
+    "test_floridyn_cl.jl",
+    "test_prepare_simulation.jl",
 ]
 
 # Get test files to run from test_args
@@ -126,6 +127,7 @@ end
     # Run remaining tests without error suppression
     files_without_suppression = setdiff(test_files_to_run, suppress_error_files)
     for test_file in files_without_suppression
+        println("-->> Running test file: $test_file")
         include(test_file)
     end
 end
