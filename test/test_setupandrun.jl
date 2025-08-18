@@ -48,7 +48,6 @@ using .TestHelpers
         @test compare_windFarms(wf_converted, wf_name_diff, detailed=false) == false
         
         # Test detailed output (just verify it runs without error)
-        # println("\nTesting detailed comparison output:")
         # compare_windFarms(wf_converted, wf_copy, detailed=true)
     end
 
