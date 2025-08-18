@@ -35,7 +35,6 @@ wf_dict_02 = vars_after_interpolateOPs_T["T"]
         wf_ref_02 = wf_dict2windfarm(wf_dict_02) # after_interpolateOPs_T
         if !compare_windFarms(wf_ref_02, wf; detailed=false, tolerance=1e-6)
             @warn "WindFarm does not match reference after interpolateOPs"
-            # compare_windFarms(wf_ref_02, wf; detailed=true, tolerance=1e-6)
             println("Calculated: ", wf.intOPs); println()
             println("Reference: ", wf_ref_02.intOPs)
         end
