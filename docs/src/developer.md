@@ -46,7 +46,6 @@ Make sure that `ControlPlots.jl` works as explained [here](https://github.com/ae
    ```
 
 ### Running tests
-
 To run the full test suite:
 ```julia
 using Pkg
@@ -56,6 +55,20 @@ Pkg.test()
 To run specific tests:
 ```julia
 include("test/test_floris.jl")
+```
+
+You get a menu with the available test sets and benchmarks using:
+```julia
+include("test/runtest.jl")
+```
+Be aware that the tests should be run both single threaded and multithreaded. So for a full test do:
+```bash
+jl
+]test
+exit()
+jl2
+]test
+exit()
 ```
 
 ### Using Revise
@@ -70,8 +83,7 @@ to disable it
 ```bash
 source ./bin/revise_off
 ```
-.
-
+Be aware that the environment variable `USE_REVISE` has only an impact if Julia is launched using `jl` or `jl2`.
 
 ### Debugging
 Suggestion: Use [Infiltrator.jl](https://github.com/JuliaDebug/Infiltrator.jl) for debugging.
