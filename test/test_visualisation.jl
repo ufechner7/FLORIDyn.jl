@@ -12,7 +12,7 @@ if ! isinteractive()
     end
 
     if !isdefined(Main, :ControlPlots)
-        if Threads.nthreads() == 1; 
+        if Threads.nthreads() == 1
             using ControlPlots; 
         else 
             plt=nothing 
