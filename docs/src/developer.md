@@ -125,6 +125,50 @@ You can get an overview over the exported methods by running the script:
 include("scripts/stats.jl")
 ```
 
+## Checking the memory allocations
+For a good performance, in particular when using multi-threading, the amount of memory allocations should be low.
+As a general rule, if you use a benchmark script and the time that the garbage collector (GC) needs is less
+than 10%, that should be good enough.
+
+For fixing allocations it is most of the time sufficient to fix the most inner functions or loops. To find them,
+two Bash scripts are provided: `test_alloc` and `analyze_alloc` . The second script has an output like this:
+```
+ufechner@ufryzen:~/repos/FLORIDyn.jl/bin$ ./analyze_alloc 
+Found 19 .mem files
+Analyzing memory allocations...
+
+=== TOP 20 MEMORY ALLOCATIONS ===
+
+190.67 MB    ./windfield/windfield_shear.jl.61012:74 shear = z_norm .^ wind_shear.alpha
+93.94 MB     ./floridyn_cl/floridyn_cl.jl.61012:492 runFLORIS(
+5.57 MB      ./floridyn_cl/floridyn_cl.jl.61012:604 T_addedTI = sqrt(sum(T_aTI_arr .^ 2))
+4.48 MB      ./floridyn_cl/floridyn_cl.jl.61012:681 wf.Weight[iT] = wf.Weight[iT] ./ wS
+3.48 MB      ./visualisation/calc_flowfield.jl.61012:246 GP.posNac[end, :] = [0.0, 0.0, zh] # Update grid point nacelle position
+3.48 MB      ./visualisation/calc_flowfield.jl.61012:245 GP.posBase[end, :] = [xGP, yGP, 0.0] # Update grid point base position
+269.10 KB    ./floridyn_cl/iterate.jl.61012:50 return IterateOPsBuffers(
+168.77 KB    ./settings.jl.61012:654 diff = sum(
+164.61 KB    ./visualisation/plot_flowfield.jl.61012:434 rm(joinpath("video", file))
+128.70 KB    ./floris/gaussian.jl.61012:180 Ct = calcCt(states_t[:, 1], states_t[:, 2])
+127.60 KB    ./floris/gaussian.jl.61012:170 RPs = Matrix{Float64}(undef, n, 3)
+85.78 KB     ./floris/gaussian.jl.61012:181 yaw = -deg2rad.(states_t[:, 2])
+84.46 KB     ./floris/gaussian.jl.61012:264 states_op = copy(wf.States_OP)
+...
+
+=== ALLOCATION SUMMARY BY FILE ===
+
+190.67 MB    1    lines ./windfield/windfield_shear.jl.61012
+103.99 MB    15   lines ./floridyn_cl/floridyn_cl.jl.61012
+6.96 MB      3    lines ./visualisation/calc_flowfield.jl.61012
+980.55 KB    32   lines ./floris/gaussian.jl.61012
+287.91 KB    29   lines ./visualisation/plot_flowfield.jl.61012
+269.10 KB    1    lines ./floridyn_cl/iterate.jl.61012
+191.23 KB    25   lines ./floridyn_cl/prepare_simulation.jl.61012
+190.89 KB    28   lines ./settings.jl.61012
+20.30 KB     20   lines ./FLORIDyn.jl.61012
+...
+```
+So you can clearly see where the largest allocations happen and refactor those functions or lines.
+
 ## Code style and conventions
 
 ### Naming conventions
