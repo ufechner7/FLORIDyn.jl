@@ -323,20 +323,19 @@ This function performs interpolation calculations while avoiding
 memory allocations by reusing pre-allocated buffer arrays from a unified buffer struct. 
 This is critical for performance when called repeatedly in loops, such as in flow field calculations.
 
-# Arguments
-- `intOPs::Vector{Matrix{Float64}}`: Pre-allocated vector of matrices to store interpolation results
-- `wf::WindFarm`: Wind farm object containing turbine positions and operational point data
+# Buffer Arguments
 - `unified_buffers::UnifiedBuffers`: Unified buffer struct containing pre-allocated arrays including:
   - `dist_buffer`: Buffer for distance calculations (length ≥ wf.nOP)
   - `sorted_indices_buffer`: Buffer for sorting indices (length ≥ wf.nOP)
 
-# Returns
-- `intOPs::Vector{Matrix{Float64}}`: Results filled in-place
+# Output Arguments
+- `intOPs::Vector{Matrix{Float64}}`: Pre-allocated vector of matrices to store interpolation results
 
-# Performance Notes
-- All temporary arrays are reused from the unified buffer struct
-- No memory allocations occur during execution
-- Suitable for use in hot loops and parallel contexts
+# Input Arguments
+- `wf::WindFarm`: Wind farm object containing turbine positions and operational point data
+
+# Returns
+- nothing: The function modifies `intOPs` in-place, storing the interpolation results for each turbine
 
 # Example
 ```julia
@@ -420,8 +419,7 @@ function interpolateOPs!(unified_buffers::UnifiedBuffers, intOPs::Vector{Matrix{
             end
         end
     end
-
-    return intOPs
+    nothing
 end
 
 """
@@ -769,15 +767,13 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
                     intOPs_buffers[iT] = zeros(length(wf.dep[iT]), 4)
                 end
             end
-            wf.intOPs = interpolateOPs!(unified_buffers, intOPs_buffers, wf)
+            interpolateOPs!(unified_buffers, intOPs_buffers, wf)
+            wf.intOPs = intOPs_buffers
         end
         if sim_steps == 1 && ! isnothing(debug)
             debug[1] = deepcopy(wf)
         end
         tmpM = setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
-        if sim_steps == 1
-            # println("intOPs: $(wf.intOPs)")
-        end
 
         ma[(it - 1) * nT + 1 : it * nT, 2:4] .= @view tmpM[1:nT, :]
         ma[(it - 1) * nT + 1 : it * nT, 1]   .= sim_time
