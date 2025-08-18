@@ -251,7 +251,8 @@ function getMeasurements(mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Fl
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
     interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
-        tmpM = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
+        setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
+        tmpM = unified_buffers.M_buffer
         
         # Extract only the result for the grid point (last "turbine")
         @views gridPointResult = tmpM[end, :]
@@ -361,7 +362,8 @@ function getMeasurementsP(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, 
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
         interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
-        tmpM = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
+        setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
+        tmpM = unified_buffers.M_buffer
         
         # Extract only the result for the grid point (last "turbine")
         @views gridPointResult = tmpM[end, :]

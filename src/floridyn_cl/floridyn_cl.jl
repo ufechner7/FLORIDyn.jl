@@ -427,7 +427,7 @@ end
 
 """
     setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, floris::Floris, 
-                      wind::Wind) -> Matrix{Float64}
+                      wind::Wind) -> Nothing
 
 Non-allocating version that uses a unified buffer struct for wind farm calculations.
 
@@ -436,7 +436,7 @@ by reusing pre-allocated buffer arrays from a [`UnifiedBuffers`](@ref) struct. T
 important for parallel execution and performance-critical loops where garbage collection overhead 
 needs to be minimized.
 
-# Arguments
+# Buffer Arguments
 - `ub::UnifiedBuffers`: Unified buffer struct containing all pre-allocated arrays
   - `ub.M_buffer`: Pre-allocated buffer for results matrix (size: nT × 3)
   - `ub.iTWFState_buffer`: Buffer for turbine wind field state
@@ -446,14 +446,23 @@ needs to be minimized.
   - `ub.dists_buffer`: Buffer for distance calculations
   - `ub.plot_WF_buffer`: Buffer for plotting wind field data
   - `ub.plot_OP_buffer`: Buffer for plotting operating point data
+
+# Output Arguments
+- `ub.M_buffer`: Pre-allocated buffer for results matrix (size: nT × 3)
+- `wf.Weight`: Sets wake weight factors for each turbine from FLORIS calculations
+- `wf.red_arr`: Updates wake reduction factors between turbines (wake interference matrix)
+
+# Input/ Output Arguments
 - `wf::WindFarm`: Wind farm object containing turbine data
+
+# Input Arguments
 - `set::Settings`: Settings object containing simulation parameters
 - `floris::Floris`: FLORIS model parameters for wake calculations
 - `wind::Wind`: Wind field configuration
 
 # Returns
-- `M::Matrix{Float64}`: Same as the input `ub.M_buffer`, filled with results
-- `wf::WindFarm`: Modified wind farm object with updated internal state
+- nothing: The function modifies `ub.M_buffer`, `wf.Weight`, and `wf.red_arr` in-place, 
+  storing the results of the wind farm calculations
 
 # Performance Notes
 - Uses in-place operations to minimize memory allocations
@@ -776,7 +785,8 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         if sim_steps == 1 && ! isnothing(debug)
             debug[1] = deepcopy(wf)
         end
-        tmpM = setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
+        setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
+        tmpM = unified_buffers.M_buffer
 
         ma[(it - 1) * nT + 1 : it * nT, 2:4] .= @view tmpM[1:nT, :]
         ma[(it - 1) * nT + 1 : it * nT, 1]   .= sim_time

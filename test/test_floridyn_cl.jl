@@ -142,7 +142,8 @@ using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
         unified_buffers = create_unified_buffers(wf)
         interpolateOPs!(unified_buffers, wf.intOPs, wf)
         wf_old = deepcopy(wf)
-        M = setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
+        setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
+        M = unified_buffers.M_buffer
         @test ! structs_equal(wf_old, wf; prn=false)
     end
     @testset "runFLORIDyn" begin

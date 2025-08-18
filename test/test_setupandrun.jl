@@ -95,7 +95,8 @@ using .TestHelpers
         unified_buffers = create_unified_buffers(wf)
         interpolateOPs!(unified_buffers, wf.intOPs, wf)
         wf_old = deepcopy(wf)
-        M = setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
+        setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
+        M = unified_buffers.M_buffer
         @test ! structs_equal(wf_old, wf; prn=false)
     end
 
@@ -110,7 +111,8 @@ using .TestHelpers
         wf1 = wf_dict2windfarm(wf_dict)
         # Create unified buffers for the non-allocating version
         unified_buffers = create_unified_buffers(wf1)
-        tmpM = setUpTmpWFAndRun!(unified_buffers, wf1, set, floris, wind)
+        setUpTmpWFAndRun!(unified_buffers, wf1, set, floris, wind)
+        tmpM = unified_buffers.M_buffer
         tmpM_ref = [0, 9.094956525547340e-02, 0.1184213787906785, 0, 9.094956525547351e-02,
                     0.1184213787906786, 0, 9.094956525547340e-02, 1.010889141095400e-01]
         @test all(tmpM[1:length(tmpM_ref),2] .≈ tmpM_ref)

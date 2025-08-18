@@ -62,31 +62,71 @@ function IterateOPsBuffers(wf::WindFarm)
 end
 
 """
+    iterateOPs!(iterate_mode::IterateOPs_model, wf::WindFarm, sim::Sim, floris::Floris, 
+                floridyn::FloriDyn, buffers::IterateOPsBuffers) -> Nothing
+
+Advance operational points through the wind field using the specified iteration strategy.
+
+This function family implements different algorithms for moving operational points (OPs) 
+through space and time, which is essential for accurate wake propagation modeling in 
+wind farm simulations. The choice of iteration method affects computational efficiency, 
+numerical stability, and physical accuracy.
+
+# Summary
+The function modifies the following WindFarm fields:
+- `wf.States_OP`: Updates operational point positions and states through temporal advancement
+- `wf.States_T`: Updates turbine states through circular shifting and temporal evolution  
+- `wf.States_WF`: Updates wind field states through circular shifting and temporal evolution
+
+# Input/ Output Arguments
+- `wf::WindFarm`: Wind farm object containing turbine and operational point data
+
+# Input Arguments
+- `iterate_mode::IterateOPs_model`: Iteration strategy (e.g., [`IterateOPs_basic`](@ref), [`IterateOPs_average`](@ref))
+- `sim::Sim`: Simulation configuration with time-stepping parameters
+- `floris::Floris`: FLORIS model parameters for wake calculations
+- `floridyn::FloriDyn`: FLORIDyn model parameters for wake dynamics
+- `buffers::IterateOPsBuffers`: Pre-allocated buffers for allocation-free execution
+
+# Algorithm Overview
+1. **State Preservation**: Save initial turbine operational point states
+2. **Downwind Advection**: Move OPs downstream based on local wind velocity
+3. **Crosswind Deflection**: Apply wake-induced lateral deflection using centerline calculations
+4. **Coordinate Transformation**: Convert to world coordinates using wind direction
+5. **Temporal Advancement**: Perform circular shifting to advance time steps
+6. **Spatial Reordering**: Maintain downstream position ordering of operational points
+
+# Available Methods
+- `iterateOPs!(::IterateOPs_basic, ...)`: Basic time-stepping with simple advection
+
+# Notes
+- Different iteration strategies provide trade-offs between accuracy and computational cost
+"""
+function iterateOPs! end
+
+"""
     iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris, 
-                floridyn::FloriDyn, buffers::IterateOPsBuffers)
+                floridyn::FloriDyn, buffers::IterateOPsBuffers) -> Nothing
 
-Allocation-free version of iterateOPs! that uses pre-allocated buffers.
+This is the high-performance version of the operational point iteration algorithm.
 
-This is the high-performance, zero-allocation version of the operational point iteration algorithm.
-All temporary arrays are pre-allocated in the buffers parameter to eliminate runtime allocations.
+# Buffer Arguments
+- `buffers::IterateOPsBuffers`: Pre-allocated buffers for all temporary calculations. See [`IterateOPsBuffers`](@ref).
 
-# Arguments  
-- `::IterateOPs_basic`: Dispatch type indicating the basic iteration algorithm
+# Input/ Output Arguments
 - `wf::WindFarm`: Wind farm object (same as standard version)
+
+# Input Arguments  
+- `::IterateOPs_basic`: Dispatch type indicating the basic iteration algorithm
 - `sim::Sim`: Simulation configuration object (same as standard version)  
 - `floris::Floris`: FLORIS model parameters (same as standard version)
 - `floridyn::FloriDyn`: FLORIDyn model parameters (same as standard version)
-- `buffers::IterateOPsBuffers`: Pre-allocated buffers for all temporary calculations. See [`IterateOPsBuffers`](@ref).
 
 # Returns
 - nothing
-
-# Performance Notes
-- Zero allocations during execution (after initial buffer setup)
-- Suitable for performance-critical applications and benchmarking
-- Buffers can be reused across multiple calls for maximum efficiency
 """
-@views function iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris, floridyn::FloriDyn, buffers::IterateOPsBuffers)
+@views function iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris, floridyn::FloriDyn, 
+                            buffers::IterateOPsBuffers)
     # Save turbine OPs using pre-allocated buffers
     @inbounds for i in 1:size(wf.StartI, 2)
         start_idx = wf.StartI[1, i]
