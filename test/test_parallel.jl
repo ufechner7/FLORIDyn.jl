@@ -50,6 +50,7 @@ if ! isinteractive()
         end
         @testset "parallel" begin
             init_plotting()
+            sleep(1)  # Ensure all workers are ready
             @test workers()[1] >= 2
         end
     end
