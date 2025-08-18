@@ -7,7 +7,6 @@
 
 ## Introduction
 A dynamic wind farm simulation software, translated from [FLORIDyn_Matlab](https://github.com/TUDelft-DataDrivenControl/FLORIDyn_Matlab), which was written by Marcus Becker.
-
 The code uses the Gaussian wake model from the quasi static wind farm simulation software [FLORIS](https://github.com/NREL/floris), developed by NREL.
 
 ## Model features
@@ -23,7 +22,8 @@ Many examples work, some selectable via a menu:
 ```julia
 include("examples/menu.jl")
 ```
-The other examples can be executed directly using the `include` statement.
+The other examples can be executed directly using the `include` statement. Often, more than 30x the performance of
+the Matlab version can be achieved.
 
 A Python version of FLORIDyn is available at [https://github.com/TUDelft-DataDrivenControl/OFF](https://github.com/TUDelft-DataDrivenControl/OFF) .
 
