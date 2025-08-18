@@ -529,10 +529,23 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
             OP2_i = Int(wf.intOPs[iT][iiT, 3])  # Index OP 2
             OP2_r = wf.intOPs[iT][iiT, 4]       # Ratio OP 2
 
-            OPi_l = OP1_r * wf.States_OP[OP1_i, :] + OP2_r * wf.States_OP[OP2_i, :]
-            ub.tmp_Tpos_buffer[iiT, :] = OPi_l[1:3]
-            ub.tmp_Tst_buffer[iiT, :] = OP1_r *wf.States_T[OP1_i, :] + OP2_r *wf.States_T[OP2_i, :]
-            ub.tmp_WF_buffer[iiT, :]  = OP1_r *wf.States_WF[OP1_i, :] + OP2_r *wf.States_WF[OP2_i, :]
+            # Compute OP-interpolated position (cols 1:3) and store OPi_l cols 4:6 in locals
+            @inbounds begin
+                ub.tmp_Tpos_buffer[iiT, 1] = OP1_r * wf.States_OP[OP1_i, 1] + OP2_r * wf.States_OP[OP2_i, 1]
+                ub.tmp_Tpos_buffer[iiT, 2] = OP1_r * wf.States_OP[OP1_i, 2] + OP2_r * wf.States_OP[OP2_i, 2]
+                ub.tmp_Tpos_buffer[iiT, 3] = OP1_r * wf.States_OP[OP1_i, 3] + OP2_r * wf.States_OP[OP2_i, 3]
+                OP4 = OP1_r * wf.States_OP[OP1_i, 4] + OP2_r * wf.States_OP[OP2_i, 4]
+                OP5 = OP1_r * wf.States_OP[OP1_i, 5] + OP2_r * wf.States_OP[OP2_i, 5]
+                OP6 = OP1_r * wf.States_OP[OP1_i, 6] + OP2_r * wf.States_OP[OP2_i, 6]
+            end
+            # Interpolate turbine states into buffer row (in-place, column-wise)
+            @inbounds for j in 1:size(wf.States_T, 2)
+                ub.tmp_Tst_buffer[iiT, j] = OP1_r * wf.States_T[OP1_i, j] + OP2_r * wf.States_T[OP2_i, j]
+            end
+            # Interpolate wind-field states into buffer row (in-place, column-wise)
+            @inbounds for j in 1:size(wf.States_WF, 2)
+                ub.tmp_WF_buffer[iiT, j] = OP1_r * wf.States_WF[OP1_i, j] + OP2_r * wf.States_WF[OP2_i, j]
+            end
 
             si = wf.StartI[wf.dep[iT][iiT]]
 
@@ -549,9 +562,9 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
 
             tmp_phi = size(ub.tmp_WF_buffer, 2) == 4 ? angSOWFA2world(ub.tmp_WF_buffer[iiT, 4]) : angSOWFA2world(ub.tmp_WF_buffer[iiT, 2])
 
-            ub.tmp_Tpos_buffer[iiT, 1] -= cos(tmp_phi) * OPi_l[4] - sin(tmp_phi) * OPi_l[5]
-            ub.tmp_Tpos_buffer[iiT, 2] -= sin(tmp_phi) * OPi_l[4] + cos(tmp_phi) * OPi_l[5]
-            ub.tmp_Tpos_buffer[iiT, 3] -= OPi_l[6]
+            ub.tmp_Tpos_buffer[iiT, 1] -= cos(tmp_phi) * OP4 - sin(tmp_phi) * OP5
+            ub.tmp_Tpos_buffer[iiT, 2] -= sin(tmp_phi) * OP4 + cos(tmp_phi) * OP5
+            ub.tmp_Tpos_buffer[iiT, 3] -= OP6
         end
 
         if !isnothing(alloc)
