@@ -177,17 +177,17 @@ where:
     
     # Velocity
     if wind.perturbation.vel
-       wf.States_WF[:, 1] .+= wind.perturbation.vel_sigma * randn(wf.nOP *wf.nT)
+    wf.States_WF[:, 1] .+= wind.perturbation.vel_sigma * randn(wf.nOP * wf.nT)
     end
 
     # Direction
     if wind.perturbation.dir
-       wf.States_WF[:, 2] .+= wind.perturbation.dir_sigma * randn(wf.nOP *wf.nT)
+    wf.States_WF[:, 2] .+= wind.perturbation.dir_sigma * randn(wf.nOP * wf.nT)
     end
 
     # Turbulence Intensity
     if wind.perturbation.ti
-       wf.States_WF[:, 3] .+= wind.perturbation.ti_sigma * randn(wf.nOP *wf.nT)
+    wf.States_WF[:, 3] .+= wind.perturbation.ti_sigma * randn(wf.nOP * wf.nT)
     end
 
     return nothing
@@ -503,20 +503,41 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
         # Multi-turbine setup using pre-allocated buffers
         tmp_nT = length(wf.dep[iT]) + 1
 
-        # Reuse buffers instead of repeat operations
-        a = @allocated for row in 1:tmp_nT
-            ub.tmp_Tpos_buffer[row, :] = wf.posBase[iT,:]' + wf.posNac[iT,:]'
-            ub.tmp_WF_buffer[row, :] = ub.iTWFState_buffer'
-            ub.tmp_Tst_buffer[row, :] = (wf.States_T[wf.StartI[iT], :])'
-        end
-        if !isnothing(alloc)
-            alloc.for2 += a
+        # Reuse buffers instead of repeat operations (allocation-free, no transposes)
+        @inbounds begin
+            # Precompute base nacelle position (x,y,z)
+            pos_x = wf.posBase[iT, 1] + wf.posNac[iT, 1]
+            pos_y = wf.posBase[iT, 2] + wf.posNac[iT, 2]
+            pos_z = wf.posBase[iT, 3] + wf.posNac[iT, 3]
+            # Fill tmp_Tpos_buffer rows with same base position
+            for row in 1:tmp_nT
+                ub.tmp_Tpos_buffer[row, 1] = pos_x
+                ub.tmp_Tpos_buffer[row, 2] = pos_y
+                ub.tmp_Tpos_buffer[row, 3] = pos_z
+            end
+
+            # Copy wind-field state row into all rows
+            nWF = size(ub.tmp_WF_buffer, 2)
+            for row in 1:tmp_nT
+                for j in 1:nWF
+                    ub.tmp_WF_buffer[row, j] = ub.iTWFState_buffer[j]
+                end
+            end
+
+            # Copy turbine state row into all rows
+            nTst = size(ub.tmp_Tst_buffer, 2)
+            src_idx = wf.StartI[iT]
+            for row in 1:tmp_nT
+                for j in 1:nTst
+                    ub.tmp_Tst_buffer[row, j] = wf.States_T[src_idx, j]
+                end
+            end
         end
 
         a = @allocated tmp_D = if wf.D[end] > 0
             vcat(wf.D[wf.dep[iT]], wf.D[iT])
         else
-           wf.D
+            wf.D
         end
 
         if !isnothing(alloc)
@@ -574,7 +595,7 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
         # Run FLORIS using the buffer views and pre-allocated FLORIS buffers
         tmp_Tpos_view = @view ub.tmp_Tpos_buffer[1:tmp_nT, :]
         tmp_WF_view = @view ub.tmp_WF_buffer[1:tmp_nT, :]
-        tmp_Tst_view = @view ub.tmp_Tst_buffer[1:tmp_nT, :]
+    tmp_Tst_view = @view ub.tmp_Tst_buffer[1:tmp_nT, :]
     runFLORIS(ub.floris_buffers, set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, wind.shear)
     T_red_arr, T_aTI_arr, T_weight = ub.floris_buffers.T_red_arr, ub.floris_buffers.T_aTI_arr, ub.floris_buffers.T_weight
 
@@ -657,9 +678,9 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
 
         wS = sum(wf.Weight[iT])
         if wS > 0
-           wf.Weight[iT] = wf.Weight[iT] ./ wS
+            wf.Weight[iT] = wf.Weight[iT] ./ wS
         else
-           wf.Weight[iT] .= 0.0
+            wf.Weight[iT] .= 0.0
         end
     end
     if !isnothing(alloc)
@@ -747,9 +768,9 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
                           vis::Vis, floridyn::FloriDyn, floris::Floris; rmt_plot_fn=nothing, 
                           msr=VelReduction, debug=nothing)
     alloc = Allocations()
-    nT      = wf.nT
-    sim_steps    = sim.n_sim_steps
-    ma       = zeros(sim_steps * nT, 6)
+    nT = wf.nT
+    sim_steps = sim.n_sim_steps
+    ma = zeros(sim_steps * nT, 6)
     ma[:, 1] .= 1.0  # Set first column to 1
     vm_int   = Vector{Matrix{Float64}}(undef, sim_steps)
 
@@ -798,8 +819,8 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         end
         alloc.setUpTmpWFAndRun += a
 
-        ma[(it-1)*nT+1 : it*nT, 2:4] .= @view tmpM[1:nT, :]
-        ma[(it-1)*nT+1 : it*nT, 1]   .= sim_time
+    ma[(it - 1) * nT + 1 : it * nT, 2:4] .= @view tmpM[1:nT, :]
+    ma[(it - 1) * nT + 1 : it * nT, 1]   .= sim_time
         wf.States_T[wf.StartI, 3] = tmpM[1:nT, 2]
    
         vm_int[it] = wf.red_arr
@@ -818,7 +839,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         # ========== Get Control settings ==========
         a = @allocated wf.States_T[wf.StartI, 2] = (
             wf.States_WF[wf.StartI, 2] .-
-                getYaw(set.control_mode, con.yaw_data, (1:nT), sim_time)'
+            getYaw(set.control_mode, con.yaw_data, (1:nT), sim_time)'
         )
         alloc.getYaw += a
 
@@ -828,7 +849,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
 
         # ========== Live Plotting ============
         a = @allocated if vis.online
-            t_rel = sim_time-sim.start_time
+            t_rel = sim_time - sim.start_time
             if mod(t_rel, vis.up_int) == 0
                 Z, X, Y = calcFlowField(set, wf, wind, floris; plt, alloc)
                 if isnothing(rmt_plot_fn)
