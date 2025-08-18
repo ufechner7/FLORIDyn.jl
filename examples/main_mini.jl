@@ -16,6 +16,11 @@ vis_file      = "data/vis_default.yaml"
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
+if (@isdefined plt) && !isnothing(plt)
+    plt.ion()
+else
+    plt = nothing
+end
 
 # Automatic parallel/threading setup
 tic()

@@ -4,54 +4,88 @@
 """
     discretizeRotor(n_rp::Int) -> Tuple{Matrix{Float64}, Vector{Float64}}
 
-Discretizes the rotor into a `n_rp` segments. The algorithm returns the normalized center location ∈ [-0.5, 0.5] and the
-relative area the segment represents.
+Discretizes the rotor into `n_rp` segments using the isocell algorithm.
+
+Memoization: results are cached per thread. Repeated calls with the same `n_rp`
+on the same thread reuse the cached arrays (no lock needed). Do not mutate the
+returned arrays, as they are shared within the thread.
 
 # Arguments
 - `n_rp::Int`: The number of radial points to discretize the rotor into.
 
 # Returns
-- The tuple `(m_rp, w)` where:
-  - `m_rp`: A matrix of size `(nC, 3)` where `nC` is the number of segments. The first column is all zeros, 
-     the second and third columns contain the normalized radial positions.
-  - `w`: A vector of weights corresponding to each segment, summing to approximately 1.
+- `(m_rp, w)` where:
+  - `m_rp::Matrix{Float64}`: Size `(nC, 3)`; first column zeros, columns 2–3 are
+    normalized coordinates in `[-0.5, 0.5]`.
+  - `w::Vector{Float64}`: Weights per cell that sum to approximately 1.
 
 # Notes
-- The algorithm returns the normalized center location in the range `[-0.5, 0.5]` and the
-  relative area that each segment represents.
-- The isocell algorithm is used, which may not yield exactly `n_rp` cells but aims to achieve a similar number.
-- For details, see the publication by Masset et al.:
-  [Masset et al. (2009)](https://orbi.uliege.be/bitstream/2268/91953/1/masset_isocell_orbi.pdf)
-- The choice of `N1 = 3` is made here, but values of `4` or `5` are also viable options. The choice of `3` is close to optimal.
+- Per-thread cache avoids contention; different threads may compute and hold
+  their own cached copies for the same `n_rp`.
+- The isocell algorithm may not yield exactly `n_rp` cells but aims for a similar number.
+- For details, see: Masset et al. (2009)
+  https://orbi.uliege.be/bitstream/2268/91953/1/masset_isocell_orbi.pdf
+- The choice `N1 = 3` is used here; values of 4 or 5 are also viable.
 """
 function discretizeRotor(n_rp::Int)
-    # DISCRETIZEROTOR discretizes the rotor plane into n_rp segments.
-    #
+  cache = _get_discretizeRotor_thread_cache()
+  return get!(cache, n_rp) do
+    _compute_discretizeRotor(n_rp)
+  end
+end
 
-    N1 = 3
-    n = round(Int, sqrt(n_rp / N1))
-    # eRP = n_rp - N1 * n^2  # Difference from calculated to actually applied
+# Lock-free per-thread memoization caches.
+# Use a Ref holding a vector of Dicts, initialized to length 0 at load time to
+# avoid baking in the precompile-time thread count.
+const _discretizeRotor_caches_ref = Base.RefValue{Vector{Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}}}(Vector{Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}}(undef, 0))
 
-    # Radial thickness of each ring
-    dltR = 1 / n
-    nC = N1 * n^2
-
-    # m_rp matrix: nC rows, 3 columns
-    # Columns:
-    # m_rp[:, 1] corresponds to RPs(:,1) in MATLAB, but unused in original code (remains zeros)
-    m_rp = zeros(nC, 3)
-
-    for i in 1:n
-        nR = (2 * i - 1) * N1
-        i_e = sum(((2 .* (1:i) .- 1) .* N1))
-        i_s = i_e - nR + 1
-
-        phi = (1:nR) .* (2 * π) ./ nR
-        m_rp[i_s:i_e, 2] .= 0.5 .* cos.(phi) .* dltR .* (0.5 + (i - 1))
-        m_rp[i_s:i_e, 3] .= 0.5 .* sin.(phi) .* dltR .* (0.5 + (i - 1))
+@inline function _get_discretizeRotor_thread_cache()
+  caches = _discretizeRotor_caches_ref[]
+  tid = Base.Threads.threadid()
+  if length(caches) < tid
+    # Grow to current nthreads(); preserve existing dicts
+    newlen = Base.Threads.nthreads()+1
+    newc = Vector{Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}}(undef, newlen)
+    @inbounds for i in 1:newlen
+      newc[i] = i <= length(caches) ? caches[i] : Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}()
     end
+    _discretizeRotor_caches_ref[] = (caches = newc)
+  end
+  return caches[tid]
+end
 
-    w = fill(1 / nC, nC)
+@inline function _compute_discretizeRotor(n_rp::Int)
+  # DISCRETIZEROTOR discretizes the rotor plane into n_rp segments.
 
-    return m_rp, w
+  N1 = 3
+  n = round(Int, sqrt(n_rp / N1))
+
+  # Radial thickness of each ring
+  dltR = 1 / n
+  nC = N1 * n^2
+
+  # m_rp matrix: nC rows, 3 columns (initialize to zeros)
+  m_rp = Array{Float64}(undef, nC, 3)
+  fill!(m_rp, 0.0)
+
+  @inbounds for i in 1:n
+    nR = (2 * i - 1) * N1
+    # Sum of first i odd numbers = i^2, scaled by N1
+    i_e = N1 * i^2
+    i_s = i_e - nR + 1
+
+    radius = 0.5 * dltR * (0.5 + (i - 1))
+    step = 2π / nR
+    for k in 0:(nR - 1)
+      idx = i_s + k
+      ang = (k + 1) * step
+      m_rp[idx, 2] = radius * cos(ang)
+      m_rp[idx, 3] = radius * sin(ang)
+    end
+  end
+
+  w = Vector{Float64}(undef, nC)
+  fill!(w, 1 / nC)
+
+  return m_rp, w
 end

@@ -5,12 +5,32 @@
 $(DocStringExtensions.README)
 """
 module FLORIDyn
-module Revert
-         macro allocated(ex)
-           # esc(:((@timed $ex).bytes))
-           esc(:($ex; 0))
-         end
-       end
+using Logging
+
+function is_debug_logging_enabled()
+    # Check both the logger level AND environment variable
+    logger_debug = Logging.min_enabled_level(current_logger()) <= Logging.Debug
+    env_debug = haskey(ENV, "JULIA_DEBUG") && 
+                (ENV["JULIA_DEBUG"] == "all" || 
+                 contains(ENV["JULIA_DEBUG"], "FLORIDyn") ||
+                 contains(ENV["JULIA_DEBUG"], "Main"))
+    return logger_debug || env_debug
+end
+
+if is_debug_logging_enabled()
+    @eval module Revert
+            macro allocated(ex)
+            esc(:((@timed $ex).bytes))
+            end
+        end
+else
+    @eval module Revert
+            macro allocated(ex)
+            esc(:($ex; 0))
+            end
+        end
+end
+
 
 using PrecompileTools: @setup_workload, @compile_workload
 using LaTeXStrings
@@ -53,15 +73,18 @@ export correctDir!
 export getYaw
 
 export discretizeRotor, calcCt, States
-export prepareSimulation, importSOWFAFile, centerline, angSOWFA2world, initSimulation
+export prepareSimulation, importSOWFAFile, centerline!, angSOWFA2world, initSimulation
 export runFLORIS, init_states, getUadv
-export runFLORIDyn, iterateOPs!, getVars, setUpTmpWFAndRun, setUpTmpWFAndRun!, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
+export runFLORIDyn, iterateOPs!, setUpTmpWFAndRun!, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
+export getVars!
 export getMeasurements, getMeasurementsP, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
 export run_floridyn, plot_flow_field, plot_measurements, close_all, turbines
+export Allocations
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
 export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_results, find_floridyn_runs, compare_dataframes
 export isdelftblue, Measurement, parse_measurements
 export FlowField, parse_flow_fields
+export UnifiedBuffers, create_unified_buffers
 
 """
     MSR `VelReduction` `AddedTurbulence` `EffWind`
@@ -270,62 +293,87 @@ struct WindDirTriple
 end
 
 """
-    WindFarm
+    create_unified_buffers(wf::WindFarm, rotor_points=50) -> UnifiedBuffers
 
-A mutable struct representing a wind farm. Fields can be specified using keyword arguments.
+Create a unified buffer struct containing all arrays needed by interpolateOPs! and setUpTmpWFAndRun!.
 
-This struct supports convenient DataFrame access through property syntax:
-- `wf.turbines`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with turbine state data (columns: turbine state names)
-- `wf.windfield`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with wind field data (columns: wind field variables)  
-- `wf.ops`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with operating point data (columns: operating point variables)
+# Arguments
+- `wf::WindFarm`: Wind farm object to determine buffer sizes
+- `rotor_points`: Number of rotor discretization points for FLORIS buffers (defaults to 50)
 
-# Fields
-- `nT::Int64`: Number of turbines
-- `nOP::Int64`: Number of operating points
-- `States_WF::Matrix{Float64}`: States of the wind farm (states × wind field variables)
-- `States_OP::Matrix{Float64}`: States of the operating points (states × operating point variables)
-- `States_T::Matrix{Float64}`: States of the turbines (states × turbines variables)
-- `posBase::Matrix{Float64}`: Base positions of the turbines (2 × nT matrix: [x-coords; y-coords])
-- `posNac::Matrix{Float64}`: Positions of the nacelles
-- `D::Vector{Float64}`: Diameters of the turbines
-- `StartI::Matrix{Int}`: Start indices for each turbine
-- `intOPs::Vector{Matrix{Float64}}`: Interpolated operating points
-- `Weight::Vector{Vector{Float64}}`: Weights for the operating points
-- `dep::Vector{Vector{Int}}`: Dependencies between turbines
-- `red_arr::Matrix{Float64}`: Reduced array for each turbine
-- `Names_T::Vector{String}`: Names of the turbine state variables
-- `Names_WF::Vector{String}`: Names of the wind field variables
-- `Names_OP::Vector{String}`: Names of the operating point variables
+# Returns
+- `UnifiedBuffers`: Struct containing all pre-allocated buffers including FLORIS computation buffers
 
-# Examples
-```julia
-# Create a wind farm
-wf = WindFarm(nT=3, nOP=100, ...)
-
-# Access data as DataFrames
-turbine_data = wf.turbines      # DataFrame with turbine states
-windfield_data = wf.windfield   # DataFrame with wind field states
-ops_data = wf.ops               # DataFrame with operating point states
-```
+# Note
+For optimal performance, use the version that accepts a Floris object to automatically 
+determine the correct rotor discretization size.
 """
-@kwdef mutable struct WindFarm
-    nT::Int64 = 0                                               # Number of turbines
-    nOP::Int64 = 0                                              # Number of operating points
-    States_WF::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)   # States of the wind farm
-    States_OP::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)   # States of the operating points
-    States_T::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)    # States of the turbines
-    posBase::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)     # Base positions of the turbines
-    posNac::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)      # Positions of the nacelles
-    D::Vector{Float64} = Vector{Float64}(undef, 0)              # Diameters of the turbines
-    StartI::Matrix{Int} = Matrix{Int}(undef, 0, 0)              # Start indices for each turbine
-    intOPs::Vector{Matrix{Float64}} = Vector{Matrix{Float64}}() # Interpolated operating points
-    Weight::Vector{Vector{Float64}} = Vector{Vector{Float64}}() # Weights
-    dep::Vector{Vector{Int}} = Vector{Vector{Int}}()            # Dependencies between turbines
-    red_arr::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)     # Reduced array for each turbine
-    Names_T::Vector{String} = Vector{String}(undef, 0)          # Names of the states of the turbines
-    Names_WF::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the wind farm
-    Names_OP::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the operating points
+function create_unified_buffers(wf::WindFarm, rotor_points=50)
+    # For interpolateOPs!
+    dist_buffer = zeros(wf.nOP)
+    sorted_indices_buffer = zeros(Int, wf.nOP)
+    
+    # For setUpTmpWFAndRun!
+    nT_with_grid = wf.nT + 1  # Original turbines + 1 grid point
+    max_deps = wf.nT + 1  # Grid point depends on all original turbines
+    
+    M_buffer = zeros(nT_with_grid, 3)
+    iTWFState_buffer = zeros(size(wf.States_WF, 2))
+    tmp_Tpos_buffer = zeros(max_deps, 3)
+    tmp_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
+    tmp_Tst_buffer = zeros(max_deps, size(wf.States_T, 2))
+    dists_buffer = zeros(max_deps)
+    plot_WF_buffer = zeros(max_deps, size(wf.States_WF, 2))
+    plot_OP_buffer = zeros(max_deps, 2)
+    
+    # Create FLORIS buffers with specified number of rotor points
+    n_floris_points = max(rotor_points, 1)
+    
+    # Try to create FLORISBuffers if available, otherwise use nothing
+    floris_buffers = try
+    FLORISBuffers(n_floris_points)
+    catch
+        nothing
+    end
+    
+    # Prepare a WindFarm buffer for grid-point computations (GP)
+    GP = deepcopy(wf)
+    original_nT = wf.nT
+    GP.nT = original_nT + 1
+    GP.dep = Vector{Vector{Int64}}(undef, GP.nT)
+    for i in 1:original_nT
+        GP.dep[i] = Int64[]
+    end
+    GP.dep[end] = collect(1:original_nT)
+    if !isempty(wf.StartI)
+        GP.StartI = hcat(wf.StartI, [wf.StartI[end] + 1])
+    else
+        GP.StartI = reshape([1], 1, 1)
+    end
+    GP.posBase = vcat(wf.posBase, zeros(1, 3))
+    GP.posNac = vcat(wf.posNac, zeros(1, 3))
+    GP.States_T = vcat(wf.States_T, zeros(1, size(wf.States_T, 2)))
+    GP.D = vcat(wf.D, [0.0])
+    GP.intOPs = [zeros(length(GP.dep[iT]), 4) for iT in 1:GP.nT]
+
+    return UnifiedBuffers(
+        dist_buffer,
+        sorted_indices_buffer,
+        M_buffer,
+        iTWFState_buffer,
+        tmp_Tpos_buffer,
+        tmp_WF_buffer,
+        tmp_Tst_buffer,
+        dists_buffer,
+        plot_WF_buffer,
+        plot_OP_buffer,
+        floris_buffers,
+        GP
+    )
 end
+
+# Method dispatch for Floris objects - defined later after Floris is loaded
+# This will be defined in floridyn_cl.jl after all includes are processed
 
 include("visualisation/structs_measurements.jl")
 include("settings.jl")

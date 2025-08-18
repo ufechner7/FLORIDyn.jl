@@ -247,3 +247,141 @@ for applications where accuracy is prioritized over computational speed.
 """
 struct IterateOPs_weighted <: IterateOPs_model end
 
+"""
+    FLORISBuffers
+
+Pre-allocated buffers for the runFLORIS computation to minimize allocations.
+
+This struct also persists result arrays so callers can read outputs without
+allocations. After calling `runFLORIS`, the following fields contain results:
+
+- `T_red_arr::Vector{Float64}`: Per-turbine velocity reduction factors. For a
+    single-turbine run, length is 1 and `T_red_arr[1]` is the scalar reduction.
+- `T_aTI_arr::Vector{Float64}`: Added turbulence intensity from upstream wakes.
+    For N turbines, length is `max(N-1, 0)`. Empty for single-turbine runs.
+- `T_Ueff::Vector{Float64}`: Effective wind speed at the last turbine as a
+    length-1 vector (multi-turbine case). Empty for single-turbine runs.
+- `T_weight::Vector{Float64}`: Gaussian weight factors used for wake overlap.
+    For N turbines, length is `max(N-1, 0)`. Empty for single-turbine runs.
+"""
+mutable struct FLORISBuffers
+    tmp_RPs::Matrix{Float64}
+    rotor_pts::Matrix{Float64}
+    # Preallocated arrays for getVars! outputs
+    sig_y::Vector{Float64}
+    sig_z::Vector{Float64}
+    x_0::Vector{Float64}
+    delta::Matrix{Float64}   # n×2
+    pc_y::Vector{Float64}
+    pc_z::Vector{Float64}
+    cw_y::Vector{Float64}
+    cw_z::Vector{Float64}
+    phi_cw::Vector{Float64}
+    r_cw::Vector{Float64}
+    core::Vector{Bool}
+    nw::Vector{Bool}
+    fw::Vector{Bool}
+    tmp_RPs_r::Vector{Float64}
+    gaussAbs::Vector{Float64}
+    gaussWght::Vector{Float64}
+    exp_y::Vector{Float64}
+    exp_z::Vector{Float64}
+    not_core::Vector{Bool}
+    # Result arrays (persisted in buffers to avoid fresh allocations)
+    T_red_arr::Vector{Float64}
+    T_aTI_arr::Vector{Float64}
+    T_Ueff::Vector{Float64}    # length 1 when set
+    T_weight::Vector{Float64}
+end
+
+"""
+    WindFarm
+
+A mutable struct representing a wind farm. Fields can be specified using keyword arguments.
+
+This struct supports convenient DataFrame access through property syntax:
+- `wf.turbines`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with turbine state data (columns: turbine state names)
+- `wf.windfield`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with wind field data (columns: wind field variables)  
+- `wf.ops`: Returns a [DataFrame](https://dataframes.juliadata.org/stable/lib/types/#DataFrames.DataFrame) with operating point data (columns: operating point variables)
+
+# Fields
+- `nT::Int64`: Number of turbines
+- `nOP::Int64`: Number of operating points
+- `States_WF::Matrix{Float64}`: States of the wind farm (states × wind field variables)
+- `States_OP::Matrix{Float64}`: States of the operating points (states × operating point variables)
+- `States_T::Matrix{Float64}`: States of the turbines (states × turbines variables)
+- `posBase::Matrix{Float64}`: Base positions of the turbines (2 × nT matrix: [x-coords; y-coords])
+- `posNac::Matrix{Float64}`: Positions of the nacelles
+- `D::Vector{Float64}`: Diameters of the turbines
+- `StartI::Matrix{Int}`: Start indices for each turbine
+- `intOPs::Vector{Matrix{Float64}}`: Interpolated operating points
+- `Weight::Vector{Vector{Float64}}`: Weights for the operating points
+- `dep::Vector{Vector{Int}}`: Dependencies between turbines
+- `red_arr::Matrix{Float64}`: Reduced array for each turbine
+- `Names_T::Vector{String}`: Names of the turbine state variables
+- `Names_WF::Vector{String}`: Names of the wind field variables
+- `Names_OP::Vector{String}`: Names of the operating point variables
+
+# Examples
+```julia
+# Create a wind farm
+wf = WindFarm(nT=3, nOP=100, ...)
+
+# Access data as DataFrames
+turbine_data = wf.turbines      # DataFrame with turbine states
+windfield_data = wf.windfield   # DataFrame with wind field states
+ops_data = wf.ops               # DataFrame with operating point states
+```
+"""
+@kwdef mutable struct WindFarm
+    nT::Int64 = 0                                               # Number of turbines
+    nOP::Int64 = 0                                              # Number of operating points
+    States_WF::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)   # States of the wind farm
+    States_OP::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)   # States of the operating points
+    States_T::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)    # States of the turbines
+    posBase::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)     # Base positions of the turbines
+    posNac::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)      # Positions of the nacelles
+    D::Vector{Float64} = Vector{Float64}(undef, 0)              # Diameters of the turbines
+    StartI::Matrix{Int} = Matrix{Int}(undef, 0, 0)              # Start indices for each turbine
+    intOPs::Vector{Matrix{Float64}} = Vector{Matrix{Float64}}() # Interpolated operating points
+    Weight::Vector{Vector{Float64}} = Vector{Vector{Float64}}() # Weights
+    dep::Vector{Vector{Int}} = Vector{Vector{Int}}()            # Dependencies between turbines
+    red_arr::Matrix{Float64} = Matrix{Float64}(undef, 0, 0)     # Reduced array for each turbine
+    Names_T::Vector{String} = Vector{String}(undef, 0)          # Names of the states of the turbines
+    Names_WF::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the wind farm
+    Names_OP::Vector{String} = Vector{String}(undef, 0)         # Names of the states of the operating points
+end
+
+"""
+    UnifiedBuffers
+
+Unified buffer struct containing all arrays needed by interpolateOPs! and setUpTmpWFAndRun!.
+
+# Fields
+- `dist_buffer::Vector{Float64}`: Distance calculations for interpolateOPs!
+- `sorted_indices_buffer::Vector{Int}`: Sorted indices for interpolateOPs!
+- `M_buffer::Matrix{Float64}`: Main result buffer for setUpTmpWFAndRun!
+- `iTWFState_buffer::Vector{Float64}`: Turbine wind field state buffer
+- `tmp_Tpos_buffer::Matrix{Float64}`: Temporary turbine position buffer
+- `tmp_WF_buffer::Matrix{Float64}`: Temporary wind field buffer
+- `tmp_Tst_buffer::Matrix{Float64}`: Temporary turbine state buffer
+- `dists_buffer::Vector{Float64}`: Distance buffer for setUpTmpWFAndRun!
+- `plot_WF_buffer::Matrix{Float64}`: Wind field plotting buffer
+- `plot_OP_buffer::Matrix{Float64}`: Observation point plotting buffer
+- `floris_buffers`: Pre-allocated FLORIS computation buffers for wind wake calculations
+"""
+struct UnifiedBuffers
+    dist_buffer::Vector{Float64}
+    sorted_indices_buffer::Vector{Int}
+    M_buffer::Matrix{Float64}
+    iTWFState_buffer::Vector{Float64}
+    tmp_Tpos_buffer::Matrix{Float64}
+    tmp_WF_buffer::Matrix{Float64}
+    tmp_Tst_buffer::Matrix{Float64}
+    dists_buffer::Vector{Float64}
+    plot_WF_buffer::Matrix{Float64}
+    plot_OP_buffer::Matrix{Float64}
+    floris_buffers::FLORISBuffers  # Will be FLORISBuffers when FLORIS is available
+    gp::WindFarm                   # Optional WindFarm buffer for grid-point computations
+end
+

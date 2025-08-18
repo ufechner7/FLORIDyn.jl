@@ -24,8 +24,10 @@ vis_file      = "data/vis_default.yaml"
 
 vis = Vis(vis_file)
 vis.show_plots = true  # Enable/disable showing plots during simulation
-if @isdefined plt
+if (@isdefined plt) && !isnothing(plt)
     plt.ion()
+else
+    plt = nothing
 end
 
 # Automatic parallel/threading setup

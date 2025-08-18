@@ -62,37 +62,26 @@ wf.intOPs = [
     zeros(0, 4)
 ]
 
-# Prepare buffers for setUpTmpWFAndRun!
-nT = wf.nT
-nOP = wf.nOP
-nWF = size(wf.States_WF, 2)
-nTst = size(wf.States_T, 2)
+# Test both versions: with and without explicit floris parameter
 
-M_buffer = zeros(nT, 3)
-iTWFState_buffer = zeros(nWF)
-tmp_Tpos_buffer = zeros(nT, 3)
-tmp_WF_buffer = zeros(nT, nWF)
-tmp_Tst_buffer = zeros(nT, nTst)
-dists_buffer = zeros(nT)
-plot_WF_buffer = zeros(nT, nWF)
-plot_OP_buffer = zeros(nT, 2)
+# Version 1: Explicit floris parameter (optimal)
+ub1 = create_unified_buffers(wf, floris)
+println("Created buffers with explicit floris parameter")
 
-alloc=Allocs()
+# Version 2: Default parameters (should work with improved default)
+ub2 = create_unified_buffers(wf)
+println("Created buffers with default parameters (50 rotor points)")
 
 iT = 1
 @assert !isempty(wf.intOPs[iT]) "wf.intOPs[$iT] is empty"
 
-# Run once to warm up
-setUpTmpWFAndRun!(M_buffer, wf, set, floris, wind,
-    iTWFState_buffer, tmp_Tpos_buffer, tmp_WF_buffer, tmp_Tst_buffer,
-    dists_buffer, plot_WF_buffer, plot_OP_buffer)
+# Run once to warm up (test both buffer versions)
+setUpTmpWFAndRun!(ub1, wf, set, floris, wind)
+setUpTmpWFAndRun!(ub2, wf, set, floris, wind)
 
-# Benchmark
-bench = @benchmark setUpTmpWFAndRun!(M_buffer, wf, set, floris, wind,
-    iTWFState_buffer, tmp_Tpos_buffer, tmp_WF_buffer, tmp_Tst_buffer,
-    dists_buffer, plot_WF_buffer, plot_OP_buffer; alloc)
+# Benchmark using optimal buffers (with explicit floris)
+bench = @benchmark setUpTmpWFAndRun!(ub1, wf, set, floris, wind)
 
 mean_time = mean(bench.times) / 1e6  # ms
 allocs = mean(bench.memory) / 1024   # KiB
 println("Benchmark setUpTmpWFAndRun!: $(round(mean_time, digits=3)) ms, $(round(allocs, digits=2)) KiB allocated")
-println(alloc)

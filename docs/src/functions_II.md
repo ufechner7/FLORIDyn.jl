@@ -7,13 +7,16 @@ CurrentModule = FLORIDyn
 # FLORIS
 ```@docs
 calcCt
-centerline
+centerline!
 discretizeRotor
 init_states
-getVars
+getVars!
 getPower
 runFLORIS
 ```
+
+Note: `runFLORIS` is allocation-free and returns nothing. Read results from the
+`FLORISBuffers` you passed in (fields `T_red_arr`, `T_aTI_arr`, `T_Ueff`, `T_weight`).
 
 # FLORIDyn
 ```@docs
@@ -21,7 +24,7 @@ initSimulation
 findTurbineGroups
 prepareSimulation
 perturbationOfTheWF!
-setUpTmpWFAndRun
+setUpTmpWFAndRun!
 interpolateOPs!
 iterateOPs!
 angSOWFA2world
