@@ -130,8 +130,10 @@ uncertainty or natural variability in wind conditions. The perturbations are app
 conditionally based on the wind perturbation configuration and are added directly 
 to the wind farm state matrix.
 
-# Arguments
+# Input/ Output Arguments
 - `wf::WindFarm`: Wind farm struct containing the state matrix `States_WF` to be perturbed
+
+# Input Arguments
 - `wind::Wind`: Wind configuration struct containing perturbation settings. See [`Wind`](@ref)
 
 # Returns
@@ -315,7 +317,8 @@ where:
 end
 
 """
-    interpolateOPs!(unified_buffers::UnifiedBuffers, intOPs::Vector{Matrix{Float64}}, wf::WindFarm)
+    interpolateOPs!(unified_buffers::UnifiedBuffers, intOPs::Vector{Matrix{Float64}}, 
+                    wf::WindFarm) -> Nothing
 
 Compute interpolation weights and indices for operational points affecting each turbine using a unified buffer.
 
@@ -423,8 +426,8 @@ function interpolateOPs!(unified_buffers::UnifiedBuffers, intOPs::Vector{Matrix{
 end
 
 """
-    setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, floris::Floris, wind::Wind) 
-                      -> Matrix{Float64}
+    setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, floris::Floris, 
+                      wind::Wind) -> Matrix{Float64}
 
 Non-allocating version that uses a unified buffer struct for wind farm calculations.
 
