@@ -52,7 +52,6 @@ turbines_wf = wf.turbines
 @testset verbose=true "Flow Field Comparison" begin
 
     df1, df2 = compare_dataframes(turbines_wf, turbines_ref)
-    # println("Number of differing rows found: ", size(df1, 1), " out of ", size(turbines_wf, 1))
     @test size(df1, 1) == 0
 
     Z, X, Y    = calcFlowField(set, wf, wind, floris)
