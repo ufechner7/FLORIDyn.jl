@@ -22,7 +22,7 @@ using Test
             dep = [Int[], Int[]]     # No dependencies initially
         )
         
-        # Test create_unified_buffers with default rotor points parameter
+        # Test create_unified_buffers with default rotor points parameter (50)
         buffers = create_unified_buffers(wf)
         @test typeof(buffers) == UnifiedBuffers
         @test !isnothing(buffers.floris_buffers)
