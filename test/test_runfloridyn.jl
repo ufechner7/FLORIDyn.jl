@@ -51,7 +51,8 @@ wf_dict_03 = vars_before_interpolateOPs_T["T"]
     @test compare_windFarms(wf, wf_ref_01; detailed=false, tolerance=1e-6)
     @test size(md) == (9, 6) # from Matlab
     # @test minimum(md.ForeignReduction) ≈ 72.56141032518147 # Matlab: 73.8438
-    # @test mean(md.ForeignReduction)    ≈ 98.54433712619702 # Matlab: 98.
+    # Reference: minimum(md.ForeignReduction) ≈ 72.56141032518147 (Matlab: 73.8438)
+    # Reference: mean(md.ForeignReduction)    ≈ 98.54433712619702 (Matlab: 98.)
     
 end
 
