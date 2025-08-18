@@ -44,7 +44,7 @@ const _discretizeRotor_caches_ref = Base.RefValue{Vector{Dict{Int, Tuple{Matrix{
   tid = Base.Threads.threadid()
   if length(caches) < tid
     # Grow to current nthreads(); preserve existing dicts
-    newlen = Base.Threads.nthreads()
+    newlen = Base.Threads.nthreads()+1
     newc = Vector{Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}}(undef, newlen)
     @inbounds for i in 1:newlen
       newc[i] = i <= length(caches) ? caches[i] : Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}()
