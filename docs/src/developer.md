@@ -58,6 +58,21 @@ To run specific tests:
 include("test/test_floris.jl")
 ```
 
+### Using Revise
+Using [Revise](https://github.com/timholy/Revise.jl) allows you to edit and run code that is part of `FLORIDyn.jl` without restarting Julia.
+Limitation before Julia 1.12: If you modify structs, you still have to restart Julia for the changes to become into effect.
+
+To enable `Revise` type
+```bash
+source ./bin/revise_on
+```
+to disable it
+```bash
+source ./bin/revise_off
+```
+.
+
+
 ### Debugging
 Suggestion: Use [Infiltrator.jl](https://github.com/JuliaDebug/Infiltrator.jl) for debugging.
 
