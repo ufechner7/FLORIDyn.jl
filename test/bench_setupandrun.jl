@@ -9,31 +9,6 @@ settings_file = "data/2021_9T_Data.yaml"
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 set = Settings(wind, sim, con)
 
-@with_kw mutable struct Allocs
-    n::Int64 = 0      # number of floris calls
-    m::Int64 = 0      # number of setupandrun calls
-    for1::Int64 = 0   # allocated memory outer for loop
-    for2::Int64 = 0   # allocated memory first inner for loop
-    for3::Int64 = 0   # allocated memory first inner for loop
-    if1::Int64 = 0    # allocated memory first if clause
-    if2::Int64 = 0    # allocated memory first if clause
-    if3::Int64 = 0    # allocated memory first if clause
-    begin1::Int64 = 0
-    floris::Int64 = 0
-end
-
-function Base.show(io::IO, allocs::Allocs)
-    println(io, "Allocations:")
-    for field_name in fieldnames(typeof(allocs))
-        value = getfield(allocs, field_name)
-        m = getfield(allocs, :m)
-        if value > 5e2 && ! (field_name in [:n, :m])
-            gb_value = value / 1024/ m
-            println(io, "  $field_name: $(round(gb_value, digits=3)) KiB")
-        end
-    end
-end
-
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 wf = initSimulation(wf, sim)
 

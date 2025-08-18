@@ -400,15 +400,6 @@ for thread safety.
 - `plt=nothing`: Plot object for garbage collection control. If provided and `set.parallel` is true,
   automatically calls `plt.GC.enable(false)` before multithreading and `plt.GC.enable(true)` 
   after completion to prevent PyCall-related segmentation faults during parallel execution.
-  When provided, this should be an instance of the `Allocations` struct which tracks memory allocations 
-  across different parts of the flow field calculation process. The relevant fields include:
-  - `cff_X`: Allocations for X-coordinate grid creation
-  - `cff_Y`: Allocations for Y-coordinate grid creation  
-  - `getMeasurementsP`: Allocations from the measurements calculation
-  - `gmp_mx`: Allocations for measurement matrix creation
-  - `gmp_buffers`: Allocations for thread-local buffers
-  - `gmp_alloc2`: Allocations from setUpTmpWFAndRun! in threaded loops
-  This is useful for performance optimization and identifying memory allocation hotspots.
 
 # Returns
 - `Z::Array{Float64,3}`: 3D array of flow field measurements with dimensions `(ny, nx, 3)`

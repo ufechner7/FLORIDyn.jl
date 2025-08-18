@@ -687,37 +687,6 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
     return ub.M_buffer
 end
 
-@with_kw_noshow mutable struct Allocations
-    iterateOPs::Int64=0
-    perturbationOfTheWF::Int64=0
-    findTurbineGroups::Int64=0
-    interpolateOPs::Int64=0
-    setUpTmpWFAndRun::Int64=0
-    correctVel::Int64=0
-    correctDir::Int64=0
-    correctTI::Int64=0
-    getYaw::Int64=0
-    getPower::Int64=0
-    calcFlowField::Int64=0
-    cff_X::Int64=0
-    cff_Y::Int64=0
-    getMeasurementsP::Int64=0
-    gmp_mx::Int64=0
-    gmp_buffers::Int64=0
-    gmp_alloc2::Int64=0 # allocations of setUpTmpWFAndRun! inside of the threaded loop
-end
-
-function Base.show(io::IO, allocs::Allocations)
-    println(io, "Allocations:")
-    for field_name in fieldnames(typeof(allocs))
-        value = getfield(allocs, field_name)
-        if value > 5e7
-            gb_value = value / 1e9
-            println(io, "  $field_name: $(round(gb_value, digits=3)) GB")
-        end
-    end
-end
-
 """
     runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, vis::Vis,
                 floridyn::FloriDyn, floris::Floris; rmt_plot_fn=nothing, msr=VelReduction) -> (WindFarm, DataFrame, Matrix)

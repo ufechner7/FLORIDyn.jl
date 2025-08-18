@@ -3,32 +3,6 @@
 
 using FLORIDyn, Test, BenchmarkTools, Parameters
 
-@with_kw mutable struct AllocsF
-    n::Int64 = 0      # number of floris calls
-    pre::Int64 = 0    # allocated memory of pre-allocation
-    expr1::Int64 = 0  # allocated memory of first expression
-    expr2::Int64 = 0  # allocated memory of first expression
-    expr3::Int64 = 0  # allocated memory of first expression
-    for1::Int64 = 0   # allocated memory outer for loop
-    for2::Int64 = 0   # allocated memory first inner for loop
-    for3::Int64 = 0   # allocated memory first inner for loop
-    if1::Int64 = 0    # allocated memory first if clause
-    if2::Int64 = 0    # allocated memory first if clause
-    if3::Int64 = 0    # allocated memory first if clause
-end
-
-function Base.show(io::IO, allocs::AllocsF)
-    println(io, "Allocations:")
-    for field_name in fieldnames(typeof(allocs))
-        value = getfield(allocs, field_name)
-        n = getfield(allocs, :n)
-        if value > 5 && ! (field_name in [:n, :m])
-            kb_value = value / 1024/ n
-            println(io, "  $field_name: $(round(kb_value, digits=3)) KiB")
-        end
-    end
-end
-
 set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), 
                 Direction_All(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(),
                 false, false)
