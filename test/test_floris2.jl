@@ -30,7 +30,7 @@ windshear = WindShear(0.08, 1.0)
 
 # single turbine case: default alloc, returns nothing for TI, Ueff, weight
 T_red_arr, T_aTI_arr, T_Ueff, T_weight = runFLORIS(set, LocationT, States_WF, 
-                                                    States_T, D, paramFLORIS, windshear)
+                                                   States_T, D, paramFLORIS, windshear)
 @test T_red_arr ≈ 0.9941836044148462
 @test isnothing(T_aTI_arr)
 @test isnothing(T_Ueff)

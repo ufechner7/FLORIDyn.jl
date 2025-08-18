@@ -72,19 +72,16 @@ println("Created buffers with explicit floris parameter")
 ub2 = create_unified_buffers(wf)
 println("Created buffers with default parameters (50 rotor points)")
 
-alloc=Allocs()
-
 iT = 1
 @assert !isempty(wf.intOPs[iT]) "wf.intOPs[$iT] is empty"
 
 # Run once to warm up (test both buffer versions)
-setUpTmpWFAndRun!(ub1, wf, set, floris, wind; alloc)
-setUpTmpWFAndRun!(ub2, wf, set, floris, wind; alloc)
+setUpTmpWFAndRun!(ub1, wf, set, floris, wind)
+setUpTmpWFAndRun!(ub2, wf, set, floris, wind)
 
 # Benchmark using optimal buffers (with explicit floris)
-bench = @benchmark setUpTmpWFAndRun!(ub1, wf, set, floris, wind; alloc)
+bench = @benchmark setUpTmpWFAndRun!(ub1, wf, set, floris, wind)
 
 mean_time = mean(bench.times) / 1e6  # ms
 allocs = mean(bench.memory) / 1024   # KiB
 println("Benchmark setUpTmpWFAndRun!: $(round(mean_time, digits=3)) ms, $(round(allocs, digits=2)) KiB allocated")
-println(alloc)

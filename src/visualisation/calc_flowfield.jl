@@ -332,13 +332,8 @@ wind_speed_field = mz[:, :, 3]
 """
 function getMeasurementsP(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind; alloc=nothing)
     size_mx = size(mx)
-    a = @allocated mz = zeros(size_mx[1], size_mx[2], nM)
-    if ! isnothing(alloc)
-        alloc.gmp_mx += a
-    end
-   
-    gmp_alloc2 = Threads.Atomic{Int64}(0)
-    
+    mz = zeros(size_mx[1], size_mx[2], nM)
+       
     # Parallel loop using @threads
     @threads :static for iGP in 1:length(mx)
         # Get thread-local buffers
@@ -366,9 +361,7 @@ function getMeasurementsP(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, 
         # Recalculate interpolated OPs for the updated geometry (non-allocating)
         interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
-        a = @allocated tmpM = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
-
-        Threads.atomic_add!(gmp_alloc2, a)
+        tmpM = setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
         
         # Extract only the result for the grid point (last "turbine")
         @views gridPointResult = tmpM[end, :]
@@ -380,9 +373,6 @@ function getMeasurementsP(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, 
         
         # Thread-safe assignment using @views to avoid race conditions
         @views mz[rw, cl, 1:3] .= gridPointResult
-    end
-    if ! isnothing(alloc)
-        alloc.gmp_alloc2 += gmp_alloc2[]  # Add total allocation to the main allocator
     end
 
     return mz
@@ -410,7 +400,6 @@ for thread safety.
 - `plt=nothing`: Plot object for garbage collection control. If provided and `set.parallel` is true,
   automatically calls `plt.GC.enable(false)` before multithreading and `plt.GC.enable(true)` 
   after completion to prevent PyCall-related segmentation faults during parallel execution.
-- `alloc=nothing`: Optional allocation tracker for performance monitoring and memory profiling.
   When provided, this should be an instance of the `Allocations` struct which tracks memory allocations 
   across different parts of the flow field calculation process. The relevant fields include:
   - `cff_X`: Allocations for X-coordinate grid creation
@@ -441,13 +430,6 @@ for thread safety.
 set.threading = true
 Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
 
-# Calculate with allocation tracking for performance monitoring
-alloc = Allocations()
-Z, X, Y = calcFlowField(set, wf, wind, floris; alloc=alloc)
-println("Memory allocated for X grid: \$(alloc.cff_X) bytes")
-println("Memory allocated for Y grid: \$(alloc.cff_Y) bytes")
-println("Total measurement allocations: \$(alloc.getMeasurementsP) bytes")
-
 # Extract velocity reduction field
 velocity_reduction = Z[:, :, 1]
 
@@ -470,13 +452,9 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; 
     yAx = fieldLims[1,2]:fieldRes:fieldLims[2,2]
 
     # Create coordinate grids (Julia equivalent of meshgrid)
-    a = @allocated X = repeat(collect(xAx)', length(yAx), 1)
-    b = @allocated Y = repeat(collect(yAx), 1, length(xAx))
-    if ! isnothing(alloc)
-        alloc.cff_X += a
-        alloc.cff_Y += b
-    end
-    
+    X = repeat(collect(xAx)', length(yAx), 1)
+    Y = repeat(collect(yAx), 1, length(xAx))
+
     # Get hub height from first turbine
     zh = wf.posNac[1, 3]
     
@@ -488,14 +466,8 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; 
         end
         try
             # Create thread-local buffers using the new function with FLORIS parameters
-            a = @allocated buffers = create_thread_buffers(wf, nthreads() + 1, floris)
-            if ! isnothing(alloc)
-                alloc.gmp_buffers += a
-            end
-            a = @allocated Z = getMeasurementsP(buffers, X, Y, nM, zh, wf, set, floris, wind; alloc)
-            if ! isnothing(alloc)
-                alloc.getMeasurementsP += a
-            end
+            buffers = create_thread_buffers(wf, nthreads() + 1, floris)
+            Z = getMeasurementsP(buffers, X, Y, nM, zh, wf, set, floris, wind)
         finally
             # Re-enable garbage collection after multithreading if not parallel
             if ! set.parallel

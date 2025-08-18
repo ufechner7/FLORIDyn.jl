@@ -764,7 +764,6 @@ applying control strategies and updating turbine states over time.
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
                           vis::Vis, floridyn::FloriDyn, floris::Floris; rmt_plot_fn=nothing, 
                           msr=VelReduction, debug=nothing)
-    alloc = Allocations()
     nT = wf.nT
     sim_steps = sim.n_sim_steps
     ma = zeros(sim_steps * nT, 6)
@@ -784,20 +783,17 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         sim.sim_step = it
 
         # ========== PREDICTION ==========
-        a = @allocated iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn, buffers)
-        alloc.iterateOPs += a
+        iterateOPs!(set.iterate_mode, wf, sim, floris, floridyn, buffers)
 
         # ========== Wind Field Perturbation ==========
-        a = @allocated perturbationOfTheWF!(wf, wind)
-        alloc.perturbationOfTheWF += a
+        perturbationOfTheWF!(wf, wind)
 
         # ========== Get FLORIS reductions ==========
-        a = @allocated wf.dep = findTurbineGroups(wf, floridyn)
-        alloc.findTurbineGroups += a
+        wf.dep = findTurbineGroups(wf, floridyn)
         if sim_steps == 1 && ! isnothing(debug)
             debug[2] = deepcopy(wf)
-        end        
-        a = @allocated begin
+        end
+        begin
             # Resize buffers if dependencies changed
             for iT in 1:wf.nT
                 if size(intOPs_buffers[iT], 1) != length(wf.dep[iT])
@@ -809,46 +805,40 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         if sim_steps == 1 && ! isnothing(debug)
             debug[1] = deepcopy(wf)
         end
-        alloc.interpolateOPs += a
-        a = @allocated tmpM = setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
+        tmpM = setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
         if sim_steps == 1
             # println("intOPs: $(wf.intOPs)")
         end
-        alloc.setUpTmpWFAndRun += a
 
-    ma[(it - 1) * nT + 1 : it * nT, 2:4] .= @view tmpM[1:nT, :]
-    ma[(it - 1) * nT + 1 : it * nT, 1]   .= sim_time
+        ma[(it - 1) * nT + 1 : it * nT, 2:4] .= @view tmpM[1:nT, :]
+        ma[(it - 1) * nT + 1 : it * nT, 1]   .= sim_time
         wf.States_T[wf.StartI, 3] = tmpM[1:nT, 2]
    
         vm_int[it] = wf.red_arr
 
         # ========== wind field corrections ==========
-        a = @allocated wf, wind = correctVel(set.cor_vel_mode, set, wf, wind, sim_time, floris, @view(tmpM[1:nT, :]))
-        alloc.correctVel += a
-        a = @allocated correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
-        alloc.correctDir += a
-        a = @allocated correctTI!(set.cor_turb_mode, set, wf, wind, sim_time)
-        alloc.correctTI += a
+        wf, wind = correctVel(set.cor_vel_mode, set, wf, wind, sim_time, floris, @view(tmpM[1:nT, :]))
+        correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
+        correctTI!(set.cor_turb_mode, set, wf, wind, sim_time)
 
         # Save free wind speed as measurement
         ma[(it-1)*nT+1 : it*nT, 5] = wf.States_WF[wf.StartI, 1]
 
         # ========== Get Control settings ==========
-        a = @allocated wf.States_T[wf.StartI, 2] = (
+        wf.States_T[wf.StartI, 2] = (
             wf.States_WF[wf.StartI, 2] .-
             getYaw(set.control_mode, con.yaw_data, (1:nT), sim_time)'
         )
-        alloc.getYaw += a
 
         # ========== Calculate Power ==========
         P = getPower(wf, @view(tmpM[1:nT, :]), floris, con)
         ma[(it-1)*nT+1:it*nT, 6] = P
 
         # ========== Live Plotting ============
-        a = @allocated if vis.online
+        if vis.online
             t_rel = sim_time - sim.start_time
             if mod(t_rel, vis.up_int) == 0
-                Z, X, Y = calcFlowField(set, wf, wind, floris; plt, alloc)
+                Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
                 if isnothing(rmt_plot_fn)
                     plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel; msr)
                     plt.pause(0.01)
@@ -858,8 +848,6 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
                 end
             end
         end
-        alloc.calcFlowField += a
-
         sim_time += sim.time_step
     end
     # Convert `ma` to DataFrame and scale measurements
@@ -868,7 +856,6 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con
         [:Time, :ForeignReduction, :AddedTurbulence, :EffWindSpeed, :FreeWindSpeed, :PowerGen]
     )
     mi = hcat(md.Time, hcat(vm_int...)')
-    @debug "Allocations: $alloc"
     return wf, md, mi
 end
 

@@ -29,8 +29,6 @@ function Base.show(io::IO, allocs::AllocsF)
     end
 end
 
-alloc = AllocsF()
-
 set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), 
                 Direction_All(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(),
                 false, false)
@@ -89,7 +87,7 @@ T_red_arr2, T_aTI_arr2, T_Ueff2, T_weight2 = begin
     n_points = size(RPl, 1)
     tmp_buffers = FLORIDyn.FLORISBuffers(n_points)
     runFLORIS(tmp_buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
-              paramFLORIS, windshear; alloc)
+              paramFLORIS, windshear)
     tmp_buffers.T_red_arr, tmp_buffers.T_aTI_arr, tmp_buffers.T_Ueff, tmp_buffers.T_weight
 end
 
@@ -98,7 +96,7 @@ t_wrapper = @benchmark begin
     n_points = size(RPl, 1)
     tmp_buffers = FLORIDyn.FLORISBuffers(n_points)
     runFLORIS(tmp_buffers, $set, $LocationT_multi, $States_WF, $States_T_multi, $D, 
-              $paramFLORIS, $windshear; alloc=$alloc)
+              $paramFLORIS, $windshear)
 end
 
 time_wrapper = mean(t_wrapper.times)/1e9
@@ -123,12 +121,12 @@ println("  Created buffers for $n_points rotor discretization points")
 
 # Run once to get results for comparison
 runFLORIS(buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
-          paramFLORIS, windshear; alloc)
+          paramFLORIS, windshear)
 T_red_arr3, T_aTI_arr3, T_Ueff3, T_weight3 = buffers.T_red_arr, buffers.T_aTI_arr, buffers.T_Ueff, buffers.T_weight
 
 # Benchmark with pre-allocated buffers
 t_buffered = @benchmark runFLORIS(buffers, set, LocationT_multi, States_WF, States_T_multi, D, 
-                                  paramFLORIS, windshear; alloc)
+                                  paramFLORIS, windshear)
 
 time_buffered = mean(t_buffered.times)/1e9
 rel_time_buffered = time_buffered * 301 / 0.115
@@ -160,5 +158,3 @@ rel_time = time * 301 / 0.115  # Relative to the total time of 0.115 seconds
 println("Benchmark time: $time seconds, relative to 0.115s: $(round(rel_time * 100, digits=2)) %")
 println("Allocations: $(t.allocs), in total $(t.memory) bytes.")
 # Benchmark time: 1.29870531e-5 seconds, relative to 0.115s: 3.4 %
-
-println(alloc)
