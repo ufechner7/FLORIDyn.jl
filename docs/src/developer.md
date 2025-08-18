@@ -18,8 +18,9 @@ The FLORIDyn.jl package is organized into several modules:
 - `examples_dev/` - Examples for developers
 - `docs/`  - Documentation source
 - `data/`  - Example data files and configuration settings
-- `video/` - PNG and MP4 output files
-- `bin/`   - Bash scripts to start Julia and for statistics
+- `video/` - Intermediate PNG output files
+- `out/`   - Final PNG and MP4 output files, one folder per test run
+- `bin/`   - Bash scripts to start Julia, analyze allocation and statistics
 
 ## Development workflow
 
