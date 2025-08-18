@@ -1,0 +1,8 @@
+#!/bin/bash -eu
+# Copyright (c) 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Usage:
+# source ./bin/revise_on
+
+export USE_REVISE=true
