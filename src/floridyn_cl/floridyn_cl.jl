@@ -463,15 +463,25 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
     # Reuse the provided M_buffer instead of allocating new
     ub.M_buffer .= 0.0  # Clear the buffer
     wf.Weight = [Float64[] for _ in 1:wf.nT]
-    wf.red_arr = ones(wf.nT, wf.nT)  # Initialize if not already allocated
+    # Initialize red_arr without reallocating when size matches
+    if size(wf.red_arr) == (wf.nT, wf.nT)
+        fill!(wf.red_arr, 1.0)
+    else
+        wf.red_arr = ones(wf.nT, wf.nT)
+    end
 
     if !isnothing(alloc)
         alloc.m += 1
     end
 
     a = @allocated for iT in 1:wf.nT # for1 loop
-        # Reuse iTWFState_buffer instead of allocating
-        ub.iTWFState_buffer .= wf.States_WF[wf.StartI[iT], :]
+        # Reuse iTWFState_buffer instead of allocating (avoid row slice)
+        @inbounds begin
+            src_row = wf.StartI[iT]
+            for j in 1:size(wf.States_WF, 2)
+                ub.iTWFState_buffer[j] = wf.States_WF[src_row, j]
+            end
+        end
 
         if hasfield(typeof(wf), :C_Vel)
             ub.iTWFState_buffer[1] = dot(wf.C_Vel[iT, :],wf.States_WF[:, 1])
@@ -495,7 +505,9 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
             )
             # Buffers now hold a length-1 vector for the single-turbine reduction
             T_red_scalar = ub.floris_buffers.T_red_arr[1]
-            ub.M_buffer[iT, :] = [T_red_scalar, 0, T_red_scalar * wf.States_WF[wf.StartI[iT], 1]]
+            ub.M_buffer[iT, 1] = T_red_scalar
+            ub.M_buffer[iT, 2] = 0.0
+            ub.M_buffer[iT, 3] = T_red_scalar * wf.States_WF[wf.StartI[iT], 1]
             wf.red_arr[iT, iT] = T_red_scalar
             continue
         end
@@ -622,7 +634,13 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
             plot_OP_view .= 0.0
             
             for iiT in 1:(tmp_nT - 1)
-                OP1_i_f, OP1_r, OP2_i_f, OP2_r = wf.intOPs[iT][iiT, :]
+                @inbounds begin
+                    m = wf.intOPs[iT]
+                    OP1_i_f = m[iiT, 1]
+                    OP1_r   = m[iiT, 2]
+                    OP2_i_f = m[iiT, 3]
+                    OP2_r   = m[iiT, 4]
+                end
                 OP1_i = Int(round(OP1_i_f))
                 OP2_i = Int(round(OP2_i_f))
                 @inbounds begin
@@ -674,7 +692,9 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
             T_Ueff_s = T_Ueff
         end
 
-        ub.M_buffer[iT, :] = [T_red, T_addedTI, T_Ueff_s]
+    ub.M_buffer[iT, 1] = T_red
+    ub.M_buffer[iT, 2] = T_addedTI
+    ub.M_buffer[iT, 3] = T_Ueff_s
 
         wS = sum(wf.Weight[iT])
         if wS > 0
