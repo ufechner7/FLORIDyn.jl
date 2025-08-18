@@ -49,7 +49,25 @@ const _discretizeRotor_caches_ref = Base.RefValue{Vector{Dict{Int, Tuple{Matrix{
     @inbounds for i in 1:newlen
       newc[i] = i <= length(caches) ? caches[i] : Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}()
     end
-    _discretizeRotor_caches_ref[] = (caches = newc)
+const _discretizeRotor_cache_lock = ReentrantLock()
+
+@inline function _get_discretizeRotor_thread_cache()
+  caches = _discretizeRotor_caches_ref[]
+  tid = Base.Threads.threadid()
+  if length(caches) < tid
+    lock(_discretizeRotor_cache_lock) do
+      caches = _discretizeRotor_caches_ref[]  # re-read in case another thread updated
+      if length(caches) < tid
+        # Grow to current nthreads(); preserve existing dicts
+        newlen = Base.Threads.nthreads()+1
+        newc = Vector{Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}}(undef, newlen)
+        @inbounds for i in 1:newlen
+          newc[i] = i <= length(caches) ? caches[i] : Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}()
+        end
+        _discretizeRotor_caches_ref[] = (caches = newc)
+        caches = newc
+      end
+    end
   end
   return caches[tid]
 end
