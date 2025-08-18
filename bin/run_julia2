@@ -4,7 +4,8 @@
 
 # Start script for single threaded, normal use of FLORIDyn
 
-USE_REVISE=false
+# If you do not want to use Revise.jl, uncomment the following line
+# USE_REVISE=false
 
 # Treats unset/empty as true
 if [[ "${USE_REVISE:-true}" == "true" ]]; then

@@ -5,32 +5,6 @@
 $(DocStringExtensions.README)
 """
 module FLORIDyn
-using Logging
-
-function is_debug_logging_enabled()
-    # Check both the logger level AND environment variable
-    logger_debug = Logging.min_enabled_level(current_logger()) <= Logging.Debug
-    env_debug = haskey(ENV, "JULIA_DEBUG") && 
-                (ENV["JULIA_DEBUG"] == "all" || 
-                 contains(ENV["JULIA_DEBUG"], "FLORIDyn") ||
-                 contains(ENV["JULIA_DEBUG"], "Main"))
-    return logger_debug || env_debug
-end
-
-if is_debug_logging_enabled()
-    @eval module Revert
-            macro allocated(ex)
-            esc(:((@timed $ex).bytes))
-            end
-        end
-else
-    @eval module Revert
-            macro allocated(ex)
-            esc(:($ex; 0))
-            end
-        end
-end
-
 
 using PrecompileTools: @setup_workload, @compile_workload
 using LaTeXStrings

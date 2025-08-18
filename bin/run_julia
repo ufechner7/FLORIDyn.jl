@@ -4,7 +4,8 @@
 
 # Start script for multithreaded, normal use of FLORIDyn
 
-USE_REVISE=false
+# If you do not want to use Revise.jl, uncomment the following line
+# USE_REVISE=false
 
 julia_version=$(julia --version | awk '{print($3)}')
 julia_major=${julia_version:0:3}
