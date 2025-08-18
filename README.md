@@ -19,10 +19,11 @@ The code uses the Gaussian wake model from the quasi static wind farm simulation
 <p align="center"><img src="https://github.com/ufechner7/FLORIDyn.jl/blob/main/docs/src/flowfield.png?raw=true" width="500" /></p>
 
 ## Status:
-Five examples work, selectable via a menu:
+Many examples work, some selectable via a menu:
 ```julia
 include("examples/menu.jl")
 ```
+The other examples can be executed directly using the `include` statement.
 
 A Python version of FLORIDyn is available at [https://github.com/TUDelft-DataDrivenControl/OFF](https://github.com/TUDelft-DataDrivenControl/OFF) .
 
