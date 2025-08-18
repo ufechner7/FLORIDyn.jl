@@ -34,21 +34,9 @@ function discretizeRotor(n_rp::Int)
   end
 end
 
-# Lock-free per-thread memoization caches.
-# Use a Ref holding a vector of Dicts, initialized to length 0 at load time to
-# avoid baking in the precompile-time thread count.
+# Per-thread memoization caches using a growable vector of Dicts stored in a Ref.
+# We guard only the growth operation with a lock; steady-state lookups are lock-free.
 const _discretizeRotor_caches_ref = Base.RefValue{Vector{Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}}}(Vector{Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}}(undef, 0))
-
-@inline function _get_discretizeRotor_thread_cache()
-  caches = _discretizeRotor_caches_ref[]
-  tid = Base.Threads.threadid()
-  if length(caches) < tid
-    # Grow to current nthreads(); preserve existing dicts
-    newlen = Base.Threads.nthreads()+1
-    newc = Vector{Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}}(undef, newlen)
-    @inbounds for i in 1:newlen
-      newc[i] = i <= length(caches) ? caches[i] : Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}()
-    end
 const _discretizeRotor_cache_lock = ReentrantLock()
 
 @inline function _get_discretizeRotor_thread_cache()
@@ -56,16 +44,18 @@ const _discretizeRotor_cache_lock = ReentrantLock()
   tid = Base.Threads.threadid()
   if length(caches) < tid
     lock(_discretizeRotor_cache_lock) do
-      caches = _discretizeRotor_caches_ref[]  # re-read in case another thread updated
-      if length(caches) < tid
-        # Grow to current nthreads(); preserve existing dicts
-        newlen = Base.Threads.nthreads()+1
+      caches2 = _discretizeRotor_caches_ref[]  # re-read in case another thread updated
+      if length(caches2) < tid
+        # Grow to at least current nthreads(), preserving previous entries
+        newlen = max(Base.Threads.nthreads(), tid)
         newc = Vector{Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}}(undef, newlen)
         @inbounds for i in 1:newlen
-          newc[i] = i <= length(caches) ? caches[i] : Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}()
+          newc[i] = i <= length(caches2) ? caches2[i] : Dict{Int, Tuple{Matrix{Float64}, Vector{Float64}}}()
         end
-        _discretizeRotor_caches_ref[] = (caches = newc)
+        _discretizeRotor_caches_ref[] = newc
         caches = newc
+      else
+        caches = caches2
       end
     end
   end
