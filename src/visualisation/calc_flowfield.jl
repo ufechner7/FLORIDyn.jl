@@ -381,7 +381,7 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
                        plt=nothing, vis=nothing)
     # Preallocate field
     nM = 3
-    
+
     # Use vis struct fields if provided, otherwise fall back to defaults
     if vis !== nothing
         fieldLims = [vis.field_limits_min';
@@ -425,6 +425,6 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
         buffers = create_thread_buffers(wf, 1, floris)
         Z = getMeasurements(buffers, X, Y, nM, zh, wf, set, floris, wind)
     end
-    
+
     return Z, X, Y
 end

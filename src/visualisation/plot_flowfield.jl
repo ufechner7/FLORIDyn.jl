@@ -98,7 +98,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
     @assert ! isnothing(plt) "plt is nothing function plotFlowField() of plot_flowfield.jl"
     # Use unit_test from vis
     use_unit_test = vis.unit_test
-    
+
     # Extract the 2D slice for the specified measurement
     if Int64(msr) > size(mz, 3)
         error("msr ($msr) exceeds number of measurements ($(size(mz, 3)))")

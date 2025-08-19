@@ -76,7 +76,7 @@ with_logger(tee_logger) do
             @info "Skipping flow field: $(flow_field.name)"
             continue
         end
-        Z, X, Y = calcFlowField(set, wf, wind, floris)
+        Z, X, Y = calcFlowField(set, wf, wind, floris; vis)
         msr = toMSR(flow_field.name)
         if flow_field.online
             if ! vis.unique_output_folder
