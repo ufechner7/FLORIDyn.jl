@@ -10,9 +10,11 @@ for the FLORIDyn.jl wind farm simulation package.
 """
 
 using Pkg
+using FLORIDyn
 using REPL.TerminalMenus
 
-options = ["\"flow_field_vel_reduction\"; PLT=1; include(\"main.jl\")",
+options = ["\"select_project()\"; select_project()",
+           "\"flow_field_vel_reduction\"; PLT=1; include(\"main.jl\")",
            "\"flow_field_added_turbulence\"; PLT=2; include(\"main.jl\")",
            "\"flow_field_eff_wind_speed\"; PLT=3; include(\"main.jl\")",
            "\"plot_measurements\"; PLT=4; include(\"main.jl\")",

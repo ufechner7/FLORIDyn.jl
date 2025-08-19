@@ -58,6 +58,6 @@ vis:
   rel_v_max: 100.0 # Unit: [%]
   # Maximum turbulence value for added turbulence visualizations (msr=AddedTurbulence)
   # Controls the upper limit for turbulence plots
-  turb_max: 35.0   # Turbulence intensity, Unit: [%]
+  turb_max: 40.0   # Turbulence intensity, Unit: [%]
   up_int: 1        # Update interval - how frequently visualization updates occur  [s]
   unit_test: false # When true, closes plots automatically after 1 second
