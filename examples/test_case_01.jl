@@ -42,16 +42,11 @@ sim.n_sim_steps = 195
 # Run initial conditions
 wf = initSimulation(wf, sim)
 
-# TODO
-# compare wf.windfield with Matlab before running floridyn
-
 vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 
 turbines_wf = wf.turbines
-# plot(1:length(turbines_ref.yaw), [turbines_wf.TI, turbines_ref.TI])
 
-# println("Relative error (turbines): ", round(rel_err(turbines_wf, turbines_ref)*100, digits=2), " %")
 df1, df2 = compare_dataframes(turbines_wf, turbines_ref)
 println("Number of differing rows found: ", size(df1, 1), " out of ", size(turbines_wf, 1))
 
