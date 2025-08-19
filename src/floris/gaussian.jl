@@ -67,18 +67,18 @@ Compute Gaussian wake widths, deflection, potential-core radii, and onset distan
 - `floris::Floris`: FLORIS Gaussian model parameters; see [`Floris`](@ref)
 - `d_rotor::Real`: Rotor diameter D [m]
 
-Behavior
+# Behavior
 - Supports scalar or per-point values for `c_t`, `yaw`, `ti`, `ti0`; scalars are broadcast to all points.
 - Uses `floris.k_a`, `floris.k_b`, `floris.alpha`, `floris.beta` to compute per-point
     `x₀`, `σ_y`, `σ_z`, deflection `Δy` (here `Δz` is set to 0), and potential-core radii `pc_y`, `pc_z`.
 - No heap allocations beyond the provided outputs; results are written in-place and the function returns `nothing`.
 
-Notes
+# Notes
 - Only `rps[:, 1]` (downstream distance) is used by this implementation; `rps[:, 2:3]` are ignored.
 - `delta` must have at least 2 columns; only columns 1:2 are written.
 - Units: distances in meters, angles in radians, intensities and `Ct` are dimensionless.
 
-Example
+# Example
 ```julia
 n = size(RPs, 1)
 sig_y = similar(RPs[:, 1])
