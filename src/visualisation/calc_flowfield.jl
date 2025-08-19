@@ -169,8 +169,8 @@ end
 
 
 """
-    getMeasurements(mx::Matrix, my::Matrix, nM::Int, zh::Real, wf::WindFarm, set::Settings, 
-                     floris::Floris, wind::Wind) -> Array{Float64,3}
+    getMeasurements(buffers::ThreadBuffers, mx::Matrix, my::Matrix, nM::Int, zh::Real,
+                    wf::WindFarm, set::Settings, floris::Floris, wind::Wind) -> Array{Float64,3}
 
 Calculate flow field measurements at specified grid points by treating them as virtual turbines.
 
@@ -180,18 +180,20 @@ Each grid point is treated as a turbine that depends on all real turbines in the
 allowing wake effects to be captured in the flow field visualization.
 
 # Arguments
+- `buffers::ThreadBuffers`: Pre-allocated thread-local buffers created with [`create_thread_buffers`](@ref);
+    for Julia 1.12 use `create_thread_buffers(wf, nthreads() + 1, floris)`; for single-thread use `create_thread_buffers(wf, 1, floris)`
 - `mx::Matrix`: X-coordinates of grid points (m)
 - `my::Matrix`: Y-coordinates of grid points (m)  
 - `nM::Int`: Number of measurements to compute (typically 3)
 - `zh::Real`: Hub height for measurements (m)
-- `wf::WindFarm`: Wind farm object containing turbine data
+- `wf::WindFarm`: Wind farm object containing turbine data. See: [`WindFarm`](@ref)
   - `wf.nT`: Number of real turbines
   - `wf.StartI`: Starting indices for turbine data
   - `wf.posBase`, `wf.posNac`: Turbine positions
   - `wf.States_*`: Turbine state matrices
-- `set::Settings`: Settings object containing simulation parameters
-- `floris::Floris`: FLORIS model parameters for wake calculations
-- `wind::Wind`: Wind field configuration
+- `set::Settings`: Settings object containing simulation parameters. See: [`Settings`](@ref)
+- `floris::Floris`: FLORIS model parameters for wake calculations. See: [`Floris`](@ref)
+- `wind::Wind`: Wind field configuration. See: [`Wind`](@ref)
 
 # Returns
 - `mz::Array{Float64,3}`: 3D array of measurements with dimensions `(size(mx,1), size(mx,2), nM)`
@@ -207,10 +209,11 @@ For each grid point:
 4. Extracts the result for the virtual turbine position
 
 # Performance Notes
-- Multi-threaded implementation using `@threads` for parallel processing of grid points
+- Multi-threaded implementation using `@threads` for parallel processing of grid points when more than one buffer is provided
+- With a single buffer (`length(buffers.thread_buffers) == 1`), runs in a single-threaded loop
 - Each grid point requires a full wind farm simulation, so computation time scales with grid size
 - Uses thread-local buffers created by [`create_thread_buffers`](@ref) to avoid race conditions
-- Scales well with the number of available CPU cores
+- On Julia 1.12 create `nthreads() + 1` buffers to accommodate thread indexing
 
 # Example
 ```julia
