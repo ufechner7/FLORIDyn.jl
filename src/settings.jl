@@ -696,3 +696,87 @@ function isdelftblue()
     path = expanduser("~/scratch")
     ispath(path)
 end
+
+"""
+    get_default_project() -> Tuple{String, String}
+
+Read or create the default project selection and return `(project_name, project_vis)`.
+
+Behavior:
+- Ensures `data/default.yaml` exists. If missing, it is created using the first project
+  listed in `data/projects.yaml`.u
+- Reads `data/projects.yaml` and selects the project whose name matches `default.name`.
+- Returns a tuple `(project_name, project_vis)` where `project_vis` is the filename from the project.
+
+Lookup strategy:
+- Prefer files in the current working directory under `data/`.
+- If not found, fall back to the package's `data/` directory for reading (not for writing).
+"""
+function get_default_project()
+    # Resolve package root for read fallbacks
+    pkg_root = joinpath(dirname(pathof(@__MODULE__)), "..")
+
+    # Paths (prefer local workspace data dir)
+    data_dir_local = joinpath(pwd(), "data")
+    default_path_local = joinpath(data_dir_local, "default.yaml")
+    projects_path_local = joinpath(data_dir_local, "projects.yaml")
+
+    # Locate projects.yaml (read-only). Fall back to pkg data if not in local workspace.
+    projects_path = projects_path_local
+    if !isfile(projects_path)
+        projects_path = joinpath(pkg_root, "data", "projects.yaml")
+    end
+    if !isfile(projects_path)
+        error("projects.yaml not found in data directory (searched: $(projects_path_local))")
+    end
+
+    projects_data = YAML.load_file(projects_path)
+    projects_list = get(projects_data, "projects", Any[])
+    if isempty(projects_list)
+        error("projects.yaml contains no projects")
+    end
+
+    # Helper to extract first project's name
+    first_project = projects_list[1]["project"]
+    first_name = String(first_project["name"])
+
+    # Read or create default.yaml in the local workspace
+    default_name = nothing
+    if isfile(default_path_local)
+        try
+            def_data = YAML.load_file(default_path_local)
+            if haskey(def_data, "default") && haskey(def_data["default"], "name")
+                default_name = String(def_data["default"]["name"])
+            end
+        catch
+            # If malformed, recreate from first project below
+        end
+    end
+    if default_name === nothing
+        # Create local data dir and write default.yaml with first project
+        mkpath(data_dir_local)
+        open(default_path_local, "w") do io
+            write(io, "default:\n  name: $(first_name)\n")
+        end
+        default_name = first_name
+    end
+
+    # Find matching project by name
+    chosen = nothing
+    for entry in projects_list
+        p = entry["project"]
+        if String(p["name"]) == default_name
+            chosen = p
+            break
+        end
+    end
+    if chosen === nothing
+        # Fallback to first project and update default.yaml accordingly
+        chosen = first_project
+        open(default_path_local, "w") do io
+            write(io, "default:\n  name: $(String(chosen["name"]))\n")
+        end
+    end
+
+    return (String(chosen["name"]), String(chosen["vis"]))
+end
