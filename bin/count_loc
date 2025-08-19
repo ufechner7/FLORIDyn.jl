@@ -2,3 +2,5 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 scc -x csv -x toml ..
+echo "src folder only:"
+scc -x csv -x toml ../src
