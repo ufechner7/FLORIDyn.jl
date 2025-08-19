@@ -328,8 +328,7 @@ Generate full flow field plot data by calculating measurements across a grid.
 
 This function creates a rectangular grid over the wind farm domain and calculates flow field
 properties at each grid point by treating them as virtual turbines. The computation can be
-performed in parallel if `set.threading` is true, with automatic garbage collection management
-for thread safety.
+performed in parallel if `set.threading` is true.
 
 # Arguments
 - `set::Settings`: Settings object containing simulation parameters
@@ -342,7 +341,8 @@ for thread safety.
 # Keyword Arguments
 - `plt=nothing`: Plot object for garbage collection control. If provided and `set.parallel` is true,
   automatically calls `plt.GC.enable(false)` before multithreading and `plt.GC.enable(true)` 
-  after completion to prevent PyCall-related segmentation faults during parallel execution.
+  after completion to prevent PyCall-related segmentation faults during parallel execution with
+  ControlPlots loaded. To take full advantage of multithreading, executed the plotting in a separate process.
 
 # Returns
 - `Z::Array{Float64,3}`: 3D array of flow field measurements with dimensions `(ny, nx, 3)`
@@ -352,9 +352,7 @@ for thread safety.
 - `X::Matrix{Float64}`: X-coordinate grid (m)
 - `Y::Matrix{Float64}`: Y-coordinate grid (m)
 
-# Performance Notes
-- Uses parallel computation when `set.parallel=true` for significant speedup on multi-core systems
-- Automatic garbage collection management prevents threading-related crashes
+# Notes
 - Grid resolution is fixed at 20m with domain from [0,0] to [3000,3000] meters
 - Hub height is taken from the first turbine in the wind farm
 
