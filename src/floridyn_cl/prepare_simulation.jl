@@ -294,6 +294,9 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         if !isfile(path)
             path = joinpath(pkg_path, path)
         end
+        if !isfile(path)
+            error("$path not found.")
+        end
         alpha = CSV.read(path, DataFrame; header=false)[1,1] # Assuming alpha is in the first row, first column
         z0 = 1.0 # Default roughness length
         wind.shear = WindShear(alpha, z0)

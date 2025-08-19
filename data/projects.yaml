@@ -1,0 +1,9 @@
+projects:
+  - project:
+      name: 2021_9T_Data
+      description: A reference simulation with 9 turbines
+      vis: vis_default.yaml
+  - project:
+      name: 2021_54T_NordseeOne
+      description: A reference simulation with 54 turbines
+      vis: vis_54T.yaml

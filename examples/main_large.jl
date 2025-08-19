@@ -11,7 +11,8 @@ using FLORIDyn, TerminalPager, DistributedNext
 if Threads.nthreads() == 1; using ControlPlots; end
 toc()
 
-settings_file, vis_file = get_default_project()
+settings_file = "data/2021_54T_NordseeOne.yaml"
+vis_file      = "data/vis_54T.yaml"
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)

@@ -19,8 +19,7 @@ if !  @isdefined PLT; PLT=1; end
 if PLT == 6; NEW_PLT = 1; else NEW_PLT = PLT; end
 if ! @isdefined LAST_PLT; LAST_PLT=Set(NEW_PLT); end
 
-settings_file = "data/2021_9T_Data.yaml"
-vis_file      = "data/vis_default.yaml"
+settings_file, vis_file = get_default_project()
 
 vis = Vis(vis_file)
 vis.show_plots = true  # Enable/disable showing plots during simulation

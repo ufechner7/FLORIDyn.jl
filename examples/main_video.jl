@@ -7,8 +7,7 @@ using Timers
 using FLORIDyn, TerminalPager, DistributedNext
 if Threads.nthreads() == 1; using ControlPlots; end
 
-settings_file = "data/2021_9T_Data.yaml"
-vis_file      = "data/vis_default.yaml"
+settings_file, vis_file = get_default_project()
 
 vis = Vis(vis_file)
 vis.show_plots = true  # Enable/disable showing plots during simulation

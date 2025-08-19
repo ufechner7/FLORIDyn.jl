@@ -57,6 +57,8 @@ export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_resul
 export isdelftblue, Measurement, parse_measurements
 export FlowField, parse_flow_fields
 export UnifiedBuffers, create_unified_buffers
+export get_default_project
+export select_project
 
 """
     MSR `VelReduction` `AddedTurbulence` `EffWind`
