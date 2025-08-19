@@ -269,10 +269,11 @@ function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, f
 
             @views gridPointResult = tmpM[end, :]
 
-            rw, cl = divrem(iGP - 1, size_mx[1])
-            rw += 1
-            cl += 1
-            @views mz[rw, cl, 1:3] .= gridPointResult
+            # Map linear index to (row, col) for column-major arrays
+            q, r = divrem(iGP - 1, size_mx[1])
+            row = r + 1
+            col = q + 1
+            @views mz[row, col, 1:3] .= gridPointResult
         end
     else
         # Parallel loop using @threads
@@ -309,12 +310,13 @@ function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, f
             @views gridPointResult = tmpM[end, :]
             
             # Convert linear index to subscripts (thread-safe)
-            rw, cl = divrem(iGP - 1, size_mx[1])
-            rw += 1
-            cl += 1
+            # Map linear index to (row, col) for column-major arrays
+            q, r = divrem(iGP - 1, size_mx[1])
+            row = r + 1
+            col = q + 1
             
             # Thread-safe assignment using @views to avoid race conditions
-            @views mz[rw, cl, 1:3] .= gridPointResult
+            @views mz[row, col, 1:3] .= gridPointResult
         end
     end
 
