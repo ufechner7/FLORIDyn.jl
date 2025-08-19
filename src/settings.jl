@@ -384,6 +384,9 @@ The struct automatically adapts to different computing environments:
     unique_output_folder::Bool = true # if true, for each simulation run a new folder is created
     skip_flow_fields::Bool = false    # if true, completely skip creation of flow field visualizations (overrides individual entries)
     skip_measurements::Bool = false   # if true, completely skip creation of measurement visualizations (overrides individual entries)
+    field_limits_min::Vector{Float64} = [0.0, 0.0, 0.0]          # [xmin, ymin, zmin] in meters
+    field_limits_max::Vector{Float64} = [3000.0, 3000.0, 400.0]  # [xmax, ymax, zmax] in meters
+    field_resolution::Float64 = 20.0                             # Resolution of the field in meters
     flow_fields::Vector{FlowField} = FlowField[]  # list of flow field visualizations to create
     measurements::Vector{Measurement} = Measurement[]  # list of measurement visualizations to create (parsed from YAML)
     v_min::Float64 = 2

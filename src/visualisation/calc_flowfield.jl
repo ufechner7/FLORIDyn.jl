@@ -343,6 +343,10 @@ performed in parallel if `set.threading` is true.
   automatically calls `plt.GC.enable(false)` before multithreading and `plt.GC.enable(true)` 
   after completion to prevent PyCall-related segmentation faults during parallel execution with
   ControlPlots loaded. To take full advantage of multithreading, executed the plotting in a separate process.
+- `vis=nothing`: Visualization configuration object containing field limits and resolution settings.
+  If provided, uses `vis.field_limits_min`, `vis.field_limits_max`, and `vis.field_resolution` 
+  to define the computational grid. If not provided, defaults to domain [0,0,0] to [3000,3000,400] 
+  meters with 20m resolution.
 
 # Returns
 - `Z::Array{Float64,3}`: 3D array of flow field measurements with dimensions `(ny, nx, 3)`
@@ -353,7 +357,7 @@ performed in parallel if `set.threading` is true.
 - `Y::Matrix{Float64}`: Y-coordinate grid (m)
 
 # Notes
-- Grid resolution is fixed at 20m with domain from [0,0] to [3000,3000] meters
+- Grid resolution and domain are configurable via the `vis` parameter, or use default values for backward compatibility
 - Hub height is taken from the first turbine in the wind farm
 
 # Example
@@ -373,12 +377,22 @@ wind_speed = Z[:, :, 3]
 - [`getMeasurements`](@ref): Function used internally to compute the flow field
 - [`plotFlowField`](@ref): Visualization function for the generated data
 """
-function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing)
+function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
+                       plt=nothing, vis=nothing)
     # Preallocate field
     nM = 3
-    fieldLims = [0.0 0.0 0.0;
-                 3000.0 3000.0 400.0]  # [xmin ymin zmin; xmax ymax zmax]
-    fieldRes = 20.0  # Resolution of the field in m
+    
+    # Use vis struct fields if provided, otherwise fall back to defaults
+    if vis !== nothing
+        fieldLims = [vis.field_limits_min';
+                     vis.field_limits_max']  # [xmin ymin zmin; xmax ymax zmax]
+        fieldRes = vis.field_resolution
+    else
+        # Default values for backward compatibility
+        fieldLims = [0.0 0.0 0.0;
+                     3000.0 3000.0 400.0]  # [xmin ymin zmin; xmax ymax zmax]
+        fieldRes = 20.0  # Resolution of the field in m
+    end
     
     xAx = fieldLims[1,1]:fieldRes:fieldLims[2,1]
     yAx = fieldLims[1,2]:fieldRes:fieldLims[2,2]
