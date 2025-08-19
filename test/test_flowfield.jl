@@ -58,7 +58,7 @@ turbines_wf = wf.turbines
     msr = 1
     A = Z_ref[:,:,msr]
     B = Z[:,:,msr]
-    Z_ref[:,:,msr] .= A'
+    Z_ref[:,:,msr] .= A
     A = Z_ref[:,:,msr]
     @test rel_err(A, B) < 0.001
 end
