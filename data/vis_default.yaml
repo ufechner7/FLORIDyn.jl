@@ -8,7 +8,10 @@ vis:
   output_folder: "out"   # Relative output folder path
   unique_output_folder: true # If true, a unique output folder is created for each simulation run
   skip_flow_fields: false    # When true, do not create flow field visualizations
-  skip_measurements: false   # When true, do not create measurement visualizations
+  skip_measurements: true   # When true, do not create measurement visualizations
+  field_limits_min: [0.0, 0.0, 0.0]          # [xmin, ymin, zmin] in meters
+  field_limits_max: [3000.0, 3000.0, 400.0]  # [xmax, ymax, zmax] in meters
+  field_resolution: 20.0                     # Resolution of the field in meters
   flow_fields:               # List of flow field visualizations to be created
     - name: "flow_field_vel_reduction"    # Flow field relative wind speed (video)
       online: true

@@ -244,6 +244,120 @@ if ! isinteractive()
             end
         end
         
+        @testset "calcFlowField" begin
+            # Get test parameters once for all calcFlowField tests
+            wf, set, floris, wind, md = get_parameters()
+            
+            @testset "basic functionality without vis parameter" begin
+                Z, X, Y = calcFlowField(set, wf, wind, floris)
+                
+                # Basic return type checks
+                @test Z isa Array{Float64, 3}  # 3D array with measurements
+                @test X isa Matrix{Float64}    # 2D grid of X coordinates
+                @test Y isa Matrix{Float64}    # 2D grid of Y coordinates
+                
+                # Check dimensions consistency (Z should be (ny, nx, nmeasurements))
+                @test size(Z, 1) == size(Y, 1)  # Number of Y points
+                @test size(Z, 2) == size(X, 2)  # Number of X points
+                @test size(Z, 3) == 3           # Three measurements (vel reduction, turbulence, effective wind)
+                
+                # Check coordinate grids have consistent dimensions
+                @test size(X) == size(Y)
+                
+                # Check for reasonable values (should be non-empty)
+                @test size(Z) != (0, 0, 0)
+                @test size(X) != (0, 0)
+                @test size(Y) != (0, 0)
+            end
+            
+            @testset "vis parameter validation" begin
+                # Test with custom vis configuration
+                custom_vis = Vis(
+                    field_limits_min = [100.0, 200.0, 50.0],
+                    field_limits_max = [1100.0, 1200.0, 150.0],
+                    field_resolution = 50.0,
+                    online = false,
+                    save = false,
+                    unit_test = true
+                )
+                
+                Z, X, Y = calcFlowField(set, wf, wind, floris; vis=custom_vis)
+                
+                # Calculate expected grid dimensions
+                # Grid points = (max - min) / resolution + 1
+                expected_x_points = Int(round((custom_vis.field_limits_max[1] - custom_vis.field_limits_min[1]) / custom_vis.field_resolution)) + 1
+                expected_y_points = Int(round((custom_vis.field_limits_max[2] - custom_vis.field_limits_min[2]) / custom_vis.field_resolution)) + 1
+                
+                # Validate grid dimensions match vis parameters
+                @test size(X, 2) == expected_x_points  # X grid has expected number of columns
+                @test size(Y, 1) == expected_y_points  # Y grid has expected number of rows
+                @test size(Z, 1) == expected_y_points  # Z has expected number of Y points
+                @test size(Z, 2) == expected_x_points  # Z has expected number of X points
+                @test size(Z, 3) == 3                  # Z has 3 measurements
+                
+                # Validate coordinate ranges
+                @test minimum(X) ≈ custom_vis.field_limits_min[1] atol=1e-10
+                @test maximum(X) ≈ custom_vis.field_limits_max[1] atol=1e-10
+                @test minimum(Y) ≈ custom_vis.field_limits_min[2] atol=1e-10
+                @test maximum(Y) ≈ custom_vis.field_limits_max[2] atol=1e-10
+                
+                # Validate grid spacing
+                if size(X, 2) > 1
+                    x_spacing = X[1, 2] - X[1, 1]  # Spacing in first row
+                    @test x_spacing ≈ custom_vis.field_resolution atol=1e-10
+                end
+                if size(Y, 1) > 1
+                    y_spacing = Y[2, 1] - Y[1, 1]  # Spacing in first column
+                    @test y_spacing ≈ custom_vis.field_resolution atol=1e-10
+                end
+            end
+            
+            @testset "vis parameter backward compatibility" begin
+                # Test that providing nothing for vis uses default behavior
+                Z1, X1, Y1 = calcFlowField(set, wf, wind, floris)
+                Z2, X2, Y2 = calcFlowField(set, wf, wind, floris; vis=nothing)
+                
+                # Results should be identical
+                @test Z1 == Z2
+                @test X1 == X2
+                @test Y1 == Y2
+            end
+            
+            @testset "different resolution values" begin
+                # Test with different resolution values
+                for resolution in [25.0, 100.0, 200.0]
+                    test_vis = Vis(
+                        field_limits_min = [0.0, 0.0, 0.0],
+                        field_limits_max = [1000.0, 1000.0, 200.0],
+                        field_resolution = resolution,
+                        online = false,
+                        save = false,
+                        unit_test = true
+                    )
+                    
+                    Z, X, Y = calcFlowField(set, wf, wind, floris; vis=test_vis)
+                    
+                    # Calculate expected dimensions
+                    expected_x = Int(round(1000.0 / resolution)) + 1
+                    expected_y = Int(round(1000.0 / resolution)) + 1
+                    
+                    @test size(X, 2) == expected_x
+                    @test size(Y, 1) == expected_y
+                    @test size(Z, 1) == expected_y
+                    @test size(Z, 2) == expected_x
+                    @test size(Z, 3) == 3
+                    
+                    # Verify resolution is respected
+                    if size(X, 2) > 1
+                        @test (X[1, 2] - X[1, 1]) ≈ resolution atol=1e-10
+                    end
+                    if size(Y, 1) > 1
+                        @test (Y[2, 1] - Y[1, 1]) ≈ resolution atol=1e-10
+                    end
+                end
+            end
+        end
+        
         @testset "plotFlowField" begin
             # Get test parameters once for all plotFlowField tests
             wf, set, floris, wind, md = get_parameters()

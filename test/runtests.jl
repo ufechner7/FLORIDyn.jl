@@ -66,6 +66,7 @@ all_test_files = [
     "test_setupandrun.jl",
     "test_interpolateops.jl",
     "test_prepare_simulation.jl",
+    "test_msr.jl",
     "aqua.jl"
 ]
 if Threads.nthreads() > 1

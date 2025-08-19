@@ -9,6 +9,11 @@ if Threads.nthreads() > 1
             addprocs(1)
             if workers() != [2]
                 sleep(1)
+                @warn "workers: $(workers()), nthreads: $(Threads.nthreads())"
+            end
+            if workers() != [2]
+                sleep(2)
+                @warn "workers: $(workers()), nthreads: $(Threads.nthreads())"
             end
             @assert workers() == [2]  # Ensure we have exactly one worker now
             @spawnat 2 eval(:(using ControlPlots))
