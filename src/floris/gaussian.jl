@@ -475,7 +475,7 @@ The function implements several key wake modeling equations:
 - Niayifar, A. and Porté-Agel, F. (2016). Analytical modeling of wind farms: A new approach for power prediction
 """
 function runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, 
-                   windshear::Union{Matrix, WindShear}; alloc=nothing)
+                   windshear::Union{Matrix, WindShear})
     if d_rotor[end] > 0
         RPl, RPw = discretizeRotor(floris.rotor_points)
     else

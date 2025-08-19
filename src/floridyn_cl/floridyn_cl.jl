@@ -469,7 +469,7 @@ needs to be minimized.
 - Buffers must be pre-sized correctly for the specific wind farm configuration
 - Thread-safe when each thread uses its own set of buffers
 """
-function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, floris::Floris, wind::Wind; alloc=nothing)
+function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
     # Reuse the provided M_buffer instead of allocating new
     ub.M_buffer .= 0.0  # Clear the buffer
     wf.Weight = [Float64[] for _ in 1:wf.nT]

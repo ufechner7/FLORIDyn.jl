@@ -235,7 +235,7 @@ wind_speed_field = mz[:, :, 3]
 - [`calcFlowField`](@ref): Higher-level function that uses this to create complete flow field data
 - [`setUpTmpWFAndRun!`](@ref): Underlying simulation function used for each grid point
 """
-function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind; alloc=nothing)
+function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
     size_mx = size(mx)
     mz = zeros(size_mx[1], size_mx[2], nM)
     
@@ -322,7 +322,7 @@ function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, f
 end
 
 """
-    calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing, alloc=nothing)
+    calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing)
 
 Generate full flow field plot data by calculating measurements across a grid.
 
@@ -375,7 +375,7 @@ wind_speed = Z[:, :, 3]
 - [`getMeasurements`](@ref): Function used internally to compute the flow field
 - [`plotFlowField`](@ref): Visualization function for the generated data
 """
-function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing, alloc=nothing)
+function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing)
     # Preallocate field
     nM = 3
     fieldLims = [0.0 0.0 0.0;
