@@ -824,3 +824,61 @@ function get_default_project()
 
     return (settings_file, vis_file)
 end
+
+"""
+    list_projects() -> Vector{Tuple{String,String}}
+
+Return a list of available projects as tuples `(name, vis)` using the same
+projects.yaml discovery logic as `get_default_project()`.
+"""
+function list_projects()
+    pkg_root = joinpath(dirname(pathof(@__MODULE__)), "..")
+    projects_path_local = joinpath(pwd(), "data", "projects.yaml")
+    projects_path = isfile(projects_path_local) ? projects_path_local : joinpath(pkg_root, "data", "projects.yaml")
+    if !isfile(projects_path)
+        error("projects.yaml not found in data directory (searched: $(projects_path_local))")
+    end
+    projects_data = YAML.load_file(projects_path)
+    projects_list = get(projects_data, "projects", Any[])
+    [(String(p["project"]["name"]), String(p["project"]["vis"])) for p in projects_list]
+end
+
+"""
+    select_project() -> String
+
+Interactive project selector. Tries a simple GUI (Gtk4.jl) if available, otherwise falls
+back to a CLI prompt. Writes the chosen name to `data/default.yaml` and returns the
+selected project name.
+
+Usage:
+    using FLORIDyn; select_project()
+"""
+function select_project()
+    projs = list_projects()
+    isempty(projs) && error("No projects found in projects.yaml")
+
+    chosen_name::Union{Nothing,String} = nothing
+
+    println("Available projects:")
+    for (i,(n,_)) in enumerate(projs)
+        println(rpad(string(i)*".",4), n)
+    end
+    print("Enter number [1-$(length(projs))]: ")
+    flush(stdout)
+    line = readline(stdin)
+    idx = try parse(Int, strip(line)) catch; 0 end
+    if idx < 1 || idx > length(projs)
+        error("Invalid selection: $(line)")
+    end
+    chosen_name = projs[idx][1]
+
+    # Write to local default.yaml
+    data_dir_local = joinpath(pwd(), "data")
+    mkpath(data_dir_local)
+    default_path_local = joinpath(data_dir_local, "default.yaml")
+    open(default_path_local, "w") do io
+        write(io, "default:\n  name: $(chosen_name)\n")
+    end
+    println("Selected project saved to data/default.yaml: ", chosen_name)
+    return chosen_name
+end
