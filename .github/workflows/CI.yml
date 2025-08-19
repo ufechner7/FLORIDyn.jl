@@ -41,6 +41,8 @@ jobs:
           - '1'
           - 'auto'
     steps:
+      - name: Wait for dpkg lock
+        run: sudo bash -c 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do echo "Waiting for dpkg lock..."; sleep 1; done'
       - name: Install matplotlib
         run: if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get install -y python3-matplotlib; fi
         shell: bash
@@ -85,6 +87,8 @@ jobs:
       statuses: write
       pull-requests: write
     steps:
+      - name: Wait for dpkg lock
+        run: sudo bash -c 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do echo "Waiting for dpkg lock..."; sleep 1; done'
       - name: Install matplotlib
         run: sudo apt-get install -y python3-matplotlib
       - uses: actions/checkout@v4
