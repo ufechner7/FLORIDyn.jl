@@ -398,8 +398,29 @@ The struct automatically adapts to different computing environments:
     unit_test::Bool = false  # enable unit test mode for visualization functions
 end
 
+# Helper to resolve a file under local or package data directories
+function _resolve_data_path(filename::String)
+    # If the provided path already exists (absolute or relative), use it
+    if isfile(filename)
+        return filename
+    end
+    pkg_root = joinpath(dirname(pathof(@__MODULE__)), "..")
+    candidates = [
+        joinpath(pwd(), filename),                 # relative to CWD
+        joinpath(pwd(), "data", filename),        # under local data/
+        joinpath(pkg_root, "data", filename),     # under package data/
+    ]
+    for p in candidates
+        if isfile(p)
+            return p
+        end
+    end
+    return filename  # fallback; YAML.load_file will throw a helpful error
+end
+
 # Constructor for Vis struct from YAML file
 function Vis(filename::String)
+    filename = _resolve_data_path(filename)
     data = YAML.load_file(filename)
     vis_data = data["vis"]
     
@@ -698,15 +719,16 @@ function isdelftblue()
 end
 
 """
-    get_default_project() -> Tuple{String, String}
+        get_default_project() -> Tuple{String, String}
 
-Read or create the default project selection and return `(project_name, project_vis)`.
+Read or create the default project selection and return `(settings_file, vis_file)` paths.
 
 Behavior:
 - Ensures `data/default.yaml` exists. If missing, it is created using the first project
-  listed in `data/projects.yaml`.u
+    listed in `data/projects.yaml`.
 - Reads `data/projects.yaml` and selects the project whose name matches `default.name`.
-- Returns a tuple `(project_name, project_vis)` where `project_vis` is the filename from the project.
+- Returns a tuple of full paths `(settings_file, vis_file)`, preferring files under the
+    local `data/` folder and falling back to the package `data/` folder for reading.
 
 Lookup strategy:
 - Prefer files in the current working directory under `data/`.
@@ -778,5 +800,27 @@ function get_default_project()
         end
     end
 
-    return (String(chosen["name"]), String(chosen["vis"]))
+    # Build settings and vis file paths (prefer local workspace, fall back to package data)
+    proj_name = String(chosen["name"])                  # e.g. "2021_9T_Data"
+    vis_fname = String(chosen["vis"])                   # e.g. "vis_default.yaml"
+    settings_fname = proj_name * ".yaml"                # e.g. "2021_9T_Data.yaml"
+
+    # Candidate paths
+    settings_local = joinpath(data_dir_local, settings_fname)
+    settings_pkg   = joinpath(pkg_root, "data", settings_fname)
+    vis_local      = joinpath(data_dir_local, vis_fname)
+    vis_pkg        = joinpath(pkg_root, "data", vis_fname)
+
+    # Resolve existing files
+    settings_file = isfile(settings_local) ? settings_local : settings_pkg
+    vis_file      = isfile(vis_local)      ? vis_local      : vis_pkg
+
+    if !isfile(settings_file)
+        error("Settings file not found: $(settings_fname) (searched in data/ and package data/)")
+    end
+    if !isfile(vis_file)
+        error("Vis file not found: $(vis_fname) (searched in data/ and package data/)")
+    end
+
+    return (settings_file, vis_file)
 end

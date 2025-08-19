@@ -11,8 +11,7 @@ using FLORIDyn, TerminalPager, DistributedNext
 if Threads.nthreads() == 1; using ControlPlots; end
 toc()
 
-settings_file = "data/2021_9T_Data.yaml"
-vis_file      = "data/vis_default.yaml"
+settings_file, vis_file = get_default_project()
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -41,6 +40,6 @@ toc()
 
 vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-@time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+@time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
 @time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
 nothing
