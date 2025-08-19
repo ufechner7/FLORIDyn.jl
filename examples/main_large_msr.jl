@@ -41,5 +41,6 @@ toc()
 
 vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-plot_measurements(wf, md, vis; separated=true, plt)
+# plot_measurements(wf, md, vis; separated=false, plt)
+plotMeasurements(plt, wf, md, vis; separated=false, msr=VelReduction)    
 nothing
