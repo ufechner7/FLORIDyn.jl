@@ -7,6 +7,9 @@ if Threads.nthreads() > 1
         if nprocs() < 2  # nprocs() counts main + workers, so < 2 means no dedicated workers
             println("No dedicated workers found, adding 1 worker...")
             addprocs(1)
+            if workers() != [2]
+                sleep(1)
+            end
             @assert workers() == [2]  # Ensure we have exactly one worker now
             # @eval @everywhere workers() using ControlPlots  # Ensure ControlPlots is available only on workers
             @spawnat 2 eval(:(using ControlPlots))
