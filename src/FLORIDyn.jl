@@ -115,6 +115,11 @@ See also [`MSR`](@ref).
 
 Converts the input string `s` to a MSR (Measurement System Representation) enumeration.
 
+Supports the following string formats:
+- Enum names: "VelReduction", "AddedTurbulence", "EffWind"
+- Flow field names: "flow_field_vel_reduction", "flow_field_added_turbulence", "flow_field_eff_wind_speed"
+- Measurement names: "msr_vel_reduction", "msr_added_turbulence", "msr_eff_wind_speed"
+
 See also [`MSR`](@ref).
 """
 function toMSR(s::String)
@@ -123,6 +128,20 @@ function toMSR(s::String)
     elseif s == "AddedTurbulence"
         return AddedTurbulence
     elseif s == "EffWind"
+        return EffWind
+    # Handle flow field names
+    elseif s == "flow_field_vel_reduction"
+        return VelReduction
+    elseif s == "flow_field_added_turbulence"
+        return AddedTurbulence
+    elseif s == "flow_field_eff_wind_speed"
+        return EffWind
+    # Handle measurement names
+    elseif s == "msr_vel_reduction"
+        return VelReduction
+    elseif s == "msr_added_turbulence"
+        return AddedTurbulence
+    elseif s == "msr_eff_wind_speed"
         return EffWind
     else
         error("Unknown measurement type: $s")

@@ -15,11 +15,13 @@ vis_file      = "data/vis_default.yaml"
 
 vis = Vis(vis_file)
 
-if !vis.show_plots
-    plt.ioff()
-    plt.pygui(false)
-else
-    plt.ion()
+if (@isdefined plt) && !isnothing(plt)
+    if !vis.show_plots
+        plt.ioff()
+        plt.pygui(false)
+    else
+        plt.ion()
+    end
 end
 
 # Automatic parallel/threading setup
@@ -75,7 +77,7 @@ with_logger(tee_logger) do
             continue
         end
         Z, X, Y = calcFlowField(set, wf, wind, floris)
-        msr = flow_field.name == "flow_field_vel_reduction" ? 1 : flow_field.name == "flow_field_added_turbulence" ? 2 : flow_field.name == "flow_field_eff_wind_speed" ? 3 : 1
+        msr = toMSR(flow_field.name)
         if flow_field.online
             if ! vis.unique_output_folder
                 @info "Cleaning up video folder: $(vis.video_path)"
