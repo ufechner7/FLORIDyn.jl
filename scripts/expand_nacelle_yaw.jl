@@ -1,4 +1,6 @@
-#!/usr/bin/env julia
+# Copyright (c) 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Extend SOWFA_nacelleYaw.csv blocks from 9 turbines (0..8) to 54 turbines (0..53)
 # Usage: julia scripts/expand_nacelle_yaw.jl [input_csv] [output_csv]
 # If output_csv is omitted, the input file is overwritten in-place.

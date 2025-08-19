@@ -1,4 +1,6 @@
-#!/usr/bin/env julia
+# Copyright (c) 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Determine minimal and maximal x and y positions of wind turbines from a YAML config.
 # Usage:
 #   julia scripts/minmax_turbine_positions.jl [path/to/config.yaml]
@@ -47,6 +49,4 @@ function main()
     print_report(res, abspath(path))
 end
 
-if abspath(PROGRAM_FILE) == @__FILE__
-    main()
-end
+main()
