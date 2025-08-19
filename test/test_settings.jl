@@ -152,6 +152,49 @@ using FLORIDyn, Test
         end
     end
 
+    @testset "list_projects" begin
+        @testset "reads projects from package/local data" begin
+            projs = FLORIDyn.list_projects()
+            @test isa(projs, Vector{Tuple{String,String}})
+            # Should contain the two reference projects from repo data
+            @test ("2021_9T_Data", "vis_default.yaml") in projs
+            @test ("2021_54T_NordseeOne", "vis_54T.yaml") in projs
+        end
+
+        @testset "prefers local projects.yaml override" begin
+            mktempdir() do tmp
+                cd(tmp) do
+                    mkpath("data")
+                    content = """
+projects:
+  - project:
+      name: Alpha
+      description: test
+      vis: alpha_vis.yaml
+  - project:
+      name: Beta
+      description: test
+      vis: beta_vis.yaml
+"""
+                    write(joinpath("data", "projects.yaml"), content)
+                    projs = FLORIDyn.list_projects()
+                    @test projs == [("Alpha", "alpha_vis.yaml"), ("Beta", "beta_vis.yaml")]
+                end
+            end
+        end
+
+        @testset "empty projects list returns empty vector" begin
+            mktempdir() do tmp
+                cd(tmp) do
+                    mkpath("data")
+                    write(joinpath("data", "projects.yaml"), "projects: []\n")
+                    projs = FLORIDyn.list_projects()
+                    @test projs == Tuple{String,String}[]
+                end
+            end
+        end
+    end
+
     @testset "Vis constructor from YAML" begin
         # Test loading Vis from YAML file
         @testset "Load from vis_default.yaml" begin
