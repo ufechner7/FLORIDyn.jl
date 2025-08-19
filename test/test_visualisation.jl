@@ -211,8 +211,14 @@ if ! isinteractive()
                 nM = 3  # Number of measurements (typically velocity reduction, added turbulence, effective wind speed)
                 zh = 90.0  # Hub height
                 wf, set, floris, wind, md = get_parameters()
+                # Create appropriate buffers depending on threading
+                if Threads.nthreads() > 1
+                    buffers = FLORIDyn.create_thread_buffers(wf, Threads.nthreads() + 1, floris)
+                else
+                    buffers = FLORIDyn.create_thread_buffers(wf, 1, floris)
+                end
                 # Call the function with the correct number of parameters
-                measurements = getMeasurements(mx, my, nM, zh, wf, set, floris, wind)
+                measurements = getMeasurements(buffers, mx, my, nM, zh, wf, set, floris, wind)
                 
                 # Test basic input properties that should be satisfied
                 @test size(mx) == size(my)  # Matrices must have same dimensions

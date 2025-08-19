@@ -34,9 +34,8 @@ run_floridyn
 
 # Visualization
 ```@docs
-getMeasurements
 create_thread_buffers
-getMeasurementsP
+getMeasurements
 calcFlowField
 plotFlowField
 plot_flow_field
