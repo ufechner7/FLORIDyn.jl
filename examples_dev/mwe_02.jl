@@ -8,8 +8,12 @@ using DistributedNext
 
 # Only add a worker if we don't have any dedicated worker processes
 if workers() < [2]  # workers() counts main + workers, so < [2] means no dedicated workers
-    println("No dedicated workers found, adding 1 worker...")
-    @time addprocs(1)
+    sleep(1)
+    if workers() < [2]
+        @warn "workers: $(workers()), nthreads: $(Threads.nthreads())"
+        println("No dedicated workers found, adding 1 worker...")
+        @time addprocs(1)
+    end
 else
     println("Already have $(nprocs()-1) dedicated worker(s), total processes: $(nprocs())")
     println("Workers: $(workers())")
