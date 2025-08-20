@@ -71,6 +71,7 @@ jl2
 ]test
 exit()
 ```
+**Make sure you have followed the steps in the section [The advanced way](@ref) of the user guide.**
 
 ### Using Revise
 Using [Revise](https://github.com/timholy/Revise.jl) allows you to edit and run code that is part of `FLORIDyn.jl` without restarting Julia.
