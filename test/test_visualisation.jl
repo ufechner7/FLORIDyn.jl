@@ -286,7 +286,8 @@ if ! isinteractive()
                 # Calculate expected grid dimensions
                 # Grid points = (max - min) / resolution + 1
                 expected_x_points = Int(round((custom_vis.field_limits_max[1] - custom_vis.field_limits_min[1]) / custom_vis.field_resolution)) + 1
-                expected_y_points = Int(round((custom_vis.field_limits_max[2] - custom_vis.field_limits_min[2]) / custom_vis.field_resolution)) + 1
+                expected_x_points = expected_grid_points(custom_vis.field_limits_min[1], custom_vis.field_limits_max[1], custom_vis.field_resolution)
+                expected_y_points = expected_grid_points(custom_vis.field_limits_min[2], custom_vis.field_limits_max[2], custom_vis.field_resolution)
                 
                 # Validate grid dimensions match vis parameters
                 @test size(X, 2) == expected_x_points  # X grid has expected number of columns
