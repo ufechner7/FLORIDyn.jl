@@ -89,6 +89,11 @@ jobs:
       - name: Install FFmpeg (Chocolatey)
         run: |
           choco install ffmpeg -y
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1' # latest stable Julia
