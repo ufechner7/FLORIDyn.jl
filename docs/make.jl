@@ -32,7 +32,7 @@ makedocs(;
         "Settings" => "settings.md",
         "Video Creation" => "video_creation.md", 
         "User Guide" => "user_guide.md",
-    "Examples" => "examples.md",
+        "Examples" => "examples.md",
         "Developer notes" => "developer.md",
         "FAQ" => "faq.md"
     ],

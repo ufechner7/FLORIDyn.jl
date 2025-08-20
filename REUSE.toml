@@ -16,6 +16,11 @@ SPDX-FileCopyrightText = "2025 Marcus Becker, Uwe Fechner"
 SPDX-License-Identifier = "CC-BY-4.0"
 
 [[annotations]]
+path = ["docs/src/windfarm-layout-nordsee-one.webp"]
+SPDX-FileCopyrightText = "2025 Nordsee One GmbH"
+SPDX-License-Identifier = "CC-BY-4.0"
+
+[[annotations]]
 path = ["docs/.gitignore", "docs/Project.toml"]
 SPDX-FileCopyrightText = "2025 Uwe Fechner"
 SPDX-License-Identifier = "MIT"
