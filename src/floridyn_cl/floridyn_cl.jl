@@ -694,7 +694,7 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
         end
     end
 
-    return ub.M_buffer
+    return nothing
 end
 
 """
