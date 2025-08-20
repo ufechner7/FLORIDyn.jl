@@ -144,8 +144,7 @@ Choose function to execute or `q` to quit:
    open_documentation()
    quit
 ```
-or similar. You can execute any of the examples by selecting one of them with the cursor keys and then pressing 
-<ENTER>. There might be additional examples that are not yet integrated in the menu. You can execute them
+or similar. First, select a project by choosing the first menu entry. Then, you can show any of the visualizations by selecting one of them with the cursor keys and then pressing <ENTER>. There might be additional examples that are not yet integrated in the menu. You can execute them
 with `include("examples/<MY_EXAMPLE.jl>")`. Some examples require that Julia runs in single-threaded mode.
 If you want to run such an example, start Julia with `jl2`.
 
