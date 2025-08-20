@@ -142,10 +142,11 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         # Initialize or update plot state
         if state === nothing
             # First call - create new figure and all elements
-            size = 0.84*4
+            size = 0.84
             ratio = (minimum(mx)- maximum(mx)) / (minimum(my) - maximum(my))
             wide = ratio > 2.0
             if wide
+                size *= 2.5
                 fig = plt.figure(figure_name, figsize=(7.25size+0.5, 7.25size/ratio))
             else
                 fig = plt.figure(figure_name, figsize=(7.25size, 6size))
