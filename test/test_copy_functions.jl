@@ -28,7 +28,12 @@ using Pkg
             
             # Check that the file has executable permissions
             stat_info = stat("bin/run_julia")
-            @test (stat_info.mode & 0o111) != 0  # Check if any execute bits are set
+            if Sys.iswindows()
+                # Windows may not set execute bits; require it to be readable instead
+                @test (stat_info.mode & 0o400) != 0  # Owner read
+            else
+                @test (stat_info.mode & 0o111) != 0  # Any execute bits set
+            end
             
             # Check that the file content is copied correctly
             # Read the original file from the package
