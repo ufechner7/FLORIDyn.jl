@@ -142,24 +142,40 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         # Initialize or update plot state
         if state === nothing
             # First call - create new figure and all elements
-            size = 0.84
-            fig = plt.figure(figure_name, figsize=(7.25size, 6size))
+            size = 0.84*4
+            ratio = (minimum(mx)- maximum(mx)) / (minimum(my) - maximum(my))
+            wide = ratio > 2.0
+            if wide
+                fig = plt.figure(figure_name, figsize=(7.25size+0.5, 7.25size/ratio))
+            else
+                fig = plt.figure(figure_name, figsize=(7.25size, 6size))
+            end
             ax = plt.gca()
             n = 40
             levels = range(lev_min, stop=lev_max, length=n+1)
             # Correct axis order: X=mx (West-East), Y=my (South-North)
             contour_collection = plt.contourf(mx, my, mz_2d, n; levels, cmap="inferno")
-            cb = plt.colorbar()
-            cb.set_label(label, labelpad=3)
+            if wide
+                cb = plt.colorbar(fraction=0.046, pad=0.01, orientation="vertical")
+                cb.set_label(label, labelpad=0)
+            else
+                cb = plt.colorbar()
+                cb.set_label(label, labelpad=3)
+            end
             
             # Set fixed axis limits and labels - do this only once
+            
             plt.xlim(minimum(mx), maximum(mx))
             plt.ylim(minimum(my), maximum(my))
             plt.xlabel("West-East [m]")
             plt.ylabel("South-North [m]")
-            
+
             # Apply tight_layout with custom padding for more top space
-            plt.tight_layout(pad=1.0, h_pad=0.3, w_pad=0.3, rect=[0, 0, 1, 0.97])
+            if wide
+                plt.tight_layout(pad=0.01, h_pad=0.01, w_pad=0.01, rect=[0.007, 0.007, 1, 0.97])
+            else
+                 plt.tight_layout(pad=1.0, h_pad=0.3, w_pad=0.3, rect=[0, 0, 1, 0.97])
+            end
             
             # Initialize empty containers for dynamic elements
             turbine_lines = []
