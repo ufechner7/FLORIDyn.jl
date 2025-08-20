@@ -131,15 +131,16 @@ To run the examples, launch Julia with one of the start scripts and then type `m
 ```
 julia> menu()
 
-Choose function to execute or `q` to quit: 
- > flow_field_vel_reduction        = PLT=1; include("main.jl")
-   flow_field_added_turbulence     = PLT=2; include("main.jl")
-   flow_field_eff_wind_speed       = PLT=3; include("main.jl")
-   plot_measurements_              = PLT=4; include("main.jl")
-   plot_measurements_lineplot      = PLT=5; include("main.jl")
-   flow_field_vel_reduction_online = PLT=6; include("main.jl")
-   create_video_from_saved_frames  = PLT=7; include("main.jl")
-   play_videos                     = include("play_video.jl")
+Choose function to execute or `q` to quit:
+ > "select_project()"; select_project()
+   "flow_field_vel_reduction";        = PLT=1; include("main.jl")
+   "flow_field_added_turbulence";     = PLT=2; include("main.jl")
+   "flow_field_eff_wind_speed";       = PLT=3; include("main.jl")
+   "plot_measurements";               = PLT=4; include("main.jl")
+   "plot_measurements_lineplot";      = PLT=5; include("main.jl")
+   "flow_field_vel_reduction_online"; = PLT=6; include("main.jl")
+   "create_video_from_saved_frames";  = PLT=7; include("main.jl")
+   "play_videos";                     = include("play_video.jl")
    open_documentation()
    quit
 ```

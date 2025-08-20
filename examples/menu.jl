@@ -16,18 +16,18 @@ using REPL.TerminalMenus
 settings_file, vis_file = get_default_project()
 @info "Using settings file: $settings_file"
 
-options = ["\"select_project()\"; select_project()",
-           "\"flow_field_vel_reduction\"; PLT=1; include(\"main.jl\")",
-           "\"flow_field_added_turbulence\"; PLT=2; include(\"main.jl\")",
-           "\"flow_field_eff_wind_speed\"; PLT=3; include(\"main.jl\")",
-           "\"plot_measurements\"; PLT=4; include(\"main.jl\")",
-           "\"plot_measurements_lineplot\"; PLT=5; include(\"main.jl\")",
+options = ["select_project()",
+           "\"flow_field_vel_reduction\";        PLT=1; include(\"main.jl\")",
+           "\"flow_field_added_turbulence\";     PLT=2; include(\"main.jl\")",
+           "\"flow_field_eff_wind_speed\";       PLT=3; include(\"main.jl\")",
+           "\"plot_measurements\";               PLT=4; include(\"main.jl\")",
+           "\"plot_measurements_lineplot\";      PLT=5; include(\"main.jl\")",
            "\"flow_field_vel_reduction_online\"; PLT=6; include(\"main.jl\")",
-           "\"create_video_from_saved_frames\"; PLT=7; include(\"main.jl\")",
-           "\"run_all_visualisations\"; include(\"main_all.jl\")",
-           "\"read_results\"; include(\"read_results.jl\")",
-           "\"plot_wind_direction\"; include(\"plot_wind_dir.jl\")",
-           "\"play_videos\"; include(\"play_video.jl\")",
+           "\"create_video_from_saved_frames\";  PLT=7; include(\"main.jl\")",
+           "\"run_all_visualisations\";          include(\"main_all.jl\")",
+           "\"read_results\";                    include(\"read_results.jl\")",
+           "\"plot_wind_direction\";             include(\"plot_wind_dir.jl\")",
+           "\"play_videos\";                     include(\"play_video.jl\")",
            "open_documentation()",
            "quit"]
 
