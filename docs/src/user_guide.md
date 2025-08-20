@@ -132,7 +132,7 @@ To run the examples, launch Julia with one of the start scripts and then type `m
 julia> menu()
 
 Choose function to execute or `q` to quit:
- > "select_project()"; select_project()
+ > select_project()
    "flow_field_vel_reduction";        = PLT=1; include("main.jl")
    "flow_field_added_turbulence";     = PLT=2; include("main.jl")
    "flow_field_eff_wind_speed";       = PLT=3; include("main.jl")
