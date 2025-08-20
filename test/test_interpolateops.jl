@@ -61,7 +61,7 @@ wf_dict_02 = vars_after_interpolateOPs_T["T"]
         # Test that the non-allocating version produces the same results as the reference
         if !compare_windFarms(wf_ref_02_copy, wf_no_alloc; detailed=false, tolerance=1e-6)
             @warn "WindFarm does not match reference after interpolateOPs!"
-            # compare_windFarms(wf_ref_02_copy, wf_no_alloc; detailed=true, tolerance=1e-6)
+            @debug compare_windFarms(wf_ref_02_copy, wf_no_alloc; detailed=true, tolerance=1e-6)
             println("Calculated (non-allocating): ", wf_no_alloc.intOPs); println()
             println("Reference: ", wf_ref_02_copy.intOPs)
         end
