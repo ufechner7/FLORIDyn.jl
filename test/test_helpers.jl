@@ -209,7 +209,7 @@ function compare_windFarms(wf1::WindFarm, wf2::WindFarm; detailed=true, toleranc
         
         if detailed
             status = equal ? "✓" : "✗"
-            println(sprintf("  %-15s %-12s %-12s   %s", string(field), string(size1), string(size2), status))
+            println(@sprintf("  %-15s %-12s %-12s   %s", string(field), string(size1), string(size2), status))
         end
     end
     
@@ -231,7 +231,7 @@ function compare_windFarms(wf1::WindFarm, wf2::WindFarm; detailed=true, toleranc
         
         if detailed
             status = equal ? "✓" : "✗"
-            println(sprintf("  %-15s %10d %10d     %s", string(field), len1, len2, status))
+            println(@sprintf("  %-15s %10d %10d     %s", string(field), len1, len2, status))
         end
     end
     
