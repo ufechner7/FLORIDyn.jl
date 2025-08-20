@@ -143,7 +143,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         if state === nothing
             # First call - create new figure and all elements
             size = 0.84
-            ratio = (minimum(mx)- maximum(mx)) / (minimum(my) - maximum(my))
+            ratio = (minimum(mx) - maximum(mx)) / (minimum(my) - maximum(my))
             wide = ratio > 2.0
             if wide
                 size *= 2.5
