@@ -118,7 +118,7 @@ floris:
            # turbines therein as source of higher TI.
 
 floridyn:
-  n_op: 350
+  n_op: 400
   deltaUW: 10.0
   deltaDW: 0.5
   deltaCW: 3.0
