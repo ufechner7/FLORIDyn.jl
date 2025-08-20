@@ -3,6 +3,11 @@
 ```@meta
 CurrentModule = FLORIDyn
 ```
+## Basic example
+This example uses 9 turbines in a 3x3 configuration. It is used for verification
+purposes.
+
+The configuration file is `2021_9T_Data.yaml` in the data folder.
 
 ## Nordsee One
 
