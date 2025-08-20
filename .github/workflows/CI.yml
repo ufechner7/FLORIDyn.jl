@@ -127,11 +127,11 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip --break-system-packages
           python3 -m pip install matplotlib --break-system-packages
-      - name: Set up PyCall to use system Python
-        run: julia -e 'ENV["PYTHON"]="/opt/homebrew/bin/python3"; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1' # latest stable Julia
+      - name: Set up PyCall to use system Python
+        run: julia -e 'ENV["PYTHON"]="/opt/homebrew/bin/python3"; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
