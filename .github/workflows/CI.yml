@@ -93,11 +93,12 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
-
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1' # latest stable Julia
           arch: x64
+      - name: Rebuild PyCall
+        run: julia -e 'using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
