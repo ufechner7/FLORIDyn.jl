@@ -52,7 +52,7 @@ vis:
   v_max: 10.0   # Maximum velocity for color scale in flow field visualizations [m/s]
   # Minimum relative velocity value for velocity reduction visualizations (msr=VelReduction)
   # Controls the color scale for relative wind speed plots. Range: 0 .. 100 %
-  rel_v_min:  20.0 # Unit: [%]
+  rel_v_min:  15.0 # Unit: [%]
   # Maximum relative velocity value for velocity reduction visualizations (msr=VelReduction)
   # Controls the upper limit for relative wind speed plots. Range: 0 .. 100 %
   rel_v_max: 100.0 # Unit: [%]
