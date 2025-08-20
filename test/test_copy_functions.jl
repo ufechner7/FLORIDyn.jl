@@ -310,7 +310,11 @@ using Pkg
                         stat_info = stat(joinpath("examples", file))
                         mode = stat_info.mode & 0o777
                         @test (mode & 0o700) == 0o700  # Owner should have rwx
-                        @test (mode & 0o070) == 0o070  # Group should have rwx
+                        if Sys.iswindows()
+                            @test (mode & 0o060) == 0o060  # Group should have rw; exec may be unset on Windows
+                        else
+                            @test (mode & 0o070) == 0o070  # Group should have rwx
+                        end
                         @test (mode & 0o004) == 0o004  # Others should have read
                     end
                 end
