@@ -17,8 +17,8 @@ const CLEAR_SCR = "\033c"
 
 settings_file, vis_file = get_default_project()
 
-options = ["select_project();                    print(CLEAR_SCR)",
-           "select_measurement();                print(CLEAR_SCR)",
+options = ["select_project();                  print(CLEAR_SCR)",
+           "select_measurement();              print(CLEAR_SCR)",
            "\"plot_flow_field\";                 PLT=1; include(\"main.jl\")",
            "\"plot_measurements\";               PLT=4; include(\"main.jl\")",
            "\"plot_measurements_lineplot\";      PLT=5; include(\"main.jl\")",
@@ -57,7 +57,7 @@ function example_menu()
     active = true
     print(CLEAR_SCR)
     while active
-        @info "Using settings file: $(basename(get_default_project()[1]))"
+        @info "Using project:       $(splitext(basename(get_default_project()[1]))[1])"
         @info "Using measurement:   $(get_default_msr())"
 
         menu = RadioMenu(options, pagesize=8)
