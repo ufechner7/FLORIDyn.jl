@@ -68,7 +68,7 @@ end
 
 """
     plot_x(times, plot_data...; ylabels=nothing, labels=nothing, fig="Wind Direction", 
-           xlabel="rel_time [s]", ysize=10, bottom=0.02, plt=nothing) -> Nothing
+           xlabel="rel_time [s]", ysize=10, bottom=0.02, legend_size=nothing, plt=nothing) -> Nothing
 
 High-level time series plotting function that automatically dispatches to either 
 parallel or sequential plotting based on the number of available threads and processes.
@@ -82,6 +82,7 @@ parallel or sequential plotting based on the number of available threads and pro
 - `xlabel`: X-axis label (default: "rel_time [s]")
 - `ysize`: Figure height (default: 10)
 - `bottom`: Bottom margin (default: 0.02)
+- `legend_size`: Legend font size (optional)
 - `plt`: Matplotlib PyPlot instance (only used in sequential mode)
 
 # Returns
@@ -95,26 +96,26 @@ provided pyplot instance.
 # Example
 ```julia
 plot_x(times, data1, data2; ylabels=["Turbine 1", "Turbine 2"], 
-       labels=["Wind Speed", "Power"], plt=plt)
+       labels=["Wind Speed", "Power"], legend_size=8, plt=plt)
 ```
 
 # See Also
 - [`plotx`](@ref): The underlying plotting function used in sequential mode
 """
 function plot_x(times, plot_data...; ylabels=nothing, labels=nothing, 
-                fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, plt=nothing)
+                fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, legend_size=nothing, plt=nothing)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Use parallel plotting with remote worker
         @spawnat 2 Main.rmt_plotx(times, plot_data...; ylabels=ylabels, labels=labels,
-                                  fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom)
+                                  fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size)
     else
         # Use sequential plotting
         if plt === nothing
             error("plt argument is required for sequential plotting")
         end
-        p=plt.plotx(times, plot_data...; ylabels=ylabels, labels=labels,
-              fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom)
-        display(p)  # Ensure the plot is displayed in interactive mode
+        p = plt.plotx(times, plot_data...; ylabels=ylabels, labels=labels,
+                      fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size)
+        display(p)  # Ensure the plot is displayed
     end
     nothing
 end

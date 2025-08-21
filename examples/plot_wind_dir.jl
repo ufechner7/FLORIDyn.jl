@@ -105,10 +105,15 @@ if MULTI
         push!(turbine_labels, "Wind Direction [°]")
         push!(subplot_labels, labels_in_subplot)
     end
+    if n_turbines > 9
+        legend_size = 6
+    else
+        legend_size = 10
+    end
     
     # Plot with multiple lines per subplot
     plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
-              fig="Wind Direction", xlabel="rel_time [s]", ysize = 10, bottom=0.02, plt=plt1)
+              fig="Wind Direction", xlabel="rel_time [s]", ysize = 10, bottom=0.02, plt=plt1, legend_size=legend_size)
 else
     # Single turbine mode - one turbine per subplot
     plot_data = [wind_dir_matrix[:, i] for i in 1:n_turbines]
