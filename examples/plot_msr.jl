@@ -61,27 +61,26 @@ else
     error("Invalid msr value: $msr. Must be VelReduction, AddedTurbulence, or EffWind.")
 end
 
-# Check if the required column exists in the DataFrame
-if !(data_column in names(md))
-    error("Column '$data_column' not found in measurement data. Available columns: $(names(md))")
-end
+# Extract measurement data for each turbine
 measurement_data = md[!, data_column]
 timeFDyn = md.Time .- md.Time[1]
-lay = get_layout(wf.nT)
+
+# Use the actual time data from the simulation results
+times = timeFDyn[1:wf.nT:end]  # Extract times corresponding to first turbine data points
+
+# Arrays to store time series data  
+measurements = Vector{Float64}[]
 
 for iT in 1:wf.nT
-    push!(measurements,  measurement_data[iT:wf.nT:end])
+    push!(measurements, measurement_data[iT:wf.nT:end])
 end
 
-for time in sim.start_time:sim.time_step:sim.end_time
-    push!(times, time - sim.start_time)
-end
+# Convert vector of vectors to matrix for easier plotting
+# measurements is a vector of 9 vectors, each with 301 time points
+# We want a matrix that's 301 × 9 (time × turbines)
+msr_matrix = hcat(measurements...)  # This creates a 301 × 9 matrix
 
-# # Convert vector of vectors to matrix for easier plotting
-msr_matrix = hcat(measurements...)  # Transpose to get time × turbines
-msr_matrix = msr_matrix'          # Now it's time × turbines
-
-# # Create dynamic plot arguments based on number of turbines
+# Create dynamic plot arguments based on number of turbines
 n_turbines = wf.nT
 
 
@@ -118,7 +117,7 @@ for row in 1:rows
         push!(plot_data, lines_in_subplot)
     end
     
-    push!(turbine_labels, "Wind Direction [°]")
+    push!(turbine_labels, ylabel)  # Use the appropriate ylabel for the measurement type
     push!(subplot_labels, labels_in_subplot)
 end
     
