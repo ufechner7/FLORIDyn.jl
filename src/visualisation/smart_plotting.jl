@@ -103,18 +103,19 @@ plot_x(times, data1, data2; ylabels=["Turbine 1", "Turbine 2"],
 - [`plotx`](@ref): The underlying plotting function used in sequential mode
 """
 function plot_x(times, plot_data...; ylabels=nothing, labels=nothing, 
-                fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, legend_size=nothing, plt=nothing)
+                fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, 
+                legend_size=nothing, plt=nothing, loc=nothing)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Use parallel plotting with remote worker
         @spawnat 2 Main.rmt_plotx(times, plot_data...; ylabels=ylabels, labels=labels,
-                                  fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size)
+                                  fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size, loc=loc)
     else
         # Use sequential plotting
         if plt === nothing
             error("plt argument is required for sequential plotting")
         end
         p = plt.plotx(times, plot_data...; ylabels=ylabels, labels=labels,
-                      fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size)
+                      fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size, loc=loc)
         display(p)  # Ensure the plot is displayed
     end
     nothing

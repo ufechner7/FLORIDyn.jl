@@ -1086,6 +1086,7 @@ if ! isinteractive()
                                    xlabel="Custom X Label",
                                    ysize=8,
                                    bottom=0.05,
+                                   legend_size=10,
                                    plt=plt)
                 
                 # Test error handling when plt is missing in single-threaded mode
@@ -1157,6 +1158,7 @@ if ! isinteractive()
                                    xlabel="rel_time [s]",
                                    ysize=10,
                                    bottom=0.02,
+                                   legend_size=8,
                                    plt=plt)
             end
             
@@ -1176,6 +1178,9 @@ if ! isinteractive()
                 
                 # Test default bottom parameter  
                 @test_nowarn plot_x(times, data; bottom=0.1, plt=plt)
+                
+                # Test legend_size parameter
+                @test_nowarn plot_x(times, data; legend_size=12, plt=plt)
             end
             
             @testset "error handling" begin
