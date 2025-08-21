@@ -1,0 +1,3 @@
+default:
+  name: 2021_9T_Data
+  msr: VelReduction  # valid options: VelReduction, AddedTurbulence, EffWind
