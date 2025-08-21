@@ -82,31 +82,70 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
     
     # Measurement plotting
     if separated
-        lay = get_layout(wf.nT)
-        
         # Calculate y-axis limits
         y_lim = [minimum(measurement_data), maximum(measurement_data)]
         y_range = y_lim[2] - y_lim[1]
         y_lim = y_lim .+ [-0.1, 0.1] * max(y_range, 0.5)
-        
-        fig = plt.figure(title, figsize=(10size, 6size))
-        c = plt.get_cmap("inferno")(0.5)  # Single color for separated plots
-        
-        for iT in 1:wf.nT
-            plt.subplot(lay[1], lay[2], iT)
-            plt.plot(
-                timeFDyn[iT:wf.nT:end],
-                measurement_data[iT:wf.nT:end],
-                linewidth=2, color=c
-            )
-            plt.grid(true)
-            plt.title("Turbine $(iT)")
-            plt.xlim(max(timeFDyn[1], 0), timeFDyn[end])
-            plt.ylim(y_lim...)
-            plt.xlabel("Time [s]")
-            plt.ylabel(ylabel)
-            plt.tight_layout()   
-            fig.subplots_adjust(wspace=0.55)
+        if wf.nT < 10
+            lay = get_layout(wf.nT)
+            fig = plt.figure(title, figsize=(10size, 6size))
+            c = plt.get_cmap("inferno")(0.5)  # Single color for separated plots
+            
+            for iT in 1:wf.nT
+                plt.subplot(lay[1], lay[2], iT)
+                plt.plot(
+                    timeFDyn[iT:wf.nT:end],
+                    measurement_data[iT:wf.nT:end],
+                    linewidth=2, color=c
+                )
+                plt.grid(true)
+                plt.title("Turbine $(iT)")
+                plt.xlim(max(timeFDyn[1], 0), timeFDyn[end])
+                plt.ylim(y_lim...)
+                plt.xlabel("Time [s]")
+                plt.ylabel(ylabel)
+                plt.tight_layout()   
+                fig.subplots_adjust(wspace=0.55)
+            end
+        else          
+            fig = plt.figure(title, figsize=(10size, 6size))
+            rows, lines = get_layout(wf.nT)
+            n_turbines = wf.nT
+
+            # Group turbines into subplots based on layout
+            plot_data = []
+            turbine_labels = []
+            subplot_labels = []
+            
+            local turbine_idx = 1
+            for row in 1:rows
+                if turbine_idx > n_turbines
+                    break
+                end
+                
+                # Collect lines for this subplot
+                local lines_in_subplot = Vector{Vector{Float64}}()
+                local labels_in_subplot = Vector{String}()
+                
+                for line in 1:lines
+                    if turbine_idx <= n_turbines
+                        # measurement_data[turbine_idx:wf.nT:end],
+                        # push!(lines_in_subplot, wind_dir_matrix[:, turbine_idx])
+                        # push!(labels_in_subplot, "T$(turbines[turbine_idx])")
+                        turbine_idx += 1
+                    end
+                end
+                
+                # Add subplot data
+                if length(lines_in_subplot) == 1
+                    push!(plot_data, lines_in_subplot[1])
+                else
+                    push!(plot_data, lines_in_subplot)
+                end
+                
+                push!(turbine_labels, ylabel)
+                push!(subplot_labels, labels_in_subplot)
+            end
         end
     else
         fig = plt.figure(title*" - Line Plot")

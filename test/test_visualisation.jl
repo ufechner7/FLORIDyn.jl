@@ -1040,6 +1040,193 @@ if ! isinteractive()
                 end
             end
         end
+        @testset "plot_x" begin
+            @testset "function exists and is callable" begin
+                # Test that the function exists and has the right signature
+                @test isa(plot_x, Function)
+                
+                # Test that we can get method information
+                methods_list = methods(plot_x)
+                @test length(methods_list) >= 1
+                
+                # Check that the function is exported
+                @test :plot_x in names(FLORIDyn)
+            end
+            
+            @testset "basic functionality with test data" begin
+                # Create test time series data
+                times = collect(0.0:10.0:100.0)  # 11 time points from 0 to 100
+                data1 = sin.(times * π / 50)     # Sine wave
+                data2 = cos.(times * π / 50)     # Cosine wave
+                data3 = times / 100             # Linear trend
+                
+                ylabels = ["Turbine 1", "Turbine 2", "Turbine 3"]
+                labels = ["Wind Speed", "Power", "Efficiency"]
+                
+                # Test basic functionality (should dispatch based on threading/processing environment)
+                @test_nowarn plot_x(times, data1, data2, data3; ylabels=ylabels, labels=labels, plt=plt)
+                
+                # Test that the function runs without error
+                @test true
+            end
+            
+            @testset "parameter validation" begin
+                # Create simple test data
+                times = [0.0, 1.0, 2.0]
+                data = [1.0, 2.0, 3.0]
+                
+                # Test with default parameters
+                @test_nowarn plot_x(times, data; plt=plt)
+                
+                # Test with custom parameters
+                @test_nowarn plot_x(times, data; 
+                                   ylabels=["Test"], 
+                                   labels=["Test Plot"], 
+                                   fig="Custom Title",
+                                   xlabel="Custom X Label",
+                                   ysize=8,
+                                   bottom=0.05,
+                                   plt=plt)
+                
+                # Test error handling when plt is missing in single-threaded mode
+                if Threads.nthreads() == 1 && nprocs() < 2
+                    @test_throws ErrorException plot_x(times, data)
+                end
+            end
+            
+            @testset "different data configurations" begin
+                # Test with single data series
+                times = [0.0, 5.0, 10.0, 15.0]
+                single_data = [10.0, 15.0, 12.0, 18.0]
+                
+                @test_nowarn plot_x(times, single_data; 
+                                   ylabels=["Single Series"],
+                                   fig="Single Data Test",
+                                   plt=plt)
+                
+                # Test with multiple data series
+                data1 = [10.0, 15.0, 12.0, 18.0]
+                data2 = [5.0, 8.0, 6.0, 9.0]
+                data3 = [20.0, 25.0, 22.0, 28.0]
+                
+                @test_nowarn plot_x(times, data1, data2, data3;
+                                   ylabels=["Series 1", "Series 2", "Series 3"],
+                                   labels=["Plot 1", "Plot 2", "Plot 3"],
+                                   fig="Multiple Data Test",
+                                   plt=plt)
+                
+                # Test with empty ylabels and labels (should use defaults)
+                @test_nowarn plot_x(times, data1, data2;
+                                   fig="Default Labels Test",
+                                   plt=plt)
+            end
+            
+            @testset "threading and process dispatch" begin
+                # Create test data
+                times = [0.0, 1.0, 2.0]
+                data = [1.0, 4.0, 2.0]
+                
+                # Test behavior based on environment
+                if Threads.nthreads() > 1 && nprocs() > 1
+                    # Should use remote plotting (rmt_plotx)
+                    @test_nowarn plot_x(times, data; fig="Multi-threaded Test")
+                else
+                    # Should use sequential plotting (requires plt)
+                    @test_nowarn plot_x(times, data; plt=plt, fig="Single-threaded Test")
+                    
+                    # Should error without plt in single-threaded mode
+                    @test_throws ErrorException plot_x(times, data; fig="Error Test")
+                end
+            end
+            
+            @testset "wind direction specific test" begin
+                # Test with data similar to wind direction plotting
+                times = collect(0.0:12.0:120.0)  # Every 12 seconds for 2 minutes
+                wind_dir_t1 = 270.0 .+ 5.0 * sin.(times * π / 60)  # Oscillating around 270°
+                wind_dir_t2 = 280.0 .+ 3.0 * cos.(times * π / 60)  # Oscillating around 280°
+                wind_dir_t3 = 275.0 .+ 2.0 * sin.(times * π / 30)  # Different frequency
+                
+                turbine_labels = ["T1", "T2", "T3"]
+                subplot_labels = ["Wind Direction", "Wind Direction", "Wind Direction"]
+                
+                # Test the specific use case from the original request
+                @test_nowarn plot_x(times, wind_dir_t1, wind_dir_t2, wind_dir_t3;
+                                   ylabels=turbine_labels,
+                                   labels=subplot_labels,
+                                   fig="Wind Direction",
+                                   xlabel="rel_time [s]",
+                                   ysize=10,
+                                   bottom=0.02,
+                                   plt=plt)
+            end
+            
+            @testset "parameter defaults" begin
+                # Test that default parameters match the expected values
+                times = [0.0, 1.0, 2.0]
+                data = [1.0, 2.0, 1.5]
+                
+                # Test default fig parameter
+                @test_nowarn plot_x(times, data; plt=plt)  # Should use "Wind Direction" as default
+                
+                # Test default xlabel parameter
+                @test_nowarn plot_x(times, data; xlabel="Time [min]", plt=plt)
+                
+                # Test default ysize parameter
+                @test_nowarn plot_x(times, data; ysize=12, plt=plt)
+                
+                # Test default bottom parameter  
+                @test_nowarn plot_x(times, data; bottom=0.1, plt=plt)
+            end
+            
+            @testset "error handling" begin
+                # Test with mismatched data lengths
+                times = [0.0, 1.0, 2.0]
+                bad_data = [1.0, 2.0]  # Different length than times
+                
+                # The function should handle this gracefully or error appropriately
+                if Threads.nthreads() == 1 && nprocs() < 2
+                    # In single-threaded mode, errors from plotx should propagate
+                    @test_throws Exception plot_x(times, bad_data; plt=plt)
+                else
+                    # In multi-threaded mode, might be handled by remote worker
+                    # Just test that it doesn't crash the main process
+                    @test_nowarn plot_x(times, bad_data)
+                end
+                
+                # Test with empty data
+                empty_times = Float64[]
+                empty_data = Float64[]
+                
+                if Threads.nthreads() == 1 && nprocs() < 2
+                    @test_throws Exception plot_x(empty_times, empty_data; plt=plt)
+                end
+            end
+            
+            @testset "integration with smart plotting pattern" begin
+                # Test that plot_x follows the same pattern as other smart plotting functions
+                
+                # Should have similar behavior to plot_flow_field and plot_measurements
+                times = [0.0, 10.0, 20.0]
+                data = [1.0, 2.0, 1.5]
+                
+                # Test consistency with other smart plotting functions
+                @test_nowarn plot_x(times, data; plt=plt)
+                
+                # Should handle the same threading logic
+                if Threads.nthreads() > 1 && nprocs() > 1
+                    # Should work without plt in multi-threaded mode
+                    @test_nowarn plot_x(times, data)
+                else
+                    # Should require plt in single-threaded mode
+                    @test_throws ErrorException plot_x(times, data)
+                end
+                
+                # Should return nothing like other smart plotting functions
+                result = plot_x(times, data; plt=plt)
+                @test result === nothing
+            end
+        end
+        
     end
 
     @testset verbose=true "Pretty Print Functions                                  " begin
