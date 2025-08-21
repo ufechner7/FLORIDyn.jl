@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt=nothing) -> Nothing
+    plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt=nothing, fig=nothing) -> Nothing
 
 High-level plotting function that automatically dispatches to either parallel or 
 sequential plotting based on the number of available threads and processes.
@@ -13,6 +13,7 @@ sequential plotting based on the number of available threads and processes.
 - `vis`: Visualization settings
 - `msr`: Measurement type, see: [MSR](@ref)
 - `plt`: Matplotlib PyPlot instance (only used in sequential mode)
+- `fig`: Figure name (optional)
 
 # Returns
 - nothing

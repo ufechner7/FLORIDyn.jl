@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    calcCt(a, _) -> Number or Vector
+    calcCt(a::Number, _) -> Float64
+    calcCt(a::AbstractVector, _) -> AbstractVector
 
 Calculate the thrust coefficient ct = 4a(1-a).
 """
@@ -10,7 +11,7 @@ Calculate the thrust coefficient ct = 4a(1-a).
     return 4 * a * (1 - a)
 end
 
-@inline function calcCt(a::AbstractArray, _)
+@inline function calcCt(a::AbstractVector, _)
     return 4 .* a .* (1 .- a)
 end
 
