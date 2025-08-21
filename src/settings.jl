@@ -800,11 +800,16 @@ function get_default_project()
 
     # Read or create default.yaml in the local workspace
     default_name = nothing
+    default_msr = VelReduction  # Default fallback
     if isfile(default_path_local)
         try
             def_data = YAML.load_file(default_path_local)
             if haskey(def_data, "default") && haskey(def_data["default"], "name")
                 default_name = String(def_data["default"]["name"])
+            end
+            if haskey(def_data, "default") && haskey(def_data["default"], "msr")
+                msr_str = String(def_data["default"]["msr"])
+                default_msr = toMSR(msr_str)
             end
         catch
             # If malformed, recreate from first project below
@@ -814,7 +819,7 @@ function get_default_project()
         # Create local data dir and write default.yaml with first project
         mkpath(data_dir_local)
         open(default_path_local, "w") do io
-            write(io, "default:\n  name: $(first_name)\n")
+            write(io, "default:\n  name: $(first_name)\n  msr: $(string(default_msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
         end
         default_name = first_name
     end
@@ -832,7 +837,7 @@ function get_default_project()
         # Fallback to first project and update default.yaml accordingly
         chosen = first_project
         open(default_path_local, "w") do io
-            write(io, "default:\n  name: $(String(chosen["name"]))\n")
+            write(io, "default:\n  name: $(String(chosen["name"]))\n  msr: $(string(default_msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
         end
     end
 
@@ -912,9 +917,89 @@ function select_project()
     data_dir_local = joinpath(pwd(), "data")
     mkpath(data_dir_local)
     default_path_local = joinpath(data_dir_local, "default.yaml")
+    
+    # Read existing MSR if available
+    existing_msr = VelReduction  # Default fallback
+    if isfile(default_path_local)
+        try
+            def_data = YAML.load_file(default_path_local)
+            if haskey(def_data, "default") && haskey(def_data["default"], "msr")
+                msr_str = String(def_data["default"]["msr"])
+                existing_msr = toMSR(msr_str)
+            end
+        catch
+            # If malformed, will use fallback
+        end
+    end
+    
     open(default_path_local, "w") do io
-        write(io, "default:\n  name: $(chosen_name)\n")
+        write(io, "default:\n  name: $(chosen_name)\n  msr: $(string(existing_msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
     end
     println("Selected project saved to data/default.yaml: ", chosen_name)
     return chosen_name
+end
+
+"""
+    get_default_msr() -> MSR
+
+Read the default measurement type (MSR) from `data/default.yaml`.
+If the file doesn't exist or doesn't have an `msr` field, returns `VelReduction`.
+
+# Returns
+- `MSR`: The default measurement type
+"""
+function get_default_msr()
+    data_dir_local = joinpath(pwd(), "data")
+    default_path_local = joinpath(data_dir_local, "default.yaml")
+    
+    if !isfile(default_path_local)
+        return VelReduction  # Default fallback
+    end
+    
+    try
+        def_data = YAML.load_file(default_path_local)
+        if haskey(def_data, "default") && haskey(def_data["default"], "msr")
+            msr_str = String(def_data["default"]["msr"])
+            return toMSR(msr_str)
+        end
+    catch
+        # If malformed or missing, return default
+    end
+    
+    return VelReduction  # Default fallback
+end
+
+"""
+    set_default_msr(msr::MSR)
+
+Set the default measurement type (MSR) in `data/default.yaml`.
+Creates the file if it doesn't exist, preserving the existing project name.
+
+# Arguments
+- `msr::MSR`: The measurement type to set as default
+"""
+function set_default_msr(msr::MSR)
+    data_dir_local = joinpath(pwd(), "data")
+    default_path_local = joinpath(data_dir_local, "default.yaml")
+    mkpath(data_dir_local)
+    
+    # Read existing data or use defaults
+    default_name = "2021_54T_NordseeOne"  # fallback
+    if isfile(default_path_local)
+        try
+            def_data = YAML.load_file(default_path_local)
+            if haskey(def_data, "default") && haskey(def_data["default"], "name")
+                default_name = String(def_data["default"]["name"])
+            end
+        catch
+            # If malformed, will use fallback name
+        end
+    end
+    
+    # Write updated file
+    open(default_path_local, "w") do io
+        write(io, "default:\n  name: $(default_name)\n  msr: $(string(msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+    end
+    
+    println("Default MSR saved to data/default.yaml: ", string(msr))
 end
