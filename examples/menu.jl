@@ -14,13 +14,12 @@ using FLORIDyn
 using REPL.TerminalMenus
 
 settings_file, vis_file = get_default_project()
-@info "Using settings file: $settings_file"
+@info "Using settings file: $(basename(settings_file))"
+@info "Using measurement:   $(get_default_msr())"
 
 options = ["select_project()",
            "select_measurement()",
-           "\"flow_field_vel_reduction\";        PLT=1; include(\"main.jl\")",
-           "\"flow_field_added_turbulence\";     PLT=2; include(\"main.jl\")",
-           "\"flow_field_eff_wind_speed\";       PLT=3; include(\"main.jl\")",
+           "\"plot_flow_field\";                 PLT=1; include(\"main.jl\")",
            "\"plot_measurements\";               PLT=4; include(\"main.jl\")",
            "\"plot_measurements_lineplot\";      PLT=5; include(\"main.jl\")",
            "\"flow_field_vel_reduction_online\"; PLT=6; include(\"main.jl\")",
