@@ -52,7 +52,7 @@ export runFLORIS!, init_states, getUadv
 export runFLORIDyn, iterateOPs!, setUpTmpWFAndRun!, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
 export getVars!
 export getMeasurements, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
-export run_floridyn, plot_flow_field, plot_measurements, close_all, turbines
+export run_floridyn, plot_flow_field, plot_measurements, plot_x, close_all, turbines
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
 export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_results, find_floridyn_runs, compare_dataframes
 export isdelftblue, Measurement, parse_measurements

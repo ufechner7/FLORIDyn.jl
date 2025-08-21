@@ -1,10 +1,8 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Status:
-# Works fine for one to nine wind turbines, not clear how to plot more wind turbines.
-
-using ControlPlots, FLORIDyn, TOML
+using FLORIDyn, TOML, DistributedNext
+if Threads.nthreads() == 1; using ControlPlots; end
 
 v = VersionNumber(TOML.parsefile(joinpath(Base.pkgdir(ControlPlots), "Project.toml"))["version"])
 @assert v >= v"0.2.7" "This script requires ControlPlots version 0.2.7 or higher."
@@ -21,14 +19,16 @@ else
     println("Single turbine per subplot selected, up to 9 turbines.")
 end
 
-settings_file = "data/2021_9T_Data.yaml"
+settings_file, vis_file = get_default_project()
 
-@assert Threads.nthreads() == 1 "This script is written for single threaded operation.
-                                  Quit Julia and start it with 'jl2'."
+if (@isdefined plt) && !isnothing(plt)
+    plt.ion()
+else
+    plt = nothing
+end
 
-# turn on interactive visualisation in case it was turned off before
-plt.ion()
-plt.pygui(true)
+# Automatic parallel/threading setup
+include("remote_plotting.jl")
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -37,6 +37,8 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+
+let
 
 # Arrays to store time series data
 times = Float64[]
@@ -102,17 +104,16 @@ if MULTI
     end
     
     # Plot with multiple lines per subplot
-    p = plotx(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
-              fig="Wind Direction", xlabel="rel_time [s]", ysize = 10, bottom=0.02)
+    plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
+              fig="Wind Direction", xlabel="rel_time [s]", ysize = 10, bottom=0.02, plt=ControlPlots)
 else
     # Single turbine mode - one turbine per subplot
     plot_data = [wind_dir_matrix[:, i] for i in 1:n_turbines]
     turbine_labels = ["T$i wind_dir [°]" for i in turbines]
     
-    p = plotx(times, plot_data...; fig="Wind Direction", xlabel="rel_time [s]", 
-              ylabels=turbine_labels, ysize = 9, bottom=0.02)
+    plot_x(times, plot_data...; fig="Wind Direction", xlabel="rel_time [s]", 
+              ylabels=turbine_labels, ysize = 9, bottom=0.02, plt)
 end
-
-display(p)
+end
 
 nothing

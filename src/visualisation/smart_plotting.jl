@@ -67,6 +67,59 @@ function plot_measurements(wf, md, vis; separated=true, msr::MSR=VelReduction, p
 end
 
 """
+    plot_x(times, plot_data...; ylabels=nothing, labels=nothing, fig="Wind Direction", 
+           xlabel="rel_time [s]", ysize=10, bottom=0.02, plt=nothing) -> Nothing
+
+High-level time series plotting function that automatically dispatches to either 
+parallel or sequential plotting based on the number of available threads and processes.
+
+# Arguments
+- `times`: Time vector for x-axis
+- `plot_data...`: Variable number of data arrays to plot
+- `ylabels`: Labels for y-axes (optional)
+- `labels`: Labels for subplots (optional)
+- `fig`: Figure title (default: "Wind Direction")
+- `xlabel`: X-axis label (default: "rel_time [s]")
+- `ysize`: Figure height (default: 10)
+- `bottom`: Bottom margin (default: 0.02)
+- `plt`: Matplotlib PyPlot instance (only used in sequential mode)
+
+# Returns
+- nothing
+
+# Description
+When running with multiple threads and processes, it uses remote plotting 
+capabilities via `rmt_plotx`. Otherwise, it directly calls `plotx` with the 
+provided pyplot instance.
+
+# Example
+```julia
+plot_x(times, data1, data2; ylabels=["Turbine 1", "Turbine 2"], 
+       labels=["Wind Speed", "Power"], plt=plt)
+```
+
+# See Also
+- [`plotx`](@ref): The underlying plotting function used in sequential mode
+"""
+function plot_x(times, plot_data...; ylabels=nothing, labels=nothing, 
+                fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, plt=nothing)
+    if Threads.nthreads() > 1 && nprocs() > 1
+        # Use parallel plotting with remote worker
+        @spawnat 2 Main.rmt_plotx(times, plot_data...; ylabels=ylabels, labels=labels,
+                                  fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom)
+    else
+        # Use sequential plotting
+        if plt === nothing
+            error("plt argument is required for sequential plotting")
+        end
+        p=plt.plotx(times, plot_data...; ylabels=ylabels, labels=labels,
+              fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom)
+        display(p)  # Ensure the plot is displayed in interactive mode
+    end
+    nothing
+end
+
+"""
     close_all(plt)
 
 Close all matplotlib figure windows.
