@@ -14,8 +14,10 @@ if ! isinteractive()
     if !isdefined(Main, :ControlPlots)
         if Threads.nthreads() == 1
             using ControlPlots; 
+            plt1 = ControlPlots
         else 
-            plt=nothing 
+            plt = nothing
+            plt1 = nothing
         end
     end
 
@@ -1064,7 +1066,7 @@ if ! isinteractive()
                 labels = ["Wind Speed", "Power", "Efficiency"]
                 
                 # Test basic functionality (should dispatch based on threading/processing environment)
-                @test_nowarn plot_x(times, data1, data2, data3; ylabels=ylabels, labels=labels, plt=plt)
+                @test_nowarn plot_x(times, data1, data2, data3; ylabels=ylabels, labels=labels, plt=plt1)
                 
                 # Test that the function runs without error
                 @test true
@@ -1076,7 +1078,7 @@ if ! isinteractive()
                 data = [1.0, 2.0, 3.0]
                 
                 # Test with default parameters
-                @test_nowarn plot_x(times, data; plt=plt)
+                @test_nowarn plot_x(times, data; plt=plt1)
                 
                 # Test with custom parameters
                 @test_nowarn plot_x(times, data; 
@@ -1087,7 +1089,7 @@ if ! isinteractive()
                                    ysize=8,
                                    bottom=0.05,
                                    legend_size=10,
-                                   plt=plt)
+                                   plt=plt1)
                 
                 # Test error handling when plt is missing in single-threaded mode
                 if Threads.nthreads() == 1 && nprocs() < 2
@@ -1103,7 +1105,7 @@ if ! isinteractive()
                 @test_nowarn plot_x(times, single_data; 
                                    ylabels=["Single Series"],
                                    fig="Single Data Test",
-                                   plt=plt)
+                                   plt=plt1)
                 
                 # Test with multiple data series
                 data1 = [10.0, 15.0, 12.0, 18.0]
@@ -1114,12 +1116,12 @@ if ! isinteractive()
                                    ylabels=["Series 1", "Series 2", "Series 3"],
                                    labels=["Plot 1", "Plot 2", "Plot 3"],
                                    fig="Multiple Data Test",
-                                   plt=plt)
+                                   plt=plt1)
                 
                 # Test with empty ylabels and labels (should use defaults)
                 @test_nowarn plot_x(times, data1, data2;
                                    fig="Default Labels Test",
-                                   plt=plt)
+                                   plt=plt1)
             end
             
             @testset "threading and process dispatch" begin
@@ -1133,7 +1135,7 @@ if ! isinteractive()
                     @test_nowarn plot_x(times, data; fig="Multi-threaded Test")
                 else
                     # Should use sequential plotting (requires plt)
-                    @test_nowarn plot_x(times, data; plt=plt, fig="Single-threaded Test")
+                    @test_nowarn plot_x(times, data; plt=plt1, fig="Single-threaded Test")
                     
                     # Should error without plt in single-threaded mode
                     @test_throws ErrorException plot_x(times, data; fig="Error Test")
@@ -1159,7 +1161,7 @@ if ! isinteractive()
                                    ysize=10,
                                    bottom=0.02,
                                    legend_size=8,
-                                   plt=plt)
+                                   plt=plt1)
             end
             
             @testset "parameter defaults" begin
@@ -1168,19 +1170,19 @@ if ! isinteractive()
                 data = [1.0, 2.0, 1.5]
                 
                 # Test default fig parameter
-                @test_nowarn plot_x(times, data; plt=plt)  # Should use "Wind Direction" as default
+                @test_nowarn plot_x(times, data; plt=plt1)  # Should use "Wind Direction" as default
                 
                 # Test default xlabel parameter
-                @test_nowarn plot_x(times, data; xlabel="Time [min]", plt=plt)
+                @test_nowarn plot_x(times, data; xlabel="Time [min]", plt=plt1)
                 
                 # Test default ysize parameter
-                @test_nowarn plot_x(times, data; ysize=12, plt=plt)
+                @test_nowarn plot_x(times, data; ysize=12, plt=plt1)
                 
                 # Test default bottom parameter  
-                @test_nowarn plot_x(times, data; bottom=0.1, plt=plt)
+                @test_nowarn plot_x(times, data; bottom=0.1, plt=plt1)
                 
                 # Test legend_size parameter
-                @test_nowarn plot_x(times, data; legend_size=12, plt=plt)
+                @test_nowarn plot_x(times, data; legend_size=12, plt=plt1)
             end
             
             @testset "error handling" begin
@@ -1191,7 +1193,7 @@ if ! isinteractive()
                 # The function should handle this gracefully or error appropriately
                 if Threads.nthreads() == 1 && nprocs() < 2
                     # In single-threaded mode, errors from plotx should propagate
-                    @test_throws Exception plot_x(times, bad_data; plt=plt)
+                    @test_throws Exception plot_x(times, bad_data; plt=plt1)
                 else
                     # In multi-threaded mode, might be handled by remote worker
                     # Just test that it doesn't crash the main process
@@ -1203,7 +1205,7 @@ if ! isinteractive()
                 empty_data = Float64[]
                 
                 if Threads.nthreads() == 1 && nprocs() < 2
-                    @test_throws Exception plot_x(empty_times, empty_data; plt=plt)
+                    @test_throws Exception plot_x(empty_times, empty_data; plt=plt1)
                 end
             end
             
@@ -1215,7 +1217,7 @@ if ! isinteractive()
                 data = [1.0, 2.0, 1.5]
                 
                 # Test consistency with other smart plotting functions
-                @test_nowarn plot_x(times, data; plt=plt)
+                @test_nowarn plot_x(times, data; plt=plt1)
                 
                 # Should handle the same threading logic
                 if Threads.nthreads() > 1 && nprocs() > 1
@@ -1227,7 +1229,7 @@ if ! isinteractive()
                 end
                 
                 # Should return nothing like other smart plotting functions
-                result = plot_x(times, data; plt=plt)
+                result = plot_x(times, data; plt=plt1)
                 @test result === nothing
             end
         end
