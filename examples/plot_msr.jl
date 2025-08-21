@@ -123,6 +123,6 @@ end
     
 # Plot with multiple lines per subplot
 plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
-            fig=title, xlabel="rel_time [s]", ysize = 10, bottom=0.02, plt=plt1, legend_size=6, loc="upper left")
+            fig=title, xlabel="rel_time [s]", ysize = 9, bottom=0.02, plt=plt1, legend_size=6, loc="upper left")
 
 nothing
