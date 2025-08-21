@@ -912,7 +912,7 @@ function select_project()
     current_project, _ = get_default_project()
     current_name = splitpath(current_project)[end]
     current_name = replace(current_name, ".yaml" => "")
-    println("Current project: $current_name")
+    println("\nCurrent project: $current_name")
     
     # Create and display the menu
     menu = TerminalMenus.RadioMenu(project_options, pagesize=length(project_options))

@@ -13,12 +13,12 @@ using Pkg
 using FLORIDyn
 using REPL.TerminalMenus
 
-settings_file, vis_file = get_default_project()
-@info "Using settings file: $(basename(settings_file))"
-@info "Using measurement:   $(get_default_msr())"
+const CLEAR_SCR = "\033c"
 
-options = ["select_project()",
-           "select_measurement()",
+settings_file, vis_file = get_default_project()
+
+options = ["select_project();                    print(CLEAR_SCR)",
+           "select_measurement();                print(CLEAR_SCR)",
            "\"plot_flow_field\";                 PLT=1; include(\"main.jl\")",
            "\"plot_measurements\";               PLT=4; include(\"main.jl\")",
            "\"plot_measurements_lineplot\";      PLT=5; include(\"main.jl\")",
@@ -55,7 +55,11 @@ end
 
 function example_menu()
     active = true
+    print(CLEAR_SCR)
     while active
+        @info "Using settings file: $(basename(get_default_project()[1]))"
+        @info "Using measurement:   $(get_default_msr())"
+
         menu = RadioMenu(options, pagesize=8)
         choice = request("\nChoose function to execute or `q` to quit: ", menu)
 
