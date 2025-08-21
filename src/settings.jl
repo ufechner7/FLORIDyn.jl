@@ -1003,3 +1003,66 @@ function set_default_msr(msr::MSR)
     
     println("Default MSR saved to data/default.yaml: ", string(msr))
 end
+
+"""
+    select_measurement() -> MSR
+
+Interactive menu for selecting the default measurement type (MSR).
+Displays available measurement types, prompts for user selection, and saves
+the choice to `data/default.yaml`.
+
+# Returns
+- `MSR`: The selected measurement type
+
+# Interactive Menu
+The function displays:
+1. VelReduction - Velocity reduction measurement
+2. AddedTurbulence - Added turbulence measurement  
+3. EffWind - Effective wind measurement
+
+# Examples
+```julia
+# Run interactive selection
+msr = select_measurement()
+```
+
+# Notes
+- The selection is immediately saved to `data/default.yaml`
+- The existing project name in `default.yaml` is preserved
+- Invalid selections will throw an error and prompt retry
+"""
+function select_measurement()
+    # Define measurement options with descriptions
+    measurements = [
+        (VelReduction, "VelReduction", "Velocity reduction measurement"),
+        (AddedTurbulence, "AddedTurbulence", "Added turbulence measurement"),
+        (EffWind, "EffWind", "Effective wind measurement")
+    ]
+    
+    println()
+    println("Available measurement types:")
+    println("=" ^ 50)
+    
+    for (i, (msr, name, description)) in enumerate(measurements)
+        println("$i. $name - $description")
+    end
+    
+    println()
+    print("Select measurement type (1-$(length(measurements))): ")
+    line = readline()
+    
+    # Parse and validate selection
+    idx = try parse(Int, strip(line)) catch; 0 end
+    if idx < 1 || idx > length(measurements)
+        error("Invalid selection: $(line). Please choose a number between 1 and $(length(measurements))")
+    end
+    
+    selected_msr = measurements[idx][1]
+    selected_name = measurements[idx][2]
+    
+    # Save the selection
+    set_default_msr(selected_msr)
+    
+    println("Selected measurement type: ", selected_name)
+    return selected_msr
+end

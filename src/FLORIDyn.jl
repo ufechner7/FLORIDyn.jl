@@ -59,7 +59,7 @@ export FlowField, parse_flow_fields
 export UnifiedBuffers, create_unified_buffers
 export get_default_project
 export select_project
-export get_default_msr, set_default_msr
+export get_default_msr, set_default_msr, select_measurement
 
 """
     MSR `VelReduction` `AddedTurbulence` `EffWind`

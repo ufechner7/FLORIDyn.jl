@@ -17,6 +17,7 @@ settings_file, vis_file = get_default_project()
 @info "Using settings file: $settings_file"
 
 options = ["select_project()",
+           "select_measurement()",
            "\"flow_field_vel_reduction\";        PLT=1; include(\"main.jl\")",
            "\"flow_field_added_turbulence\";     PLT=2; include(\"main.jl\")",
            "\"flow_field_eff_wind_speed\";       PLT=3; include(\"main.jl\")",
