@@ -867,9 +867,9 @@ function get_default_project()
 end
 
 """
-    list_projects() -> Vector{Tuple{String,String}}
+    list_projects() -> Vector{Tuple{String,String,String}}
 
-Return a list of available projects as tuples `(name, vis)` using the same
+Return a list of available projects as tuples `(name, description, vis)` using the same
 projects.yaml discovery logic as `get_default_project()`.
 """
 function list_projects()
@@ -881,15 +881,15 @@ function list_projects()
     end
     projects_data = YAML.load_file(projects_path)
     projects_list = get(projects_data, "projects", Any[])
-    [(String(p["project"]["name"]), String(p["project"]["vis"])) for p in projects_list]
+    [(String(p["project"]["name"]), String(get(p["project"], "description", "")), String(p["project"]["vis"])) for p in projects_list]
 end
 
 """
     select_project() -> String
 
-Interactive project selector. Tries a simple GUI (Gtk4.jl) if available, otherwise falls
-back to a CLI prompt. Writes the chosen name to `data/default.yaml` and returns the
-selected project name.
+Interactive project selector using a terminal menu interface. Displays available projects
+from projects.yaml and allows selection using arrow keys. Writes the chosen name to 
+`data/default.yaml` and returns the selected project name.
 
 Usage:
     using FLORIDyn; select_project()
@@ -898,20 +898,34 @@ function select_project()
     projs = list_projects()
     isempty(projs) && error("No projects found in projects.yaml")
 
-    chosen_name::Union{Nothing,String} = nothing
+    # Create menu options with project names and descriptions
+    project_options = String[]
+    for (name, description, vis) in projs
+        if isempty(description)
+            push!(project_options, name)
+        else
+            push!(project_options, "$name - $description")
+        end
+    end
 
-    println("Available projects:")
-    for (i,(n,_)) in enumerate(projs)
-        println(rpad(string(i)*".",4), n)
+    # Display current default project
+    current_project, _ = get_default_project()
+    current_name = splitpath(current_project)[end]
+    current_name = replace(current_name, ".yaml" => "")
+    println("Current project: $current_name")
+    
+    # Create and display the menu
+    menu = TerminalMenus.RadioMenu(project_options, pagesize=length(project_options))
+    choice = TerminalMenus.request("Select project (↑/↓ to navigate, Enter to select, 'q' to cancel):", menu)
+
+    # Handle cancellation
+    if choice == -1
+        println("Project selection cancelled.")
+        return current_name  # Return current project name if cancelled
     end
-    print("Enter number [1-$(length(projs))]: ")
-    flush(stdout)
-    line = readline(stdin)
-    idx = try parse(Int, strip(line)) catch; 0 end
-    if idx < 1 || idx > length(projs)
-        error("Invalid selection: $(line)")
-    end
-    chosen_name = projs[idx][1]
+    
+    # Get the selected project name
+    chosen_name = projs[choice][1]  # First element is the name
 
     # Write to local default.yaml
     data_dir_local = joinpath(pwd(), "data")
@@ -1007,18 +1021,18 @@ end
 """
     select_measurement() -> MSR
 
-Interactive menu for selecting the default measurement type (MSR).
-Displays available measurement types, prompts for user selection, and saves
+Interactive menu for selecting the default measurement type (MSR) using a terminal menu interface.
+Uses REPL.TerminalMenus to provide a user-friendly selection interface and saves
 the choice to `data/default.yaml`.
 
 # Returns
 - `MSR`: The selected measurement type
 
 # Interactive Menu
-The function displays:
-1. VelReduction - Velocity reduction measurement
-2. AddedTurbulence - Added turbulence measurement  
-3. EffWind - Effective wind speed measurement
+The function displays a terminal menu with:
+- VelReduction - Velocity reduction measurement
+- AddedTurbulence - Added turbulence measurement  
+- EffWind - Effective wind speed measurement
 
 # Examples
 ```julia
@@ -1027,42 +1041,45 @@ msr = select_measurement()
 ```
 
 # Notes
+- Uses arrow keys and Enter for selection
 - The selection is immediately saved to `data/default.yaml`
 - The existing project name in `default.yaml` is preserved
-- Invalid selections will throw an error and prompt retry
+- If user cancels (Ctrl+C), returns current default MSR without changes
 """
 function select_measurement()
     # Define measurement options with descriptions
-    measurements = [
-        (VelReduction, "VelReduction", "Velocity reduction measurement"),
-        (AddedTurbulence, "AddedTurbulence", "Added turbulence measurement"),
-        (EffWind, "EffWind", "Effective wind speed measurement")
+    measurement_options = [
+        "VelReduction - Velocity reduction measurement",
+        "AddedTurbulence - Added turbulence measurement", 
+        "EffWind - Effective wind speed measurement"
     ]
     
-    println()
-    println("Available measurement types:")
-    println("=" ^ 50)
-    
-    for (i, (msr, name, description)) in enumerate(measurements)
-        println("$i. $name - $description")
-    end
+    # Corresponding MSR enum values
+    msr_values = [VelReduction, AddedTurbulence, EffWind]
     
     println()
-    print("Select measurement type (1-$(length(measurements))): ")
-    line = readline()
+    println("Select default measurement type:")
+    println("=" ^ 40)
     
-    # Parse and validate selection
-    idx = try parse(Int, strip(line)) catch; 0 end
-    if idx < 1 || idx > length(measurements)
-        error("Invalid selection: $(line). Please choose a number between 1 and $(length(measurements))")
+    # Create terminal menu
+    menu = RadioMenu(measurement_options, pagesize=length(measurement_options))
+    
+    # Get user selection
+    choice = request("Use ↑/↓ arrows and Enter to select, or 'q' to cancel: ", menu)
+    
+    # Handle cancellation
+    if choice == -1
+        println("Selection cancelled. Current default MSR unchanged: $(get_default_msr())")
+        return get_default_msr()
     end
     
-    selected_msr = measurements[idx][1]
-    selected_name = measurements[idx][2]
+    # Get selected MSR
+    selected_msr = msr_values[choice]
+    selected_name = string(selected_msr)
     
     # Save the selection
     set_default_msr(selected_msr)
     
-    println("Selected measurement type: ", selected_name)
+    println("✓ Selected measurement type: $selected_name")
     return selected_msr
 end

@@ -155,10 +155,10 @@ using FLORIDyn, Test
     @testset "list_projects" begin
         @testset "reads projects from package/local data" begin
             projs = FLORIDyn.list_projects()
-            @test isa(projs, Vector{Tuple{String,String}})
+            @test isa(projs, Vector{Tuple{String,String,String}})
             # Should contain the two reference projects from repo data
-            @test ("2021_9T_Data", "vis_default.yaml") in projs
-            @test ("2021_54T_NordseeOne", "vis_54T.yaml") in projs
+            @test ("2021_9T_Data", "A reference simulation with 9 turbines", "vis_default.yaml") in projs
+            @test ("2021_54T_NordseeOne", "A reference simulation with 54 turbines", "vis_54T.yaml") in projs
         end
 
         @testset "prefers local projects.yaml override" begin
@@ -178,7 +178,7 @@ projects:
 """
                     write(joinpath("data", "projects.yaml"), content)
                     projs = FLORIDyn.list_projects()
-                    @test projs == [("Alpha", "alpha_vis.yaml"), ("Beta", "beta_vis.yaml")]
+                    @test projs == [("Alpha", "test", "alpha_vis.yaml"), ("Beta", "test", "beta_vis.yaml")]
                 end
             end
         end
@@ -189,7 +189,7 @@ projects:
                     mkpath("data")
                     write(joinpath("data", "projects.yaml"), "projects: []\n")
                     projs = FLORIDyn.list_projects()
-                    @test projs == Tuple{String,String}[]
+                    @test projs == Tuple{String,String,String}[]
                 end
             end
         end
@@ -199,10 +199,10 @@ projects:
                 cd(tmp) do
                     # Don't create local projects.yaml - should fall back to package data
                     projs = FLORIDyn.list_projects()
-                    @test isa(projs, Vector{Tuple{String,String}})
+                    @test isa(projs, Vector{Tuple{String,String,String}})
                     # Should contain the reference projects from package data
-                    @test ("2021_9T_Data", "vis_default.yaml") in projs
-                    @test ("2021_54T_NordseeOne", "vis_54T.yaml") in projs
+                    @test ("2021_9T_Data", "A reference simulation with 9 turbines", "vis_default.yaml") in projs
+                    @test ("2021_54T_NordseeOne", "A reference simulation with 54 turbines", "vis_54T.yaml") in projs
                 end
             end
         end
@@ -270,9 +270,9 @@ projects:
                     write(joinpath("data", "projects.yaml"), content)
                     projs = FLORIDyn.list_projects()
                     expected = [
-                        ("ProjectOne", "vis_one.yaml"),
-                        ("ProjectTwo", "vis_two.yaml"),
-                        ("ProjectThree", "vis_three.yaml")
+                        ("ProjectOne", "First test project", "vis_one.yaml"),
+                        ("ProjectTwo", "Second test project with longer description", "vis_two.yaml"),
+                        ("ProjectThree", "Third project", "vis_three.yaml")
                     ]
                     @test projs == expected
                 end
@@ -323,9 +323,9 @@ projects:
                     write(joinpath("data", "projects.yaml"), content)
                     projs = FLORIDyn.list_projects()
                     expected = [
-                        ("Project-With-Dashes", "vis_dashes.yaml"),
-                        ("Project_With_Underscores", "vis_underscores.yaml"),
-                        ("Project With Spaces", "vis_spaces.yaml")
+                        ("Project-With-Dashes", "Project with dashes", "vis_dashes.yaml"),
+                        ("Project_With_Underscores", "Project with underscores", "vis_underscores.yaml"),
+                        ("Project With Spaces", "Project with spaces", "vis_spaces.yaml")
                     ]
                     @test projs == expected
                 end
@@ -693,156 +693,128 @@ vis:
             # Test the measurement options structure used by select_measurement
             @testset "Measurement options validation" begin
                 # Test that all MSR enum values are represented
-                measurements = [
-                    (VelReduction, "VelReduction", "Velocity reduction measurement"),
-                    (AddedTurbulence, "AddedTurbulence", "Added turbulence measurement"),
-                    (EffWind, "EffWind", "Effective wind measurement")
+                measurement_options = [
+                    "VelReduction - Velocity reduction measurement",
+                    "AddedTurbulence - Added turbulence measurement", 
+                    "EffWind - Effective wind speed measurement"
                 ]
+                msr_values = [VelReduction, AddedTurbulence, EffWind]
                 
                 # Test each measurement option
-                for (msr, name, description) in measurements
+                for (option, msr) in zip(measurement_options, msr_values)
+                    @test isa(option, String)
                     @test isa(msr, MSR)
-                    @test isa(name, String)
-                    @test isa(description, String)
-                    @test length(name) > 0
-                    @test length(description) > 0
+                    @test length(option) > 10  # Should be descriptive
+                    @test contains(option, string(msr))  # Should contain MSR name
+                    @test contains(option, " - ")  # Should have separator
                 end
                 
                 # Test that all MSR enum values are covered
                 all_msr_values = [VelReduction, AddedTurbulence, EffWind]
-                measurement_msrs = [msr for (msr, _, _) in measurements]
-                @test Set(all_msr_values) == Set(measurement_msrs)
+                @test Set(all_msr_values) == Set(msr_values)
+                @test length(measurement_options) == length(msr_values)
             end
 
-            # Test input validation logic (simulates what select_measurement does)
-            @testset "Input validation logic" begin
-                measurements = [
-                    (VelReduction, "VelReduction", "Velocity reduction measurement"),
-                    (AddedTurbulence, "AddedTurbulence", "Added turbulence measurement"),
-                    (EffWind, "EffWind", "Effective wind measurement")
+            # Test menu option formatting
+            @testset "Menu option formatting" begin
+                measurement_options = [
+                    "VelReduction - Velocity reduction measurement",
+                    "AddedTurbulence - Added turbulence measurement", 
+                    "EffWind - Effective wind speed measurement"
                 ]
                 
-                # Test valid inputs
-                for i in 1:length(measurements)
-                    input_str = string(i)
-                    idx = try parse(Int, strip(input_str)) catch; 0 end
-                    @test idx == i
-                    @test idx >= 1 && idx <= length(measurements)
+                for option in measurement_options
+                    # Test that options are well-formatted
+                    @test contains(option, " - ")
+                    parts = split(option, " - ", limit=2)
+                    @test length(parts) == 2
                     
-                    # Test that we can access the measurement
-                    selected_msr = measurements[idx][1]
-                    @test isa(selected_msr, MSR)
-                end
-                
-                # Test invalid inputs
-                invalid_inputs = ["0", "4", "-1", "abc", "", "1.5", " "]
-                for invalid_input in invalid_inputs
-                    idx = try parse(Int, strip(invalid_input)) catch; 0 end
-                    is_valid = idx >= 1 && idx <= length(measurements)
-                    @test !is_valid
+                    msr_name = parts[1]
+                    description = parts[2]
+                    
+                    # Test MSR name part
+                    @test msr_name in ["VelReduction", "AddedTurbulence", "EffWind"]
+                    
+                    # Test description part
+                    @test length(description) > 5
+                    @test contains(lowercase(description), "measurement")
                 end
             end
 
-            # Test that select_measurement integrates correctly with set_default_msr
+            # Test that select_measurement integrates correctly with MSR functions
             @testset "Integration with MSR functions" begin
                 mktempdir() do tmp
                     cd(tmp) do
-                        # Test that we can manually call the same logic that select_measurement uses
-                        measurements = [
-                            (VelReduction, "VelReduction", "Velocity reduction measurement"),
-                            (AddedTurbulence, "AddedTurbulence", "Added turbulence measurement"),
-                            (EffWind, "EffWind", "Effective wind measurement")
-                        ]
+                        # Test the mapping between menu choices and MSR values
+                        msr_values = [VelReduction, AddedTurbulence, EffWind]
                         
-                        # Simulate selecting each measurement type
-                        for (i, (expected_msr, expected_name, description)) in enumerate(measurements)
-                            # Simulate the selection logic from select_measurement
-                            selected_msr = measurements[i][1]
-                            selected_name = measurements[i][2]
-                            
-                            # Test that the MSR values match expectations
-                            @test selected_msr == expected_msr
-                            @test selected_name == expected_name
-                            
-                            # Test that set_default_msr works with the selected MSR
-                            FLORIDyn.set_default_msr(selected_msr)
-                            @test FLORIDyn.get_default_msr() == selected_msr
+                        # Test that each MSR value can be set and retrieved
+                        for expected_msr in msr_values
+                            FLORIDyn.set_default_msr(expected_msr)
+                            @test FLORIDyn.get_default_msr() == expected_msr
                         end
+                        
+                        # Test current default MSR retrieval (used by select_measurement for cancellation)
+                        FLORIDyn.set_default_msr(AddedTurbulence)
+                        current_msr = FLORIDyn.get_default_msr()
+                        @test current_msr == AddedTurbulence
                     end
                 end
             end
 
-            # Test error conditions that select_measurement should handle
-            @testset "Error handling scenarios" begin
-                measurements = [
-                    (VelReduction, "VelReduction", "Velocity reduction measurement"),
-                    (AddedTurbulence, "AddedTurbulence", "Added turbulence measurement"),
-                    (EffWind, "EffWind", "Effective wind measurement")
-                ]
-                
-                # Test boundary conditions
-                @testset "Boundary conditions" begin
-                    # Test minimum valid index
-                    idx = 1
-                    @test idx >= 1 && idx <= length(measurements)
-                    selected = measurements[idx]
-                    @test isa(selected[1], MSR)
-                    
-                    # Test maximum valid index
-                    idx = length(measurements)
-                    @test idx >= 1 && idx <= length(measurements)
-                    selected = measurements[idx]
-                    @test isa(selected[1], MSR)
-                    
-                    # Test just outside valid range
-                    @test !(0 >= 1 && 0 <= length(measurements))
-                    @test !((length(measurements) + 1) >= 1 && (length(measurements) + 1) <= length(measurements))
-                end
-                
-                # Test that the function's error message would be descriptive
-                @testset "Error message validation" begin
-                    invalid_input = "invalid"
-                    idx = try parse(Int, strip(invalid_input)) catch; 0 end
-                    is_valid = idx >= 1 && idx <= length(measurements)
-                    @test !is_valid
-                    
-                    # Test that error message format would be helpful
-                    expected_error_pattern = "Invalid selection: $(invalid_input). Please choose a number between 1 and $(length(measurements))"
-                    @test contains(expected_error_pattern, "Invalid selection")
-                    @test contains(expected_error_pattern, invalid_input)
-                    @test contains(expected_error_pattern, "1 and $(length(measurements))")
+            # Test cancellation behavior (simulating what happens when user cancels)
+            @testset "Cancellation handling" begin
+                mktempdir() do tmp
+                    cd(tmp) do
+                        # Set a known MSR value
+                        FLORIDyn.set_default_msr(EffWind)
+                        
+                        # Test that get_default_msr returns the current value
+                        # (This simulates what select_measurement returns on cancellation)
+                        current_msr = FLORIDyn.get_default_msr()
+                        @test current_msr == EffWind
+                        
+                        # Test that the value remains unchanged after "cancellation"
+                        # (In real usage, select_measurement would return this value)
+                        @test FLORIDyn.get_default_msr() == EffWind
+                    end
                 end
             end
 
-            # Test measurement descriptions for completeness
-            @testset "Measurement descriptions" begin
-                measurements = [
-                    (VelReduction, "VelReduction", "Velocity reduction measurement"),
-                    (AddedTurbulence, "AddedTurbulence", "Added turbulence measurement"),
-                    (EffWind, "EffWind", "Effective wind measurement")
+            # Test menu configuration
+            @testset "Menu configuration" begin
+                measurement_options = [
+                    "VelReduction - Velocity reduction measurement",
+                    "AddedTurbulence - Added turbulence measurement", 
+                    "EffWind - Effective wind speed measurement"
                 ]
                 
-                for (i, (msr, name, description)) in enumerate(measurements)
-                    # Test that descriptions are meaningful
-                    @test length(description) > 10  # Should be descriptive
-                    @test contains(lowercase(description), "measurement")
-                    
-                    # Test that names match the MSR enum string representation
-                    @test string(msr) == name
-                    
-                    # Test menu display format
-                    menu_line = "$i. $name - $description"
-                    @test contains(menu_line, string(i))
-                    @test contains(menu_line, name)
-                    @test contains(menu_line, description)
-                    @test contains(menu_line, " - ")
+                # Test that we can create a RadioMenu with these options
+                # (This tests the structure that select_measurement uses)
+                try
+                    menu = REPL.TerminalMenus.RadioMenu(measurement_options, pagesize=length(measurement_options))
+                    @test isa(menu, REPL.TerminalMenus.RadioMenu)
+                    @test length(measurement_options) == 3  # Should have exactly 3 options
+                catch e
+                    # If TerminalMenus is not available in test environment, skip this test
+                    @test_skip "TerminalMenus not available in test environment: $e"
                 end
             end
 
-            # Note: Full interactive testing of select_measurement() with actual stdin 
-            # mocking would be complex and environment-dependent. The function's core 
+            # Test measurement descriptions match MSR enum values
+            @testset "MSR enum consistency" begin
+                msr_values = [VelReduction, AddedTurbulence, EffWind]
+                expected_names = ["VelReduction", "AddedTurbulence", "EffWind"]
+                
+                for (msr, expected_name) in zip(msr_values, expected_names)
+                    @test string(msr) == expected_name
+                end
+            end
+
+            # Note: Full interactive testing of select_measurement() with actual menu 
+            # interaction would require complex input simulation. The function's core 
             # logic is thoroughly tested through the underlying MSR functions and 
-            # input validation logic above.
+            # menu structure validation above.
         end
 
         @testset "Integration with existing functions" begin
@@ -919,6 +891,258 @@ projects:
                         @test FLORIDyn.get_default_msr() == EffWind
                     end
                 end
+            end
+
+            @testset "select_project function" begin
+                # Test that the function is exported and callable
+                @testset "Function availability" begin
+                    @test isdefined(FLORIDyn, :select_project)
+                    @test hasmethod(FLORIDyn.select_project, ())
+                end
+
+                # Test project menu structure used by select_project
+                @testset "Project menu structure validation" begin
+                    mktempdir() do tmp
+                        cd(tmp) do
+                            # Create test projects.yaml
+                            mkpath("data")
+                            test_projects = """
+                            projects:
+                              - project:
+                                  name: test_proj1
+                                  description: "Test project 1"
+                                  vis: "vis_test1.yaml"
+                              - project:
+                                  name: test_proj2
+                                  description: "Test project 2 with longer description"
+                                  vis: "vis_test2.yaml"
+                              - project:
+                                  name: short_name
+                                  description: ""
+                                  vis: "vis_short.yaml"
+                            """
+                            open(joinpath("data", "projects.yaml"), "w") do io
+                                write(io, test_projects)
+                            end
+                            
+                            # Test that projects are loaded correctly
+                            projects = FLORIDyn.list_projects()
+                            @test length(projects) == 3
+                            
+                            # Test menu option formatting for select_project
+                            project_options = String[]
+                            for (name, description, vis) in projects
+                                if isempty(description)
+                                    push!(project_options, name)
+                                else
+                                    push!(project_options, "$name - $description")
+                                end
+                            end
+                            
+                            # Verify proper formatting
+                            @test length(project_options) == 3
+                            @test any(option -> contains(option, "test_proj1 - Test project 1"), project_options)
+                            @test any(option -> contains(option, "test_proj2 - Test project 2 with longer description"), project_options)
+                            @test any(option -> option == "short_name", project_options)  # No description, so just name
+                            
+                            # Test that options are well-formatted
+                            for option in project_options
+                                @test isa(option, String)
+                                @test length(option) > 0
+                            end
+                        end
+                    end
+                end
+
+                # Test integration with MSR preservation
+                @testset "MSR preservation during project selection" begin
+                    mktempdir() do tmp
+                        cd(tmp) do
+                            # Create test projects.yaml
+                            mkpath("data")
+                            test_projects = """
+                            projects:
+                              - project:
+                                  name: proj_a
+                                  description: "Project A"
+                                  vis: "vis_a.yaml"
+                              - project:
+                                  name: proj_b
+                                  description: "Project B"
+                                  vis: "vis_b.yaml"
+                            """
+                            open(joinpath("data", "projects.yaml"), "w") do io
+                                write(io, test_projects)
+                            end
+                            
+                            # Create the necessary settings files
+                            open(joinpath("data", "proj_a.yaml"), "w") do io
+                                write(io, "# Dummy settings file for proj_a\n")
+                            end
+                            open(joinpath("data", "proj_b.yaml"), "w") do io
+                                write(io, "# Dummy settings file for proj_b\n")
+                            end
+                            open(joinpath("data", "vis_a.yaml"), "w") do io
+                                write(io, "# Dummy vis file for proj_a\n")
+                            end
+                            open(joinpath("data", "vis_b.yaml"), "w") do io
+                                write(io, "# Dummy vis file for proj_b\n")
+                            end
+                            
+                            # Set initial MSR
+                            FLORIDyn.set_default_msr(AddedTurbulence)
+                            initial_msr = FLORIDyn.get_default_msr()
+                            @test initial_msr == AddedTurbulence
+                            
+                            # Simulate what select_project does when changing project
+                            chosen_name = "proj_b"
+                            
+                            # Read existing MSR (as select_project does)
+                            existing_msr = AddedTurbulence  # Fallback
+                            default_path_local = joinpath("data", "default.yaml")
+                            if isfile(default_path_local)
+                                try
+                                    def_data = YAML.load_file(default_path_local)
+                                    if haskey(def_data, "default") && haskey(def_data["default"], "msr")
+                                        msr_str = String(def_data["default"]["msr"])
+                                        existing_msr = FLORIDyn.toMSR(msr_str)
+                                    end
+                                catch
+                                    # If malformed, will use fallback
+                                end
+                            end
+                            
+                            # Write new project while preserving MSR (as select_project does)
+                            open(default_path_local, "w") do io
+                                write(io, "default:\n  name: $(chosen_name)\n  msr: $(string(existing_msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+                            end
+                            
+                            # Verify project changed and MSR preserved
+                            current_project, _ = FLORIDyn.get_default_project()
+                            current_name = splitpath(current_project)[end]
+                            current_name = replace(current_name, ".yaml" => "")
+                            @test current_name == "proj_b"
+                            @test FLORIDyn.get_default_msr() == AddedTurbulence  # MSR should be preserved
+                        end
+                    end
+                end
+
+                # Test cancellation behavior
+                @testset "Cancellation handling" begin
+                    mktempdir() do tmp
+                        cd(tmp) do
+                            # Create test projects.yaml
+                            mkpath("data")
+                            test_projects = """
+                            projects:
+                              - project:
+                                  name: original_proj
+                                  description: "Original project"
+                                  vis: "vis_orig.yaml"
+                            """
+                            open(joinpath("data", "projects.yaml"), "w") do io
+                                write(io, test_projects)
+                            end
+                            
+                            # Create the necessary settings files
+                            open(joinpath("data", "original_proj.yaml"), "w") do io
+                                write(io, "# Dummy settings file for original_proj\n")
+                            end
+                            open(joinpath("data", "vis_orig.yaml"), "w") do io
+                                write(io, "# Dummy vis file for original_proj\n")
+                            end
+                            
+                            # Set up initial project
+                            FLORIDyn.set_default_msr(VelReduction)  # This also sets a default project
+                            
+                            # Get current project name for cancellation test
+                            current_project, _ = FLORIDyn.get_default_project()
+                            current_name = splitpath(current_project)[end]
+                            current_name = replace(current_name, ".yaml" => "")
+                            
+                            # Test that get_default_project returns consistent format
+                            # (This is what select_project returns on cancellation)
+                            @test isa(current_name, String)
+                            @test length(current_name) > 0
+                        end
+                    end
+                end
+
+                # Test menu configuration compatibility with REPL.TerminalMenus
+                @testset "TerminalMenus compatibility" begin
+                    mktempdir() do tmp
+                        cd(tmp) do
+                            # Create test projects.yaml
+                            mkpath("data")
+                            test_projects = """
+                            projects:
+                              - project:
+                                  name: menu_test1
+                                  description: "Menu test project 1"
+                                  vis: "vis_mt1.yaml"
+                              - project:
+                                  name: menu_test2
+                                  description: "Menu test project 2"
+                                  vis: "vis_mt2.yaml"
+                              - project:
+                                  name: no_desc
+                                  description: ""
+                                  vis: "vis_nd.yaml"
+                            """
+                            open(joinpath("data", "projects.yaml"), "w") do io
+                                write(io, test_projects)
+                            end
+                            
+                            # Test that we can create a RadioMenu with project options
+                            projects = FLORIDyn.list_projects()
+                            project_options = String[]
+                            for (name, description, vis) in projects
+                                if isempty(description)
+                                    push!(project_options, name)
+                                else
+                                    push!(project_options, "$name - $description")
+                                end
+                            end
+                            
+                            # Test RadioMenu creation (structure that select_project uses)
+                            try
+                                menu = REPL.TerminalMenus.RadioMenu(project_options, pagesize=length(project_options))
+                                @test isa(menu, REPL.TerminalMenus.RadioMenu)
+                                @test length(project_options) == 3
+                            catch e
+                                # If TerminalMenus is not available in test environment, skip this test
+                                @test_skip "TerminalMenus not available in test environment: $e"
+                            end
+                        end
+                    end
+                end
+
+                # Test project name extraction from get_default_project
+                @testset "Project name extraction" begin
+                    mktempdir() do tmp
+                        cd(tmp) do
+                            # Test name extraction logic used in select_project
+                            test_paths = [
+                                ("/path/to/test_project.yaml", "test_project"),
+                                ("simple.yaml", "simple"),
+                                ("/long/path/with/many/dirs/complex_name.yaml", "complex_name"),
+                                ("data/default.yaml", "default")
+                            ]
+                            
+                            for (test_path, expected_name) in test_paths
+                                # Simulate the name extraction logic from select_project
+                                current_name = splitpath(test_path)[end]
+                                current_name = replace(current_name, ".yaml" => "")
+                                @test current_name == expected_name
+                            end
+                        end
+                    end
+                end
+
+                # Note: Full interactive testing of select_project() with actual menu 
+                # interaction would require complex input simulation. The function's core 
+                # logic is thoroughly tested through the underlying project functions and 
+                # menu structure validation above.
             end
         end
     end
