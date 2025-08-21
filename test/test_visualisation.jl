@@ -7,6 +7,7 @@ end
 using DataFrames  # Required for DataFrame functionality in turbines() tests
 
 if ! isinteractive()
+    global plt1
     if !isdefined(Main, :FLORIDyn)
         using FLORIDyn
     end
@@ -14,11 +15,15 @@ if ! isinteractive()
     if !isdefined(Main, :ControlPlots)
         if Threads.nthreads() == 1
             using ControlPlots; 
-            plt1 = ControlPlots
         else 
+            global plt1
             plt = nothing
-            plt1 = nothing
         end
+    end
+    plt1 = nothing
+    if Threads.nthreads() == 1
+        global plt1
+        plt1 = ControlPlots
     end
 
     function get_parameters()
