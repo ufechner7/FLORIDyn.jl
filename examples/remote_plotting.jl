@@ -41,8 +41,10 @@ if Threads.nthreads() > 1
                                             fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02)
                 # Create a fresh plt instance just for this task
                 local_plt = ControlPlots.plt
-                return plotx(times, plot_data...; ylabels=ylabels, labels=labels,
+                p=ControlPlots.plotx(times, plot_data...; ylabels=ylabels, labels=labels,
                            fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom)
+                display(p)  # Ensure the plot is displayed
+                nothing
             end
             @everywhere function rmt_close_all()
                 local_plt = ControlPlots.plt

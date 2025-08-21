@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 using FLORIDyn, TOML, DistributedNext
-if Threads.nthreads() == 1; using ControlPlots; end
-
-v = VersionNumber(TOML.parsefile(joinpath(Base.pkgdir(ControlPlots), "Project.toml"))["version"])
-@assert v >= v"0.2.7" "This script requires ControlPlots version 0.2.7 or higher."
+if Threads.nthreads() == 1; 
+    using ControlPlots
+    v = VersionNumber(TOML.parsefile(joinpath(Base.pkgdir(ControlPlots), "Project.toml"))["version"])
+    @assert v >= v"0.2.7" "This script requires ControlPlots version 0.2.7 or higher."
+end
 
 # Dialog to set MULTI variable
 println("\033[1mPlot wind direction for multiple turbines?\033[0m")
@@ -26,6 +27,8 @@ if (@isdefined plt) && !isnothing(plt)
 else
     plt = nothing
 end
+plt1 = nothing
+if Threads.nthreads() == 1; plt1 = ControlPlots; end
 
 # Automatic parallel/threading setup
 include("remote_plotting.jl")
@@ -105,14 +108,14 @@ if MULTI
     
     # Plot with multiple lines per subplot
     plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
-              fig="Wind Direction", xlabel="rel_time [s]", ysize = 10, bottom=0.02, plt=ControlPlots)
+              fig="Wind Direction", xlabel="rel_time [s]", ysize = 10, bottom=0.02, plt=plt1)
 else
     # Single turbine mode - one turbine per subplot
     plot_data = [wind_dir_matrix[:, i] for i in 1:n_turbines]
     turbine_labels = ["T$i wind_dir [°]" for i in turbines]
     
     plot_x(times, plot_data...; fig="Wind Direction", xlabel="rel_time [s]", 
-              ylabels=turbine_labels, ysize = 9, bottom=0.02, plt)
+              ylabels=turbine_labels, ysize = 9, bottom=0.02, plt=plt1)
 end
 end
 
