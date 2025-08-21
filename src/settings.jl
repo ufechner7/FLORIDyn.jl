@@ -1018,7 +1018,7 @@ the choice to `data/default.yaml`.
 The function displays:
 1. VelReduction - Velocity reduction measurement
 2. AddedTurbulence - Added turbulence measurement  
-3. EffWind - Effective wind measurement
+3. EffWind - Effective wind speed measurement
 
 # Examples
 ```julia
@@ -1036,7 +1036,7 @@ function select_measurement()
     measurements = [
         (VelReduction, "VelReduction", "Velocity reduction measurement"),
         (AddedTurbulence, "AddedTurbulence", "Added turbulence measurement"),
-        (EffWind, "EffWind", "Effective wind measurement")
+        (EffWind, "EffWind", "Effective wind speed measurement")
     ]
     
     println()
