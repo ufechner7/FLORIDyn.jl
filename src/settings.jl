@@ -486,20 +486,56 @@ function Base.getproperty(vis::Vis, name::Symbol)
 end
 
 """
-    setup(filename)
+    setup(filename) -> (wind, sim, con, floris, floridyn, ta)
 
-Initializes or configures the system using the provided `filename`. The `filename` should specify the path to a configuration or settings file required for setup.
+Load wind farm configuration from a YAML file and parse all simulation components.
+
+This function reads a comprehensive wind farm configuration file and extracts all necessary 
+parameters for setting up a FLORIDyn simulation, including wind conditions, simulation 
+settings, control strategies, FLORIS model parameters, FLORIDyn dynamics, and turbine 
+array layout.
 
 # Arguments
-- `filename::String`: Path to the `.yaml` file to be used for setup.
+- `filename::String`: Path to the YAML configuration file containing wind farm setup data.
+  The file should contain sections for: wind, sim, con, floris, floridyn, and turbines.
 
 # Returns
-- The tuple `(wind, sim, con)` where:
-  - `wind`: An instance of the [`Wind`](@ref) struct containing wind-related parameters.
-  - `sim`: An instance of the [`Sim`](@ref) struct containing simulation parameters.
-  - `con`: An instance of the [`Con`](@ref) struct containing controller parameters.
-  - `floris`: An instance of the [`Floris`](@ref) struct containing FLORIS model parameters.
-  - `floridyn`: An instance of the [`FloriDyn`](@ref) struct containing FLORIDyn model parameters.
+A 6-tuple containing fully configured simulation components:
+- `wind::Wind`: Wind conditions and input specifications (velocity, direction, turbulence, shear, corrections, perturbations)
+- `sim::Sim`: Simulation parameters (time range, discretization, dynamics, initialization, data paths)  
+- `con::Con`: Control settings (yaw strategies, control data)
+- `floris::Floris`: FLORIS wake model parameters (alpha, beta, k coefficients, air density, etc.)
+- `floridyn::FloriDyn`: FLORIDyn dynamic model settings (operating points, perturbations, state changes)
+- `ta::TurbineArray`: Turbine array configuration (positions, types, initial states)
+
+# YAML File Structure
+The configuration file must contain these top-level sections:
+```yaml
+wind:          # Wind input specifications and corrections
+sim:           # Simulation time, discretization, and dynamics  
+con:           # Control strategies and yaw data
+floris:        # FLORIS model coefficients and parameters
+floridyn:      # FLORIDyn dynamic model settings
+turbines:      # Array of turbine definitions with position, type, initial states
+```
+
+# Example
+```julia
+# Load complete wind farm configuration
+wind, sim, con, floris, floridyn, ta = setup("data/2021_9T_Data.yaml")
+
+# Access turbine positions  
+println("Number of turbines: ", size(ta.pos, 1))
+println("Simulation duration: ", sim.end_time - sim.start_time, " seconds")
+```
+
+# See Also
+- [`Wind`](@ref): Wind conditions and input specifications
+- [`Sim`](@ref): Simulation parameters and settings  
+- [`Con`](@ref): Control configuration
+- [`Floris`](@ref): FLORIS wake model parameters
+- [`FloriDyn`](@ref): FLORIDyn dynamic model settings
+- [`TurbineArray`](@ref): Turbine array layout and properties
 """
 function setup(filename)
     data = YAML.load_file(filename)
