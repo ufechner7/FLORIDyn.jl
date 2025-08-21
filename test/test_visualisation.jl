@@ -1167,6 +1167,8 @@ if ! isinteractive()
                                    bottom=0.02,
                                    legend_size=8,
                                    plt=plt1)
+                sleep(1)
+                close_all(plt)  # Close the plot after testing
             end
             
             @testset "parameter defaults" begin
@@ -1188,6 +1190,8 @@ if ! isinteractive()
                 
                 # Test legend_size parameter
                 @test_nowarn plot_x(times, data; legend_size=12, plt=plt1)
+                sleep(1)  # Allow time for the plot to render
+                close_all(plt)  # Close the plot after testing
             end
             
             @testset "error handling" begin
@@ -1585,6 +1589,8 @@ if ! isinteractive()
             end
         end
     end
+    sleep(1)  # Allow time for the plot to render
+    close_all(plt)  # Close the plot after testing
 else
     # Running tests via Pkg.test (safest approach)
     @eval Main using Pkg
