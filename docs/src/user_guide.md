@@ -139,6 +139,9 @@ Choose function to execute or `q` to quit:
    "plot_measurements_lineplot";      = PLT=5; include("main.jl")
    "flow_field_vel_reduction_online"; = PLT=6; include("main.jl")
    "create_video_from_saved_frames";  = PLT=7; include("main.jl")
+   "run_all_visualisations";          include("main_all.jl")
+   "read_results";                    include("read_results.jl")
+   "plot_wind_direction";             include("plot_wind_dir.jl")
    "play_videos";                     = include("play_video.jl")
    open_documentation()
    quit
