@@ -10,8 +10,7 @@ tic()
 using FLORIDyn, TerminalPager, DistributedNext, ControlPlots, JLD2
 using Logging, LoggingExtras, Dates
 
-settings_file = "data/2021_9T_Data.yaml"
-vis_file      = "data/vis_default.yaml"
+settings_file, vis_file = get_default_project()
 
 vis = Vis(vis_file)
 
