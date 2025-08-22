@@ -72,13 +72,13 @@ You can select any of the examples with the `<UP>` and `<DOWN>` keys, and then p
 For developers, follow the [developer notes](https://ufechner7.github.io/FLORIDyn.jl/dev/developer/).
 
 ## References
-Citation of the FLORIDyn model:
+Citation of the FLORIDyn model:\
 [1] FLORIDyn - A dynamic and flexible framework for real-time wind farm control, M. Becker, D. Allaerts, J.W. van Wingerden, 2022, http://doi.org/10.1088/1742-6596/2265/3/032103
 
-Used FLORIS model:
+Used FLORIS model:\
 [2] Experimental and theoretical study of wind turbine wakes in yawed conditions, M. Bastankhah, F. Porté-Agel, 2020, http://doi.org/10.1017/jfm.2016.595
 
-Gaussian wake model:
+Gaussian wake model:\
 [3] Experimental and theoretical study of wind turbine wakes in yawed conditions", M. Bastankhah, F. Porté-Agel, 2016, Journal of Fluid Mechanics. 2016;806:506-541. http://doi.org/10.1017/jfm.2016.595
 
 Additional references for smaller subcomponents can be found in the code or in the related publications.
