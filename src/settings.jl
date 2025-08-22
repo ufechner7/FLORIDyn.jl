@@ -846,9 +846,8 @@ end
 """
     select_project() -> String
 
-Interactive project selector. Tries a simple GUI (Gtk4.jl) if available, otherwise falls
-back to a CLI prompt. Writes the chosen name to `data/default.yaml` and returns the
-selected project name.
+Interactive project selector. Lists available projects and prompts the user to select one.
+Writes the chosen name to `data/default.yaml` and returns the selected project name.
 
 Usage:
     using FLORIDyn; select_project()
