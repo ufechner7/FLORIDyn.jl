@@ -132,10 +132,9 @@ To run the examples, launch Julia with one of the start scripts and then type `m
 julia> menu()
 
 Choose function to execute or `q` to quit:
- > select_project()
-   "flow_field_vel_reduction";        = PLT=1; include("main.jl")
-   "flow_field_added_turbulence";     = PLT=2; include("main.jl")
-   "flow_field_eff_wind_speed";       = PLT=3; include("main.jl")
+ > select_project();                  print(CLEAR_SCR)
+   select_measurement();              print(CLEAR_SCR)
+   "plot_flow_field";                 PLT=1; include("main.jl")
    "plot_measurements";               = PLT=4; include("main.jl")
    "plot_measurements_lineplot";      = PLT=5; include("main.jl")
    "flow_field_vel_reduction_online"; = PLT=6; include("main.jl")
@@ -144,7 +143,7 @@ Choose function to execute or `q` to quit:
    open_documentation()
    quit
 ```
-or similar. First, select a project by choosing the first menu entry. Then, you can show any of the visualizations by selecting one of them with the cursor keys and then pressing <ENTER>. There might be additional examples that are not yet integrated in the menu. You can execute them
+or similar. First, select a project and a measurement by choosing the first menu entries. Then, you can show any of the visualizations by selecting one of them with the cursor keys and then pressing <ENTER>. There might be additional examples that are not yet integrated in the menu. You can execute them
 with `include("examples/<MY_EXAMPLE.jl>")`. Some examples require that Julia runs in single-threaded mode.
 If you want to run such an example, start Julia with `jl2`.
 
