@@ -113,7 +113,7 @@ if MULTI
     
     # Plot with multiple lines per subplot
     plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
-              fig="Wind Direction", xlabel="rel_time [s]", ysize = 10, bottom=0.02, plt=plt1, 
+              fig="Wind Direction", xlabel="rel_time [s]", ysize = 9, bottom=0.02, plt=plt1, 
               legend_size=legend_size, loc="upper right")
 else
     # Single turbine mode - one turbine per subplot
