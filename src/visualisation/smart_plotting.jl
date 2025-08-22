@@ -83,7 +83,7 @@ parallel or sequential plotting based on the number of available threads and pro
 - `ysize`: Figure height (default: 10)
 - `bottom`: Bottom margin (default: 0.02)
 - `legend_size`: Legend font size (optional)
-- `plt`: Matplotlib PyPlot instance (only used in sequential mode)
+- `pltctrl`: ControlPlots instance (only used in sequential mode)
 
 # Returns
 - nothing
@@ -91,12 +91,12 @@ parallel or sequential plotting based on the number of available threads and pro
 # Description
 When running with multiple threads and processes, it uses remote plotting 
 capabilities via `rmt_plotx`. Otherwise, it directly calls `plotx` with the 
-provided pyplot instance.
+provided ControlPlots instance.
 
 # Example
 ```julia
 plot_x(times, data1, data2; ylabels=["Turbine 1", "Turbine 2"], 
-       labels=["Wind Speed", "Power"], legend_size=8, plt=plt)
+       labels=["Wind Speed", "Power"], legend_size=8, pltctrl=pltctrl)
 ```
 
 # See Also
@@ -104,17 +104,17 @@ plot_x(times, data1, data2; ylabels=["Turbine 1", "Turbine 2"],
 """
 function plot_x(times, plot_data...; ylabels=nothing, labels=nothing, 
                 fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, 
-                legend_size=nothing, plt=nothing, loc=nothing)
+                legend_size=nothing, pltctrl=nothing, loc=nothing)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Use parallel plotting with remote worker
         @spawnat 2 Main.rmt_plotx(times, plot_data...; ylabels=ylabels, labels=labels,
                                   fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size, loc=loc)
     else
         # Use sequential plotting
-        if plt === nothing
-            error("plt argument is required for sequential plotting")
+        if pltctrl === nothing
+            error("pltctrl argument is required for sequential plotting")
         end
-        p = plt.plotx(times, plot_data...; ylabels=ylabels, labels=labels,
+        p = pltctrl.plotx(times, plot_data...; ylabels=ylabels, labels=labels,
                       fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size, loc=loc)
         display(p)  # Ensure the plot is displayed
     end

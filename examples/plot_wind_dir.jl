@@ -5,7 +5,7 @@ using FLORIDyn, TOML, DistributedNext
 if Threads.nthreads() == 1; 
     using ControlPlots
     v = VersionNumber(TOML.parsefile(joinpath(Base.pkgdir(ControlPlots), "Project.toml"))["version"])
-    @assert v >= v"0.2.7" "This script requires ControlPlots version 0.2.7 or higher."
+    @assert v >= v"0.2.8" "This script requires ControlPlots version 0.2.8 or higher."
 end
 
 settings_file, vis_file = get_default_project()
@@ -15,8 +15,8 @@ if (@isdefined plt) && !isnothing(plt)
 else
     plt = nothing
 end
-plt1 = nothing
-if Threads.nthreads() == 1; plt1 = ControlPlots; end
+pltctrl = nothing
+if Threads.nthreads() == 1; pltctrl = ControlPlots; end
 
 # Automatic parallel/threading setup
 include("remote_plotting.jl")
@@ -101,7 +101,7 @@ if n_turbines > 9
     
     # Plot with multiple lines per subplot
     plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
-              fig="Wind Direction", xlabel="rel_time [s]", ysize = 9, bottom=0.02, plt=plt1, 
+              fig="Wind Direction", xlabel="rel_time [s]", ysize = 9, bottom=0.02, plt=pltctrl, 
               legend_size=legend_size, loc="upper right")
 else
     # Single turbine mode - one turbine per subplot
@@ -109,7 +109,7 @@ else
     turbine_labels = ["T$i wind_dir [°]" for i in turbines]
     
     plot_x(times, plot_data...; fig="Wind Direction", xlabel="rel_time [s]", 
-              ylabels=turbine_labels, ysize = 9, bottom=0.02, plt=plt1)
+              ylabels=turbine_labels, ysize = 9, bottom=0.02, plt=pltctrl)
 end
 end
 
