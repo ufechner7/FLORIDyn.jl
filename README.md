@@ -7,7 +7,7 @@
 
 ## Introduction
 A dynamic wind farm simulation software, translated from [FLORIDyn_Matlab](https://github.com/TUDelft-DataDrivenControl/FLORIDyn_Matlab), which was written by Marcus Becker.
-The code uses the Gaussian wake model from the quasi static wind farm simulation software [FLORIS](https://github.com/NREL/floris), developed by NREL.
+The code uses the Gaussian wake model derived in [3].
 
 ## Model features
 - Simulate wind farms dynamically at a low computational cost
@@ -86,10 +86,13 @@ See the copyright notices in the source files, and the list of authors in [AUTHO
 
 ## References
 Citation of the FLORIDyn model:
-FLORIDyn - A dynamic and flexible framework for real-time wind farm control, M. Becker, D. Allaerts, J.W. van Wingerden, 2022, http://doi.org/10.1088/1742-6596/2265/3/032103
+[1] FLORIDyn - A dynamic and flexible framework for real-time wind farm control, M. Becker, D. Allaerts, J.W. van Wingerden, 2022, http://doi.org/10.1088/1742-6596/2265/3/032103
 
 Used FLORIS model:
-Experimental and theoretical study of wind turbine wakes in yawed conditions, M. Bastankhah, F. Porté-Agel, 2020, http://doi.org/10.1017/jfm.2016.595
+[2] Experimental and theoretical study of wind turbine wakes in yawed conditions, M. Bastankhah, F. Porté-Agel, 2020, http://doi.org/10.1017/jfm.2016.595
+
+Gaussian wake model:
+[3] Experimental and theoretical study of wind turbine wakes in yawed conditions", M. Bastankhah, F. Porté-Agel, 2016, Journal of Fluid Mechanics. 2016;806:506-541. http://doi.org/10.1017/jfm.2016.595
 
 Additional references for smaller subcomponents can be found in the code or in the related publications.
 
