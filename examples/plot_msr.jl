@@ -18,8 +18,8 @@ if (@isdefined plt) && !isnothing(plt)
 else
     plt = nothing
 end
-plt1 = nothing
-if Threads.nthreads() == 1; plt1 = ControlPlots; end
+pltctrl = nothing
+if Threads.nthreads() == 1; pltctrl = ControlPlots; end
 
 # Automatic parallel/threading setup
 include("remote_plotting.jl")
@@ -123,6 +123,6 @@ end
     
 # Plot with multiple lines per subplot
 plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
-            fig=title, xlabel="rel_time [s]", ysize = 9, bottom=0.02, plt=plt1, legend_size=6, loc="upper left")
+            fig=title, xlabel="rel_time [s]", ysize = 9, bottom=0.02, pltctrl=pltctrl, legend_size=6, loc="upper left")
 
 nothing
