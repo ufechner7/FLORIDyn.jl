@@ -8,18 +8,6 @@ if Threads.nthreads() == 1;
     @assert v >= v"0.2.7" "This script requires ControlPlots version 0.2.7 or higher."
 end
 
-# Dialog to set MULTI variable
-println("\033[1mPlot wind direction for multiple turbines?\033[0m")
-print("Enter 'y' for multiple turbines, 'n' for single turbine [y/N]: ")
-response = readline()
-MULTI = lowercase(strip(response)) in ["y", "yes", "true", "1"]
-
-if MULTI
-    println("Multi-turbine mode selected, up to 81 turbines.")
-else
-    println("Single turbine per subplot selected, up to 9 turbines.")
-end
-
 settings_file, vis_file = get_default_project()
 
 if (@isdefined plt) && !isnothing(plt)
@@ -69,7 +57,7 @@ wind_dir_matrix = wind_dir_matrix'          # Now it's time × turbines
 # Create dynamic plot arguments based on number of turbines
 n_turbines = length(turbines)
 
-if MULTI
+if n_turbines > 9
     rows, lines = get_layout(wf.nT)
     
     # Group turbines into subplots based on layout
