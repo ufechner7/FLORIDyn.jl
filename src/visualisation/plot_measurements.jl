@@ -77,7 +77,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
         error("Column '$data_column' not found in measurement data. Available columns: $(names(md))")
     end
     
-    size = 1
+    plot_size = 1
     measurement_data = md[!, data_column]
     
     # Measurement plotting
@@ -88,7 +88,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
         y_lim = y_lim .+ [-0.1, 0.1] * max(y_range, 0.5)
         if wf.nT < 10
             lay = get_layout(wf.nT)
-            fig = plt.figure(title, figsize=(10size, 6size))
+            fig = plt.figure(title, figsize=(10plot_size, 6plot_size))
             c = plt.get_cmap("inferno")(0.5)  # Single color for separated plots
             
             for iT in 1:wf.nT
@@ -108,54 +108,46 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
                 fig.subplots_adjust(wspace=0.55)
             end
         else          
-            fig = plt.figure(title, figsize=(10size, 6size))
+            fig = plt.figure(title, figsize=(10plot_size, 6plot_size))
             rows, lines = get_layout(wf.nT)
             n_turbines = wf.nT
 
             # Group turbines into subplots based on layout
-            plot_data = []
-            turbine_labels = []
-            subplot_labels = []
-            
-            local turbine_idx = 1
-            for row in 1:rows
-                if turbine_idx > n_turbines
-                    break
-                end
-                
-                # Collect lines for this subplot
-                local lines_in_subplot = Vector{Vector{Float64}}()
-                local labels_in_subplot = Vector{String}()
-                
-                for line in 1:lines
-                    if turbine_idx <= n_turbines
-                        # measurement_data[turbine_idx:wf.nT:end],
-                        # push!(lines_in_subplot, wind_dir_matrix[:, turbine_idx])
-                        # push!(labels_in_subplot, "T$(turbines[turbine_idx])")
-                        turbine_idx += 1
-                    end
-                end
-                
-                # Add subplot data
-                if length(lines_in_subplot) == 1
-                    push!(plot_data, lines_in_subplot[1])
-                else
-                    push!(plot_data, lines_in_subplot)
-                end
-                
-                push!(turbine_labels, ylabel)
-                push!(subplot_labels, labels_in_subplot)
+            times = Float64[]
+            measurements = Vector{Float64}[]
+            turbines = 1:wf.nT
+
+            # Extract measurement data for each turbine
+            measurement_data = md[!, data_column]
+            timeFDyn = md.Time .- md.Time[1]
+
+            # Use the actual time data from the simulation results
+            times = timeFDyn[1:wf.nT:end]  # Extract times corresponding to first turbine data points
+
+            # Arrays to store time series data  
+            measurements = Vector{Float64}[]
+
+            for iT in 1:wf.nT
+                push!(measurements, measurement_data[iT:wf.nT:end])
             end
+
+            # Convert vector of vectors to matrix for easier plotting
+            # measurements is a vector of 9 vectors, each with 301 time points
+            # We want a matrix that's 301 × 9 (time × turbines)
+            msr_matrix = hcat(measurements...)  # This creates a 301 × 54 matrix
+            println("--->>> ", size(msr_matrix))
         end
     else
         fig = plt.figure(title*" - Line Plot")
-        colors = plt.get_cmap("inferno")(range(0, 1, length=wf.nT))
+        # Generate colors for each turbine
+        color_values = range(0, 1, length=wf.nT)
+        colors = [plt.get_cmap("inferno")(val) for val in color_values]
         
         for iT in 1:wf.nT
             plt.plot(
                 timeFDyn[iT:wf.nT:end],
                 measurement_data[iT:wf.nT:end],
-                linewidth=2, color=colors[iT, :]
+                linewidth=2, color=colors[iT]
             )
         end
         plt.grid(true)
