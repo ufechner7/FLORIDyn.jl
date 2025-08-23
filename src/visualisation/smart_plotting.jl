@@ -55,11 +55,11 @@ parallel or sequential plotting based on the number of available threads and pro
 function plot_measurements(wf, md, vis; separated=true, msr::MSR=VelReduction, plt=nothing, pltctrl=nothing)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Use parallel plotting with remote worker
-        @spawnat 2 Main.rmt_plot_measurements(wf, md, vis; separated=separated, msr)
+        @spawnat 2 Main.rmt_plot_measurements(wf, md, vis; separated, msr)
     else
         # Use sequential plotting
-        if plt === nothing
-            error("plt argument is required for sequential plotting")
+        if pltctrl === nothing
+            error("--> pltctrl argument is required for sequential plotting, th: $(Threads.nthreads()), procs: $(nprocs())")
         end
         plotMeasurements(plt, wf, md, vis; separated, msr, pltctrl)
     end
@@ -112,7 +112,7 @@ function plot_x(times, plot_data...; ylabels=nothing, labels=nothing,
     else
         # Use sequential plotting
         if pltctrl === nothing
-            error("pltctrl argument is required for sequential plotting")
+            warn("pltctrl argument is required for sequential plotting. th: $(Threads.nthreads()), procs: $(nprocs())")
         end
         p = pltctrl.plotx(times, plot_data...; ylabels=ylabels, labels=labels,
                       fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size, loc=loc)

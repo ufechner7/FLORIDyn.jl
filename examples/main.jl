@@ -21,8 +21,22 @@ if ! @isdefined LAST_PLT; LAST_PLT=Set(NEW_PLT); end
 
 settings_file, vis_file = get_default_project()[2:3]
 
+# vis = Vis(vis_file)
+# vis.show_plots = true  # Enable/disable showing plots during simulation
+# if (@isdefined plt) && !isnothing(plt)
+#     plt.ion()
+# else
+#     plt = nothing
+# end
+# pltctrl = nothing
+# if Threads.nthreads() == 1; pltctrl = ControlPlots; end
+
+# # Automatic parallel/threading setup
+# tic()
+# include("remote_plotting.jl")
+# toc()
+
 vis = Vis(vis_file)
-vis.show_plots = true  # Enable/disable showing plots during simulation
 if (@isdefined plt) && !isnothing(plt)
     plt.ion()
 else
@@ -32,9 +46,7 @@ pltctrl = nothing
 if Threads.nthreads() == 1; pltctrl = ControlPlots; end
 
 # Automatic parallel/threading setup
-tic()
 include("remote_plotting.jl")
-toc()
 
 function get_parameters(vis)
     # get the settings for the wind field, simulator and controller

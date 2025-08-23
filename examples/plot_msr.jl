@@ -122,6 +122,7 @@ for row in 1:rows
 end
     
 # Plot with multiple lines per subplot
+println(typeof(pltctrl))
 plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
             fig=title, xlabel="rel_time [s]", ysize = 9, bottom=0.02, pltctrl, legend_size=6, loc="center left")
 

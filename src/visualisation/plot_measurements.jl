@@ -45,10 +45,10 @@ plotMeasurements(plt, wind_farm, measurements_df, vis; separated=true, msr=Added
 - [`getMeasurements`](@ref): For generating measurement data
 """
 function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=VelReduction, pltctrl=nothing)
-    local fig
+    # local fig
     # Master switch: still create figures for saving, but suppress interactive pauses/display when show_plots=false
     show_plots = vis.show_plots
-    fig = nothing  # Initialize fig variable
+    # fig = nothing  # Initialize fig variable
 
     # Subtract start time
     timeFDyn = md.Time .- md.Time[1]
@@ -178,9 +178,13 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
                 push!(subplot_labels, labels_in_subplot)
             end
             # Plot with multiple lines per subplot
-            p=plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
-                   fig=title, xlabel="rel_time [s]", ysize = 9, bottom=0.0, pltctrl, legend_size=8.0, loc="center left")
-            display(p)
+            println(typeof(pltctrl))
+            try
+                plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
+                        fig=title, xlabel="rel_time [s]", ysize = 9, bottom=0.02, pltctrl, legend_size=6, loc="center left")
+            catch e
+                println("Error in plot_x: $e")
+            end
         end
     else # not separated
         fig = plt.figure(title*" - Line Plot")
@@ -228,9 +232,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
         if show_plots
             plt.pause(1.0)
         end
-        if fig !== nothing
-            plt.close(fig)
-        end
+        close_all(plt)
     end
     if show_plots
         plt.pause(0.01)

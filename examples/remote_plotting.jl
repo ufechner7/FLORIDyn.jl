@@ -41,9 +41,8 @@ if Threads.nthreads() > 1
                                             fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, 
                                             legend_size=nothing, loc=nothing)
                 # Create a fresh plt instance just for this task
-                local_plt = ControlPlots.plt
-                p=ControlPlots.plotx(times, plot_data...; ylabels=ylabels, labels=labels,
-                           fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size, loc=loc)
+                p=ControlPlots.plotx(times, plot_data...; ylabels, labels, fig=fig, xlabel, ysize, bottom, 
+                                     legend_size, loc)
                 display(p)  # Ensure the plot is displayed
                 nothing
             end
