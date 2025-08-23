@@ -136,8 +136,48 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
             # We want a matrix that's 301 × 9 (time × turbines)
             msr_matrix = hcat(measurements...)  # This creates a 301 × 54 matrix
             println("--->>> ", size(msr_matrix))
+
+            # Create dynamic plot arguments based on number of turbines
+            n_turbines = wf.nT
+            rows, lines = get_layout(wf.nT)
+
+            # Group turbines into subplots based on layout
+            plot_data = []
+            turbine_labels = []
+            subplot_labels = []
+                
+            turbine_idx = 1
+            for row in 1:rows
+            # global turbine_idx, lines_in_subplot, labels_in_subplot
+            if turbine_idx > n_turbines
+                break
+            end
+                
+            # Collect lines for this subplot
+            lines_in_subplot = Vector{Vector{Float64}}()
+            labels_in_subplot = Vector{String}()
+
+            for line in 1:lines
+                if turbine_idx <= n_turbines
+                    push!(lines_in_subplot, msr_matrix[:, turbine_idx])
+                    push!(labels_in_subplot, "T$(turbines[turbine_idx])")
+                    turbine_idx += 1
+                end
+            end
+                
+            # Add subplot data
+            if length(lines_in_subplot) == 1
+                push!(plot_data, lines_in_subplot[1])
+            else
+                push!(plot_data, lines_in_subplot)
+            end
+            
+            push!(turbine_labels, ylabel)  # Use the appropriate ylabel for the measurement type
+            push!(subplot_labels, labels_in_subplot)
         end
-    else
+
+        end
+    else # not separated
         fig = plt.figure(title*" - Line Plot")
         # Generate colors for each turbine
         color_values = range(0, 1, length=wf.nT)
