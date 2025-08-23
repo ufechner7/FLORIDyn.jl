@@ -2,47 +2,58 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=VelReduction) -> Nothing
+    plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=VelReduction, pltctrl=nothing) -> Nothing
 
-Plot foreign reduction measurements from FLORIDyn simulation data.
+Plot measurement data from FLORIDyn simulation results.
 
 # Arguments
-- `plt`: Plotting package (e.g., PyPlot, which is exported from ControlPlots)
+- `plt`: Plotting package (e.g., PyPlot, which is exported from ControlPlots); nothing for remote plotting
 - `wf::WindFarm`: Wind farm object with field `nT` (number of turbines). See [`WindFarm`](@ref)
 - `md::DataFrame`: Measurements DataFrame containing time series data with columns:
   - `Time`: Simulation time [s]
-  - `ForeignReduction`: Foreign reduction  \\[%\\]
+  - `ForeignReduction`: Foreign reduction [%] (for VelReduction)
+  - `AddedTurbulence`: Added turbulence [%] (for AddedTurbulence)
+  - `EffWindSpeed`: Effective wind speed [m/s] (for EffWind)
 - `vis::Vis`: Visualization settings including unit_test parameter. See [`Vis`](@ref)
 - `separated::Bool`: Whether to use separated subplot layout (default: false)
-- `msr::MSR`: Measurement type to plot, see: [MSR](@ref) 
+- `msr::MSR`: Measurement type to plot, see: [MSR](@ref). Options: VelReduction, AddedTurbulence, EffWind
+- `pltctrl`: ControlPlots module instance (optional, used for large turbine count plotting); nothing for remote plotting
 
 # Returns
 - `nothing`
 
 # Description
-This function creates time series plots of foreign reduction measurements from FLORIDyn simulations. It handles:
+This function creates time series plots of measurement data from FLORIDyn simulations. It handles:
 1. Time normalization by subtracting the start time
-2. Foreign reduction plots in either separated (subplot) or combined layout
-3. Different measurement types based on the `msr` parameter
+2. Multiple measurement types (velocity reduction, added turbulence, effective wind speed)
+3. Automatic layout selection based on turbine count
+4. Both separated (subplot) and combined plotting modes
 
 # Plotting Modes
 - **Separated mode** (`separated=true`): Creates individual subplots for each turbine
+  - For ≤9 turbines: Traditional subplot grid
+  - For >9 turbines: Uses helper function with grouped subplots via [`plot_x`](@ref)
 - **Combined mode** (`separated=false`): Plots all turbines on a single figure with different colors
 
-# Example
+# Examples
 ```julia
-using ControlPlots
+using ControlPlots # For single-threaded plotting
 
 # Plot velocity reduction for all turbines in combined mode
 plotMeasurements(plt, wind_farm, measurements_df, vis; msr=VelReduction)
 
 # Plot added turbulence with separated subplots
 plotMeasurements(plt, wind_farm, measurements_df, vis; separated=true, msr=AddedTurbulence)
+
+# Plot effective wind speed with ControlPlots module for large farms
+plotMeasurements(plt, wind_farm, measurements_df, vis; separated=true, msr=EffWind, pltctrl=ControlPlots)
 ```
 
 # See Also
 - [`plotFlowField`](@ref): For flow field visualization
 - [`getMeasurements`](@ref): For generating measurement data
+- [`prepare_large_measurements_plot_inputs`](@ref): Helper for large turbine counts
+- [`plot_x`](@ref): Multi-subplot plotting function
 """
 function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=VelReduction, pltctrl=nothing)
     # Master switch: still create figures for saving, but suppress interactive pauses/display when show_plots=false
@@ -165,7 +176,7 @@ end
 Prepare grouped plotting inputs for large numbers of turbines when `separated=true`.
 
 Returns
-- `times::Vector{Float64}`: Time vector (one entry per recorded timestep)
+- `times::Vector{Float64}`: Time vector (one entry per recorded time step)
 - `plot_data::Vector{Any}`: Each element is either a Vector (single line subplot) or Vector{Vector{Float64}} (multiple lines)
 - `turbine_labels::Vector{String}`: Y-axis labels per subplot (same ylabel repeated)
 - `subplot_labels::Vector{Vector{String}}`: Line labels per subplot
