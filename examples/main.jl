@@ -4,8 +4,11 @@
 # MainFLORIDyn Center-Line model
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
+tic()
 using FLORIDyn, TerminalPager, DistributedNext
-if Threads.nthreads() == 1; using ControlPlots; end
+if Threads.nthreads() == 1
+    using ControlPlots  # Only load ControlPlots (PyPlot) when single-threaded
+end
 
 # PLT options:
 # PLT=1: Velocity reduction plot
@@ -43,7 +46,10 @@ else
     plt = nothing
 end
 pltctrl = nothing
-if Threads.nthreads() == 1; pltctrl = ControlPlots; end
+# Provide ControlPlots module only for pure sequential plotting (single-threaded, no workers)
+if Threads.nthreads() == 1
+    pltctrl = ControlPlots
+end
 
 # Automatic parallel/threading setup
 include("remote_plotting.jl")
@@ -87,11 +93,11 @@ if PLT == 1
 elseif PLT == 4
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    @time plot_measurements(wf, md, vis; separated=true, msr=get_default_msr(), plt, pltctrl)
+    @time plot_measurements(wf, md, vis; separated=true, msr=get_default_msr(), plt=plt, pltctrl=pltctrl)
 elseif PLT == 5
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    @time plot_measurements(wf, md, vis; separated=false, msr=get_default_msr(), plt, pltctrl)
+    @time plot_measurements(wf, md, vis; separated=false, msr=get_default_msr(), plt=plt, pltctrl=pltctrl)
 elseif PLT == 6
     vis.online = true
     # Clean up any existing PNG files in video folder before starting

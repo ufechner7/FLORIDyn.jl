@@ -35,7 +35,9 @@ if Threads.nthreads() > 1
             @everywhere function rmt_plot_measurements(wf, md, vis; separated, msr=VelReduction)
                 # Create a fresh plt instance just for this task
                 local_plt = ControlPlots.plt
-                return plotMeasurements(local_plt, wf, md, vis; separated=separated, msr)
+                # Pass pltctrl=ControlPlots so that any internal plot_x calls on the (single-threaded) worker
+                # have the ControlPlots module available for sequential plotting.
+                return plotMeasurements(local_plt, wf, md, vis; separated=separated, msr, pltctrl=ControlPlots)
             end
             @everywhere function rmt_plotx(times, plot_data...; ylabels=nothing, labels=nothing,
                                             fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, 

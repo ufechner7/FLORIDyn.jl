@@ -137,7 +137,6 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
             # measurements is a vector of 9 vectors, each with 301 time points
             # We want a matrix that's 301 × 9 (time × turbines)
             msr_matrix = hcat(measurements...)  # This creates a 301 × 54 matrix
-            println("--->>> ", size(msr_matrix))
 
             # Create dynamic plot arguments based on number of turbines
             n_turbines = wf.nT
@@ -178,7 +177,6 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
                 push!(subplot_labels, labels_in_subplot)
             end
             # Plot with multiple lines per subplot
-            println(typeof(pltctrl))
             try
                 plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
                         fig=title, xlabel="rel_time [s]", ysize = 9, bottom=0.02, pltctrl, legend_size=6, loc="center left")
