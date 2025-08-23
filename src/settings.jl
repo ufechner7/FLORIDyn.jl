@@ -249,6 +249,8 @@ properties for flexible path management.
                           When `true`, filenames of saved plots are printed (default: `false`).
 - `video_folder::String`: Relative path for the video output directory. Used when `online=true`
                          and `save=true` (default: `"video"`).
+- `fps::Int`: Frames per second for video output when creating videos from saved frames.
+             Controls the playback speed of generated MP4 videos (default: `12`).
 - `output_folder::String`: Relative path for the output directory. Used when `online=false`
                           and `save=true` (default: `"out"`).
 - `unique_output_folder::Bool`: If `true`, a unique timestamped folder is created for each simulation run.
@@ -380,6 +382,7 @@ The struct automatically adapts to different computing environments:
     log_debug::Bool = false           # if true, enable debug level logging output
     unique_folder::String = ""        # this will be set when starting the simulation
     video_folder::String = "video"    # relative video folder path
+    fps::Int = 12                     # frames per second for video output
     output_folder::String = "out"     # relative output folder path
     unique_output_folder::Bool = true # if true, for each simulation run a new folder is created
     skip_flow_fields::Bool = false    # if true, completely skip creation of flow field visualizations (overrides individual entries)
