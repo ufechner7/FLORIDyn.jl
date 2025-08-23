@@ -102,8 +102,9 @@ parallel or sequential plotting based on the number of available threads and pro
 
 # Description
 When running with multiple threads and processes, it uses remote plotting 
-capabilities via `rmt_plotx`. Otherwise, it directly calls `plotx` with the 
-provided ControlPlots instance.
+capabilities via `rmt_plotx` ONLY if no local `pltctrl` is provided. If a `pltctrl`
+argument is supplied (e.g. during unit tests with a mock), it forces the sequential
+path so tests can observe side-effects without needing remote worker setup.
 
 # Example
 ```julia
@@ -117,7 +118,7 @@ plot_x(times, data1, data2; ylabels=["Turbine 1", "Turbine 2"],
 function plot_x(times, plot_data...; ylabels=nothing, labels=nothing, 
                 fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, 
                 legend_size=nothing, pltctrl=nothing, loc=nothing)
-    if Threads.nthreads() > 1 && nprocs() > 1
+    if Threads.nthreads() > 1 && nprocs() > 1 && pltctrl === nothing
         # Use parallel plotting with remote worker
         @spawnat 2 Main.rmt_plotx(times, plot_data...; ylabels=ylabels, labels=labels,
                                   fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size, loc=loc)
