@@ -88,7 +88,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
         y_lim = y_lim .+ [-0.1, 0.1] * max(y_range, 0.5)
         if wf.nT < 10
             lay = get_layout(wf.nT)
-            fig = plt.figure(title, figsize=(10plot_size, 6plot_size))
+            fig = plt.figure(title, figsize=(10*plot_size, 6*plot_size))
             c = plt.get_cmap("inferno")(0.5)  # Single color for separated plots
             
             for iT in 1:wf.nT
@@ -108,7 +108,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
                 fig.subplots_adjust(wspace=0.55)
             end
         else          
-            fig = plt.figure(title, figsize=(10plot_size, 6plot_size))
+            fig = plt.figure(title, figsize=(10*plot_size, 6*plot_size))
             rows, lines = get_layout(wf.nT)
             n_turbines = wf.nT
 
@@ -148,34 +148,33 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
                 
             turbine_idx = 1
             for row in 1:rows
-            # global turbine_idx, lines_in_subplot, labels_in_subplot
-            if turbine_idx > n_turbines
-                break
-            end
-                
-            # Collect lines for this subplot
-            lines_in_subplot = Vector{Vector{Float64}}()
-            labels_in_subplot = Vector{String}()
-
-            for line in 1:lines
-                if turbine_idx <= n_turbines
-                    push!(lines_in_subplot, msr_matrix[:, turbine_idx])
-                    push!(labels_in_subplot, "T$(turbines[turbine_idx])")
-                    turbine_idx += 1
+                # global turbine_idx, lines_in_subplot, labels_in_subplot
+                if turbine_idx > n_turbines
+                    break
                 end
-            end
                 
-            # Add subplot data
-            if length(lines_in_subplot) == 1
-                push!(plot_data, lines_in_subplot[1])
-            else
-                push!(plot_data, lines_in_subplot)
-            end
-            
-            push!(turbine_labels, ylabel)  # Use the appropriate ylabel for the measurement type
-            push!(subplot_labels, labels_in_subplot)
-        end
+                # Collect lines for this subplot
+                lines_in_subplot = Vector{Vector{Float64}}()
+                labels_in_subplot = Vector{String}()
 
+                for line in 1:lines
+                    if turbine_idx <= n_turbines
+                        push!(lines_in_subplot, msr_matrix[:, turbine_idx])
+                        push!(labels_in_subplot, "T$(turbines[turbine_idx])")
+                        turbine_idx += 1
+                    end
+                end
+                
+                # Add subplot data
+                if length(lines_in_subplot) == 1
+                    push!(plot_data, lines_in_subplot[1])
+                else
+                    push!(plot_data, lines_in_subplot)
+                end
+                
+                push!(turbine_labels, ylabel)  # Use the appropriate ylabel for the measurement type
+                push!(subplot_labels, labels_in_subplot)
+            end
         end
     else # not separated
         fig = plt.figure(title*" - Line Plot")
