@@ -73,12 +73,12 @@ For developers, follow the [developer notes](https://ufechner7.github.io/FLORIDy
 
 ## References
 Citation of the FLORIDyn model:\
-[1] FLORIDyn - A dynamic and flexible framework for real-time wind farm control, M. Becker, D. Allaerts, J.W. van Wingerden, 2022, [doi:10.1088/1742-6596/2265/3/032103](http://doi.org/10.1088/1742-6596/2265/3/032103)
+[1] FLORIDyn - A dynamic and flexible framework for real-time wind farm control, M. Becker, D. Allaerts, J.W. van Wingerden, 2022, [DOI 10.1088/1742-6596/2265/3/032103](http://doi.org/10.1088/1742-6596/2265/3/032103)
 
 Used FLORIS model:\
-[2] Experimental and theoretical study of wind turbine wakes in yawed conditions, M. Bastankhah, F. Porté-Agel, 2020, [doi:10.1017/jfm.2016.595](http://doi.org/10.1017/jfm.2016.595)
+[2] Experimental and theoretical study of wind turbine wakes in yawed conditions, M. Bastankhah, F. Porté-Agel, 2020, [DOI 10.1017/jfm.2016.595](http://doi.org/10.1017/jfm.2016.595)
 
 Gaussian wake model:\
-[3] Experimental and theoretical study of wind turbine wakes in yawed conditions", M. Bastankhah, F. Porté-Agel, 2016, Journal of Fluid Mechanics. 2016;806:506-541. [doi:10.1017/jfm.2016.595](http://doi.org/10.1017/jfm.2016.595)
+[3] Experimental and theoretical study of wind turbine wakes in yawed conditions", M. Bastankhah, F. Porté-Agel, 2016, Journal of Fluid Mechanics. 2016;806:506-541. [DOI 10.1017/jfm.2016.595](http://doi.org/10.1017/jfm.2016.595)
 
 Additional references for smaller subcomponents can be found in the code or in the related publications.
