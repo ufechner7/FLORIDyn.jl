@@ -109,8 +109,6 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
                 fig.subplots_adjust(wspace=0.55)
             end
         else          
-            # fig = plt.figure(title, figsize=(10*plot_size, 6*plot_size))
-            # fig = plt.figure(title)
             rows, lines = get_layout(wf.nT)
             n_turbines = wf.nT
 
