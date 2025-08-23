@@ -75,6 +75,17 @@ with_logger(tee_logger) do
             @info "Skipping flow field: $(flow_field.name)"
             continue
         end
+        
+        # Reset wind farm state before each video to ensure clean initialization
+        if flow_field.online
+            @info "Resetting wind farm state for $(flow_field.name) video..."
+            # Full state reset: reinitialize all state matrices to clean values
+            # Use the original turbine initial states from the turbine array
+            _, _, _, _, _, ta = setup(settings_file)
+            wf.States_OP, wf.States_T, wf.States_WF = init_states(set, wf, wind, ta.init_States, floris, sim)
+            wf = initSimulation(wf, sim)
+        end
+        
         Z, X, Y = calcFlowField(set, wf, wind, floris; vis)
         msr = toMSR(flow_field.name)
         if flow_field.online
@@ -94,7 +105,7 @@ with_logger(tee_logger) do
                     createAllVideos(fps=vis.fps, delete_frames=false, video_dir=vis.video_path, output_dir=vis.output_path)
                 end
                 if !isempty(video_paths)
-                    @info "Video created successfully: $(video_paths[1])"
+                    @info "Video created successfully: $(video_paths[Int(msr)])"
                     vis.no_videos += 1
                 else
                     @warn "No video created."
