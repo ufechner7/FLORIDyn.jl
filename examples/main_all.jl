@@ -63,7 +63,7 @@ with_logger(tee_logger) do
         @info "Skipping flow field visualisation."
     end
     if ! vis.show_plots
-        @info "Do not show the plots, only create png files."
+        @info "Do not show the plots, only create png/ mp4 files."
     end
     for flow_field in vis.flow_fields
         global wf, md, mi, FLORIDYN_EXECUTED
