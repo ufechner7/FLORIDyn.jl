@@ -108,7 +108,8 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
                 fig.subplots_adjust(wspace=0.55)
             end
         else          
-            fig = plt.figure(title, figsize=(10*plot_size, 6*plot_size))
+            # fig = plt.figure(title, figsize=(10*plot_size, 6*plot_size))
+            # fig = plt.figure(title)
             rows, lines = get_layout(wf.nT)
             n_turbines = wf.nT
 
@@ -177,7 +178,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
             end
             # Plot with multiple lines per subplot
             p=plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
-                   fig=title, xlabel="rel_time [s]", ysize = 9, bottom=0.02, pltctrl, legend_size=6, loc="upper left")
+                   fig=title, xlabel="rel_time [s]", ysize = 9, bottom=0.0, pltctrl, legend_size=8.0, loc="center left")
             display(p)
         end
     else # not separated
