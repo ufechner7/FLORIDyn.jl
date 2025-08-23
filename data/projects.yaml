@@ -6,7 +6,7 @@ projects:
       vis: vis_default.yaml
   - project:
       name: 2021_9T_Data_full
-      description: A reference simulation with 9 turbines, full visualization
+      description: 9 turbines, no visualization, full output incl. 3 videos
       settings: 2021_9T_Data.yaml
       vis: vis_full_9T.yaml
   - project:

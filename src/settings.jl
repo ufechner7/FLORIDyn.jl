@@ -848,7 +848,8 @@ function get_default_project()
     # Build settings and vis file paths (prefer local workspace, fall back to package data)
     proj_name = String(chosen["name"])                  # e.g. "2021_9T_Data"
     vis_fname = String(chosen["vis"])                   # e.g. "vis_default.yaml"
-    settings_fname = proj_name * ".yaml"                # e.g. "2021_9T_Data.yaml"
+    # Use explicit settings field if available, otherwise construct from project name
+    settings_fname = haskey(chosen, "settings") ? String(chosen["settings"]) : proj_name * ".yaml"
 
     # Candidate paths
     settings_local = joinpath(data_dir_local, settings_fname)

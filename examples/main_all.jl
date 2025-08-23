@@ -83,6 +83,7 @@ with_logger(tee_logger) do
                 cleanup_video_folder()
             end
             vis.online = true
+            close_all(plt)
             @info "Starting simulation with online visualisation for $(flow_field.name) ..."
             wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
             FLORIDYN_EXECUTED = true
