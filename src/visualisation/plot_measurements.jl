@@ -44,7 +44,7 @@ plotMeasurements(plt, wind_farm, measurements_df, vis; separated=true, msr=Added
 - [`plotFlowField`](@ref): For flow field visualization
 - [`getMeasurements`](@ref): For generating measurement data
 """
-function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=VelReduction)
+function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=VelReduction, pltctrl=nothing)
     local fig
     # Master switch: still create figures for saving, but suppress interactive pauses/display when show_plots=false
     show_plots = vis.show_plots
@@ -175,6 +175,10 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
                 push!(turbine_labels, ylabel)  # Use the appropriate ylabel for the measurement type
                 push!(subplot_labels, labels_in_subplot)
             end
+            # Plot with multiple lines per subplot
+            p=plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
+                   fig=title, xlabel="rel_time [s]", ysize = 9, bottom=0.02, pltctrl, legend_size=6, loc="upper left")
+            display(p)
         end
     else # not separated
         fig = plt.figure(title*" - Line Plot")

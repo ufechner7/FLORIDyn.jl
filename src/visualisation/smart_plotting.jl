@@ -52,7 +52,7 @@ parallel or sequential plotting based on the number of available threads and pro
 # See Also
 - [`plotMeasurements`](@ref): The underlying plotting function used in sequential mode
 """
-function plot_measurements(wf, md, vis; separated=true, msr::MSR=VelReduction, plt=nothing)
+function plot_measurements(wf, md, vis; separated=true, msr::MSR=VelReduction, plt=nothing, pltctrl=nothing)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Use parallel plotting with remote worker
         @spawnat 2 Main.rmt_plot_measurements(wf, md, vis; separated=separated, msr)
@@ -61,7 +61,7 @@ function plot_measurements(wf, md, vis; separated=true, msr::MSR=VelReduction, p
         if plt === nothing
             error("plt argument is required for sequential plotting")
         end
-        plotMeasurements(plt, wf, md, vis; separated=separated, msr)        
+        plotMeasurements(plt, wf, md, vis; separated, msr, pltctrl)
     end
     nothing
 end

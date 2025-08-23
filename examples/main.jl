@@ -28,6 +28,8 @@ if (@isdefined plt) && !isnothing(plt)
 else
     plt = nothing
 end
+pltctrl = nothing
+if Threads.nthreads() == 1; pltctrl = ControlPlots; end
 
 # Automatic parallel/threading setup
 tic()
@@ -73,11 +75,11 @@ if PLT == 1
 elseif PLT == 4
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    @time plot_measurements(wf, md, vis; separated=true, msr=get_default_msr(), plt)
+    @time plot_measurements(wf, md, vis; separated=true, msr=get_default_msr(), plt, pltctrl)
 elseif PLT == 5
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    @time plot_measurements(wf, md, vis; separated=false, msr=get_default_msr(), plt)
+    @time plot_measurements(wf, md, vis; separated=false, msr=get_default_msr(), plt, pltctrl)
 elseif PLT == 6
     vis.online = true
     # Clean up any existing PNG files in video folder before starting
