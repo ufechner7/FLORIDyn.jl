@@ -19,12 +19,12 @@ project, settings_file, vis_file = get_default_project()
 
 options = ["select_project();                  print(CLEAR_SCR)",
            "select_measurement();              print(CLEAR_SCR)",
+           "\"run_all_visualisations\";          include(\"main_all.jl\")",
            "\"plot_flow_field\";                 PLT=1; include(\"main.jl\")",
            "\"plot_measurements\";               PLT=4; include(\"main.jl\")",
            "\"plot_measurements_lineplot\";      PLT=5; include(\"main.jl\")",
            "\"flow_field_online\";               PLT=6; include(\"main.jl\")",
            "\"create_video_from_saved_frames\";  PLT=7; include(\"main.jl\")",
-           "\"run_all_visualisations\";          include(\"main_all.jl\")",
            "\"read_results\";                    include(\"read_results.jl\")",
            "\"plot_wind_direction\";             include(\"plot_wind_dir.jl\")",
            "\"play_videos\";                     include(\"play_video.jl\")",
@@ -60,7 +60,7 @@ function example_menu()
         @info "Using project:       $(get_default_project()[1])"
         @info "Using measurement:   $(get_default_msr())"
 
-        menu = RadioMenu(options, pagesize=8)
+        menu = RadioMenu(options, pagesize=13)
         choice = request("\nChoose function to execute or `q` to quit: ", menu)
 
         if choice != -1 && choice != length(options)
