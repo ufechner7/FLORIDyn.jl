@@ -86,6 +86,7 @@ with_logger(tee_logger) do
             close_all(plt)
             @info "Starting simulation with online visualisation for $(flow_field.name) ..."
             wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
+            sleep(2)
             FLORIDYN_EXECUTED = true
             if flow_field.create_video
                 @info "Creating video for $(flow_field.name) ..."
