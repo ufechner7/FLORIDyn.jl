@@ -38,6 +38,8 @@ plotFlowField
 plot_flow_field
 plotMeasurements
 plot_measurements
+plot_x
+prepare_large_plot_inputs
 close_all
 ```
 

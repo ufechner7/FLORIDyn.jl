@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=VelReduction, pltctrl=nothing) -> Nothing
+    plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; 
+                     separated=false, msr=VelReduction, pltctrl=nothing) -> Nothing
 
 Plot measurement data from FLORIDyn simulation results.
 
@@ -11,9 +12,9 @@ Plot measurement data from FLORIDyn simulation results.
 - `wf::WindFarm`: Wind farm object with field `nT` (number of turbines). See [`WindFarm`](@ref)
 - `md::DataFrame`: Measurements DataFrame containing time series data with columns:
   - `Time`: Simulation time [s]
-  - `ForeignReduction`: Foreign reduction [%] (for VelReduction)
-  - `AddedTurbulence`: Added turbulence [%] (for AddedTurbulence)
-  - `EffWindSpeed`: Effective wind speed [m/s] (for EffWind)
+  - `ForeignReduction`: Foreign reduction [%] \\(for VelReduction\\)
+  - `AddedTurbulence`: Added turbulence [%] \\(for AddedTurbulence\\)
+  - `EffWindSpeed`: Effective wind speed [m/s] \\(for EffWind\\)
 - `vis::Vis`: Visualization settings including unit_test parameter. See [`Vis`](@ref)
 - `separated::Bool`: Whether to use separated subplot layout (default: false)
 - `msr::MSR`: Measurement type to plot, see: [MSR](@ref). Options: VelReduction, AddedTurbulence, EffWind
@@ -52,7 +53,7 @@ plotMeasurements(plt, wind_farm, measurements_df, vis; separated=true, msr=EffWi
 # See Also
 - [`plotFlowField`](@ref): For flow field visualization
 - [`getMeasurements`](@ref): For generating measurement data
-- [`prepare_large_measurements_plot_inputs`](@ref): Helper for large turbine counts
+- [`prepare_large_plot_inputs`](@ref): Helper for large turbine counts
 - [`plot_x`](@ref): Multi-subplot plotting function
 """
 function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=false, msr=VelReduction, pltctrl=nothing)

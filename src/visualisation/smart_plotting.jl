@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt=nothing, fig=nothing) -> Nothing
+    plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt=nothing, 
+                    fig=nothing) -> Nothing
 
 High-level plotting function that automatically dispatches to either parallel or 
 sequential plotting based on the number of available threads and processes.
@@ -80,22 +81,23 @@ end
 
 """
     plot_x(times, plot_data...; ylabels=nothing, labels=nothing, fig="Wind Direction", 
-           xlabel="rel_time [s]", ysize=10, bottom=0.02, legend_size=nothing, pltctrl=nothing, loc=nothing) -> Nothing
+           xlabel="rel_time [s]", ysize=10, bottom=0.02, legend_size=nothing, pltctrl=nothing, 
+           loc=nothing) -> Nothing
 
 High-level time series plotting function that automatically dispatches to either 
 parallel or sequential plotting based on the number of available threads and processes.
 
 # Arguments
-- `times`: Time vector for x-axis
+- `times`:        Time vector for x-axis
 - `plot_data...`: Variable number of data arrays to plot
-- `ylabels`: Labels for y-axes (optional)
-- `labels`: Labels for subplots (optional)
-- `fig`: Figure title (default: "Wind Direction")
-- `xlabel`: X-axis label (default: "rel_time [s]")
-- `ysize`: Figure height (default: 10)
-- `bottom`: Bottom margin (default: 0.02)
-- `legend_size`: Legend font size (optional)
-- `pltctrl`: ControlPlots instance (only used in sequential mode)
+- `ylabels`:      Labels for y-axes (optional)
+- `labels`:       Labels for subplots (optional)
+- `fig`:          Figure title (default: "Wind Direction")
+- `xlabel`:       X-axis label (default: "rel_time [s]")
+- `ysize`:        Size of the Y-axis labels in points (default: 10)
+- `bottom`:       Bottom margin (default: 0.02)
+- `legend_size`:  Legend font size in points (optional)
+- `pltctrl`:      ControlPlots instance (only used in sequential mode)
 
 # Returns
 - nothing
@@ -113,7 +115,7 @@ plot_x(times, data1, data2; ylabels=["Turbine 1", "Turbine 2"],
 ```
 
 # See Also
-- [`plotx`](@ref): The underlying plotting function used in sequential mode
+- `plotx`: The underlying plotting function from ControlPlots used in sequential mode
 """
 function plot_x(times, plot_data...; ylabels=nothing, labels=nothing, 
                 fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, 
