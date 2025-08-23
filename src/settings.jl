@@ -758,15 +758,16 @@ function isdelftblue()
 end
 
 """
-        get_default_project() -> Tuple{String, String}
+        get_default_project() -> Tuple{String, String, String}
 
-Read or create the default project selection and return `(settings_file, vis_file)` paths.
+Read or create the default project selection and return `(project_name, settings_file, vis_file)` paths.
 
 Behavior:
 - Ensures `data/default.yaml` exists. If missing, it is created using the first project
     listed in `data/projects.yaml`.
 - Reads `data/projects.yaml` and selects the project whose name matches `default.name`.
-- Returns a tuple of full paths `(settings_file, vis_file)`, preferring files under the
+- Returns a tuple of `(project_name, settings_file, vis_file)` where `project_name` is the 
+    name of the selected project and the other two are full paths, preferring files under the
     local `data/` folder and falling back to the package `data/` folder for reading.
 
 Lookup strategy:
@@ -866,7 +867,7 @@ function get_default_project()
         error("Vis file not found: $(vis_fname) (searched in data/ and package data/)")
     end
 
-    return (settings_file, vis_file)
+    return (proj_name, settings_file, vis_file)
 end
 
 """
@@ -912,9 +913,8 @@ function select_project()
     end
 
     # Display current default project
-    current_project, _ = get_default_project()
-    current_name = splitpath(current_project)[end]
-    current_name = replace(current_name, ".yaml" => "")
+    current_project, _, _ = get_default_project()
+    current_name = current_project
     println("\nCurrent project: $current_name")
     
     # Create and display the menu

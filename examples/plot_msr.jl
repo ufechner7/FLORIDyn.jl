@@ -10,7 +10,7 @@ end
 
 MULTI = true
 
-settings_file, vis_file = get_default_project()
+settings_file, vis_file = get_default_project()[2:3]
 
 vis = Vis(vis_file)
 if (@isdefined plt) && !isnothing(plt)

@@ -8,7 +8,7 @@ if Threads.nthreads() == 1;
     @assert v >= v"0.2.8" "This script requires ControlPlots version 0.2.8 or higher."
 end
 
-settings_file, vis_file = get_default_project()
+settings_file, vis_file = get_default_project()[2:3]
 
 if (@isdefined plt) && !isnothing(plt)
     plt.ion()

@@ -318,7 +318,8 @@ using Pkg
                 @test isdir("examples")
                 
                 # Check that the expected example files were copied
-                expected_files = ["main.jl", "menu.jl", "create_videos.jl", "play_video.jl"]
+                expected_files = ["main.jl", "menu.jl", "main_all.jl", "main_video.jl", "plot_wind_dir.jl", 
+                                  "remote_plotting.jl", "play_video.jl"]
                 for file in expected_files
                     @test isfile(joinpath("examples", file))
                 end

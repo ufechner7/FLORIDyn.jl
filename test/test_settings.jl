@@ -78,11 +78,13 @@ using FLORIDyn, Test
             mktempdir() do tmp
                 cd(tmp) do
                     write_projects_yaml(pwd())
-                    settings_file, vis_file = FLORIDyn.get_default_project()
+                    project_name, settings_file, vis_file = FLORIDyn.get_default_project()
                     # Should create default.yaml with first project
                     @test isfile(joinpath("data", "default.yaml"))
                     def_content = read(joinpath("data", "default.yaml"), String)
                     @test occursin("name: 2021_9T_Data", def_content)
+                    # Should return project name as first element
+                    @test project_name == "2021_9T_Data"
                     # Should resolve to package data files (no local settings/vis exist)
                     @test settings_file == joinpath(pkg_data, "2021_9T_Data.yaml")
                     @test vis_file == joinpath(pkg_data, "vis_default.yaml")
@@ -98,7 +100,8 @@ using FLORIDyn, Test
                     open(joinpath("data", "default.yaml"), "w") do io
                         write(io, "default:\n  name: 2021_54T_NordseeOne\n")
                     end
-                    settings_file, vis_file = FLORIDyn.get_default_project()
+                    project_name, settings_file, vis_file = FLORIDyn.get_default_project()
+                    @test project_name == "2021_54T_NordseeOne"
                     @test settings_file == joinpath(pkg_data, "2021_54T_NordseeOne.yaml")
                     @test vis_file == joinpath(pkg_data, "vis_54T.yaml")
                 end
@@ -114,8 +117,9 @@ using FLORIDyn, Test
                     open(joinpath("data", "default.yaml"), "w") do io
                         write(io, "default:\n  name: DOES_NOT_EXIST\n")
                     end
-                    settings_file, vis_file = FLORIDyn.get_default_project()
+                    project_name, settings_file, vis_file = FLORIDyn.get_default_project()
                     # Should fall back to first project and rewrite default.yaml
+                    @test project_name == "2021_9T_Data"
                     @test settings_file == joinpath(pkg_data, "2021_9T_Data.yaml")
                     @test vis_file == joinpath(pkg_data, "vis_default.yaml")
                     def_content = read(joinpath("data", "default.yaml"), String)
@@ -134,7 +138,8 @@ using FLORIDyn, Test
                     local_vis = joinpath("data", "vis_default.yaml")
                     write(local_settings, "# local settings placeholder\n")
                     write(local_vis, "# local vis placeholder\n")
-                    settings_file, vis_file = FLORIDyn.get_default_project()
+                    project_name, settings_file, vis_file = FLORIDyn.get_default_project()
+                    @test project_name == "2021_9T_Data"
                     @test abspath(settings_file) == abspath(local_settings)
                     @test abspath(vis_file) == abspath(local_vis)
                 end

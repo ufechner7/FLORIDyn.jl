@@ -15,7 +15,7 @@ using REPL.TerminalMenus
 
 const CLEAR_SCR = "\033c"
 
-settings_file, vis_file = get_default_project()
+project, settings_file, vis_file = get_default_project()
 
 options = ["select_project();                  print(CLEAR_SCR)",
            "select_measurement();              print(CLEAR_SCR)",
@@ -57,7 +57,7 @@ function example_menu()
     active = true
     print(CLEAR_SCR)
     while active
-        @info "Using project:       $(splitext(basename(get_default_project()[1]))[1])"
+        @info "Using project:       $(get_default_project()[1])"
         @info "Using measurement:   $(get_default_msr())"
 
         menu = RadioMenu(options, pagesize=8)
