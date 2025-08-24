@@ -1,6 +1,21 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+#= prepare_simulation.jl - Wind farm simulation preparation module
+
+This module contains functions for setting up and preparing wind farm simulations:
+
+Functions defined in this file:
+- readCovMatrix(cov_data, nT, name): Read and process covariance matrix data for wind field error modeling
+- prepareSimulation(set, wind, con, floridyn, floris, turbProp, sim): Main function to prepare simulation environment
+- generateDemoCSV(path, name, type, nT, startV, endV): Generate demo CSV files for wind field data
+
+The main prepareSimulation function handles:
+- Wind velocity, direction, turbulence intensity, and shear data loading
+- Wind farm setup with turbine positioning and states initialization
+- Control system configuration (yaw control)
+- Simulation parameter configuration =#
+
 """
     readCovMatrix(cov_data, nT, name)
 
