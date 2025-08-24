@@ -6,7 +6,6 @@ This file contains core functions for the Gaussian wake model implementation in 
 
 Functions and structures defined in this file:
 - calcCt: Calculate thrust coefficient from axial induction factor (scalar and vectorized versions)
-- FLORISBuffers: Constructor for pre-allocated computation buffers
 - getVars!: Compute Gaussian wake widths, deflection, potential-core radii, and onset distance
 - centerline!: Compute cross-wind wake deflection at observation points
 - States (struct): Container for state variable names and counts 
@@ -33,37 +32,6 @@ end
 
 @inline function calcCt(a::AbstractVector, _)
     return 4 .* a .* (1 .- a)
-end
-
-
-function FLORISBuffers(n_pts::Int)
-    return FLORISBuffers(
-        Matrix{Float64}(undef, n_pts, 3),  # tmp_RPs
-        Matrix{Float64}(undef, n_pts, 3),  # rotor_pts
-        Vector{Float64}(undef, n_pts),     # sig_y
-        Vector{Float64}(undef, n_pts),     # sig_z
-        Vector{Float64}(undef, n_pts),     # x_0
-        Matrix{Float64}(undef, n_pts, 2),  # delta
-        Vector{Float64}(undef, n_pts),     # pc_y
-        Vector{Float64}(undef, n_pts),     # pc_z
-        Vector{Float64}(undef, n_pts),     # cw_y
-        Vector{Float64}(undef, n_pts),     # cw_z
-        Vector{Float64}(undef, n_pts),     # phi_cw
-        Vector{Float64}(undef, n_pts),     # r_cw
-        Vector{Bool}(undef, n_pts),        # core
-        Vector{Bool}(undef, n_pts),        # nw
-        Vector{Bool}(undef, n_pts),        # fw
-        Vector{Float64}(undef, n_pts),     # tmp_RPs_r
-        Vector{Float64}(undef, n_pts),     # gaussAbs
-        Vector{Float64}(undef, n_pts),     # gaussWght
-        Vector{Float64}(undef, n_pts),     # exp_y
-        Vector{Float64}(undef, n_pts),     # exp_z
-        Vector{Bool}(undef, n_pts),        # not_core
-        Float64[],                         # T_red_arr (size set per call)
-        Float64[],                         # T_aTI_arr (size set per call)
-        Float64[],                         # T_Ueff (size 0 or 1)
-        Float64[],                         # T_weight (size set per call)
-    )
 end
 
 """

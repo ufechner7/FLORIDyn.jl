@@ -175,6 +175,7 @@ include("windfield/structs_vel.jl")
 include("correction/structs_dir.jl")
 include("correction/structs_vel.jl")
 include("correction/structs_turb.jl")
+include("floris/structs_floris.jl")  # Include FLORISBuffers before structs.jl needs it
 include("floridyn_cl/structs.jl")
 include("controller/structs_controller.jl")
 

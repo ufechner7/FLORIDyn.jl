@@ -5,6 +5,7 @@
 This file contains the main FLORIS wake model execution functions and their specialized helpers.
 
 Functions defined in this file:
+- FLORISBuffers(n_pts::Int): Constructor for FLORISBuffers struct
 - prepare_rotor_points!: Prepare rotor discretization points with scaling, rotation, and translation
 - handle_single_turbine!: Handle the special case when there is only one turbine in the simulation
 - setup_computation_buffers!: Initialize and setup computation buffers for multi-turbine wake calculations
@@ -13,8 +14,53 @@ Functions defined in this file:
 - runFLORIS!: Main orchestrating function that coordinates the FLORIS wake model execution
 
 The runFLORIS! function serves as the main entry point and coordinates execution through the
-specialized helper functions.
+specialized helper functions. The FLORISBuffers struct is defined in structs_floris.jl.
 =#
+
+"""
+    FLORISBuffers(n_pts::Int) -> FLORISBuffers
+
+Constructor for FLORISBuffers struct that pre-allocates all necessary arrays for FLORIS computation.
+
+# Arguments
+- `n_pts::Int`: Number of rotor discretization points to allocate for
+
+# Returns
+- `FLORISBuffers`: Initialized struct with all arrays pre-allocated to size `n_pts`
+
+# Notes
+- Result arrays (T_red_arr, T_aTI_arr, T_Ueff, T_weight) are initialized as empty and resized during computation
+- This constructor minimizes allocations during FLORIS wake model execution
+"""
+function FLORISBuffers(n_pts::Int)
+    return FLORISBuffers(
+        Matrix{Float64}(undef, n_pts, 3),  # tmp_RPs
+        Matrix{Float64}(undef, n_pts, 3),  # rotor_pts
+        Vector{Float64}(undef, n_pts),     # sig_y
+        Vector{Float64}(undef, n_pts),     # sig_z
+        Vector{Float64}(undef, n_pts),     # x_0
+        Matrix{Float64}(undef, n_pts, 2),  # delta
+        Vector{Float64}(undef, n_pts),     # pc_y
+        Vector{Float64}(undef, n_pts),     # pc_z
+        Vector{Float64}(undef, n_pts),     # cw_y
+        Vector{Float64}(undef, n_pts),     # cw_z
+        Vector{Float64}(undef, n_pts),     # phi_cw
+        Vector{Float64}(undef, n_pts),     # r_cw
+        Vector{Bool}(undef, n_pts),        # core
+        Vector{Bool}(undef, n_pts),        # nw
+        Vector{Bool}(undef, n_pts),        # fw
+        Vector{Float64}(undef, n_pts),     # tmp_RPs_r
+        Vector{Float64}(undef, n_pts),     # gaussAbs
+        Vector{Float64}(undef, n_pts),     # gaussWght
+        Vector{Float64}(undef, n_pts),     # exp_y
+        Vector{Float64}(undef, n_pts),     # exp_z
+        Vector{Bool}(undef, n_pts),        # not_core
+        Float64[],                         # T_red_arr (size set per call)
+        Float64[],                         # T_aTI_arr (size set per call)
+        Float64[],                         # T_Ueff (size 0 or 1)
+        Float64[],                         # T_weight (size set per call)
+    )
+end
 
 """
     prepare_rotor_points!(buffers::FLORISBuffers, location_t, states_t, d_rotor, floris::Floris)
