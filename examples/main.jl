@@ -11,9 +11,7 @@ if Threads.nthreads() == 1
 end
 
 # PLT options:
-# PLT=1: Velocity reduction plot
-# PLT=2: Added turbulence plot  
-# PLT=3: Wind speed plot
+# PLT=1: Flow field plot
 # PLT=4: Measurements plot (separated subplots)
 # PLT=5: Measurements plot (combined)
 # PLT=6: Velocity reduction plot with online visualization
@@ -78,16 +76,17 @@ if PLT == 1
 elseif PLT == 4
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    @time plot_measurements(wf, md, vis; separated=true, msr=get_default_msr(), plt=plt, pltctrl=pltctrl)
+    @time plot_measurements(wf, md, vis; separated=true, msr=get_default_msr(), plt, pltctrl)
 elseif PLT == 5
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    @time plot_measurements(wf, md, vis; separated=false, msr=get_default_msr(), plt=plt, pltctrl=pltctrl)
+    @time plot_measurements(wf, md, vis; separated=false, msr=get_default_msr(), plt, pltctrl)
 elseif PLT == 6
     vis.online = true
     # Clean up any existing PNG files in video folder before starting
     cleanup_video_folder()
-    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=get_default_msr())
+    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; 
+                                    msr=get_default_msr())
 elseif PLT == 7
     # Create videos from saved plot frames
     println("Creating videos from saved plot frames...")
