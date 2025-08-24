@@ -1,6 +1,31 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+#=
+This file contains the main FLORIDyn simulation control loop and supporting functions.
+
+Functions defined in this file:
+- angSOWFA2world: Convert wind direction from SOWFA convention to world coordinates
+- initSimulation: Initialize or load wind farm simulation state based on configuration
+- perturbationOfTheWF!: Add stochastic perturbations to wind field parameters 
+- findTurbineGroups: Analyze spatial relationships and identify turbine dependencies
+- interpolateOPs!: Perform observation point interpolation calculations (memory-optimized)
+- setUpTmpWFAndRun!: Execute wind farm wake calculations with unified buffers
+- runFLORIDyn: Main simulation control loop orchestrating the complete FLORIDyn simulation
+- create_unified_buffers: Create and initialize unified buffer structures for efficient computation
+
+This file implements the core FLORIDyn simulation methodology including:
+- Turbine wake interactions and dependencies
+- Observation point propagation and interpolation  
+- Wind field perturbations and uncertainty modeling
+- Memory-efficient computation through unified buffer management
+- Integration of FLORIS wake model with dynamic turbine states
+
+The main entry point is runFLORIDyn which coordinates the complete simulation workflow
+from initialization through time-stepping to final state saving. All functions are
+optimized for performance with minimal memory allocations during the simulation loop.
+=#
+
 """
     angSOWFA2world(deg_SOWFA) -> Float64
 
