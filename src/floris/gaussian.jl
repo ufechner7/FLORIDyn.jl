@@ -256,12 +256,50 @@ function centerline!(deflection::AbstractMatrix,
     return deflection
 end
 
- 
-
 """
     States
 
-Lightweight container for names and counts of turbine, OP, and wind-field states.
+Lightweight container for state variable names and counts used in wind farm simulations.
+
+This mutable struct organizes the state variables into three categories: turbine states,
+observation point (OP) states, and wind field (WF) states. It provides both the variable
+names and their counts for efficient memory allocation and state management.
+
+# Fields
+- `T_names::Vector{String}`: Names of turbine state variables ["a", "yaw", "TI"]
+- `Turbine::Int`: Number of turbine state variables (3)
+- `OP_names::Vector{String}`: Names of observation point variables ["x0", "y0", "z0", "x1", "y1", "z1"]
+- `OP::Int`: Number of observation point variables (6)
+- `WF_names::Vector{String}`: Names of wind field variables ["wind_vel", "wind_dir", "TI0"]
+- `WF::Int`: Number of wind field variables (3)
+
+# Constructor
+Use the default constructor [`States()`](@ref) to create an instance with predefined
+variable names and counts currently used by FLORIDyn.jl.
+
+# Example
+```julia
+states = States()
+println("Turbine states: ", states.T_names)
+println("Number of turbine states: ", states.Turbine)
+```
+
+# State Variable Definitions
+## Turbine States (T_names)
+- `"a"`: Axial induction factor [-]
+- `"yaw"`: Yaw angle [degrees]
+- `"TI"`: Local turbulence intensity [-]
+
+## Observation Point States (OP_names)
+- `"x0", "y0", "z0"`: Initial position coordinates [m]
+- `"x1", "y1", "z1"`: Final position coordinates [m]
+
+## Wind Field States (WF_names)
+- `"wind_vel"`: Wind velocity [m/s]
+- `"wind_dir"`: Wind direction [degrees]
+- `"TI0"`: Ambient turbulence intensity [-]
+
+See also: [`States()`](@ref)
 """
 mutable struct States
     T_names::Vector{String}
@@ -272,6 +310,29 @@ mutable struct States
     WF::Int
 end
 
+"""
+    States() -> States
+
+Default constructor for the States struct with predefined wind farm simulation variables.
+
+Creates a States instance with commonly used state variable names and their counts
+for wind farm simulations using the FLORIS wake model.
+
+# Returns
+- `States`: Initialized struct with:
+  - Turbine states: ["a", "yaw", "TI"] (count: 3)
+  - Observation point states: ["x0", "y0", "z0", "x1", "y1", "z1"] (count: 6)  
+  - Wind field states: ["wind_vel", "wind_dir", "TI0"] (count: 3)
+
+# Example
+```julia
+states = States()
+@assert states.Turbine == 3
+@assert states.T_names == ["a", "yaw", "TI"]
+```
+
+See also: [`States`](@ref)
+"""
 function States()
     T_names = ["a", "yaw", "TI"]
     Turbine = length(T_names)
