@@ -1,6 +1,45 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+#=
+This file contains configuration structures and setup functions for wind farm simulations.
+
+Structures defined in this file:
+- WindPerturbation: Mutable struct for configuring stochastic wind perturbations
+- WindCorrection: Struct for wind correction settings (velocity, direction, turbulence)
+- Wind: Mutable struct representing wind conditions and input specifications
+- Vel: Struct for velocity correction iteration settings
+- Dir: Struct for direction correction iteration settings  
+- Dyn: Struct for dynamic simulation settings (advection, operation iteration)
+- Sim: Mutable struct for simulation parameters (time, discretization, initialization)
+- Con: Mutable struct for control settings (yaw strategies, control data)
+- Floris: Mutable struct for FLORIS wake model parameters and coefficients
+- FloriDyn: Struct for FLORIDyn dynamic model settings (operating points, perturbations)
+- TurbineArray: Struct for turbine array configuration (positions, types, initial states)
+- Vis: Mutable struct for visualization settings and plotting control
+
+Functions defined in this file:
+- _resolve_data_path: Internal function to resolve relative data file paths
+- Vis(filename): Constructor for Vis struct from YAML configuration file
+- Base.getproperty: Custom property accessor for Vis struct (computed paths)
+- setup: Main configuration loader that parses YAML files into simulation components
+- Settings: Constructor function that creates Settings struct from Wind, Sim, Con parameters
+- getTurbineData: Retrieve nacelle positions and rotor diameters for turbine types
+- importSOWFAFile: Import and parse SOWFA simulation data files
+- condenseSOWFAYaw: Process and condense SOWFA yaw angle data arrays
+- isdelftblue: Detect if running on Delft Blue HPC environment
+- get_default_project: Get default project configuration from user preferences
+- list_projects: List available project configurations
+- select_project: Interactive project selection interface
+- get_default_msr: Get default measurement configuration
+- set_default_msr: Set default measurement configuration  
+- select_measurement: Interactive measurement selection interface
+
+This file serves as the main configuration hub for FLORIDyn, handling YAML parsing,
+struct initialization, and providing utilities for project and measurement management.
+The structures use the @with_kw macro for keyword-based constructors with default values.
+=#
+
 """
     WindPerturbation
 
