@@ -1,6 +1,21 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+#=
+This file contains the main FLORIS wake model execution functions and their specialized helpers.
+
+Functions defined in this file:
+- prepare_rotor_points!: Prepare rotor discretization points with scaling, rotation, and translation
+- handle_single_turbine!: Handle the special case when there is only one turbine in the simulation
+- setup_computation_buffers!: Initialize and setup computation buffers for multi-turbine wake calculations
+- compute_wake_effects!: Compute wake effects for a single upstream turbine on the downstream turbine
+- compute_final_wind_shear!: Compute final wind shear effects and effective wind speed for the last turbine
+- runFLORIS!: Main orchestrating function that coordinates the FLORIS wake model execution
+
+The runFLORIS! function serves as the main entry point and coordinates execution through the
+specialized helper functions.
+=#
+
 """
     prepare_rotor_points!(buffers::FLORISBuffers, location_t, states_t, d_rotor, floris::Floris)
 
