@@ -81,6 +81,9 @@ in the buffers to avoid allocations.
 # Returns
 - `RPl`: View of transformed rotor points
 - `RPw`: Rotor point weights
+
+# Note
+This function is **private** and intended for internal use only.
 """
 function prepare_rotor_points!(buffers::FLORISBuffers, location_t, states_t, d_rotor, floris::Floris)
     if d_rotor[end] > 0
@@ -153,6 +156,9 @@ the appropriate buffer arrays. It returns early to avoid the multi-turbine wake 
 
 # Returns
 - `nothing` (results stored in buffers)
+
+# Note
+This function is **private** and intended for internal use only.
 """
 function handle_single_turbine!(buffers::FLORISBuffers, RPl, RPw, location_t, set::Settings, 
                                windshear, d_rotor)
@@ -206,6 +212,9 @@ the main computation loop.
 
 # Returns
 - Tuple of buffer views for use in wake calculations
+
+# Note
+This function is **private** and intended for internal use only.
 """
 function setup_computation_buffers!(buffers::FLORISBuffers, nRP::Int, nT::Int)
     # Initialize outputs in buffers
@@ -275,6 +284,16 @@ calculations, and Gaussian wake modeling.
 - `d_rotor`: Rotor diameter array
 - `floris::Floris`: FLORIS model parameters
 - `nRP::Int`: Number of rotor points
+
+# Returns
+- `nothing`. Results are written into fields of `buffers`:
+    - `buffers.T_red_arr`: Velocity reduction factors for each turbine
+    - `buffers.T_aTI_arr`: Added turbulence intensity values
+    - `buffers.T_Ueff`: Effective wind speeds
+    - `buffers.T_weight`: Wake weighting factors
+
+# Note
+This function is **private** and intended for internal use only.
 """
 function compute_wake_effects!(buffers::FLORISBuffers, views, iT::Int, RPl, RPw, location_t, 
                               states_wf, states_t, d_rotor, floris::Floris, nRP::Int)
@@ -305,7 +324,7 @@ function compute_wake_effects!(buffers::FLORISBuffers, views, iT::Int, RPl, RPw,
     end
 
     if tmp_RPs[1, 1] <= 10
-        return
+        return nothing
     end
 
     a_val = states_t[iT, 1]
@@ -426,6 +445,7 @@ function compute_wake_effects!(buffers::FLORISBuffers, views, iT::Int, RPl, RPw,
         acc = muladd(RPw[i], exp_y[i] * exp_z[i], acc)
     end
     buffers.T_aTI_arr[iT] = T_addedTI_tmp * acc
+    nothing
 end
 
 """
@@ -446,6 +466,16 @@ the final effective wind speed by combining all wake effects and wind shear.
 - `windshear`: Wind shear data
 - `tmp_RPs_r`: Temporary buffer for rotor point calculations
 - `states_wf`: Wind farm states matrix
+
+# Returns
+- `nothing`. Results are written into fields of `buffers`:
+    - `buffers.T_red_arr`: Velocity reduction factors for each turbine
+    - `buffers.T_aTI_arr`: Added turbulence intensity values
+    - `buffers.T_Ueff`: Effective wind speeds
+    - `buffers.T_weight`: Wake weighting factors
+
+# Note
+This function is **private** and intended for internal use only.
 """
 function compute_final_wind_shear!(buffers::FLORISBuffers, RPl, RPw, location_t, set::Settings, 
                                   windshear, tmp_RPs_r, states_wf)
@@ -470,6 +500,7 @@ function compute_final_wind_shear!(buffers::FLORISBuffers, RPl, RPw, location_t,
     T_red = prod(buffers.T_red_arr)
     T_Ueff_scalar = states_wf[end, 1] * T_red
     resize!(buffers.T_Ueff, 1); buffers.T_Ueff[1] = T_Ueff_scalar
+    nothing
 end
 
 """
