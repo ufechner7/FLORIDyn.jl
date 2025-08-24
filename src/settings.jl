@@ -493,13 +493,13 @@ end
 
 Load wind farm configuration from a YAML file and parse all simulation components.
 
-This function reads a comprehensive wind farm configuration file and extracts all necessary 
+This function reads the configuration file of the simulation and extracts all necessary 
 parameters for setting up a FLORIDyn simulation, including wind conditions, simulation 
 settings, control strategies, FLORIS model parameters, FLORIDyn dynamics, and turbine 
 array layout.
 
 # Arguments
-- `filename::String`: Path to the YAML configuration file containing wind farm setup data.
+- `filename::String`: Path to the YAML configuration file.
   The file should contain sections for: wind, sim, con, floris, floridyn, and turbines.
 
 # Returns
@@ -626,7 +626,6 @@ Retrieve nacelle positions and rotor diameters for a given list of wind turbine 
 
 # Raises
 - `ArgumentError` if an unknown or misspelled turbine name is encountered.
-
 """
 function getTurbineData(names::Vector{String})
     num = length(names)
