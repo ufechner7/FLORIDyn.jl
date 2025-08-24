@@ -1,6 +1,26 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+#=
+This file contains core functions for the Gaussian wake model implementation in FLORIS.
+
+Functions and structures defined in this file:
+- calcCt: Calculate thrust coefficient from axial induction factor (scalar and vectorized versions)
+- FLORISBuffers: Constructor for pre-allocated computation buffers
+- getVars!: Compute Gaussian wake widths, deflection, potential-core radii, and onset distance
+- centerline!: Compute cross-wind wake deflection at observation points
+- States (struct): Container for state variable names and counts 
+- States(): Default constructor for States struct with predefined variables
+- init_states: Initialize state arrays for wind farm simulation
+- getPower: Calculate power output of wind turbines accounting for yaw effects
+- getUadv: Calculate advection speed factor based on Zong & Porté-Agel 2020
+
+This file provides the mathematical foundation for the Gaussian wake model, including
+wake expansion calculations, deflection modeling, and state management. The main
+runFLORIS! function and its helpers have been moved to runfloris.jl for better
+code organization.
+=#
+
 """
     calcCt(a::Number, _) -> Float64
     calcCt(a::AbstractVector, _) -> AbstractVector
