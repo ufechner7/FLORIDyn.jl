@@ -720,10 +720,10 @@ function runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf
             end
         end
 
-    buffers.T_weight[iT] = sum(gaussWght)
-    buffers.T_red_arr[iT] = 1 - dot(RPw, tmp_RPs_r)
+        buffers.T_weight[iT] = sum(gaussWght)
+        buffers.T_red_arr[iT] = 1 - dot(RPw, tmp_RPs_r)
 
-    # Added TI
+        # Added TI
         T_addedTI_tmp = floris.k_fa * (
             a_val^floris.k_fb *
             TI0^floris.k_fc *
@@ -748,7 +748,7 @@ function runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf
         @inbounds for i in 1:nRP
             acc = muladd(RPw[i], exp_y[i] * exp_z[i], acc)
         end
-    buffers.T_aTI_arr[iT] = T_addedTI_tmp * acc
+        buffers.T_aTI_arr[iT] = T_addedTI_tmp * acc
     end
 
     # Compute z for wind shear:
