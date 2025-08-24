@@ -49,6 +49,8 @@ export getYaw
 export discretizeRotor, calcCt, States
 export prepareSimulation, importSOWFAFile, centerline!, angSOWFA2world, initSimulation
 export runFLORIS!, init_states, getUadv
+export prepare_rotor_points!, handle_single_turbine!, setup_computation_buffers!
+export compute_wake_effects!, compute_final_wind_shear!
 export runFLORIDyn, iterateOPs!, setUpTmpWFAndRun!, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
 export getVars!
 export getMeasurements, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples

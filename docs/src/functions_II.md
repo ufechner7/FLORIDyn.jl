@@ -13,6 +13,11 @@ init_states
 getVars!
 getPower
 runFLORIS!
+prepare_rotor_points!
+handle_single_turbine!
+setup_computation_buffers!
+compute_wake_effects!
+compute_final_wind_shear!
 ```
 
 # FLORIDyn
