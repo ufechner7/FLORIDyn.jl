@@ -395,7 +395,7 @@ end
 
 Execute the FLORIS (FLOw Redirection and Induction in Steady State) wake model simulation for wind farm analysis.
 
-This function performs a comprehensive wake analysis using the Gaussian wake model to calculate
+This function performs a wake analysis using the Gaussian wake model to calculate
 velocity reductions, turbulence intensity additions, and effective wind speeds at turbine locations.
 It accounts for wake interactions, rotor discretization, wind shear effects, and turbulence propagation.
 
@@ -771,7 +771,6 @@ function runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf
     T_Ueff_scalar = states_wf[end, 1] * T_red
     resize!(buffers.T_Ueff, 1); buffers.T_Ueff[1] = T_Ueff_scalar
 
-    # return buffers.T_red_arr, buffers.T_aTI_arr, buffers.T_Ueff, buffers.T_weight
     nothing
 end
 
