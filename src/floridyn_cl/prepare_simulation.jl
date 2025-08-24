@@ -3,7 +3,7 @@
 
 #= prepare_simulation.jl - Wind farm simulation preparation module
 
-This module contains functions for setting up and preparing wind farm simulations:
+This file contains functions for setting up and preparing wind farm simulations:
 
 Functions defined in this file:
 - readCovMatrix(cov_data, nT, name): Read and process covariance matrix data for wind field error modeling
