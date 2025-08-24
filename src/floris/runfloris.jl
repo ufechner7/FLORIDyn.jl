@@ -474,7 +474,7 @@ end
 
 """
     runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
-               floris::Floris, windshear::Union{Matrix, WindShear})
+               floris, windshear::Union{Matrix, WindShear})
 
 Execute the FLORIS (FLOw Redirection and Induction in Steady State) wake model simulation for wind farm analysis.
 
@@ -490,7 +490,7 @@ locations, accounting for wake interactions, rotor discretization, wind shear ef
 - `states_wf`: Wind field state matrix containing velocity, direction, and turbulence data
 - `states_t`: Turbine state matrix with axial induction factors, yaw angles, and turbulence intensities
 - `d_rotor`: Vector of rotor diameters for each turbine [m]
-- `floris::Floris`: FLORIS model parameters containing wake model coefficients and rotor discretization settings (see [`Floris`](@ref))
+- `floris`: FLORIS model parameters containing wake model coefficients and rotor discretization settings (see [`Floris`](@ref))
 - `windshear`: Wind shear profile data for vertical wind speed variation modeling, either a matrix or of type [`WindShear`](@ref)
 
 # Returns
@@ -566,7 +566,7 @@ The function implements state-of-the-art wake modeling based on:
 - [`FLORISBuffers`](@ref): Buffer structure documentation
 - [`Floris`](@ref): FLORIS model parameters
 """
-function runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, 
+function runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, floris, 
                    windshear::Union{Matrix, WindShear})
     # Prepare rotor points (RPl, RPw)
     RPl, RPw = prepare_rotor_points!(buffers, location_t, states_t, d_rotor, floris)

@@ -723,8 +723,8 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
 end
 
 """
-    runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, vis::Vis,
-                floridyn::FloriDyn, floris::Floris; rmt_plot_fn=nothing, msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
+    runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris;
+                rmt_plot_fn=nothing, msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
@@ -765,8 +765,7 @@ Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models,
 applying control strategies and updating turbine states over time.
 
 """
-function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
-                          vis::Vis, floridyn::FloriDyn, floris::Floris; rmt_plot_fn=nothing, 
+function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris; rmt_plot_fn=nothing, 
                           msr=VelReduction, debug=nothing)
     nT = wf.nT
     sim_steps = sim.n_sim_steps
