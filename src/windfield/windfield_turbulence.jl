@@ -2,15 +2,15 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    getWindTiT(::TI_Constant, wind_ti::Number, iT, _)
+    getWindTiT(::TI_Constant, wind_ti, iT, _)
 
 Return turbulence intensity for the requested turbine(s).
 
 # Arguments
-- `::TI_Constant`: type parameter to indicate constant wind turbulence
-- `wind_ti::Number`: Constant value (turbulence intensity)
-- `iT`: Index or indices of the turbines
-- `_`: will be ignored
+- `::TI_Constant`: Type parameter to indicate constant wind turbulence
+- `wind_ti`:       Constant value (turbulence intensity)
+- `iT`:            Index or indices of the turbines
+- `_`:             will be ignored
 
 # Returns
 - `Ti`: Array of turbulence intensity values for each turbine index

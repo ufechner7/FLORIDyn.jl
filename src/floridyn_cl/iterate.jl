@@ -17,10 +17,16 @@ Functions and structs defined in this file:
 
 The main functionality handles:
 - Downwind advection of observation points based on local wind velocity
+- _reorder_ops!(wf, buffers): Reorder operational points to maintain downstream ordering
+
+The main functionality handles:
+- Downwind advection of operational points based on local wind velocity
+>>>>>>> f37a98a0 (Fix plots and improve code organization)
 - Crosswind deflection due to wake-induced effects
 - Coordinate transformation to world coordinates
 - Temporal advancement through circular shifting
 - Spatial reordering to maintain proper downstream sequencing =#
+
 """
     IterateOPsBuffers
 

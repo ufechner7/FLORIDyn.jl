@@ -13,6 +13,7 @@ import Base: show
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
 using Statistics, StaticArrays, Pkg, DistributedNext, Dates
+using REPL.TerminalMenus
 
 export MSR, toMSR, VelReduction, AddedTurbulence, EffWind
 export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray
@@ -51,7 +52,7 @@ export runFLORIS!, init_states, getUadv
 export runFLORIDyn, iterateOPs!, setUpTmpWFAndRun!, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
 export getVars!
 export getMeasurements, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
-export run_floridyn, plot_flow_field, plot_measurements, close_all, turbines
+export run_floridyn, plot_flow_field, plot_measurements, plot_x, close_all, turbines
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
 export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_results, find_floridyn_runs, compare_dataframes
 export isdelftblue, Measurement, parse_measurements
@@ -59,6 +60,7 @@ export FlowField, parse_flow_fields
 export UnifiedBuffers, create_unified_buffers
 export get_default_project
 export select_project
+export get_default_msr, set_default_msr, select_measurement
 
 """
     MSR `VelReduction` `AddedTurbulence` `EffWind`
@@ -171,6 +173,7 @@ include("windfield/structs_vel.jl")
 include("correction/structs_dir.jl")
 include("correction/structs_vel.jl")
 include("correction/structs_turb.jl")
+include("floris/structs_floris.jl")  # Include FLORISBuffers before structs.jl needs it
 include("floridyn_cl/structs.jl")
 include("controller/structs_controller.jl")
 
@@ -379,6 +382,7 @@ include("windfield/windfield_velocity.jl")
 
 include("floris/discretization.jl")
 include("floris/gaussian.jl")
+include("floris/runfloris.jl")
 include("floridyn_cl/floridyn_cl.jl")
 
 include("correction/direction.jl")

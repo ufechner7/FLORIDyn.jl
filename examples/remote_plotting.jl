@@ -17,9 +17,8 @@ if Threads.nthreads() > 1
             @spawnat 2 eval(:(using ControlPlots))
             @eval @everywhere using FLORIDyn      # Ensure FLORIDyn (including WindFarm) is available on all workers
             
-            # Create a completely isolated plt instance for this specific task
+            # Use a completely isolated plt instance for this specific task
             @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis; msr=EffWind, fig=nothing)
-                # Create a fresh plt instance just for this task
                 local_plt = ControlPlots.plt
                 return plotFlowField(local_plt, wf, X, Y, Z, vis; msr, fig)
             end
@@ -33,9 +32,19 @@ if Threads.nthreads() > 1
                 nothing
             end
             @everywhere function rmt_plot_measurements(wf, md, vis; separated, msr=VelReduction)
-                # Create a fresh plt instance just for this task
+                # Use a fresh plt instance just for this task
                 local_plt = ControlPlots.plt
-                return plotMeasurements(local_plt, wf, md, vis; separated=separated, msr)
+                # Pass pltctrl=ControlPlots so that any internal plot_x calls on the (single-threaded) worker
+                # have the ControlPlots module available for plotting.
+                return plotMeasurements(local_plt, wf, md, vis; separated=separated, msr, pltctrl=ControlPlots)
+            end
+            @everywhere function rmt_plotx(times, plot_data...; ylabels=nothing, labels=nothing,
+                                            fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, 
+                                            legend_size=nothing, loc=nothing)
+                p=ControlPlots.plotx(times, plot_data...; ylabels, labels, fig=fig, xlabel, ysize, bottom, 
+                                     legend_size, loc)
+                display(p)  # Ensure the plot is displayed
+                nothing
             end
             @everywhere function rmt_close_all()
                 local_plt = ControlPlots.plt
