@@ -4,13 +4,14 @@
 # MainFLORIDyn Center-Line model
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
+tic()
 using FLORIDyn, TerminalPager, DistributedNext
-if Threads.nthreads() == 1; using ControlPlots; end
+if Threads.nthreads() == 1
+    using ControlPlots  # Only load ControlPlots (PyPlot) when single-threaded
+end
 
 # PLT options:
-# PLT=1: Velocity reduction plot
-# PLT=2: Added turbulence plot  
-# PLT=3: Wind speed plot
+# PLT=1: Flow field plot
 # PLT=4: Measurements plot (separated subplots)
 # PLT=5: Measurements plot (combined)
 # PLT=6: Velocity reduction plot with online visualization
@@ -19,20 +20,22 @@ if !  @isdefined PLT; PLT=1; end
 if PLT == 6; NEW_PLT = 1; else NEW_PLT = PLT; end
 if ! @isdefined LAST_PLT; LAST_PLT=Set(NEW_PLT); end
 
-settings_file, vis_file = get_default_project()
+settings_file, vis_file = get_default_project()[2:3]
 
 vis = Vis(vis_file)
-vis.show_plots = true  # Enable/disable showing plots during simulation
 if (@isdefined plt) && !isnothing(plt)
     plt.ion()
 else
     plt = nothing
 end
+pltctrl = nothing
+# Provide ControlPlots module only for pure sequential plotting (single-threaded, no workers)
+if Threads.nthreads() == 1
+    pltctrl = ControlPlots
+end
 
 # Automatic parallel/threading setup
-tic()
 include("remote_plotting.jl")
-toc()
 
 function get_parameters(vis)
     # get the settings for the wind field, simulator and controller
@@ -69,35 +72,26 @@ if PLT == 1
     vis.online = false
     @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
-    @time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
-elseif PLT == 2
-    vis.online = false
-    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
-    @time plot_flow_field(wf, X, Y, Z, vis; msr=AddedTurbulence, plt)
-elseif PLT == 3
-    vis.online = false
-    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
-    @time plot_flow_field(wf, X, Y, Z, vis; msr=EffWind, plt)
+    @time plot_flow_field(wf, X, Y, Z, vis; msr=get_default_msr(), plt)
 elseif PLT == 4
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    @time plot_measurements(wf, md, vis; separated=true, plt)
+    @time plot_measurements(wf, md, vis; separated=true, msr=get_default_msr(), plt, pltctrl)
 elseif PLT == 5
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
-    @time plot_measurements(wf, md, vis; separated=false, plt)
+    @time plot_measurements(wf, md, vis; separated=false, msr=get_default_msr(), plt, pltctrl)
 elseif PLT == 6
     vis.online = true
     # Clean up any existing PNG files in video folder before starting
     cleanup_video_folder()
-    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; 
+                                    msr=get_default_msr())
 elseif PLT == 7
     # Create videos from saved plot frames
     println("Creating videos from saved plot frames...")
     if isdir("video")
-        video_paths = createAllVideos(fps=4, delete_frames=false, output_dir=vis.output_path)
+        video_paths = createAllVideos(fps=vis.fps, delete_frames=false, output_dir=vis.output_path)
         if !isempty(video_paths)
             println("Videos created successfully!")
             for path in video_paths

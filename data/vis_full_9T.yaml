@@ -1,5 +1,5 @@
 vis:
-  show_plots: true       # Enable/disable showing plots during simulation
+  show_plots: false      # Enable/disable showing plots during simulation
   log_debug: false       # Enable/disable logging of debug information
   save: true             # Enable/disable saving of plots to disk
   save_results: true     # Enable/disable saving of simulation results as .jld2 files
@@ -9,7 +9,7 @@ vis:
   output_folder: "out"   # Relative output folder path
   unique_output_folder: true # If true, a unique output folder is created for each simulation run
   skip_flow_fields: false    # When true, do not create flow field visualizations
-  skip_measurements: true   # When true, do not create measurement visualizations
+  skip_measurements: false   # When true, do not create measurement visualizations
   field_limits_min: [0.0, 0.0, 0.0]          # [xmin, ymin, zmin] in meters
   field_limits_max: [3000.0, 3000.0, 400.0]  # [xmax, ymax, zmax] in meters
   field_resolution: 20.0                     # Resolution of the field in meters
@@ -17,19 +17,31 @@ vis:
     - name: "flow_field_vel_reduction"    # Flow field relative wind speed (video)
       online: true
       create_video: true
-      skip: true
+      skip: false
     - name: "flow_field_vel_reduction"    # Flow field relative wind speed (plot)
       online: false
       create_video: false
       skip: false      
     - name: "flow_field_added_turbulence" # Flow field added turbulence
+      online: false
+      create_video: false
+      skip: false
+    - name: "flow_field_added_turbulence" # Flow field added turbulence
       online: true
       create_video: true
-      skip: true
+      skip: false     
     - name: "flow_field_eff_wind_speed"   # Flow field effective wind speed
       online: false
       create_video: false
       skip: false
+    - name: "flow_field_eff_wind_speed"   # Flow field effective wind speed
+      online: true
+      create_video: true
+      skip: false 
+    - name: "flow_field_eff_wind_speed"   # Flow field effective wind speed
+      online: false
+      create_video: false
+      skip: false      
   measurements:           # List of measurement plots to be created
     - name: "msr_vel_reduction"     # Measurement relative wind speed
       separated: true

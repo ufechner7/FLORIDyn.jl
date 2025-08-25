@@ -201,7 +201,7 @@ function interp(x, y, t)
 end
 
 """
-    getWindDirT(::Direction_InterpTurbine, wind_dir::AbstractMatrix iT, t)
+    getWindDirT(::Direction_InterpTurbine, wind_dir, iT, t)
 
 Return wind direction in SOWFA-degrees for the requested turbine(s).
 

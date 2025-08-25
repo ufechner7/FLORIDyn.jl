@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    getYaw(::Yaw_SOWFA, ConYawData::AbstractMatrix, iT, t) -> Float64 or Vector{Float64}
+    getYaw(::Yaw_SOWFA, con_yaw_data::AbstractMatrix, iT, t) -> Float64 or Vector{Float64}
 
 Return the yaw angle at time `t` for the specified turbine(s) using linear interpolation.
 
 # Arguments
 - `::Yaw_SOWFA`: Controller type dispatch parameter for SOWFA-style yaw control
-- `ConYawData::Matrix{Float64}`: Control data matrix where:
+- `con_yaw_data::Matrix{Float64}`: Control data matrix where:
   - First column contains time values (in seconds)
   - Subsequent columns contain yaw angles for each turbine (in degrees)
 - `iT`: Turbine index or indices to query:
