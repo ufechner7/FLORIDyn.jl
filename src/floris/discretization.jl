@@ -1,24 +1,6 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-#=
-This file contains rotor discretization functions for the FLORIS wake model.
-
-Functions defined in this file:
-- discretizeRotor: Main function that discretizes the rotor into segments using the isocell algorithm
-- _get_discretizeRotor_thread_cache: Internal function for thread-safe memoization cache management
-- _compute_discretizeRotor: Internal function that performs the actual rotor discretization computation
-
-The rotor discretization is essential for accurate wake modeling as it determines how the rotor
-plane is divided into computational cells for wake calculations. The implementation uses the
-isocell algorithm (Masset et al. 2009) with thread-safe memoization for performance optimization.
-
-Key features:
-- Thread-safe per-thread caching to avoid recomputation of identical discretizations
-- Isocell algorithm for optimal cell distribution
-- Returns normalized coordinates and weights for integration
-=#
-
 """
     discretizeRotor(n_rp::Int) -> Tuple{Matrix{Float64}, Vector{Float64}}
 

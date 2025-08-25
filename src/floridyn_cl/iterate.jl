@@ -21,7 +21,6 @@ The main functionality handles:
 - Coordinate transformation to world coordinates
 - Temporal advancement through circular shifting
 - Spatial reordering to maintain proper downstream sequencing =#
-
 """
     IterateOPsBuffers
 

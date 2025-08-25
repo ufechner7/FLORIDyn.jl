@@ -10,7 +10,8 @@ tic()
 using FLORIDyn, TerminalPager, DistributedNext, ControlPlots, JLD2
 using Logging, LoggingExtras, Dates
 
-settings_file, vis_file = get_default_project()[2:3]
+settings_file = "data/2021_9T_Data.yaml"
+vis_file      = "data/vis_default.yaml"
 
 vis = Vis(vis_file)
 
@@ -63,7 +64,7 @@ with_logger(tee_logger) do
         @info "Skipping flow field visualisation."
     end
     if ! vis.show_plots
-        @info "Do not show the plots, only create png/ mp4 files."
+        @info "Do not show the plots, only create png files."
     end
     for flow_field in vis.flow_fields
         global wf, md, mi, FLORIDYN_EXECUTED
@@ -75,17 +76,6 @@ with_logger(tee_logger) do
             @info "Skipping flow field: $(flow_field.name)"
             continue
         end
-        
-        # Reset wind farm state before each video to ensure clean initialization
-        if flow_field.online
-            @info "Resetting wind farm state for $(flow_field.name) video..."
-            # Full state reset: reinitialize all state matrices to clean values
-            # Use the original turbine initial states from the turbine array
-            _, _, _, _, _, ta = setup(settings_file)
-            wf.States_OP, wf.States_T, wf.States_WF = init_states(set, wf, wind, ta.init_States, floris, sim)
-            wf = initSimulation(wf, sim)
-        end
-        
         Z, X, Y = calcFlowField(set, wf, wind, floris; vis)
         msr = toMSR(flow_field.name)
         if flow_field.online
@@ -94,18 +84,16 @@ with_logger(tee_logger) do
                 cleanup_video_folder()
             end
             vis.online = true
-            close_all(plt)
             @info "Starting simulation with online visualisation for $(flow_field.name) ..."
             wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
-            sleep(2) # wait for the last frame to be saved before creating video
             FLORIDYN_EXECUTED = true
             if flow_field.create_video
                 @info "Creating video for $(flow_field.name) ..."
                 video_paths = redirect_stdout(devnull) do
-                    createAllVideos(fps=vis.fps, delete_frames=false, video_dir=vis.video_path, output_dir=vis.output_path)
+                    createAllVideos(fps=4, delete_frames=false, video_dir=vis.video_path, output_dir=vis.output_path)
                 end
                 if !isempty(video_paths)
-                    @info "Video created successfully: $(video_paths[Int(msr)])"
+                    @info "Video created successfully: $(video_paths[1])"
                     vis.no_videos += 1
                 else
                     @warn "No video created."
