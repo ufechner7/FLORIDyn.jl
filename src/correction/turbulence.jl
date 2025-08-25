@@ -17,7 +17,7 @@ approach for turbulence intensity handling in FLORIDyn simulations.
   - `set.turb_mode`: Turbulence model configuration specifying the retrieval method
 - `wf::WindFarm`: Wind farm object containing the state matrices to be updated
   - `wf.States_WF`: Wind field states matrix where column 3 contains turbulence intensity values
-  - `wf.StartI`: Starting indices for each turbine's operational points
+  - `wf.StartI`: Starting indices for each turbine's observation points
   - `wf.nT`: Number of turbines
 - `wind::Wind`: Wind configuration object containing turbulence intensity data
   - `wind.ti`: Turbulence intensity data or model parameters

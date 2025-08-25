@@ -12,8 +12,8 @@ Mutable struct to hold animation state for flow field plotting.
 - `cb`: Colorbar object
 - `contour_collection`: Collection from contourf for updating data
 - `turbine_lines`: Vector of line objects for turbine rotors
-- `op_scatter1`: Scatter plot object for all operational points
-- `op_scatter2`: Scatter plot object for every 10th operational point
+- `op_scatter1`: Scatter plot object for all observation points
+- `op_scatter2`: Scatter plot object for every 10th observation point
 - `title_obj`: Title text object for updating
 - `figure_name`: Name of the figure window
 - `label`: Colorbar label text
@@ -67,7 +67,7 @@ This function supports creating animations by maintaining plot state across mult
 - Initializes and returns a PlotState object
 
 ## Subsequent Calls (state = PlotState)
-- Updates existing contour data, turbine positions, and operational points
+- Updates existing contour data, turbine positions, and observation points
 - Reuses the same figure and layout for smooth animation
 
 # Animation Example
@@ -86,7 +86,7 @@ end
 
 # Notes
 - The function automatically handles coordinate system transformations for turbine orientations
-- Operational points are displayed as white scatter points for reference
+- Observation points are displayed as white scatter points for reference
 - Color scales are kept consistent across animation frames when using the same measurement type
 - The time parameter `t` can be used for title updates or time annotations
 - When `vis.save=true`, plots are saved as PNG files to the `video/` directory
@@ -182,7 +182,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             # Initialize empty containers for dynamic elements
             turbine_lines = []
             
-            # Create initial scatter plots for operational points
+            # Create initial scatter plots for observation points
             op_scatter1 = plt.scatter(wf.States_OP[:, 1], wf.States_OP[:, 2], s=2, color="white", marker="o")
             op_scatter2 = plt.scatter(wf.States_OP[1:10:end, 1], wf.States_OP[1:10:end, 2], s=6, color="white", marker="o")
             

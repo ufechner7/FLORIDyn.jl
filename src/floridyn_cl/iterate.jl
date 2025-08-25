@@ -1,22 +1,22 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-#= iterate.jl - Operational point iteration for wind farm simulations
+#= iterate.jl - Observation point iteration for wind farm simulations
 
-This file contains functions for advancing operational points through the wind field
-in wind farm wake modeling simulations. The operational points track wake evolution
+This file contains functions for advancing observation points through the wind field
+in wind farm wake modeling simulations. The observation points track wake evolution
 through space and time.
 
 Functions and structs defined in this file:
 - IterateOPsBuffers: Struct with pre-allocated buffers for allocation-free execution
 - IterateOPsBuffers(wf): Constructor for buffer struct
-- iterateOPs!: Generic function for operational point iteration (multiple dispatch)
+- iterateOPs!: Generic function for observation point iteration (multiple dispatch)
 - iterateOPs!(::IterateOPs_basic, wf, sim, floris, floridyn, buffers): High-performance basic iteration algorithm
 - _circshift_and_restore!(data, initial_states, start_indices, buffer): In-place circular shift with state restoration
-- _reorder_ops!(wf, buffers): Reorder operational points to maintain downstream ordering
+- _reorder_ops!(wf, buffers): Reorder observation points to maintain downstream ordering
 
 The main functionality handles:
-- Downwind advection of operational points based on local wind velocity
+- Downwind advection of observation points based on local wind velocity
 - Crosswind deflection due to wake-induced effects
 - Coordinate transformation to world coordinates
 - Temporal advancement through circular shifting
@@ -27,12 +27,12 @@ The main functionality handles:
 
 A struct containing pre-allocated buffers for allocation-free execution of iterateOPs!.
 
-This struct eliminates all allocations during the operational point iteration by 
+This struct eliminates all allocations during the observation point iteration by 
 pre-allocating all necessary temporary arrays. It should be created once and reused
 across multiple calls to iterateOPs! for maximum performance.
 
 # Fields
-- `tmpOPStates::Matrix{Float64}`: Buffer for saving turbine operational point states  
+- `tmpOPStates::Matrix{Float64}`: Buffer for saving turbine observation point states  
 - `tmpTStates::Matrix{Float64}`: Buffer for saving turbine states
 - `tmpWFStates::Matrix{Float64}`: Buffer for saving wind farm states
 - `step_dw::Vector{Float64}`: Buffer for downwind step calculations
@@ -41,7 +41,7 @@ across multiple calls to iterateOPs! for maximum performance.
 - `temp_states_op::Matrix{Float64}`: Temporary buffer for States_OP circular shifting
 - `temp_states_t::Matrix{Float64}`: Temporary buffer for States_T circular shifting  
 - `temp_states_wf::Matrix{Float64}`: Temporary buffer for States_WF circular shifting
-- `sort_buffer::Vector{Int}`: Buffer for sorting operational points
+- `sort_buffer::Vector{Int}`: Buffer for sorting observation points
 
 # Constructor
     IterateOPsBuffers(wf::WindFarm)
@@ -86,21 +86,21 @@ end
     iterateOPs!(iterate_mode::IterateOPs_model, wf::WindFarm, sim::Sim, floris::Floris, 
                 floridyn::FloriDyn, buffers::IterateOPsBuffers) -> Nothing
 
-Advance operational points through the wind field using the specified iteration strategy.
+Advance observation points through the wind field using the specified iteration strategy.
 
-This function family implements different algorithms for moving operational points (OPs) 
+This function family implements different algorithms for moving observation points (OPs) 
 through space and time, which is essential for accurate wake propagation modeling in 
 wind farm simulations. The choice of iteration method affects computational efficiency, 
 numerical stability, and physical accuracy.
 
 # Summary
 The function modifies the following WindFarm fields:
-- `wf.States_OP`: Updates operational point positions and states through temporal advancement
+- `wf.States_OP`: Updates observation point positions and states through temporal advancement
 - `wf.States_T`: Updates turbine states through circular shifting and temporal evolution  
 - `wf.States_WF`: Updates wind field states through circular shifting and temporal evolution
 
 # Input/ Output Arguments
-- `wf::WindFarm`: Wind farm object containing turbine and operational point data
+- `wf::WindFarm`: Wind farm object containing turbine and observation point data
 
 # Input Arguments
 - `iterate_mode::IterateOPs_model`: Iteration strategy (e.g., [`IterateOPs_basic`](@ref), [`IterateOPs_average`](@ref))
@@ -110,12 +110,12 @@ The function modifies the following WindFarm fields:
 - `buffers::IterateOPsBuffers`: Pre-allocated buffers for allocation-free execution
 
 # Algorithm Overview
-1. **State Preservation**: Save initial turbine operational point states
+1. **State Preservation**: Save initial turbine observation point states
 2. **Downwind Advection**: Move OPs downstream based on local wind velocity
 3. **Crosswind Deflection**: Apply wake-induced lateral deflection using centerline calculations
 4. **Coordinate Transformation**: Convert to world coordinates using wind direction
 5. **Temporal Advancement**: Perform circular shifting to advance time steps
-6. **Spatial Reordering**: Maintain downstream position ordering of operational points
+6. **Spatial Reordering**: Maintain downstream position ordering of observation points
 
 # Available Methods
 - `iterateOPs!(::IterateOPs_basic, ...)`: Basic time-stepping with simple advection
@@ -129,7 +129,7 @@ function iterateOPs! end
     iterateOPs!(::IterateOPs_basic, wf::WindFarm, sim::Sim, floris::Floris, 
                 floridyn::FloriDyn, buffers::IterateOPsBuffers) -> Nothing
 
-This is the high-performance version of the operational point iteration algorithm.
+This is the high-performance version of the observation point iteration algorithm.
 
 # Buffer Arguments
 - `buffers::IterateOPsBuffers`: Pre-allocated buffers for all temporary calculations. See [`IterateOPsBuffers`](@ref).
@@ -237,7 +237,7 @@ end
 """
     _reorder_ops!(wf, buffers)
 
-Check if operational points are in order and reorder them if not, using pre-allocated buffers.
+Check if observation points are in order and reorder them if not, using pre-allocated buffers.
 """
 function _reorder_ops!(wf::WindFarm, buffers::IterateOPsBuffers)
     @inbounds for iT in 1:wf.nT

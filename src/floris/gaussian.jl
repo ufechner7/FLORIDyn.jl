@@ -195,7 +195,7 @@ deflection matrix without allocating temporary arrays.
   - Column 2: Vertical deflection Δz `[m]` (always zero in current implementation)
 
 # Input Arguments
-- `states_op::AbstractMatrix` (size n×k): Operational point states where n is number of points
+- `states_op::AbstractMatrix` (size n×k): Observation point states where n is number of points
   - Column 4 contains downstream distance in wake-aligned coordinates `[m]`
 - `states_t::AbstractMatrix`: Turbine state matrix containing:
   - Column 1: Axial induction factor a `[-]`
@@ -207,7 +207,7 @@ deflection matrix without allocating temporary arrays.
 - `d_rotor::Real`: Rotor diameter D `[m]`
 
 # Notes
-- Only `states_op[:, 4]` (downstream distance) is used from the operational points
+- Only `states_op[:, 4]` (downstream distance) is used from the observation points
 - The function internally converts yaw angles from degrees to radians with sign correction
 - Thrust coefficient is calculated from axial induction factor using `calcCt`
 
