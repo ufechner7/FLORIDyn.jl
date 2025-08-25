@@ -13,7 +13,7 @@ for fun in exported_functions
     f = getfield(FLORIDyn, fun)
     mes = methods(f)
     for me in mes
-        println(replace(split(repr(me),'@')[1], "FLORIDyn." => ""))
+        println(split(repr(me),'@')[1])
         total += 1
     end
 end

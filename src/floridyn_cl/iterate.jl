@@ -1,27 +1,6 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-#= iterate.jl - Operational point iteration for wind farm simulations
-
-This file contains functions for advancing operational points through the wind field
-in wind farm wake modeling simulations. The operational points track wake evolution
-through space and time.
-
-Functions and structs defined in this file:
-- IterateOPsBuffers: Struct with pre-allocated buffers for allocation-free execution
-- IterateOPsBuffers(wf): Constructor for buffer struct
-- iterateOPs!: Generic function for operational point iteration (multiple dispatch)
-- iterateOPs!(::IterateOPs_basic, wf, sim, floris, floridyn, buffers): High-performance basic iteration algorithm
-- _circshift_and_restore!(data, initial_states, start_indices, buffer): In-place circular shift with state restoration
-- _reorder_ops!(wf, buffers): Reorder operational points to maintain downstream ordering
-
-The main functionality handles:
-- Downwind advection of operational points based on local wind velocity
-- Crosswind deflection due to wake-induced effects
-- Coordinate transformation to world coordinates
-- Temporal advancement through circular shifting
-- Spatial reordering to maintain proper downstream sequencing =#
-
 """
     IterateOPsBuffers
 

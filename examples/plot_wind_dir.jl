@@ -1,25 +1,34 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, TOML, DistributedNext
-if Threads.nthreads() == 1; 
-    using ControlPlots
-    v = VersionNumber(TOML.parsefile(joinpath(Base.pkgdir(ControlPlots), "Project.toml"))["version"])
-    @assert v >= v"0.2.8" "This script requires ControlPlots version 0.2.8 or higher."
-end
+# Status:
+# Works fine for one to nine wind turbines, not clear how to plot more wind turbines.
 
-settings_file, vis_file = get_default_project()[2:3]
+using ControlPlots, FLORIDyn, TOML
 
-if (@isdefined plt) && !isnothing(plt)
-    plt.ion()
+v = VersionNumber(TOML.parsefile(joinpath(Base.pkgdir(ControlPlots), "Project.toml"))["version"])
+@assert v >= v"0.2.7" "This script requires ControlPlots version 0.2.7 or higher."
+
+# Dialog to set MULTI variable
+println("\033[1mPlot wind direction for multiple turbines?\033[0m")
+print("Enter 'y' for multiple turbines, 'n' for single turbine [y/N]: ")
+response = readline()
+MULTI = lowercase(strip(response)) in ["y", "yes", "true", "1"]
+
+if MULTI
+    println("Multi-turbine mode selected, up to 81 turbines.")
 else
-    plt = nothing
+    println("Single turbine per subplot selected, up to 9 turbines.")
 end
-pltctrl = nothing
-if Threads.nthreads() == 1; pltctrl = ControlPlots; end
 
-# Automatic parallel/threading setup
-include("remote_plotting.jl")
+settings_file = "data/2021_9T_Data.yaml"
+
+@assert Threads.nthreads() == 1 "This script is written for single threaded operation.
+                                  Quit Julia and start it with 'jl2'."
+
+# turn on interactive visualisation in case it was turned off before
+plt.ion()
+plt.pygui(true)
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -28,8 +37,6 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-
-let
 
 # Arrays to store time series data
 times = Float64[]
@@ -57,7 +64,7 @@ wind_dir_matrix = wind_dir_matrix'          # Now it's time × turbines
 # Create dynamic plot arguments based on number of turbines
 n_turbines = length(turbines)
 
-if n_turbines > 9
+if MULTI
     rows, lines = get_layout(wf.nT)
     
     # Group turbines into subplots based on layout
@@ -93,24 +100,19 @@ if n_turbines > 9
         push!(turbine_labels, "Wind Direction [°]")
         push!(subplot_labels, labels_in_subplot)
     end
-    if n_turbines > 9
-        legend_size = 6
-    else
-        legend_size = 10
-    end
     
     # Plot with multiple lines per subplot
-    plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
-              fig="Wind Direction", xlabel="rel_time [s]", ysize = 9, bottom=0.02, pltctrl, 
-              legend_size=legend_size, loc="upper right")
+    p = plotx(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
+              fig="Wind Direction", xlabel="rel_time [s]", ysize = 10, bottom=0.02)
 else
     # Single turbine mode - one turbine per subplot
     plot_data = [wind_dir_matrix[:, i] for i in 1:n_turbines]
     turbine_labels = ["T$i wind_dir [°]" for i in turbines]
     
-    plot_x(times, plot_data...; fig="Wind Direction", xlabel="rel_time [s]", 
-              ylabels=turbine_labels, ysize = 9, bottom=0.02, pltctrl)
+    p = plotx(times, plot_data...; fig="Wind Direction", xlabel="rel_time [s]", 
+              ylabels=turbine_labels, ysize = 9, bottom=0.02)
 end
-end
+
+display(p)
 
 nothing

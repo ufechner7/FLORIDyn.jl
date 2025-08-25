@@ -38,8 +38,7 @@ mutable struct PlotState
 end
 
 """
-    plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis::Vis, t=nothing; 
-                  msr::MSR=EffWind, fig=nothing)
+    plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis, t; msr=EffWind)
 
 Plot a 2D contour of the flow field data with support for animation.
 
@@ -354,7 +353,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
 end
 
 """
-    plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=EffWind, fig=nothing)
+    plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=EffWind)
 
 Compatibility method for the original plotFlowField interface.
 

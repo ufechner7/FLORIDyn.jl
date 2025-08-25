@@ -17,12 +17,13 @@ The code uses the Gaussian wake model derived in [3].
 
 ![Flow Field](flowfield.png)
 
-## Status
-All examples work, most key examples are selectable via a menu:
+## Status:
+Many examples work, some selectable via a menu:
 ```julia
 include("examples/menu.jl")
 ```
-The other examples can be executed directly using the `include` statement. Often, more than 30x the performance of the Matlab version can be achieved. Currently, only `IterateOPs_basic` is implemented.
+The other examples can be executed directly using the `include` statement. Often, more than 30x the performance of
+the Matlab version can be achieved.
 
 A Python version of FLORIDyn is available at [https://github.com/TUDelft-DataDrivenControl/OFF](https://github.com/TUDelft-DataDrivenControl/OFF) .
 

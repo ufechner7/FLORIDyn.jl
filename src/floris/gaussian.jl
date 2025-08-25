@@ -1,28 +1,8 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-#=
-This file contains core functions for the Gaussian wake model implementation in FLORIS.
-
-Functions and structures defined in this file:
-- calcCt: Calculate thrust coefficient from axial induction factor (scalar and vectorized versions)
-- getVars!: Compute Gaussian wake widths, deflection, potential-core radii, and onset distance
-- centerline!: Compute cross-wind wake deflection at observation points
-- States (struct): Container for state variable names and counts 
-- States(): Default constructor for States struct with predefined variables
-- init_states: Initialize state arrays for wind farm simulation
-- getPower: Calculate power output of wind turbines accounting for yaw effects
-- getUadv: Calculate advection speed factor based on Zong & Porté-Agel 2020
-
-This file provides the mathematical foundation for the Gaussian wake model, including
-wake expansion calculations, deflection modeling, and state management. The main
-runFLORIS! function and its helpers have been moved to runfloris.jl for better
-code organization.
-=#
-
 """
-    calcCt(a::Number, _) -> Float64
-    calcCt(a::AbstractVector, _) -> AbstractVector
+    calcCt(a, _) -> Number or Vector
 
 Calculate the thrust coefficient ct = 4a(1-a).
 """
@@ -30,8 +10,39 @@ Calculate the thrust coefficient ct = 4a(1-a).
     return 4 * a * (1 - a)
 end
 
-@inline function calcCt(a::AbstractVector, _)
+@inline function calcCt(a::AbstractArray, _)
     return 4 .* a .* (1 .- a)
+end
+
+
+function FLORISBuffers(n_pts::Int)
+    return FLORISBuffers(
+        Matrix{Float64}(undef, n_pts, 3),  # tmp_RPs
+        Matrix{Float64}(undef, n_pts, 3),  # rotor_pts
+        Vector{Float64}(undef, n_pts),     # sig_y
+        Vector{Float64}(undef, n_pts),     # sig_z
+        Vector{Float64}(undef, n_pts),     # x_0
+        Matrix{Float64}(undef, n_pts, 2),  # delta
+        Vector{Float64}(undef, n_pts),     # pc_y
+        Vector{Float64}(undef, n_pts),     # pc_z
+        Vector{Float64}(undef, n_pts),     # cw_y
+        Vector{Float64}(undef, n_pts),     # cw_z
+        Vector{Float64}(undef, n_pts),     # phi_cw
+        Vector{Float64}(undef, n_pts),     # r_cw
+        Vector{Bool}(undef, n_pts),        # core
+        Vector{Bool}(undef, n_pts),        # nw
+        Vector{Bool}(undef, n_pts),        # fw
+        Vector{Float64}(undef, n_pts),     # tmp_RPs_r
+        Vector{Float64}(undef, n_pts),     # gaussAbs
+        Vector{Float64}(undef, n_pts),     # gaussWght
+        Vector{Float64}(undef, n_pts),     # exp_y
+        Vector{Float64}(undef, n_pts),     # exp_z
+        Vector{Bool}(undef, n_pts),        # not_core
+        Float64[],                         # T_red_arr (size set per call)
+        Float64[],                         # T_aTI_arr (size set per call)
+        Float64[],                         # T_Ueff (size 0 or 1)
+        Float64[],                         # T_weight (size set per call)
+    )
 end
 
 """
@@ -244,50 +255,12 @@ function centerline!(deflection::AbstractMatrix,
     return deflection
 end
 
+ 
+
 """
     States
 
-Lightweight container for state variable names and counts used in wind farm simulations.
-
-This mutable struct organizes the state variables into three categories: turbine states,
-observation point (OP) states, and wind field (WF) states. It provides both the variable
-names and their counts for efficient memory allocation and state management.
-
-# Fields
-- `T_names::Vector{String}`: Names of turbine state variables ["a", "yaw", "TI"]
-- `Turbine::Int`: Number of turbine state variables (3)
-- `OP_names::Vector{String}`: Names of observation point variables ["x0", "y0", "z0", "x1", "y1", "z1"]
-- `OP::Int`: Number of observation point variables (6)
-- `WF_names::Vector{String}`: Names of wind field variables ["wind_vel", "wind_dir", "TI0"]
-- `WF::Int`: Number of wind field variables (3)
-
-# Constructor
-Use the default constructor [`States()`](@ref) to create an instance with predefined
-variable names and counts currently used by FLORIDyn.jl.
-
-# Example
-```julia
-states = States()
-println("Turbine states: ", states.T_names)
-println("Number of turbine states: ", states.Turbine)
-```
-
-# State Variable Definitions
-## Turbine States (T_names)
-- `"a"`: Axial induction factor [-]
-- `"yaw"`: Yaw angle [degrees]
-- `"TI"`: Local turbulence intensity [-]
-
-## Observation Point States (OP_names)
-- `"x0", "y0", "z0"`: Initial position coordinates [m]
-- `"x1", "y1", "z1"`: Final position coordinates [m]
-
-## Wind Field States (WF_names)
-- `"wind_vel"`: Wind velocity [m/s]
-- `"wind_dir"`: Wind direction [degrees]
-- `"TI0"`: Ambient turbulence intensity [-]
-
-See also: [`States()`](@ref)
+Lightweight container for names and counts of turbine, OP, and wind-field states.
 """
 mutable struct States
     T_names::Vector{String}
@@ -298,29 +271,6 @@ mutable struct States
     WF::Int
 end
 
-"""
-    States() -> States
-
-Default constructor for the States struct with predefined wind farm simulation variables.
-
-Creates a States instance with commonly used state variable names and their counts
-for wind farm simulations using the FLORIS wake model.
-
-# Returns
-- `States`: Initialized struct with:
-  - Turbine states: ["a", "yaw", "TI"] (count: 3)
-  - Observation point states: ["x0", "y0", "z0", "x1", "y1", "z1"] (count: 6)  
-  - Wind field states: ["wind_vel", "wind_dir", "TI0"] (count: 3)
-
-# Example
-```julia
-states = States()
-@assert states.Turbine == 3
-@assert states.T_names == ["a", "yaw", "TI"]
-```
-
-See also: [`States`](@ref)
-"""
 function States()
     T_names = ["a", "yaw", "TI"]
     Turbine = length(T_names)
@@ -436,6 +386,392 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
     end
 
     return states_op, states_t, states_wf
+end
+
+"""
+        runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
+                            floris::Floris, windshear::Union{Matrix, WindShear})
+
+Execute the FLORIS (FLOw Redirection and Induction in Steady State) wake model simulation for wind farm analysis.
+
+This function performs a comprehensive wake analysis using the Gaussian wake model to calculate
+velocity reductions, turbulence intensity additions, and effective wind speeds at turbine locations.
+It accounts for wake interactions, rotor discretization, wind shear effects, and turbulence propagation.
+
+# Output Arguments
+- `buffers::FLORISBuffers`: Pre-allocated buffer arrays and outputs (see [`FLORISBuffers`](@ref))
+
+# Input Arguments
+- `set::Settings`: Simulation settings containing configuration options for wind shear modeling
+- `location_t`: Matrix of turbine positions [x, y, z] coordinates for each turbine [m]
+- `states_wf`: Wind field state matrix containing velocity, direction, and turbulence data
+- `states_t`: Turbine state matrix with axial induction factors, yaw angles, and turbulence intensities
+- `d_rotor`: Vector of rotor diameters for each turbine [m]
+- `floris::Floris`: FLORIS model parameters containing wake model coefficients and rotor discretization settings (see [`Floris`](@ref))
+- `windshear`: Wind shear profile data for vertical wind speed variation modeling, either a matrix or of type [`WindShear`](@ref)
+
+# Returns
+- `nothing`. Results are written into fields of `buffers`:
+    - `buffers.T_red_arr`
+    - `buffers.T_aTI_arr`
+    - `buffers.T_Ueff`
+    - `buffers.T_weight`
+
+# Description
+The function performs the following computational steps:
+
+## 1. Rotor Discretization
+- Discretizes rotor planes into radial points using the isocell algorithm
+- Applies yaw rotation transformations to rotor point coordinates
+- Handles both active turbines (d_rotor > 0) and placeholder turbines
+
+## 2. Single Turbine Case
+For single turbine simulations, only wind shear effects are calculated without wake interactions.
+
+## 3. Multi-Turbine Wake Analysis
+For each upstream turbine affecting downstream turbines:
+
+### Coordinate Transformations
+- Transforms rotor points to wake coordinate system aligned with wind direction
+- Applies rotational matrices for wind direction and turbine yaw angles
+- Filters turbines based on minimum downstream distance (10 rotor diameters)
+
+### Wake Variable Calculations
+- Computes wake expansion coefficients, potential core dimensions, and deflection using `getVars`
+- Calculates crosswind wake positions and radial distances from wake centerline
+- Determines core region boundaries and near/far wake transitions
+
+### Velocity Reduction Modeling
+- Applies different deficit models for core region vs. Gaussian wake regions
+- Uses velocity deficit superposition for multiple wake interactions
+- Accounts for yaw-induced wake deflection and asymmetry
+
+### Turbulence Intensity Enhancement
+- Calculates added turbulence intensity using empirical correlations
+- Applies Gaussian weighting for spatial distribution of turbulence enhancement
+- Uses parameters k_fa, k_fb, k_fc, k_fd for turbulence intensity modeling
+
+## 4. Wind Shear Integration
+- Applies vertical wind shear corrections to the downstream turbine
+- Uses wind shear profile data for realistic boundary layer effects
+
+# Mathematical Models
+The function implements several key wake modeling equations:
+
+**Velocity Deficit**: Based on Gaussian wake theory with yaw corrections
+**Deflection**: Uses analytical wake deflection models for yawed turbines  
+**Turbulence**: Empirical correlations for wake-added turbulence intensity
+**Superposition**: Linear superposition of velocity deficits from multiple wakes
+
+# Notes
+- Uses SOWFA (Simulator for Offshore Wind Farm Applications) coordinate conventions
+- Implements state-of-the-art Gaussian wake model with yaw considerations
+- Supports both research and engineering applications for wind farm optimization
+- Computational complexity scales as O(N²) for N turbines due to wake interactions
+- Requires proper initialization of turbine states and wind field conditions
+
+# References
+- Bastankhah, M. and Porté-Agel, F. (2016). Experimental and theoretical study of wind turbine wakes in yawed conditions
+- Niayifar, A. and Porté-Agel, F. (2016). Analytical modeling of wind farms: A new approach for power prediction
+"""
+function runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, floris::Floris, 
+                   windshear::Union{Matrix, WindShear})
+    if d_rotor[end] > 0
+        RPl, RPw = discretizeRotor(floris.rotor_points)
+    else
+        RPl = SA[0.0 0.0 0.0]
+        RPw = SA[1.0]
+    end
+    # Yaw rotation for last turbine
+    tmp_yaw = deg2rad(states_t[end, 2])
+    R = SA[cos(tmp_yaw)  sin(tmp_yaw)  0.0;
+          -sin(tmp_yaw)  cos(tmp_yaw)  0.0;
+           0.0           0.0           1.0]
+
+    # Conservative allocation reduction: scale into rotor_pts buffer (no scaled_RPl alloc),
+    # then perform the rotation+translation in-place
+    nRP_local = size(RPl, 1)
+    # Safety: ensure buffers are large enough before writing to avoid OOB/segfaults
+    if size(buffers.rotor_pts, 1) < nRP_local
+        error("FLORISBuffers.rotor_pts too small: expected at least $(nRP_local) rows, got $(size(buffers.rotor_pts, 1)).\n" *
+              "Ensure create_unified_buffers(.., floris) used the same rotor discretization.")
+    end
+    @inbounds for i in 1:nRP_local
+        buffers.rotor_pts[i, 1] = RPl[i, 1] * d_rotor[end]
+        buffers.rotor_pts[i, 2] = RPl[i, 2] * d_rotor[end]
+        buffers.rotor_pts[i, 3] = RPl[i, 3] * d_rotor[end]
+    end
+    scaled_RPl = @view buffers.rotor_pts[1:nRP_local, :]
+    # In-place rotation + translation to avoid allocations from transpose/mul/broadcast
+    @inbounds begin
+        # Extract rotation matrix entries (StaticArrays, so this is cheap)
+        R11, R12, R13 = R[1,1], R[1,2], R[1,3]
+        R21, R22, R23 = R[2,1], R[2,2], R[2,3]
+        R31, R32, R33 = R[3,1], R[3,2], R[3,3]
+        # Extract translation components once
+        tx = location_t[end, 1]
+        ty = location_t[end, 2]
+        tz = location_t[end, 3]
+        for i in 1:nRP_local
+            x = scaled_RPl[i, 1]
+            y = scaled_RPl[i, 2]
+            z = scaled_RPl[i, 3]
+            scaled_RPl[i, 1] = R11*x + R12*y + R13*z + tx
+            scaled_RPl[i, 2] = R21*x + R22*y + R23*z + ty
+            scaled_RPl[i, 3] = R31*x + R32*y + R33*z + tz
+        end
+    end
+    RPl = scaled_RPl
+
+    if length(d_rotor) == 1
+        # Avoid allocating RPl[:,3] and the broadcasted division by using a buffer
+        nRP_local = size(RPl, 1)
+        if length(buffers.tmp_RPs_r) < nRP_local
+            error("FLORISBuffers.tmp_RPs_r too small: expected at least $(nRP_local) elements, got $(length(buffers.tmp_RPs_r)).\n" *
+                  "Ensure create_unified_buffers(.., floris) used the same rotor discretization.")
+        end
+        if set.shear_mode isa Shear_PowerLaw
+            # Power law expects z normalized by hub height; clamp to > 0
+            @inbounds for i in 1:nRP_local
+                val = RPl[i, 3] / location_t[end, 3]
+                buffers.tmp_RPs_r[i] = val > eps() ? val : eps()
+            end
+        else
+            # Interpolation expects absolute height in meters
+            @inbounds for i in 1:nRP_local
+                buffers.tmp_RPs_r[i] = RPl[i, 3]
+            end
+        end
+        z_view = @view buffers.tmp_RPs_r[1:nRP_local]
+        redShear = getWindShearT(set.shear_mode, windshear, z_view)
+        # Avoid allocating a view for RPw in the dot product
+        acc = 0.0
+        @inbounds for i in 1:nRP_local
+            acc = muladd(RPw[i], redShear[i], acc)
+        end
+        T_red_scalar = acc
+        # Persist result into buffers as 1-length arrays (optional use by callers)
+        resize!(buffers.T_red_arr, 1); buffers.T_red_arr[1] = T_red_scalar
+        resize!(buffers.T_aTI_arr, 0)
+        resize!(buffers.T_Ueff, 0)
+        resize!(buffers.T_weight, 0)
+        return nothing
+    end
+
+    # Initialize outputs in buffers
+    nT = length(d_rotor)
+    resize!(buffers.T_red_arr, nT); fill!(buffers.T_red_arr, 1.0)
+    resize!(buffers.T_aTI_arr, max(nT - 1, 0))
+    if nT > 1
+        fill!(buffers.T_aTI_arr, 0.0)
+    end
+    resize!(buffers.T_weight, max(nT - 1, 0))
+    if nT > 1
+        fill!(buffers.T_weight, 0.0)
+    end
+
+    # Pre-allocate arrays that are reused in the loop
+    nRP = size(RPl, 1)
+    # Ensure buffers are properly sized
+    if size(buffers.tmp_RPs, 1) < nRP
+        error("Buffer tmp_RPs is too small: expected at least $(nRP) rows, got $(size(buffers.tmp_RPs, 1))")
+    end
+    if length(buffers.cw_y) < nRP
+        error("Buffer arrays are too small: expected at least $(nRP) elements, got $(length(buffers.cw_y))")
+    end
+    
+    # Use views of pre-allocated buffers to match the current discretization size exactly
+    tmp_RPs = view(buffers.tmp_RPs, 1:nRP, :)
+    sig_y = view(buffers.sig_y, 1:nRP)
+    sig_z = view(buffers.sig_z, 1:nRP)
+    x_0   = view(buffers.x_0, 1:nRP)
+    delta = view(buffers.delta, 1:nRP, :)
+    pc_y  = view(buffers.pc_y, 1:nRP)
+    pc_z  = view(buffers.pc_z, 1:nRP)
+    cw_y = view(buffers.cw_y, 1:nRP)
+    cw_z = view(buffers.cw_z, 1:nRP)
+    phi_cw = view(buffers.phi_cw, 1:nRP)
+    r_cw = view(buffers.r_cw, 1:nRP)
+    core = view(buffers.core, 1:nRP)
+    nw = view(buffers.nw, 1:nRP)
+    fw = view(buffers.fw, 1:nRP)
+    tmp_RPs_r = view(buffers.tmp_RPs_r, 1:nRP)
+    gaussAbs = view(buffers.gaussAbs, 1:nRP)
+    gaussWght = view(buffers.gaussWght, 1:nRP)
+    exp_y = view(buffers.exp_y, 1:nRP)
+    exp_z = view(buffers.exp_z, 1:nRP)
+    not_core = view(buffers.not_core, 1:nRP)
+
+    for iT in 1:(nT - 1)
+        tmp_phi = size(states_wf,2) == 4 ? angSOWFA2world(states_wf[iT, 4]) :
+                                           angSOWFA2world(states_wf[iT, 2])
+
+        # Use pre-allocated array instead of creating new one
+        for i in 1:nRP
+            for j in 1:3
+                tmp_RPs[i, j] = RPl[i, j] - location_t[iT, j]
+            end
+        end
+        
+        cos_phi = cos(tmp_phi)
+        sin_phi = sin(tmp_phi)
+        
+        # Apply rotation matrix manually to avoid allocation
+        for i in 1:nRP
+            x = tmp_RPs[i, 1]
+            y = tmp_RPs[i, 2]
+            z = tmp_RPs[i, 3]
+            tmp_RPs[i, 1] = cos_phi * x + sin_phi * y
+            tmp_RPs[i, 2] = -sin_phi * x + cos_phi * y
+            tmp_RPs[i, 3] = z
+        end
+
+        if tmp_RPs[1, 1] <= 10
+            continue
+        end
+
+        a_val = states_t[iT, 1]
+        yaw_deg = states_t[iT, 2]
+        yaw = -deg2rad(yaw_deg)
+        TI = states_t[iT, 3]
+        Ct = calcCt(a_val, yaw_deg)
+        TI0 = states_wf[iT, 3]
+
+        # Compute mean_x now, before tmp_RPs is reused for other data
+        mean_x = 0.0
+        @inbounds for i in 1:nRP
+            mean_x += tmp_RPs[i, 1]
+        end
+        mean_x /= nRP
+
+        # Compute wake variables using in-place API with preallocated buffers
+        getVars!(sig_y, sig_z, x_0, delta, pc_y, pc_z, tmp_RPs, Ct, yaw, TI, TI0, floris, d_rotor[iT])
+        C_T = Ct
+
+        # Use pre-allocated arrays
+        @inbounds for i in 1:nRP
+            delta_y = delta[i, 1]
+            delta_z = delta[i, 2]
+            
+            cw_y[i] = tmp_RPs[i, 2] - delta_y
+            cw_z[i] = tmp_RPs[i, 3] - delta_z
+            phi_cw[i] = atan(cw_z[i], cw_y[i])
+            r_cw[i] = sqrt(cw_y[i]^2 + cw_z[i]^2)
+            
+            pc_y_val = pc_y[i]
+            pc_z_val = pc_z[i]
+            pc_y_half_cos = 0.5 * pc_y_val * cos(phi_cw[i])
+            pc_z_half_sin = 0.5 * pc_z_val * sin(phi_cw[i])
+            core[i] = (r_cw[i] < sqrt(pc_y_half_cos^2 + pc_z_half_sin^2)) || (tmp_RPs[i, 1] == 0.0)
+            
+            nw[i] = tmp_RPs[i, 1] < x_0[i]
+            fw[i] = !nw[i]
+        end
+
+        # Initialize arrays
+        fill!(tmp_RPs_r, 0.0)
+        fill!(gaussAbs, 0.0)
+        fill!(gaussWght, 1.0)
+        
+        sqrt_1_minus_CT = sqrt(1 - C_T)
+        @inbounds for i in 1:nRP
+            if core[i]
+                tmp_RPs_r[i] = 1 - sqrt_1_minus_CT
+            end
+            
+            if nw[i]
+                gaussAbs[i] = 1 - sqrt_1_minus_CT
+            elseif fw[i]
+                sig_y_val = sig_y[i]
+                sig_z_val = sig_z[i]
+                gaussAbs[i] = 1 - sqrt(1 - C_T * cos(yaw) / (8 * sig_y_val * sig_z_val / d_rotor[iT]^2))
+            end
+        end
+
+        # Handle not_core calculations
+        @inbounds for i in 1:nRP
+            not_core[i] = !core[i]
+        end
+        
+        any_not_core = false
+        @inbounds for i in 1:nRP
+            if not_core[i]
+                any_not_core = true
+                break
+            end
+        end
+        
+        if any_not_core
+            @inbounds for i in 1:nRP
+                if not_core[i]
+                    sig_y_val = sig_y[i]
+                    sig_z_val = sig_z[i]
+                    pc_y_val = pc_y[i]
+                    pc_z_val = pc_z[i]
+                    
+                    y_term = (cw_y[i] - cos(phi_cw[i]) * pc_y_val * 0.5) / sig_y_val
+                    z_term = (cw_z[i] - sin(phi_cw[i]) * pc_z_val * 0.5) / sig_z_val
+                    exp_y[i] = exp(-0.5 * y_term^2)
+                    exp_z[i] = exp(-0.5 * z_term^2)
+                    gaussWght[i] = exp_y[i] * exp_z[i]
+                    tmp_RPs_r[i] = gaussAbs[i] * gaussWght[i]
+                end
+            end
+        end
+
+    buffers.T_weight[iT] = sum(gaussWght)
+    buffers.T_red_arr[iT] = 1 - dot(RPw, tmp_RPs_r)
+
+    # Added TI
+        T_addedTI_tmp = floris.k_fa * (
+            a_val^floris.k_fb *
+            TI0^floris.k_fc *
+            (mean_x / d_rotor[iT])^floris.k_fd
+        )
+
+        TIexp = floris.TIexp
+        @inbounds for i in 1:nRP
+            sig_y_val = sig_y[i]
+            sig_z_val = sig_z[i]
+            pc_y_val = pc_y[i]
+            pc_z_val = pc_z[i]
+            
+            y_term = (cw_y[i] - cos(phi_cw[i]) * pc_y_val * 0.5) / (TIexp * sig_y_val)
+            z_term = (cw_z[i] - sin(phi_cw[i]) * pc_z_val * 0.5) / (TIexp * sig_z_val)
+            exp_y[i] = exp(-0.5 * y_term^2)
+            exp_z[i] = exp(-0.5 * z_term^2)
+        end
+
+        # Avoid allocating a temporary from (exp_y .* exp_z) by manual accumulation
+        acc = 0.0
+        @inbounds for i in 1:nRP
+            acc = muladd(RPw[i], exp_y[i] * exp_z[i], acc)
+        end
+    buffers.T_aTI_arr[iT] = T_addedTI_tmp * acc
+    end
+
+    # Compute z for wind shear:
+    # - Power law expects normalized height (clamped positive)
+    # - Interpolation expects absolute height (meters)
+    if set.shear_mode isa Shear_PowerLaw
+        @inbounds for i in 1:nRP
+            val = RPl[i, 3] / location_t[end, 3]
+            tmp_RPs_r[i] = val > eps() ? val : eps()
+        end
+    else
+        @inbounds for i in 1:nRP
+            tmp_RPs_r[i] = RPl[i, 3]
+        end
+    end
+    redShear = getWindShearT(set.shear_mode, windshear, tmp_RPs_r)
+    buffers.T_red_arr[end] = dot(RPw, redShear)
+
+    T_red = prod(buffers.T_red_arr)
+    T_Ueff_scalar = states_wf[end, 1] * T_red
+    resize!(buffers.T_Ueff, 1); buffers.T_Ueff[1] = T_Ueff_scalar
+
+    # return buffers.T_red_arr, buffers.T_aTI_arr, buffers.T_Ueff, buffers.T_weight
+    nothing
 end
 
 """
