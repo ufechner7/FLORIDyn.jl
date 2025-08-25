@@ -24,7 +24,10 @@ wf_original = deepcopy(wf)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 wf.dep = findTurbineGroups(wf, floridyn)
-t = @benchmark  wf.intOPs = interpolateOPs(wf)
+# Create unified buffers for interpolateOPs!
+intOPs_buffers = [zeros(length(wf.dep[iT]), 4) for iT in 1:wf.nT]
+unified_buffers = create_unified_buffers(wf)
+t = @benchmark interpolateOPs!($unified_buffers, $intOPs_buffers, $wf)
 
 time = mean(t.times)/1e9
 rel_time = time * 301 / 0.08  # Relative to the total time of 0.08 seconds

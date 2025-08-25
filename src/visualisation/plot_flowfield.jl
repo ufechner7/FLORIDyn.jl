@@ -93,11 +93,12 @@ end
 - The `video/` directory is automatically created if it doesn't exist
 - This function requires a plotting package like ControlPlots.jl to be loaded and available as `plt`
 """
-function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis::Vis, t=nothing; msr::MSR=EffWind)
+function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vis::Vis, 
+                       t=nothing; msr::MSR=EffWind, fig=nothing)
     @assert ! isnothing(plt) "plt is nothing function plotFlowField() of plot_flowfield.jl"
     # Use unit_test from vis
     use_unit_test = vis.unit_test
-    
+
     # Extract the 2D slice for the specified measurement
     if Int64(msr) > size(mz, 3)
         error("msr ($msr) exceeds number of measurements ($(size(mz, 3)))")
@@ -126,6 +127,9 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             lev_min = vis.v_min; lev_max = vis.v_max;
             label = "Wind speed [m/s]"
         end
+        if !isnothing(fig)
+            figure_name = fig
+        end
         title = figure_name
         
         # Append time information to title if t is provided
@@ -139,22 +143,40 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
         if state === nothing
             # First call - create new figure and all elements
             size = 0.84
-            fig = plt.figure(figure_name, figsize=(7.25size, 6size))
+            ratio = (minimum(mx) - maximum(mx)) / (minimum(my) - maximum(my))
+            wide = ratio > 2.0
+            if wide
+                size *= 2.5
+                fig = plt.figure(figure_name, figsize=(7.25size+0.5, 7.25size/ratio))
+            else
+                fig = plt.figure(figure_name, figsize=(7.25size, 6size))
+            end
             ax = plt.gca()
             n = 40
             levels = range(lev_min, stop=lev_max, length=n+1)
-            contour_collection = plt.contourf(my, mx, mz_2d, n; levels, cmap="inferno")
-            cb = plt.colorbar()
-            cb.set_label(label, labelpad=3)
+            # Correct axis order: X=mx (West-East), Y=my (South-North)
+            contour_collection = plt.contourf(mx, my, mz_2d, n; levels, cmap="inferno")
+            if wide
+                cb = plt.colorbar(fraction=0.046, pad=0.01, orientation="vertical")
+                cb.set_label(label, labelpad=0)
+            else
+                cb = plt.colorbar()
+                cb.set_label(label, labelpad=3)
+            end
             
             # Set fixed axis limits and labels - do this only once
+            
             plt.xlim(minimum(mx), maximum(mx))
             plt.ylim(minimum(my), maximum(my))
             plt.xlabel("West-East [m]")
             plt.ylabel("South-North [m]")
-            
+
             # Apply tight_layout with custom padding for more top space
-            plt.tight_layout(pad=1.0, h_pad=0.3, w_pad=0.3, rect=[0, 0, 1, 0.97])
+            if wide
+                plt.tight_layout(pad=0.01, h_pad=0.01, w_pad=0.01, rect=[0.007, 0.007, 1, 0.97])
+            else
+                 plt.tight_layout(pad=1.0, h_pad=0.3, w_pad=0.3, rect=[0, 0, 1, 0.97])
+            end
             
             # Initialize empty containers for dynamic elements
             turbine_lines = []
@@ -186,44 +208,22 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
                 end
                 @debug "plotFlowField update" msr figure=state.figure_name contour_type=string(typeof(state.contour_collection)) has_collections=has_prop levels_len=length(state.levels) threads=Threads.nthreads()
             end
-            # Update contour data with defensive handling for backend differences
-            # Some matplotlib backends accessed via PyCall may not expose :collections
-            has_collections_capability = false
+            # Update contour data
             try
-                has_collections_capability = hasproperty(state.contour_collection, :collections)
-            catch
-                has_collections_capability = false
-            end
-            if has_collections_capability
-                try
-                    for collection in state.contour_collection.collections
-                        collection.remove()
-                    end
-                catch e
-                    # Fall back silently to full rebuild (suppress warnings in tests)
-                    if vis.log_debug
-                        @debug "Rebuilding figure after collection removal failure" exception=(e, catch_backtrace())
-                    end
-                    try
-                        plt.close(state.fig)
-                    catch
-                    end
-                    return plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr)
+                for collection in state.contour_collection.collections
+                    collection.remove()
                 end
-                # Create new contour with updated data
-                state.contour_collection = plt.contourf(my, mx, mz_2d, 40; levels=state.levels, cmap="inferno")
-                if vis.log_debug
-                    @debug "plotFlowField updated contour" msr contour_type_new=string(typeof(state.contour_collection))
-                end
-            else
-                # Backend without accessible collections: rebuild without logging to keep stderr clean
+            catch e
                 try
                     plt.close(state.fig)
                 catch
                 end
                 return plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr)
             end
-        end
+            # Create new contour with updated data
+            # Correct axis order consistent with initialization
+            state.contour_collection = plt.contourf(mx, my, mz_2d, 40; levels=state.levels, cmap="inferno")
+            end
 
         # Plot the turbine rotors as short, thick lines (as seen from above)
         for i_T in 1:length(wf.D)
@@ -378,8 +378,8 @@ with `state=nothing`, effectively creating a single plot without animation suppo
 This method is provided for backward compatibility. For animation support, 
 use the new interface with explicit state management.
 """
-function plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=EffWind)
-    plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr)
+function plotFlowField(plt, wf, mx, my, mz, vis, t=nothing; msr=EffWind, fig=nothing)
+    plotFlowField(nothing, plt, wf, mx, my, mz, vis, t; msr, fig)
     return nothing
 end
 

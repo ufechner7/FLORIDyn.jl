@@ -14,5 +14,5 @@ t = @benchmark vv_dep = findTurbineGroups(wf, floridyn)
 time = mean(t.times)/1e9
 rel_time = time * 301 / 0.115  # Relative to the total time of 0.115 seconds
 println("Benchmark time: $time seconds, relative to 0.115s: $(round(rel_time * 100, digits=2)) %")
-
+println("Allocations: $(t.memory) bytes")   
 # Benchmark time: 9.1144926e-5 seconds, relative to 0.115s: 23.86 %

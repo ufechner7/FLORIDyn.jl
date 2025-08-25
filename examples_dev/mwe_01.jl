@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Check if the function getMeasurementsP is type stable.
+# Check if the function getMeasurements is type stable.
 # The output must NOT contain any RED variables.
 # For performance reasons, the function should be type stable.
 
@@ -32,6 +32,6 @@ nM = 3  # Number of measurements (typically velocity reduction, added turbulence
 zh = 90.0  # Hub height
 wf, set, floris, wind, md = get_parameters()
 # Call the function with the correct number of parameters
-@code_warntype getMeasurementsP(mx, my, nM, zh, wf, set, floris, wind)
+@code_warntype getMeasurements(mx, my, nM, zh, wf, set, floris, wind)
 
 nothing

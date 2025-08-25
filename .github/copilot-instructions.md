@@ -42,4 +42,5 @@ This project is developed in Julia for scientific computing.
 
 ## General
 - Write clean, readable, and maintainable code.
+- When executing Julia code, include it in '' and not in "" .
 

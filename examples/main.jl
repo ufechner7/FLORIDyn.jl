@@ -4,7 +4,8 @@
 # MainFLORIDyn Center-Line model
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
-using FLORIDyn, TerminalPager, DistributedNext, ControlPlots
+using FLORIDyn, TerminalPager, DistributedNext
+if Threads.nthreads() == 1; using ControlPlots; end
 
 # PLT options:
 # PLT=1: Velocity reduction plot
@@ -18,12 +19,15 @@ if !  @isdefined PLT; PLT=1; end
 if PLT == 6; NEW_PLT = 1; else NEW_PLT = PLT; end
 if ! @isdefined LAST_PLT; LAST_PLT=Set(NEW_PLT); end
 
-settings_file = "data/2021_9T_Data.yaml"
-vis_file      = "data/vis_default.yaml"
+settings_file, vis_file = get_default_project()
 
 vis = Vis(vis_file)
 vis.show_plots = true  # Enable/disable showing plots during simulation
-plt.ion()
+if (@isdefined plt) && !isnothing(plt)
+    plt.ion()
+else
+    plt = nothing
+end
 
 # Automatic parallel/threading setup
 tic()
@@ -64,17 +68,17 @@ end
 if PLT == 1
     vis.online = false
     @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
     @time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
 elseif PLT == 2
     vis.online = false
     @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
     @time plot_flow_field(wf, X, Y, Z, vis; msr=AddedTurbulence, plt)
 elseif PLT == 3
     vis.online = false
     @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
     @time plot_flow_field(wf, X, Y, Z, vis; msr=EffWind, plt)
 elseif PLT == 4
     vis.online = false

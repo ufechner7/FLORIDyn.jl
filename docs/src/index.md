@@ -7,8 +7,7 @@ Description = "Dynamic wind farm simulation software"
 
 ## Introduction
 A dynamic wind farm simulation software, translated from [FLORIDyn_Matlab](https://github.com/TUDelft-DataDrivenControl/FLORIDyn_Matlab), which was written by Marcus Becker.
-
-The code uses the Gaussian wake model from the quasi static wind farm simulation software [FLORIS](https://github.com/NREL/floris), developed by NREL.
+The code uses the Gaussian wake model derived in [3].
 
 ## Model features
 - Simulate wind farms dynamically at a low computational cost
@@ -19,10 +18,13 @@ The code uses the Gaussian wake model from the quasi static wind farm simulation
 ![Flow Field](flowfield.png)
 
 ## Status:
-Five examples work, selectable via a menu:
+Many examples work, some selectable via a menu:
 ```julia
 include("examples/menu.jl")
 ```
+The other examples can be executed directly using the `include` statement. Often, more than 30x the performance of
+the Matlab version can be achieved.
+
 A Python version of FLORIDyn is available at [https://github.com/TUDelft-DataDrivenControl/OFF](https://github.com/TUDelft-DataDrivenControl/OFF) .
 
 ## Installation
@@ -70,10 +72,13 @@ You can select any of the examples with the `<UP>` and `<DOWN>` keys, and then p
 For developers, follow the [developer notes](https://ufechner7.github.io/FLORIDyn.jl/dev/developer/).
 
 ## References
-Citation of the FLORIDyn model:
-FLORIDyn - A dynamic and flexible framework for real-time wind farm control, M. Becker, D. Allaerts, J.W. van Wingerden, 2022, http://doi.org/10.1088/1742-6596/2265/3/032103
+Citation of the FLORIDyn model:\
+[1] FLORIDyn - A dynamic and flexible framework for real-time wind farm control, M. Becker, D. Allaerts, J.W. van Wingerden, 2022, [DOI 10.1088/1742-6596/2265/3/032103](http://doi.org/10.1088/1742-6596/2265/3/032103)
 
-Used FLORIS model:
-Experimental and theoretical study of wind turbine wakes in yawed conditions, M. Bastankhah, F. Porté-Agel, 2020, http://doi.org/10.1017/jfm.2016.595
+Used FLORIS model:\
+[2] Experimental and theoretical study of wind turbine wakes in yawed conditions, M. Bastankhah, F. Porté-Agel, 2020, [DOI 10.1017/jfm.2016.595](http://doi.org/10.1017/jfm.2016.595)
+
+Gaussian wake model:\
+[3] Experimental and theoretical study of wind turbine wakes in yawed conditions", M. Bastankhah, F. Porté-Agel, 2016, Journal of Fluid Mechanics. 2016;806:506-541. [DOI 10.1017/jfm.2016.595](http://doi.org/10.1017/jfm.2016.595)
 
 Additional references for smaller subcomponents can be found in the code or in the related publications.

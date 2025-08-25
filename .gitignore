@@ -10,3 +10,5 @@ out/
 
 # Ignore Julia coverage instrumentation output files
 *.cov
+*.mem
+data/default.yaml

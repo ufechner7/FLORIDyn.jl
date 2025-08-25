@@ -56,12 +56,12 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
     if msr == VelReduction
         data_column = "ForeignReduction"
         title = "Velocity Reduction"
-        ylabel = "Velocity Reduction \\[%\\]"
+        ylabel = "Vel Reduction [%]"
         msr_name = "msr_velocity_reduction"
     elseif msr == AddedTurbulence
         data_column = "AddedTurbulence" 
         title = "Added Turbulence"
-        ylabel = "Added Turbulence \\[%\\]"
+        ylabel = "Added Turbulence [%]"
         msr_name = "msr_added_turbulence"
     elseif msr == EffWind
         data_column = "EffWindSpeed"
@@ -106,7 +106,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
             plt.xlabel("Time [s]")
             plt.ylabel(ylabel)
             plt.tight_layout()   
-            fig.subplots_adjust(wspace=0.295)
+            fig.subplots_adjust(wspace=0.55)
         end
     else
         fig = plt.figure(title*" - Line Plot")

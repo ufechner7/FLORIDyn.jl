@@ -28,7 +28,12 @@ using Pkg
             
             # Check that the file has executable permissions
             stat_info = stat("bin/run_julia")
-            @test (stat_info.mode & 0o111) != 0  # Check if any execute bits are set
+            if Sys.iswindows()
+                # Windows may not set execute bits; require it to be readable instead
+                @test (stat_info.mode & 0o400) != 0  # Owner read
+            else
+                @test (stat_info.mode & 0o111) != 0  # Any execute bits set
+            end
             
             # Check that the file content is copied correctly
             # Read the original file from the package
@@ -84,12 +89,17 @@ using Pkg
                 # On some systems, umask might affect this, so we check for reasonable permissions
                 mode = stat_info.mode & 0o777
                 
-                # Should have read and execute for owner and group, at minimum
-                @test (mode & 0o500) == 0o500  # Owner read and execute
-                @test (mode & 0o050) == 0o050  # Group read and execute
-                
-                # Should be executable by owner
-                @test (mode & 0o100) != 0
+                # Should have reasonable permissions; Windows may not set execute bits
+                if Sys.iswindows()
+                    @test (mode & 0o400) == 0o400  # Owner read
+                    @test (mode & 0o040) == 0o040  # Group read
+                else
+                    # POSIX: expect read and execute for owner and group
+                    @test (mode & 0o500) == 0o500  # Owner read and execute
+                    @test (mode & 0o050) == 0o050  # Group read and execute
+                    # Should be executable by owner
+                    @test (mode & 0o100) != 0
+                end
             end
             
         finally
@@ -147,7 +157,11 @@ using Pkg
                 # Check that the file has correct permissions
                 stat_info = stat("data/2021_9T_Data.yaml")
                 mode = stat_info.mode & 0o777
-                @test (mode & 0o700) == 0o700  # Owner should have rwx
+                if Sys.iswindows()
+                    @test (mode & 0o600) == 0o600  # Owner should have rw
+                else
+                    @test (mode & 0o700) == 0o700  # Owner should have rwx
+                end
             end
             
             @testset "content validation" begin
@@ -209,8 +223,13 @@ using Pkg
                             stat_info = stat(file_path)
                             mode = stat_info.mode & 0o777
                             # Files should have 0o774 permissions as set by the function
-                            @test (mode & 0o700) == 0o700  # Owner should have rwx
-                            @test (mode & 0o070) == 0o070  # Group should have rwx
+                            if Sys.iswindows()
+                                @test (mode & 0o600) == 0o600  # Owner should have rw
+                                @test (mode & 0o060) == 0o060  # Group should have rw
+                            else
+                                @test (mode & 0o700) == 0o700  # Owner should have rwx
+                                @test (mode & 0o070) == 0o070  # Group should have rwx
+                            end
                             @test (mode & 0o004) == 0o004  # Others should have read
                         end
                     end
@@ -309,8 +328,13 @@ using Pkg
                     if isfile(joinpath("examples", file))
                         stat_info = stat(joinpath("examples", file))
                         mode = stat_info.mode & 0o777
-                        @test (mode & 0o700) == 0o700  # Owner should have rwx
-                        @test (mode & 0o070) == 0o070  # Group should have rwx
+                        if Sys.iswindows()
+                            @test (mode & 0o600) == 0o600  # Owner should have rw
+                            @test (mode & 0o060) == 0o060  # Group should have rw; exec may be unset on Windows
+                        else
+                            @test (mode & 0o700) == 0o700  # Owner should have rwx
+                            @test (mode & 0o070) == 0o070  # Group should have rwx
+                        end
                         @test (mode & 0o004) == 0o004  # Others should have read
                     end
                 end

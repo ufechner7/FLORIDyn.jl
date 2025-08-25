@@ -115,7 +115,7 @@ If the functions that are executed in parallel allocate memory, then the pressur
 with the number of threads. This creates a practical limit for the number of threads that can be used in one process,
 unless the parallel code is allocation free.
 
-In this simulation software, currently only the function [getMeasurementsP](@ref) uses multithreading. It can increase 
+In this simulation software, currently only the function [getMeasurements](@ref) uses multithreading. It can increase 
 the performance of the simulation with flow field calculation by a factor of four to five.
 
 ## Multitasking

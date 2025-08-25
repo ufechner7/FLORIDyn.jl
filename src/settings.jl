@@ -384,6 +384,9 @@ The struct automatically adapts to different computing environments:
     unique_output_folder::Bool = true # if true, for each simulation run a new folder is created
     skip_flow_fields::Bool = false    # if true, completely skip creation of flow field visualizations (overrides individual entries)
     skip_measurements::Bool = false   # if true, completely skip creation of measurement visualizations (overrides individual entries)
+    field_limits_min::Vector{Float64} = [0.0, 0.0, 0.0]          # [xmin, ymin, zmin] in meters
+    field_limits_max::Vector{Float64} = [3000.0, 3000.0, 400.0]  # [xmax, ymax, zmax] in meters
+    field_resolution::Float64 = 20.0                             # Resolution of the field in meters
     flow_fields::Vector{FlowField} = FlowField[]  # list of flow field visualizations to create
     measurements::Vector{Measurement} = Measurement[]  # list of measurement visualizations to create (parsed from YAML)
     v_min::Float64 = 2
@@ -395,8 +398,29 @@ The struct automatically adapts to different computing environments:
     unit_test::Bool = false  # enable unit test mode for visualization functions
 end
 
+# Helper to resolve a file under local or package data directories
+function _resolve_data_path(filename::String)
+    # If the provided path already exists (absolute or relative), use it
+    if isfile(filename)
+        return filename
+    end
+    pkg_root = joinpath(dirname(pathof(@__MODULE__)), "..")
+    candidates = [
+        joinpath(pwd(), filename),                 # relative to CWD
+        joinpath(pwd(), "data", filename),        # under local data/
+        joinpath(pkg_root, "data", filename),     # under package data/
+    ]
+    for p in candidates
+        if isfile(p)
+            return p
+        end
+    end
+    return filename  # fallback; YAML.load_file will throw a helpful error
+end
+
 # Constructor for Vis struct from YAML file
 function Vis(filename::String)
+    filename = _resolve_data_path(filename)
     data = YAML.load_file(filename)
     vis_data = data["vis"]
     
@@ -447,7 +471,7 @@ function Base.getproperty(vis::Vis, name::Symbol)
         else
             path = joinpath(pwd(), vis.video_folder, vis.unique_folder)
         end
-        return mkpath(path)
+        return String(rstrip(mkpath(path), ['/','\\']))
     elseif name === :output_path
         # Refactored from ternary operator to explicit if/else for clarity
         if isdelftblue()
@@ -455,7 +479,7 @@ function Base.getproperty(vis::Vis, name::Symbol)
         else
             path = joinpath(pwd(), vis.output_folder, vis.unique_folder)
         end
-        return mkpath(path)
+        return String(rstrip(mkpath(path), ['/','\\']))
     else
         return getfield(vis, name)
     end
@@ -692,4 +716,168 @@ end
 function isdelftblue()
     path = expanduser("~/scratch")
     ispath(path)
+end
+
+"""
+        get_default_project() -> Tuple{String, String}
+
+Read or create the default project selection and return `(settings_file, vis_file)` paths.
+
+Behavior:
+- Ensures `data/default.yaml` exists. If missing, it is created using the first project
+    listed in `data/projects.yaml`.
+- Reads `data/projects.yaml` and selects the project whose name matches `default.name`.
+- Returns a tuple of full paths `(settings_file, vis_file)`, preferring files under the
+    local `data/` folder and falling back to the package `data/` folder for reading.
+
+Lookup strategy:
+- Prefer files in the current working directory under `data/`.
+- If not found, fall back to the package's `data/` directory for reading (not for writing).
+"""
+function get_default_project()
+    # Resolve package root for read fallbacks
+    pkg_root = joinpath(dirname(pathof(@__MODULE__)), "..")
+
+    # Paths (prefer local workspace data dir)
+    data_dir_local = joinpath(pwd(), "data")
+    default_path_local = joinpath(data_dir_local, "default.yaml")
+    projects_path_local = joinpath(data_dir_local, "projects.yaml")
+
+    # Locate projects.yaml (read-only). Fall back to pkg data if not in local workspace.
+    projects_path = projects_path_local
+    if !isfile(projects_path)
+        projects_path = joinpath(pkg_root, "data", "projects.yaml")
+    end
+    if !isfile(projects_path)
+        error("projects.yaml not found in data directory (searched: $(projects_path_local))")
+    end
+
+    projects_data = YAML.load_file(projects_path)
+    projects_list = get(projects_data, "projects", Any[])
+    if isempty(projects_list)
+        error("projects.yaml contains no projects")
+    end
+
+    # Helper to extract first project's name
+    first_project = projects_list[1]["project"]
+    first_name = String(first_project["name"])
+
+    # Read or create default.yaml in the local workspace
+    default_name = nothing
+    if isfile(default_path_local)
+        try
+            def_data = YAML.load_file(default_path_local)
+            if haskey(def_data, "default") && haskey(def_data["default"], "name")
+                default_name = String(def_data["default"]["name"])
+            end
+        catch
+            # If malformed, recreate from first project below
+        end
+    end
+    if default_name === nothing
+        # Create local data dir and write default.yaml with first project
+        mkpath(data_dir_local)
+        open(default_path_local, "w") do io
+            write(io, "default:\n  name: $(first_name)\n")
+        end
+        default_name = first_name
+    end
+
+    # Find matching project by name
+    chosen = nothing
+    for entry in projects_list
+        p = entry["project"]
+        if String(p["name"]) == default_name
+            chosen = p
+            break
+        end
+    end
+    if chosen === nothing
+        # Fallback to first project and update default.yaml accordingly
+        chosen = first_project
+        open(default_path_local, "w") do io
+            write(io, "default:\n  name: $(String(chosen["name"]))\n")
+        end
+    end
+
+    # Build settings and vis file paths (prefer local workspace, fall back to package data)
+    proj_name = String(chosen["name"])                  # e.g. "2021_9T_Data"
+    vis_fname = String(chosen["vis"])                   # e.g. "vis_default.yaml"
+    settings_fname = proj_name * ".yaml"                # e.g. "2021_9T_Data.yaml"
+
+    # Candidate paths
+    settings_local = joinpath(data_dir_local, settings_fname)
+    settings_pkg   = joinpath(pkg_root, "data", settings_fname)
+    vis_local      = joinpath(data_dir_local, vis_fname)
+    vis_pkg        = joinpath(pkg_root, "data", vis_fname)
+
+    # Resolve existing files
+    settings_file = isfile(settings_local) ? settings_local : settings_pkg
+    vis_file      = isfile(vis_local)      ? vis_local      : vis_pkg
+
+    if !isfile(settings_file)
+        error("Settings file not found: $(settings_fname) (searched in data/ and package data/)")
+    end
+    if !isfile(vis_file)
+        error("Vis file not found: $(vis_fname) (searched in data/ and package data/)")
+    end
+
+    return (settings_file, vis_file)
+end
+
+"""
+    list_projects() -> Vector{Tuple{String,String}}
+
+Return a list of available projects as tuples `(name, vis)` using the same
+projects.yaml discovery logic as `get_default_project()`.
+"""
+function list_projects()
+    pkg_root = joinpath(dirname(pathof(@__MODULE__)), "..")
+    projects_path_local = joinpath(pwd(), "data", "projects.yaml")
+    projects_path = isfile(projects_path_local) ? projects_path_local : joinpath(pkg_root, "data", "projects.yaml")
+    if !isfile(projects_path)
+        error("projects.yaml not found in data directory (searched: $(projects_path_local))")
+    end
+    projects_data = YAML.load_file(projects_path)
+    projects_list = get(projects_data, "projects", Any[])
+    [(String(p["project"]["name"]), String(p["project"]["vis"])) for p in projects_list]
+end
+
+"""
+    select_project() -> String
+
+Interactive project selector. Lists available projects and prompts the user to select one.
+Writes the chosen name to `data/default.yaml` and returns the selected project name.
+
+Usage:
+    using FLORIDyn; select_project()
+"""
+function select_project()
+    projs = list_projects()
+    isempty(projs) && error("No projects found in projects.yaml")
+
+    chosen_name::Union{Nothing,String} = nothing
+
+    println("Available projects:")
+    for (i,(n,_)) in enumerate(projs)
+        println(rpad(string(i)*".",4), n)
+    end
+    print("Enter number [1-$(length(projs))]: ")
+    flush(stdout)
+    line = readline(stdin)
+    idx = try parse(Int, strip(line)) catch; 0 end
+    if idx < 1 || idx > length(projs)
+        error("Invalid selection: $(line)")
+    end
+    chosen_name = projs[idx][1]
+
+    # Write to local default.yaml
+    data_dir_local = joinpath(pwd(), "data")
+    mkpath(data_dir_local)
+    default_path_local = joinpath(data_dir_local, "default.yaml")
+    open(default_path_local, "w") do io
+        write(io, "default:\n  name: $(chosen_name)\n")
+    end
+    println("Selected project saved to data/default.yaml: ", chosen_name)
+    return chosen_name
 end

@@ -7,12 +7,12 @@ CurrentModule = FLORIDyn
 # FLORIS
 ```@docs
 calcCt
-centerline
+centerline!
 discretizeRotor
 init_states
-getVars
+getVars!
 getPower
-runFLORIS
+runFLORIS!
 ```
 
 # FLORIDyn
@@ -21,8 +21,8 @@ initSimulation
 findTurbineGroups
 prepareSimulation
 perturbationOfTheWF!
-setUpTmpWFAndRun
-interpolateOPs
+setUpTmpWFAndRun!
+interpolateOPs!
 iterateOPs!
 angSOWFA2world
 runFLORIDyn
@@ -31,9 +31,8 @@ run_floridyn
 
 # Visualization
 ```@docs
-getMeasurements
 create_thread_buffers
-getMeasurementsP
+getMeasurements
 calcFlowField
 plotFlowField
 plot_flow_field

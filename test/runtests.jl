@@ -52,6 +52,7 @@ all_test_files = [
     "test_vel.jl",
     "test_iterate.jl",
     "test_floridyn_cl.jl",
+    "test_runfloridyn.jl",
     "test_floris.jl",
     "test_correction.jl",
     "test_controller.jl",
@@ -59,8 +60,13 @@ all_test_files = [
     "test_high_res_time.jl",
     "test_visualisation.jl",
     "test_measurements.jl",
+    "test_flowfield.jl",
     "test_pretty_print.jl",
     "test_copy_functions.jl",
+    "test_setupandrun.jl",
+    "test_interpolateops.jl",
+    "test_prepare_simulation.jl",
+    "test_msr.jl",
     "aqua.jl"
 ]
 if Threads.nthreads() > 1
@@ -74,7 +80,8 @@ suppress_error_files = [
     "test_tit.jl", 
     "test_vel.jl",
     "test_iterate.jl",
-    "test_floridyn_cl.jl"
+    "test_floridyn_cl.jl",
+    "test_prepare_simulation.jl",
 ]
 
 # Get test files to run from test_args
@@ -121,6 +128,7 @@ end
     # Run remaining tests without error suppression
     files_without_suppression = setdiff(test_files_to_run, suppress_error_files)
     for test_file in files_without_suppression
+        println("-->> Running test file: $test_file")
         include(test_file)
     end
 end

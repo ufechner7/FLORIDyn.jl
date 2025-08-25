@@ -1,0 +1,41 @@
+# Copyright (c) 2025 Marcus Becker, Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
+# MainFLORIDyn Center-Line model
+# Improved FLORIDyn approach over the gaussian FLORIDyn model
+using Timers
+using FLORIDyn, TerminalPager, DistributedNext
+if Threads.nthreads() == 1; using ControlPlots; end
+
+settings_file, vis_file = get_default_project()
+
+vis = Vis(vis_file)
+vis.show_plots = true  # Enable/disable showing plots during simulation
+if (@isdefined plt) && !isnothing(plt)
+    plt.ion()
+else
+    plt = nothing
+end
+
+# Automatic parallel/threading setup
+tic()
+include("remote_plotting.jl")
+toc()
+
+# get the settings for the wind field, simulator and controller
+wind, sim, con, floris, floridyn, ta = setup(settings_file)
+
+# create settings struct with automatic parallel/threading detection
+set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
+
+wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+toc()
+
+vis.online = true
+# Clean up any existing PNG files in video folder before starting
+cleanup_video_folder()
+@time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+nothing
+
+# was: 61.696510 seconds (7.74 G allocations: 619.266 GiB, 29.02% gc time, 6 lock conflicts, 1.70% compilation time)
+# now: 37.828030 seconds (831.03 M allocations: 101.482 GiB, 11.67% gc time, 6 lock conflicts, 2.96% compilation time)

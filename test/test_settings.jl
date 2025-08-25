@@ -50,6 +50,150 @@ using FLORIDyn, Test
             @test length(data.D) == 0
         end
     end
+    
+    @testset "get_default_project" begin
+        pkg_data = joinpath(dirname(pathof(FLORIDyn)), "..", "data")
+
+        # Helper to write a minimal projects.yaml in the current working dir
+        function write_projects_yaml(dir; entries=[
+            (name="2021_9T_Data", vis="vis_default.yaml"),
+            (name="2021_54T_NordseeOne", vis="vis_54T.yaml"),
+        ])
+            mkpath(joinpath(dir, "data"))
+            io = open(joinpath(dir, "data", "projects.yaml"), "w")
+            try
+                write(io, "projects:\n")
+                for e in entries
+                    write(io, "  - project:\n")
+                    write(io, "      name: $(e.name)\n")
+                    write(io, "      description: test\n")
+                    write(io, "      vis: $(e.vis)\n")
+                end
+            finally
+                close(io)
+            end
+        end
+
+        @testset "creates default.yaml with first project and returns pkg paths" begin
+            mktempdir() do tmp
+                cd(tmp) do
+                    write_projects_yaml(pwd())
+                    settings_file, vis_file = FLORIDyn.get_default_project()
+                    # Should create default.yaml with first project
+                    @test isfile(joinpath("data", "default.yaml"))
+                    def_content = read(joinpath("data", "default.yaml"), String)
+                    @test occursin("name: 2021_9T_Data", def_content)
+                    # Should resolve to package data files (no local settings/vis exist)
+                    @test settings_file == joinpath(pkg_data, "2021_9T_Data.yaml")
+                    @test vis_file == joinpath(pkg_data, "vis_default.yaml")
+                end
+            end
+        end
+
+        @testset "honors existing default.yaml selection" begin
+            mktempdir() do tmp
+                cd(tmp) do
+                    write_projects_yaml(pwd())
+                    mkpath("data")
+                    open(joinpath("data", "default.yaml"), "w") do io
+                        write(io, "default:\n  name: 2021_54T_NordseeOne\n")
+                    end
+                    settings_file, vis_file = FLORIDyn.get_default_project()
+                    @test settings_file == joinpath(pkg_data, "2021_54T_NordseeOne.yaml")
+                    @test vis_file == joinpath(pkg_data, "vis_54T.yaml")
+                end
+            end
+        end
+
+        @testset "updates stale default.yaml to first project" begin
+            mktempdir() do tmp
+                cd(tmp) do
+                    write_projects_yaml(pwd())
+                    mkpath("data")
+                    # Write a non-existing project name
+                    open(joinpath("data", "default.yaml"), "w") do io
+                        write(io, "default:\n  name: DOES_NOT_EXIST\n")
+                    end
+                    settings_file, vis_file = FLORIDyn.get_default_project()
+                    # Should fall back to first project and rewrite default.yaml
+                    @test settings_file == joinpath(pkg_data, "2021_9T_Data.yaml")
+                    @test vis_file == joinpath(pkg_data, "vis_default.yaml")
+                    def_content = read(joinpath("data", "default.yaml"), String)
+                    @test occursin("name: 2021_9T_Data", def_content)
+                end
+            end
+        end
+
+        @testset "prefers local data files over package files" begin
+            mktempdir() do tmp
+                cd(tmp) do
+                    write_projects_yaml(pwd())
+                    # Create local settings and vis files
+                    mkpath("data")
+                    local_settings = joinpath("data", "2021_9T_Data.yaml")
+                    local_vis = joinpath("data", "vis_default.yaml")
+                    write(local_settings, "# local settings placeholder\n")
+                    write(local_vis, "# local vis placeholder\n")
+                    settings_file, vis_file = FLORIDyn.get_default_project()
+                    @test abspath(settings_file) == abspath(local_settings)
+                    @test abspath(vis_file) == abspath(local_vis)
+                end
+            end
+        end
+
+        @testset "empty projects list throws error" begin
+            mktempdir() do tmp
+                cd(tmp) do
+                    mkpath("data")
+                    write(joinpath("data", "projects.yaml"), "projects: []\n")
+                    @test_throws ErrorException FLORIDyn.get_default_project()
+                end
+            end
+        end
+    end
+
+    @testset "list_projects" begin
+        @testset "reads projects from package/local data" begin
+            projs = FLORIDyn.list_projects()
+            @test isa(projs, Vector{Tuple{String,String}})
+            # Should contain the two reference projects from repo data
+            @test ("2021_9T_Data", "vis_default.yaml") in projs
+            @test ("2021_54T_NordseeOne", "vis_54T.yaml") in projs
+        end
+
+        @testset "prefers local projects.yaml override" begin
+            mktempdir() do tmp
+                cd(tmp) do
+                    mkpath("data")
+                    content = """
+projects:
+  - project:
+      name: Alpha
+      description: test
+      vis: alpha_vis.yaml
+  - project:
+      name: Beta
+      description: test
+      vis: beta_vis.yaml
+"""
+                    write(joinpath("data", "projects.yaml"), content)
+                    projs = FLORIDyn.list_projects()
+                    @test projs == [("Alpha", "alpha_vis.yaml"), ("Beta", "beta_vis.yaml")]
+                end
+            end
+        end
+
+        @testset "empty projects list returns empty vector" begin
+            mktempdir() do tmp
+                cd(tmp) do
+                    mkpath("data")
+                    write(joinpath("data", "projects.yaml"), "projects: []\n")
+                    projs = FLORIDyn.list_projects()
+                    @test projs == Tuple{String,String}[]
+                end
+            end
+        end
+    end
 
     @testset "Vis constructor from YAML" begin
         # Test loading Vis from YAML file

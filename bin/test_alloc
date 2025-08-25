@@ -1,0 +1,70 @@
+#!/bin/bash
+# Copyright (c) 2025 Marcus Becker, Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Track memory allocations when running examples/mwe_04.jl
+# This script runs Julia with allocation tracking enabled and generates .mem files
+
+# Default file to run
+MAIN_FILE="examples_dev/mwe_04.jl"
+
+if [[ $(basename $(pwd)) == "bin" ]]; then
+    cd ..
+fi
+
+# Check if alternative file is provided as argument
+if [ $# -gt 0 ]; then
+    MAIN_FILE="$1"
+fi
+
+# Check if the main file exists
+if [ ! -f "$MAIN_FILE" ]; then
+    echo "Error: File '$MAIN_FILE' not found."
+    echo "Available main files in examples/:"
+    ls examples/main*.jl 2>/dev/null || echo "No main*.jl files found in examples/"
+    echo ""
+    echo "Usage: $0 [path/to/main_file.jl]"
+    echo "Example: $0 examples/main.jl"
+    exit 1
+fi
+
+echo "Running allocation tracking for: $MAIN_FILE"
+echo "This will generate .mem files showing line-by-line allocation information."
+echo ""
+
+# Clean up any existing .mem files first
+echo "Cleaning up existing .mem files..."
+find . -name "*.mem" -type f -delete 2>/dev/null
+echo "Done."
+echo ""
+
+# Run Julia with allocation tracking
+echo "Starting Julia with allocation tracking..."
+echo "Command: julia --project=. --track-allocation=user $MAIN_FILE"
+echo ""
+
+# Execute the main file with allocation tracking
+julia --project=. --track-allocation=user "$MAIN_FILE"
+
+# Check if .mem files were created
+mem_count=$(find . -name "*.mem" -type f | wc -l)
+
+echo ""
+echo "Allocation tracking complete."
+echo "Generated $mem_count .mem files."
+
+if [ "$mem_count" -gt 0 ]; then
+    echo ""
+    echo "To analyze the allocations:"
+    echo "1. Look at .mem files in src/ directories"
+    echo "2. Lines with numbers show bytes allocated on that line"
+    echo "3. Higher numbers indicate more memory allocation"
+    echo ""
+    echo "Find highest allocating lines with:"
+    echo "  ./bin/analyze_alloc"
+    echo ""
+    echo "To clean up .mem files when done:"
+    echo "  ./bin/clean_mem_files"
+else
+    echo "No .mem files were generated. The program may not have run successfully."
+fi
