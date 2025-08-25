@@ -115,7 +115,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
                 plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
                        fig=title, xlabel="rel_time [s]", ysize=9, bottom=0.02, pltctrl, legend_size=6, loc="center left")
             catch e
-                println("Error in plot_x: $e")
+                @error "Error in plot_x" exception=e stacktrace=catch_backtrace()
             end
         end
     else
