@@ -51,6 +51,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
 
     # Subtract start time
     timeFDyn = md.Time .- md.Time[1]
+    rel_time = timeFDyn  # Relative time for plotting
 
     # Determine measurement type based on msr parameter
     if msr == VelReduction
@@ -88,25 +89,31 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
         y_lim = [minimum(measurement_data), maximum(measurement_data)]
         y_range = y_lim[2] - y_lim[1]
         y_lim = y_lim .+ [-0.1, 0.1] * max(y_range, 0.5)
-        
-        fig = plt.figure(title, figsize=(10size, 6size))
-        c = plt.get_cmap("inferno")(0.5)  # Single color for separated plots
-        
-        for iT in 1:wf.nT
-            plt.subplot(lay[1], lay[2], iT)
-            plt.plot(
-                timeFDyn[iT:wf.nT:end],
-                measurement_data[iT:wf.nT:end],
-                linewidth=2, color=c
-            )
-            plt.grid(true)
-            plt.title("Turbine $(iT)")
-            plt.xlim(max(timeFDyn[1], 0), timeFDyn[end])
-            plt.ylim(y_lim...)
-            plt.xlabel("Time [s]")
-            plt.ylabel(ylabel)
-            plt.tight_layout()   
-            fig.subplots_adjust(wspace=0.55)
+        if wf.nT < 10
+            lay = get_layout(wf.nT)
+            plot_size = 1
+            fig = plt.figure(title, figsize=(10*plot_size, 6*plot_size))
+            c = plt.get_cmap("inferno")(0.5)
+            for iT in 1:wf.nT
+                plt.subplot(lay[1], lay[2], iT)
+                plt.plot(rel_time[iT:wf.nT:end], measurement_data[iT:wf.nT:end], linewidth=2, color=c)
+                plt.grid(true)
+                plt.title("Turbine $(iT)")
+                plt.xlim(max(rel_time[1], 0), rel_time[end])
+                plt.ylim(y_lim...)
+                plt.xlabel("Time [s]")
+                plt.ylabel(ylabel)
+                plt.tight_layout()
+                fig.subplots_adjust(wspace=0.55)
+            end
+        else
+            try
+                times, plot_data, turbine_labels, subplot_labels = prepare_large_plot_inputs(wf, md, data_column, ylabel)
+                plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
+                       fig=title, xlabel="rel_time [s]", ysize=9, bottom=0.02, pltctrl, legend_size=6, loc="center left")
+            catch e
+                @error "Error in plot_x" exception=e stacktrace=catch_backtrace()
+            end
         end
     else
         fig = plt.figure(title*" - Line Plot")
