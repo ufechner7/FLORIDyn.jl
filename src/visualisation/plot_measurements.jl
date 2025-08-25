@@ -51,6 +51,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
 
     # Subtract start time
     timeFDyn = md.Time .- md.Time[1]
+    rel_time = timeFDyn  # Relative time for plotting
 
     # Determine measurement type based on msr parameter
     if msr == VelReduction
