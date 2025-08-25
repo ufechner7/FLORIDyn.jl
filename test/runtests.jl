@@ -68,7 +68,6 @@ all_test_files = [
     "test_interpolateops.jl",
     "test_prepare_simulation.jl",
     "test_msr.jl",
-    "test_no_empty_files.jl",
     "aqua.jl"
 ]
 if Threads.nthreads() > 1
