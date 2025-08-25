@@ -37,7 +37,7 @@ abstract type IterateOPs_model end
 
 Observation point iteration model using averaged dynamics.
 
-This iteration strategy employs averaging techniques to advance operational 
+This iteration strategy employs averaging techniques to advance observation 
 points through the wind field, providing enhanced numerical stability and 
 smoother wake evolution compared to basic methods.
 
