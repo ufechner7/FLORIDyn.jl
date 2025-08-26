@@ -64,6 +64,9 @@ to estimate wind velocity fields, typically used for advanced wind field reconst
 
 # See also:
 - [`VelModel`](@ref): Abstract supertype for velocity models.
+
+# WARNING
+This model is **not yet implemented**!
 """
 struct Velocity_I_and_I <: VelModel end
 
@@ -78,9 +81,6 @@ at arbitrary spatial locations based on available measurement data or model pred
 
 # See also:
 - [`VelModel`](@ref): Abstract supertype for velocity models.
-
-# WARNING
-This model is **not yet implemented**!
 """
 struct Velocity_Interpolation <: VelModel end
 
