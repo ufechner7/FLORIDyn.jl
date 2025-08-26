@@ -107,7 +107,7 @@ Yaw_SOWFA
 ```
 
 ## Defining the OP iteration model
-An instance of these structs needs to be passed to the functions that iterate operational points (OPs) through the wind field. They are all subtypes of [`IterateOPs_model`](@ref)
+An instance of these structs needs to be passed to the functions that iterate observation points (OPs) through the wind field. They are all subtypes of [`IterateOPs_model`](@ref)
 
 ```@docs
 IterateOPs_average

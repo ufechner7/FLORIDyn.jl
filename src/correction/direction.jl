@@ -81,8 +81,8 @@ wind direction for all turbines in the wind farm. The function performs the foll
 
 1. **Data Retrieval**: Calls `getDataDir` to obtain current wind direction data for all turbines
 2. **State Update**: Updates the wind direction in the wind farm state (`wf.States_WF[:, 2]`)
-3. **Operational Point Orientation**: If the state matrix has 4 columns, also updates the 
-   operational point orientation (`wf.States_WF[wf.StartI, 4]`) to match the wind direction
+3. **Observation Point Orientation**: If the state matrix has 4 columns, also updates the 
+   observation point orientation (`wf.States_WF[wf.StartI, 4]`) to match the wind direction
 
 The correction is applied uniformly to all turbines using the first direction value from the 
 retrieved direction data.
@@ -99,7 +99,7 @@ current_direction = wind_farm.States_WF[1, 2]  # Updated direction for first tur
 # Notes
 - This function modifies the wind farm state in-place (indicated by the `!` suffix)
 - All turbines receive the same direction correction value (`phi[1]`)
-- The operational point orientation is only updated if the state matrix has 4 columns
+- The observation point orientation is only updated if the state matrix has 4 columns
 - Direction values are typically in radians following standard wind engineering conventions
 
 # See also

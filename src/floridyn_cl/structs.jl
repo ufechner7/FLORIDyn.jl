@@ -4,14 +4,14 @@
 """
     IterateOPs_model
 
-Abstract supertype for all operational point iteration algorithms in FLORIDyn.
+Abstract supertype for all observation point iteration algorithms in FLORIDyn.
 
 This abstract type defines the interface for different strategies used to advance 
-operational points through the wind field during time-stepping simulations. All 
+observation points through the wind field during time-stepping simulations. All 
 concrete iteration models must be subtypes of this abstract type.
 
 # Purpose
-The iteration models determine how operational points (OPs) move through space 
+The iteration models determine how observation points (OPs) move through space 
 and time, affecting:
 - Wake propagation dynamics
 - Spatial discretization accuracy
@@ -21,7 +21,7 @@ and time, affecting:
 # Implementation
 Concrete subtypes implement specific iteration strategies through method dispatch 
 on functions like [`iterateOPs!`](@ref). Each model represents a different 
-approach to handling the temporal and spatial evolution of operational points.
+approach to handling the temporal and spatial evolution of observation points.
 
 # Available Models
 - [`IterateOPs_basic`](@ref): Basic time-stepping with simple advection
@@ -35,9 +35,9 @@ abstract type IterateOPs_model end
 """
     IterateOPs_average <: IterateOPs_model
 
-Operational point iteration model using averaged dynamics.
+Observation point iteration model using averaged dynamics.
 
-This iteration strategy employs averaging techniques to advance operational 
+This iteration strategy employs averaging techniques to advance observation 
 points through the wind field, providing enhanced numerical stability and 
 smoother wake evolution compared to basic methods.
 
@@ -57,7 +57,7 @@ Recommended for:
 # Mathematical Approach
 The averaging process involves temporal or spatial averaging of 
 relevant quantities (velocities, deflections, turbulence) before applying 
-the advancement step, resulting in more stable operational point trajectories.
+the advancement step, resulting in more stable observation point trajectories.
 
 # Notes
 This model may require additional computational resources compared to basic 
@@ -69,9 +69,9 @@ struct IterateOPs_average <: IterateOPs_model end
 """
     IterateOPs_basic <: IterateOPs_model
 
-Basic operational point iteration model with simple time-stepping.
+Basic observation point iteration model with simple time-stepping.
 
-This is the fundamental iteration strategy that advances operational points 
+This is the fundamental iteration strategy that advances observation points 
 using direct time-stepping based on local wind velocities and wake deflection 
 effects. It provides the core functionality for FLORIDyn simulations.
 
@@ -101,7 +101,7 @@ Uses explicit time-stepping with:
 ```
 Δx = U × Δt × advection_factor
 ```
-where operational points move downstream based on local wind conditions.
+where observation points move downstream based on local wind conditions.
 
 # Notes
 This model serves as the reference implementation and baseline for 
@@ -113,15 +113,15 @@ struct IterateOPs_basic <: IterateOPs_model end
 """
     IterateOPs_buffer <: IterateOPs_model
 
-Operational point iteration model with buffered memory management.
+Observation point iteration model with buffered memory management.
 
 This iteration strategy implements buffering techniques to optimize memory 
-usage and computational efficiency during operational point advancement, 
+usage and computational efficiency during observation point advancement, 
 particularly beneficial for large-scale wind farm simulations.
 
 # Algorithm Characteristics
 - **Memory Efficiency**: Optimized memory access patterns
-- **Scalability**: Better performance for large numbers of operational points
+- **Scalability**: Better performance for large numbers of observation points
 - **Caching**: Intelligent buffering of frequently accessed data
 - **Computational Cost**: Reduced overhead for memory-intensive operations
 
@@ -129,11 +129,11 @@ particularly beneficial for large-scale wind farm simulations.
 Recommended for:
 - Large wind farms with many turbines
 - Memory-constrained computing environments
-- High-resolution simulations with dense operational point grids
+- High-resolution simulations with dense observation point grids
 - Production simulations requiring optimal resource utilization
 
 # Implementation Strategy
-The buffering approach manages operational point data through:
+The buffering approach manages observation point data through:
 - Efficient memory allocation patterns
 - Reduced data copying operations
 - Optimized access to state matrices
@@ -154,10 +154,10 @@ struct IterateOPs_buffer <: IterateOPs_model end
 """
     IterateOPs_maximum <: IterateOPs_model
 
-Operational point iteration model using maximum value selection.
+Observation point iteration model using maximum value selection.
 
 This iteration strategy employs maximum value-based decision making during 
-operational point advancement, potentially useful for conservative estimates 
+observation point advancement, potentially useful for conservative estimates 
 or worst-case scenario analysis in wind farm simulations.
 
 # Algorithm Characteristics
@@ -199,15 +199,15 @@ struct IterateOPs_maximum <: IterateOPs_model end
 """
     IterateOPs_weighted <: IterateOPs_model
 
-Operational point iteration model using weighted interpolation.
+Observation point iteration model using weighted interpolation.
 
 This iteration strategy employs sophisticated weighted interpolation 
-techniques to advance operational points, providing enhanced accuracy 
+techniques to advance observation points, providing enhanced accuracy 
 through spatial and temporal weighting of relevant physical quantities.
 
 # Algorithm Characteristics
 - **High Accuracy**: Superior interpolation accuracy
-- **Smoothness**: Smooth transitions between operational points
+- **Smoothness**: Smooth transitions between observation points
 - **Computational Cost**: Higher due to interpolation calculations
 - **Flexibility**: Adaptable weighting schemes
 
@@ -247,53 +247,7 @@ for applications where accuracy is prioritized over computational speed.
 """
 struct IterateOPs_weighted <: IterateOPs_model end
 
-"""
-    FLORISBuffers
 
-Pre-allocated buffers for the runFLORIS! computation to minimize allocations.
-
-This struct also persists result arrays so callers can read outputs without
-allocations. After calling `runFLORIS!`, the following fields contain results:
-
-# Output Fields
-- `T_red_arr::Vector{Float64}`: Per-turbine velocity reduction factors. For a
-    single-turbine run, length is 1 and `T_red_arr[1]` is the scalar reduction.
-- `T_aTI_arr::Vector{Float64}`: Added turbulence intensity from upstream wakes.
-    For N turbines, length is `max(N-1, 0)`. Empty for single-turbine runs.
-- `T_Ueff::Vector{Float64}`: Effective wind speed at the last turbine as a
-    length-1 vector (multi-turbine case). Empty for single-turbine runs.
-- `T_weight::Vector{Float64}`: Gaussian weight factors used for wake overlap.
-    For N turbines, length is `max(N-1, 0)`. Empty for single-turbine runs.
-"""
-mutable struct FLORISBuffers
-    tmp_RPs::Matrix{Float64}
-    rotor_pts::Matrix{Float64}
-    # Preallocated arrays for getVars! outputs
-    sig_y::Vector{Float64}
-    sig_z::Vector{Float64}
-    x_0::Vector{Float64}
-    delta::Matrix{Float64}   # n×2
-    pc_y::Vector{Float64}
-    pc_z::Vector{Float64}
-    cw_y::Vector{Float64}
-    cw_z::Vector{Float64}
-    phi_cw::Vector{Float64}
-    r_cw::Vector{Float64}
-    core::Vector{Bool}
-    nw::Vector{Bool}
-    fw::Vector{Bool}
-    tmp_RPs_r::Vector{Float64}
-    gaussAbs::Vector{Float64}
-    gaussWght::Vector{Float64}
-    exp_y::Vector{Float64}
-    exp_z::Vector{Float64}
-    not_core::Vector{Bool}
-    # Result arrays (persisted in buffers to avoid fresh allocations)
-    T_red_arr::Vector{Float64}
-    T_aTI_arr::Vector{Float64}
-    T_Ueff::Vector{Float64}    # length 1 when set
-    T_weight::Vector{Float64}
-end
 
 """
     WindFarm

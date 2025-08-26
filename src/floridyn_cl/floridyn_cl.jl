@@ -1,6 +1,31 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+#=
+This file contains the main FLORIDyn simulation control loop and supporting functions.
+
+Functions defined in this file:
+- angSOWFA2world: Convert wind direction from SOWFA convention to world coordinates
+- initSimulation: Initialize or load wind farm simulation state based on configuration
+- perturbationOfTheWF!: Add stochastic perturbations to wind field parameters 
+- findTurbineGroups: Analyze spatial relationships and identify turbine dependencies
+- interpolateOPs!: Perform observation point interpolation calculations (memory-optimized)
+- setUpTmpWFAndRun!: Execute wind farm wake calculations with unified buffers
+- runFLORIDyn: Main simulation control loop orchestrating the complete FLORIDyn simulation
+- create_unified_buffers: Create and initialize unified buffer structures for efficient computation
+
+This file implements the core FLORIDyn simulation methodology including:
+- Turbine wake interactions and dependencies
+- Observation point propagation and interpolation  
+- Wind field perturbations and uncertainty modeling
+- Memory-efficient computation through unified buffer management
+- Integration of FLORIS wake model with dynamic turbine states
+
+The main entry point is runFLORIDyn which coordinates the complete simulation workflow
+from initialization through time-stepping to final state saving. All functions are
+optimized for performance with minimal memory allocations during the simulation loop.
+=#
+
 """
     angSOWFA2world(deg_SOWFA) -> Float64
 
@@ -165,12 +190,12 @@ States_WF[:, col] += σ × N(0,1)
 where:
 - `σ` is the standard deviation for the specific parameter
 - `N(0,1)` is standard normal random noise with dimensions `(nOP × nT)`
-- `nOP` is the number of operational points per turbine
+- `nOP` is the number of observation points per turbine
 - `nT` is the total number of turbines
 
 # Notes
 - The function uses in-place modification (indicated by the `!` suffix)
-- Perturbations are applied independently to each operational point and turbine
+- Perturbations are applied independently to each observation point and turbine
 - The random noise follows a standard normal distribution scaled by the respective sigma values
 - Only enabled perturbation types (based on boolean flags) are applied
 """
@@ -205,7 +230,7 @@ are affected by the wakes of upstream turbines. It uses coordinate transformatio
 wind-aligned reference frame and geometric criteria to determine wake interactions.
 
 # Arguments
-- `wf::WindFarm`: Wind farm object containing turbine positions, operational points, and wind field states. See [`WindFarm`](@ref)
+- `wf::WindFarm`: Wind farm object containing turbine positions, observation points, and wind field states. See [`WindFarm`](@ref)
 - `floridyn::FloriDyn`: FLORIDyn model parameters containing wake interaction thresholds. See [`FloriDyn`](@ref)
 
 # Returns
@@ -214,7 +239,7 @@ wind-aligned reference frame and geometric criteria to determine wake interactio
   that influence the wake conditions at the corresponding turbine.
 
 # Algorithm
-1. **Coordinate Transformation**: For each turbine pair, transforms coordinates to a wind-aligned frame using the closest operational point
+1. **Coordinate Transformation**: For each turbine pair, transforms coordinates to a wind-aligned frame using the closest observation point
 2. **Wake Zone Detection**: Applies geometric criteria to determine if a downstream turbine lies within the wake zone:
    - Upstream extent: `r₁[1] ≥ -uw × D[iT]` (allowing for slight upstream influence)
    - Downstream extent: `r₁[1] ≤ dw × D[iT]` (wake extends downstream)  
@@ -228,11 +253,11 @@ r₁ = R(φ) × (rₒₚ - rₜᵤᵣᵦ)
 ```
 where:
 - `R(φ)` is the rotation matrix for wind direction angle `φ`
-- `rₒₚ` is the position of the closest operational point from the upstream turbine
+- `rₒₚ` is the position of the closest observation point from the upstream turbine
 - `rₜᵤᵣᵦ` is the position of the downstream turbine being evaluated
 
 # Notes
-- The function uses the closest operational point from each upstream turbine to determine wind direction
+- The function uses the closest observation point from each upstream turbine to determine wind direction
 - Wake zones are defined as multiples of rotor diameter using the FLORIDyn parameters
 - Self-interaction (turbine affecting itself) is explicitly excluded
 - The coordinate transformation accounts for the SOWFA wind direction convention
@@ -320,7 +345,7 @@ end
     interpolateOPs!(unified_buffers::UnifiedBuffers, intOPs::Vector{Matrix{Float64}}, 
                     wf::WindFarm) -> Nothing
 
-Compute interpolation weights and indices for operational points affecting each turbine using a unified buffer.
+Compute interpolation weights and indices for observation points affecting each turbine using a unified buffer.
 
 This function performs interpolation calculations while avoiding 
 memory allocations by reusing pre-allocated buffer arrays from a unified buffer struct. 
@@ -335,7 +360,7 @@ This is critical for performance when called repeatedly in loops, such as in flo
 - `intOPs::Vector{Matrix{Float64}}`: Pre-allocated vector of matrices to store interpolation results
 
 # Input Arguments
-- `wf::WindFarm`: Wind farm object containing turbine positions and operational point data
+- `wf::WindFarm`: Wind farm object containing turbine positions and observation point data
 
 # Returns
 - nothing: The function modifies `intOPs` in-place, storing the interpolation results for each turbine
@@ -694,12 +719,12 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
         end
     end
 
-    return ub.M_buffer
+    return nothing
 end
 
 """
-    runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, vis::Vis,
-                floridyn::FloriDyn, floris::Floris; rmt_plot_fn=nothing, msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
+    runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris;
+                rmt_plot_fn=nothing, msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
@@ -724,7 +749,7 @@ Main entry point for the FLORIDyn closed-loop simulation.
 
 # Returns
 A tuple `(wf, md, mi)` containing:
-- `wf::WindFarm`: Updated simulation state with final turbine positions, wind field states, and operational point data
+- `wf::WindFarm`: Updated simulation state with final turbine positions, wind field states, and observation point data
 - `md::DataFrame`: Measurement data with columns:
   - `:Time`: Simulation time steps
   - `:ForeignReduction`: Wind speed reduction factors (%) due to wake effects from other turbines
@@ -740,8 +765,7 @@ Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models,
 applying control strategies and updating turbine states over time.
 
 """
-function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim::Sim, con::Con, 
-                          vis::Vis, floridyn::FloriDyn, floris::Floris; rmt_plot_fn=nothing, 
+function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris; rmt_plot_fn=nothing, 
                           msr=VelReduction, debug=nothing)
     nT = wf.nT
     sim_steps = sim.n_sim_steps

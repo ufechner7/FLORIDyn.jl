@@ -60,6 +60,7 @@ all_test_files = [
     "test_high_res_time.jl",
     "test_visualisation.jl",
     "test_measurements.jl",
+    "test_plot_measurements_54T.jl",
     "test_flowfield.jl",
     "test_pretty_print.jl",
     "test_copy_functions.jl",
@@ -67,6 +68,7 @@ all_test_files = [
     "test_interpolateops.jl",
     "test_prepare_simulation.jl",
     "test_msr.jl",
+    "test_no_empty_files.jl",
     "aqua.jl"
 ]
 if Threads.nthreads() > 1

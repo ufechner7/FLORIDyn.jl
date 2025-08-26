@@ -4,13 +4,13 @@
 using Interpolations
 
 """
-    getWindShearT(::Shear_Interpolation, WindShear::AbstractMatrix, z)
+    getWindShearT(::Shear_Interpolation, wind_shear::AbstractMatrix, z)
 
-Compute the wind shear at a given height `z` using the specified `WindShear` model.
+Compute the wind shear at a given height `z` using the specified `wind_shear` model.
 
 # Arguments
 - `::Shear_Interpolation`: (Type only) Use interpolation to determine the wind shear.
-- `WindShear`: A matrix describing the wind shear profile.
+- `wind_shear`: A matrix describing the wind shear profile.
 - `z`: The height (in meters) at which to evaluate the wind shear.
 
 # Returns
@@ -56,13 +56,13 @@ end
 # end
 
 """
-    getWindShearT(::Shear_PowerLaw, WindShear, z_norm)
+    getWindShearT(::Shear_PowerLaw, wind_shear::WindShear, z_norm)
 
 Return the shear factor `u_eff = shear * u_referenceHeight` using the power law.
 
 # Arguments
 - `Shear_PowerLaw`: (type only, unused) Specifies that this method applies to the power law model
-- `WindShear`: A struct of type (`WindShear`)(@ref)
+- `wind_shear`: A struct of type (`WindShear`)(@ref)
     - `z0`: Reference height (not used in this function)
     - `alpha`: WindShear coefficient
 - `z_norm`: Height(s) (can be scalar or array)

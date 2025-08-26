@@ -1,6 +1,45 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+#=
+This file contains configuration structures and setup functions for wind farm simulations.
+
+Structures defined in this file:
+- WindPerturbation: Mutable struct for configuring stochastic wind perturbations
+- WindCorrection: Struct for wind correction settings (velocity, direction, turbulence)
+- Wind: Mutable struct representing wind conditions and input specifications
+- Vel: Struct for velocity correction iteration settings
+- Dir: Struct for direction correction iteration settings  
+- Dyn: Struct for dynamic simulation settings (advection, operation iteration)
+- Sim: Mutable struct for simulation parameters (time, discretization, initialization)
+- Con: Mutable struct for control settings (yaw strategies, control data)
+- Floris: Mutable struct for FLORIS wake model parameters and coefficients
+- FloriDyn: Struct for FLORIDyn dynamic model settings (operating points, perturbations)
+- TurbineArray: Struct for turbine array configuration (positions, types, initial states)
+- Vis: Mutable struct for visualization settings and plotting control
+
+Functions defined in this file:
+- _resolve_data_path: Internal function to resolve relative data file paths
+- Vis(filename): Constructor for Vis struct from YAML configuration file
+- Base.getproperty: Custom property accessor for Vis struct (computed paths)
+- setup: Main configuration loader that parses YAML files into simulation components
+- Settings: Constructor function that creates Settings struct from Wind, Sim, Con parameters
+- getTurbineData: Retrieve nacelle positions and rotor diameters for turbine types
+- importSOWFAFile: Import and parse SOWFA simulation data files
+- condenseSOWFAYaw: Process and condense SOWFA yaw angle data arrays
+- isdelftblue: Detect if running on Delft Blue HPC environment
+- get_default_project: Get default project configuration from user preferences
+- list_projects: List available project configurations
+- select_project: Interactive project selection interface
+- get_default_msr: Get default measurement configuration
+- set_default_msr: Set default measurement configuration  
+- select_measurement: Interactive measurement selection interface
+
+This file serves as the main configuration hub for FLORIDyn, handling YAML parsing,
+struct initialization, and providing utilities for project and measurement management.
+The structures use the @with_kw macro for keyword-based constructors with default values.
+=#
+
 """
     WindPerturbation
 
@@ -249,6 +288,8 @@ properties for flexible path management.
                           When `true`, filenames of saved plots are printed (default: `false`).
 - `video_folder::String`: Relative path for the video output directory. Used when `online=true`
                          and `save=true` (default: `"video"`).
+- `fps::Int`: Frames per second for video output when creating videos from saved frames.
+             Controls the playback speed of generated MP4 videos (default: `12`).
 - `output_folder::String`: Relative path for the output directory. Used when `online=false`
                           and `save=true` (default: `"out"`).
 - `unique_output_folder::Bool`: If `true`, a unique timestamped folder is created for each simulation run.
@@ -380,6 +421,7 @@ The struct automatically adapts to different computing environments:
     log_debug::Bool = false           # if true, enable debug level logging output
     unique_folder::String = ""        # this will be set when starting the simulation
     video_folder::String = "video"    # relative video folder path
+    fps::Int = 12                     # frames per second for video output
     output_folder::String = "out"     # relative output folder path
     unique_output_folder::Bool = true # if true, for each simulation run a new folder is created
     skip_flow_fields::Bool = false    # if true, completely skip creation of flow field visualizations (overrides individual entries)
@@ -486,20 +528,56 @@ function Base.getproperty(vis::Vis, name::Symbol)
 end
 
 """
-    setup(filename)
+    setup(filename) -> (wind, sim, con, floris, floridyn, ta)
 
-Initializes or configures the system using the provided `filename`. The `filename` should specify the path to a configuration or settings file required for setup.
+Load wind farm configuration from a YAML file and parse all simulation components.
+
+This function reads the configuration file of the simulation and extracts all necessary 
+parameters for setting up a FLORIDyn simulation, including wind conditions, simulation 
+settings, control strategies, FLORIS model parameters, FLORIDyn dynamics, and turbine 
+array layout.
 
 # Arguments
-- `filename::String`: Path to the `.yaml` file to be used for setup.
+- `filename::String`: Path to the YAML configuration file.
+  The file should contain sections for: wind, sim, con, floris, floridyn, and turbines.
 
 # Returns
-- The tuple `(wind, sim, con)` where:
-  - `wind`: An instance of the [`Wind`](@ref) struct containing wind-related parameters.
-  - `sim`: An instance of the [`Sim`](@ref) struct containing simulation parameters.
-  - `con`: An instance of the [`Con`](@ref) struct containing controller parameters.
-  - `floris`: An instance of the [`Floris`](@ref) struct containing FLORIS model parameters.
-  - `floridyn`: An instance of the [`FloriDyn`](@ref) struct containing FLORIDyn model parameters.
+A 6-tuple containing fully configured simulation components:
+- `wind::Wind`: Wind conditions and input specifications (velocity, direction, turbulence, shear, corrections, perturbations)
+- `sim::Sim`: Simulation parameters (time range, discretization, dynamics, initialization, data paths)  
+- `con::Con`: Control settings (yaw strategies, control data)
+- `floris::Floris`: FLORIS wake model parameters (alpha, beta, k coefficients, air density, etc.)
+- `floridyn::FloriDyn`: FLORIDyn dynamic model settings (operating points, perturbations, state changes)
+- `ta::TurbineArray`: Turbine array configuration (positions, types, initial states)
+
+# YAML File Structure
+The configuration file must contain these top-level sections:
+```yaml
+wind:          # Wind input specifications and corrections
+sim:           # Simulation time, discretization, and dynamics  
+con:           # Control strategies and yaw data
+floris:        # FLORIS model coefficients and parameters
+floridyn:      # FLORIDyn dynamic model settings
+turbines:      # Array of turbine definitions with position, type, initial states
+```
+
+# Example
+```julia
+# Load complete wind farm configuration
+wind, sim, con, floris, floridyn, ta = setup("data/2021_9T_Data.yaml")
+
+# Access turbine positions  
+println("Number of turbines: ", size(ta.pos, 1))
+println("Simulation duration: ", sim.end_time - sim.start_time, " seconds")
+```
+
+# See Also
+- [`Wind`](@ref): Wind conditions and input specifications
+- [`Sim`](@ref): Simulation parameters and settings  
+- [`Con`](@ref): Control configuration
+- [`Floris`](@ref): FLORIS wake model parameters
+- [`FloriDyn`](@ref): FLORIDyn dynamic model settings
+- [`TurbineArray`](@ref): Turbine array layout and properties
 """
 function setup(filename)
     data = YAML.load_file(filename)
@@ -587,7 +665,6 @@ Retrieve nacelle positions and rotor diameters for a given list of wind turbine 
 
 # Raises
 - `ArgumentError` if an unknown or misspelled turbine name is encountered.
-
 """
 function getTurbineData(names::Vector{String})
     num = length(names)
@@ -719,15 +796,16 @@ function isdelftblue()
 end
 
 """
-        get_default_project() -> Tuple{String, String}
+        get_default_project() -> Tuple{String, String, String}
 
-Read or create the default project selection and return `(settings_file, vis_file)` paths.
+Read or create the default project selection and return `(project_name, settings_file, vis_file)` paths.
 
 Behavior:
 - Ensures `data/default.yaml` exists. If missing, it is created using the first project
     listed in `data/projects.yaml`.
 - Reads `data/projects.yaml` and selects the project whose name matches `default.name`.
-- Returns a tuple of full paths `(settings_file, vis_file)`, preferring files under the
+- Returns a tuple of `(project_name, settings_file, vis_file)` where `project_name` is the 
+    name of the selected project and the other two are full paths, preferring files under the
     local `data/` folder and falling back to the package `data/` folder for reading.
 
 Lookup strategy:
@@ -764,11 +842,16 @@ function get_default_project()
 
     # Read or create default.yaml in the local workspace
     default_name = nothing
+    default_msr = VelReduction  # Default fallback
     if isfile(default_path_local)
         try
             def_data = YAML.load_file(default_path_local)
             if haskey(def_data, "default") && haskey(def_data["default"], "name")
                 default_name = String(def_data["default"]["name"])
+            end
+            if haskey(def_data, "default") && haskey(def_data["default"], "msr")
+                msr_str = String(def_data["default"]["msr"])
+                default_msr = toMSR(msr_str)
             end
         catch
             # If malformed, recreate from first project below
@@ -778,7 +861,7 @@ function get_default_project()
         # Create local data dir and write default.yaml with first project
         mkpath(data_dir_local)
         open(default_path_local, "w") do io
-            write(io, "default:\n  name: $(first_name)\n")
+            write(io, "default:\n  name: $(first_name)\n  msr: $(string(default_msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
         end
         default_name = first_name
     end
@@ -796,14 +879,15 @@ function get_default_project()
         # Fallback to first project and update default.yaml accordingly
         chosen = first_project
         open(default_path_local, "w") do io
-            write(io, "default:\n  name: $(String(chosen["name"]))\n")
+            write(io, "default:\n  name: $(String(chosen["name"]))\n  msr: $(string(default_msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
         end
     end
 
     # Build settings and vis file paths (prefer local workspace, fall back to package data)
     proj_name = String(chosen["name"])                  # e.g. "2021_9T_Data"
     vis_fname = String(chosen["vis"])                   # e.g. "vis_default.yaml"
-    settings_fname = proj_name * ".yaml"                # e.g. "2021_9T_Data.yaml"
+    # Use explicit settings field if available, otherwise construct from project name
+    settings_fname = haskey(chosen, "settings") ? String(chosen["settings"]) : proj_name * ".yaml"
 
     # Candidate paths
     settings_local = joinpath(data_dir_local, settings_fname)
@@ -822,13 +906,13 @@ function get_default_project()
         error("Vis file not found: $(vis_fname) (searched in data/ and package data/)")
     end
 
-    return (settings_file, vis_file)
+    return (proj_name, settings_file, vis_file)
 end
 
 """
-    list_projects() -> Vector{Tuple{String,String}}
+    list_projects() -> Vector{Tuple{String,String,String}}
 
-Return a list of available projects as tuples `(name, vis)` using the same
+Return a list of available projects as tuples `(name, description, vis)` using the same
 projects.yaml discovery logic as `get_default_project()`.
 """
 function list_projects()
@@ -840,14 +924,15 @@ function list_projects()
     end
     projects_data = YAML.load_file(projects_path)
     projects_list = get(projects_data, "projects", Any[])
-    [(String(p["project"]["name"]), String(p["project"]["vis"])) for p in projects_list]
+    [(String(p["project"]["name"]), String(get(p["project"], "description", "")), String(p["project"]["vis"])) for p in projects_list]
 end
 
 """
     select_project() -> String
 
-Interactive project selector. Lists available projects and prompts the user to select one.
-Writes the chosen name to `data/default.yaml` and returns the selected project name.
+Interactive project selector using a terminal menu interface. Displays available projects
+from projects.yaml and allows selection using arrow keys. Writes the chosen name to 
+`data/default.yaml` and returns the selected project name.
 
 Usage:
     using FLORIDyn; select_project()
@@ -856,28 +941,187 @@ function select_project()
     projs = list_projects()
     isempty(projs) && error("No projects found in projects.yaml")
 
-    chosen_name::Union{Nothing,String} = nothing
+    # Create menu options with project names and descriptions
+    project_options = String[]
+    for (name, description, vis) in projs
+        if isempty(description)
+            push!(project_options, name)
+        else
+            push!(project_options, "$name - $description")
+        end
+    end
 
-    println("Available projects:")
-    for (i,(n,_)) in enumerate(projs)
-        println(rpad(string(i)*".",4), n)
+    # Display current default project
+    current_project, _, _ = get_default_project()
+    current_name = current_project
+    println("\nCurrent project: $current_name")
+    
+    # Create and display the menu
+    menu = TerminalMenus.RadioMenu(project_options, pagesize=length(project_options))
+    choice = TerminalMenus.request("Select project (↑/↓ to navigate, Enter to select, 'q' to cancel):", menu)
+
+    # Handle cancellation
+    if choice == -1
+        println("Project selection cancelled.")
+        return current_name  # Return current project name if cancelled
     end
-    print("Enter number [1-$(length(projs))]: ")
-    flush(stdout)
-    line = readline(stdin)
-    idx = try parse(Int, strip(line)) catch; 0 end
-    if idx < 1 || idx > length(projs)
-        error("Invalid selection: $(line)")
-    end
-    chosen_name = projs[idx][1]
+    
+    # Get the selected project name
+    chosen_name = projs[choice][1]  # First element is the name
 
     # Write to local default.yaml
     data_dir_local = joinpath(pwd(), "data")
     mkpath(data_dir_local)
     default_path_local = joinpath(data_dir_local, "default.yaml")
+    
+    # Read existing MSR if available
+    existing_msr = VelReduction  # Default fallback
+    if isfile(default_path_local)
+        try
+            def_data = YAML.load_file(default_path_local)
+            if haskey(def_data, "default") && haskey(def_data["default"], "msr")
+                msr_str = String(def_data["default"]["msr"])
+                existing_msr = toMSR(msr_str)
+            end
+        catch
+            # If malformed, will use fallback
+        end
+    end
+    
     open(default_path_local, "w") do io
-        write(io, "default:\n  name: $(chosen_name)\n")
+        write(io, "default:\n  name: $(chosen_name)\n  msr: $(string(existing_msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
     end
     println("Selected project saved to data/default.yaml: ", chosen_name)
     return chosen_name
+end
+
+"""
+    get_default_msr() -> MSR
+
+Read the default measurement type (MSR) from `data/default.yaml`.
+If the file doesn't exist or doesn't have an `msr` field, returns `VelReduction`.
+
+# Returns
+- `MSR`: The default measurement type
+"""
+function get_default_msr()
+    data_dir_local = joinpath(pwd(), "data")
+    default_path_local = joinpath(data_dir_local, "default.yaml")
+    
+    if !isfile(default_path_local)
+        return VelReduction  # Default fallback
+    end
+    
+    try
+        def_data = YAML.load_file(default_path_local)
+        if haskey(def_data, "default") && haskey(def_data["default"], "msr")
+            msr_str = String(def_data["default"]["msr"])
+            return toMSR(msr_str)
+        end
+    catch
+        # If malformed or missing, return default
+    end
+    
+    return VelReduction  # Default fallback
+end
+
+"""
+    set_default_msr(msr::MSR)
+
+Set the default measurement type (MSR) in `data/default.yaml`.
+Creates the file if it doesn't exist, preserving the existing project name.
+
+# Arguments
+- `msr::MSR`: The measurement type to set as default
+"""
+function set_default_msr(msr::MSR)
+    data_dir_local = joinpath(pwd(), "data")
+    default_path_local = joinpath(data_dir_local, "default.yaml")
+    mkpath(data_dir_local)
+    
+    # Read existing data or use defaults
+    default_name = "2021_54T_NordseeOne"  # fallback
+    if isfile(default_path_local)
+        try
+            def_data = YAML.load_file(default_path_local)
+            if haskey(def_data, "default") && haskey(def_data["default"], "name")
+                default_name = String(def_data["default"]["name"])
+            end
+        catch
+            # If malformed, will use fallback name
+        end
+    end
+    
+    # Write updated file
+    open(default_path_local, "w") do io
+        write(io, "default:\n  name: $(default_name)\n  msr: $(string(msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+    end
+    
+    println("Default MSR saved to data/default.yaml: ", string(msr))
+end
+
+"""
+    select_measurement() -> MSR
+
+Interactive menu for selecting the default measurement type (MSR) using a terminal menu interface.
+Uses REPL.TerminalMenus to provide a user-friendly selection interface and saves
+the choice to `data/default.yaml`.
+
+# Returns
+- `MSR`: The selected measurement type
+
+# Interactive Menu
+The function displays a terminal menu with:
+- VelReduction - Velocity reduction measurement
+- AddedTurbulence - Added turbulence measurement  
+- EffWind - Effective wind speed measurement
+
+# Examples
+```julia
+# Run interactive selection
+msr = select_measurement()
+```
+
+# Notes
+- Uses arrow keys and Enter for selection
+- The selection is immediately saved to `data/default.yaml`
+- The existing project name in `default.yaml` is preserved
+- If user cancels (Ctrl+C), returns current default MSR without changes
+"""
+function select_measurement()
+    # Define measurement options with descriptions
+    measurement_options = [
+        "VelReduction - Velocity reduction measurement",
+        "AddedTurbulence - Added turbulence measurement", 
+        "EffWind - Effective wind speed measurement"
+    ]
+    
+    # Corresponding MSR enum values
+    msr_values = [VelReduction, AddedTurbulence, EffWind]
+    
+    println()
+    println("Select default measurement type:")
+    println("=" ^ 40)
+    
+    # Create terminal menu
+    menu = RadioMenu(measurement_options, pagesize=length(measurement_options))
+    
+    # Get user selection
+    choice = request("Use ↑/↓ arrows and Enter to select, or 'q' to cancel: ", menu)
+    
+    # Handle cancellation
+    if choice == -1
+        println("Selection cancelled. Current default MSR unchanged: $(get_default_msr())")
+        return get_default_msr()
+    end
+    
+    # Get selected MSR
+    selected_msr = msr_values[choice]
+    selected_name = string(selected_msr)
+    
+    # Save the selection
+    set_default_msr(selected_msr)
+    
+    println("✓ Selected measurement type: $selected_name")
+    return selected_msr
 end

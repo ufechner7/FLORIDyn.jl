@@ -4,7 +4,8 @@ vis:
   save: true             # Enable/disable saving of plots to disk
   save_results: true     # Enable/disable saving of simulation results as .jld2 files
   print_filenames: false # If true, print the names of the saved files
-  video_folder: "video"  # Relative video folder path 
+  video_folder: "video"  # Relative video folder path
+  fps: 12                # Frames per second for video output
   output_folder: "out"   # Relative output folder path
   unique_output_folder: true # If true, a unique output folder is created for each simulation run
   skip_flow_fields: false    # When true, do not create flow field visualizations
