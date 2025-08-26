@@ -36,16 +36,36 @@ wind:
   # - PowerLaw
   # - Interpolate
   input_shear: PowerLaw
+  # State Correction
+  #   Choose how flow metrics are corrected in the simulation based on measurements of the turbines or 
+  #   of the states in the OPs.
+  #   The option Influence makes turbines in the wake of other turbines copy the state of the OPs of the 
+  #   upstream turbines. Uninfluenced turbines will use the flow measures as provided by the selected input method. 
+  #   With the option None the values from the inputs are put into the OPs and existing OPs keep their unaltered state.
   correction:
+    # Option for velocity correction
+    # - None
+    # - Influence
     vel: None
+    # Option for wind direction correction
+    #   For the wind direction All is also an option, meaning that all OPs will be assigned the same wind direction. 
+    #   The value is based on the first returned value of the wind direction input.
+    # - None
+    # - Influence
     dir: All
+    # Option for turbulence intensity correction
+    # - None
+    # - Influence
     ti: None
+  # Wind Field state pertubation / process noise
+  #   To model a changing and evolving wind field, state pertubation can be activated. 
+  #   This adds a normal distributed pertubation to all states with a given standard deviation .
   perturbation:
-    vel: 0
+    vel: false
     vel_sigma: 0.2
-    dir: 0
+    dir: false
     dir_sigma: 0.5
-    ti: 0
+    ti: false
     ti_sigma: 0.005
 
 sim:
