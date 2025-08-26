@@ -139,6 +139,9 @@ with both predictable trends and random fluctuations.
 
 # See also:
 - [`VelModel`](@ref): Abstract supertype for velocity models.
+
+# WARNING
+This model is **not yet implemented**!
 """
 struct Velocity_RW_with_Mean <: VelModel end
 

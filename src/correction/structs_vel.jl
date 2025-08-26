@@ -17,6 +17,9 @@ abstract type VelCorrection end
     Velocity_Influence <: VelCorrection
 
 A marker struct used to represent velocity correction based on influence modeling.
+
+# WARNING
+This correction type is **not yet implemented**!
 """
 struct Velocity_Influence <: VelCorrection end
 
