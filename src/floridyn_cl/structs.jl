@@ -63,6 +63,9 @@ the advancement step, resulting in more stable observation point trajectories.
 This model may require additional computational resources compared to basic 
 methods but provides better stability characteristics for challenging 
 simulation scenarios.
+
+# WARNING
+**Not yet implemented**
 """
 struct IterateOPs_average <: IterateOPs_model end
 
@@ -193,6 +196,9 @@ Particularly useful in:
 This model may produce more conservative results compared to other 
 iteration strategies and should be used when understanding bounds 
 on simulation behavior is important.
+
+# WARNING
+**Not yet implemented**
 """
 struct IterateOPs_maximum <: IterateOPs_model end
 
@@ -244,6 +250,9 @@ time, or other relevant metrics.
 This model provides the highest accuracy among available iteration 
 strategies but requires additional computational resources. Best suited 
 for applications where accuracy is prioritized over computational speed.
+
+# WARNING
+**Not yet implemented**
 """
 struct IterateOPs_weighted <: IterateOPs_model end
 
