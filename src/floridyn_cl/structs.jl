@@ -29,6 +29,9 @@ approach to handling the temporal and spatial evolution of observation points.
 - [`IterateOPs_buffer`](@ref): Buffered approach for memory efficiency
 - [`IterateOPs_maximum`](@ref): Maximum value-based iteration
 - [`IterateOPs_weighted`](@ref): Weighted interpolation method
+
+# WARNING
+Currently, only [`IterateOPs_basic`](@ref) is fully implemented and tested.
 """
 abstract type IterateOPs_model end
 
