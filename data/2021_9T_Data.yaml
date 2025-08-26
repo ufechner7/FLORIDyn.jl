@@ -51,6 +51,7 @@ wind:
     #   For the wind direction All is also an option, meaning that all OPs will be assigned the same wind direction. 
     #   The value is based on the first returned value of the wind direction input.
     # - None
+    # - All
     # - Influence
     dir: All
     # Option for turbulence intensity correction
