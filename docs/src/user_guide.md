@@ -152,7 +152,7 @@ If you want to run such an example, start Julia with `jl2`.
 
 ## Running a custom simulation
 To run your own simulation you need to follow these steps:
-1. Create a copy of an existing YAML files in the data folder. Give it a good name. The file `turbine-specs.yaml` does not have to be copied. If you need additional turbine definitions, just add them to this file.
+1. Create a copy of an existing YAML files in the data folder. Give them a good name. The file `turbine-specs.yaml` does not have to be copied. If you need additional turbine definitions, just add them to this file.
 2. Modify the custom YAML file according to your needs, following the comments in the YAML file.
 3. Create a subfolder with the name of the custom YAML file and copy all required CSV files.
 4. Update/ generate the CSV files according to your needs.
