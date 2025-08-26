@@ -74,7 +74,6 @@ all subtypes of [`VelCorrection`](@ref)
 ```@docs
 Velocity_Influence
 Velocity_None
-Velocity_wGaspariAndCohn
 ```
 
 ## Defining the direction correction
