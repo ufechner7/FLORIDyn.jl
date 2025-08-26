@@ -78,6 +78,9 @@ at arbitrary spatial locations based on available measurement data or model pred
 
 # See also:
 - [`VelModel`](@ref): Abstract supertype for velocity models.
+
+# WARNING
+This model is **not yet implemented**!
 """
 struct Velocity_Interpolation <: VelModel end
 
