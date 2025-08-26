@@ -17,6 +17,9 @@ abstract type VelCorrection end
     Velocity_Influence <: VelCorrection
 
 A marker struct used to represent velocity correction based on influence modeling.
+
+# WARNING
+This correction type is **not yet implemented**!
 """
 struct Velocity_Influence <: VelCorrection end
 
@@ -27,10 +30,3 @@ A marker struct used to indicate that no velocity corrections should be applied.
 """
 struct Velocity_None <: VelCorrection end
 
-"""
-    Velocity_wGaspariAndCohn <: VelCorrection
-
-A marker struct used to represent velocity correction using the Gaspari and Cohn localization method.
-This correction method is commonly used in ensemble data assimilation for spatial localization.
-"""
-struct Velocity_wGaspariAndCohn <: VelCorrection end

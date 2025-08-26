@@ -74,7 +74,6 @@ all subtypes of [`VelCorrection`](@ref)
 ```@docs
 Velocity_Influence
 Velocity_None
-Velocity_wGaspariAndCohn
 ```
 
 ## Defining the direction correction
@@ -94,7 +93,6 @@ all subtypes of [`TurbulenceCorrection`](@ref)
 ```@docs
 TI_Influence
 TI_None
-TI_wGaspariAndCohn
 ```
 
 ## Defining the controller
