@@ -25,7 +25,16 @@ wind:
   # - InterpTurbine_wErrorCov
   # - RW_with_mean             random walk with mean
   input_dir: Interpolation
+  # Ambient Turbulence Intensity Input
+  # - Interpolation
+  # - InterpTurbine (Interpolation per turbine)
+  # - Constant
   input_ti: Constant
+  # Wind Shear Input
+  #   For the custom wind profile the reduction is interpolated between given set-points, this option 
+  #   is called Interpolate and expects input normalized by hub-height and wind speed at hub-height.
+  # - PowerLaw
+  # - Interpolate
   input_shear: PowerLaw
   correction:
     vel: None
@@ -65,7 +74,7 @@ sim:
     # Operating point (OP) / wind field propagation
     # 'Basic'    iterates the OPs based on their wind speed, OPs do not interact with each other. 
     # 'Averaged' is a weighted average between the new wind speed value and the old value. 
-    #            This smoothes out turbulent inputs and reduces the occasions when one OP overtakes another OP. 
+    #            This smooths out turbulent inputs and reduces the occasions when one OP overtakes another OP. 
     # 'Maximum'  overwrites the state of a slower OP once the faster one overtakes it.
     op_iteration: IterateOPs_basic
     # In case the averaging is used, provide weights for the new value (first weight) 
