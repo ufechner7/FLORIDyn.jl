@@ -94,7 +94,6 @@ all subtypes of [`TurbulenceCorrection`](@ref)
 ```@docs
 TI_Influence
 TI_None
-TI_wGaspariAndCohn
 ```
 
 ## Defining the controller
