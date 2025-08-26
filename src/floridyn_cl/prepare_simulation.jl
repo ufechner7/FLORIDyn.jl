@@ -339,8 +339,8 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     wf.nT = size(turbProp.pos, 1)
         
     t_data = getTurbineData(turbProp.type)
-    wf.posNac = t_data.NacPos
-    wf.D = t_data.D
+    wf.posNac = t_data.nac_pos
+    wf.D = t_data.rotor_diameter
 
     states = States()
     if floridyn.twf_model == "heterogeneous"
