@@ -4,7 +4,8 @@
 # MainFLORIDyn Center-Line model
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 
-# Minimal example of how to run a simulation using FLORIDyn.jl
+# Minimal example of how to run a simulation using FLORIDyn.jl 
+# for benchmarking the 54 turbine layout.
 using Timers
 tic()
 using FLORIDyn, TerminalPager, DistributedNext 
