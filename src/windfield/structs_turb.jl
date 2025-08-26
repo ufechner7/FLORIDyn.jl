@@ -24,6 +24,9 @@ struct TI_Constant <: TurbulenceModel end
     TI_EnKF_InterpTurbine <: TurbulenceModel
 
 A marker struct representing the Turbulence Intensity (TI) Ensemble Kalman Filter (EnKF) interpolation model.
+
+# WARNING
+This model is **not yet implemented**!
 """
 struct TI_EnKF_InterpTurbine <: TurbulenceModel end
 

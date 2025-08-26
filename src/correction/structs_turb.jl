@@ -17,6 +17,9 @@ abstract type TurbulenceCorrection end
     TI_Influence <: TurbulenceCorrection
 
 A marker struct used to represent turbulence intensity correction based on influence modeling.
+
+# WARNING
+This correction type is **not yet implemented**!
 """
 struct TI_Influence <: TurbulenceCorrection end
 
@@ -26,11 +29,3 @@ struct TI_Influence <: TurbulenceCorrection end
 A marker struct used to indicate that no turbulence intensity corrections should be applied.
 """
 struct TI_None <: TurbulenceCorrection end
-
-"""
-    TI_wGaspariAndCohn <: TurbulenceCorrection
-
-A marker struct used to represent turbulence intensity correction using the Gaspari and Cohn localization method.
-This correction method is commonly used in ensemble data assimilation for spatial localization.
-"""
-struct TI_wGaspariAndCohn <: TurbulenceCorrection end
