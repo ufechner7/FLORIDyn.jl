@@ -7,10 +7,16 @@ CurrentModule = FLORIDyn
 This example uses 9 turbines in a 3x3 configuration. It is used for verification
 purposes. One of the three flow field visualisations is the turbulence animation, showed here:
 
+
 ```@raw html
-<div style="display: flex; justify-content: center;">
-  <iframe src="https://www.dropbox.com/scl/fi/e5uonvron9eoa1vupsxgm/ff_added_turbulence_animation.mp4?rlkey=nk1fgm9d2xwurdldycwa8ih9w&st=2s7c2sm3&raw=1" height="436" width="510" allowfullscreen></iframe>
-</div>
+<style> .video-container {
+  position: relative;
+  width: 510px;
+  max-width: 100%;
+  aspect-ratio: 510 / 436; /* width / height */
+  overflow: hidden;
+  margin: 0 auto;
+} .responsive-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; clip-path: inset(7px 1px 7px 1px);} </style> <div class="video-container"> <iframe src="https://www.dropbox.com/scl/fi/e5uonvron9eoa1vupsxgm/ff_added_turbulence_animation.mp4?rlkey=nk1fgm9d2xwurdldycwa8ih9w&st=2s7c2sm3&raw=1" class="responsive-iframe" allowfullscreen frameborder="0"></iframe> </div>
 ```
 
 The configuration file is `2021_9T_Data.yaml` in the data folder.
