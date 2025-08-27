@@ -23,7 +23,7 @@ The code uses the Gaussian wake model derived in [3].
   aspect-ratio: 510 / 436; /* width / height */
   overflow: hidden;
   margin: 0 auto;
-} .responsive-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; } </style> <div class="video-container"> <iframe src="https://www.dropbox.com/scl/fi/85ujwjfcjtg6hcanhkhso/ff_wind_speed_animation.mp4?rlkey=97srxqybootd5f0exkdbmnv4s&st=boe1fhtk&raw=1" class="responsive-iframe" allowfullscreen frameborder="0"></iframe> </div>
+} .responsive-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; clip-path: inset(1px 1px 1px 1px);} </style> <div class="video-container"> <iframe src="https://www.dropbox.com/scl/fi/85ujwjfcjtg6hcanhkhso/ff_wind_speed_animation.mp4?rlkey=97srxqybootd5f0exkdbmnv4s&st=boe1fhtk&raw=1" class="responsive-iframe" allowfullscreen frameborder="0"></iframe> </div>
 ```
 
 ## Status
