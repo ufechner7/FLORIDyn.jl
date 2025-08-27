@@ -57,7 +57,8 @@ Supported and tested:
     - `Velocity_InterpTurbine_wErrorCov`
     - `Velocity_ZOH_wErrorCov`
 
-Partially implemented / NOT currently operational:
+## WARNING
+Not yet implemented:
 - `wind.input_vel == "I_and_I"`:
     - Marked "NOT YET IMPLEMENTED" in source. Requires a dedicated estimator struct
         providing fields (`WSE`, timing, yaw, torque, pitch, etc.). Existing pathway
