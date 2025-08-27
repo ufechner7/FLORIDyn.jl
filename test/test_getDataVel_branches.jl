@@ -96,8 +96,8 @@ end
         @test_throws MethodError getDataVel(set, wind, wf, 0.0, tmp_m, floris)
     end
 
-    # 4. EnKF_InterpTurbine branch (broken until getDataVel passes model type into getWindSpeedT_EnKF)
-    @testset "EnKF branch (broken)" begin
+    # 4. EnKF_InterpTurbine branch
+    @testset "EnKF branch" begin
         wind = Wind(
             "EnKF_InterpTurbine", "Constant", "Constant", "PowerLaw",
             FLORIDyn.WindCorrection("None","None","None"),
@@ -105,6 +105,21 @@ end
             [0.0 6.0 7.0 8.0; 10.0 8.0 9.0 10.0], nothing, 0.05, nothing
         )
         set = _settings(Velocity_EnKF_InterpTurbine())
-        @test_broken getDataVel(set, wind, wf, 5.0, tmp_m, floris)
+        # Mid-point interpolation (t = 5.0) => linear between rows
+        u_mid, wind2 = getDataVel(set, wind, wf, 5.0, tmp_m, floris)
+        @test wind2 === wind
+        @test length(u_mid) == nT
+        @test all(isapprox.(u_mid, [7.0, 8.0, 9.0]; atol=1e-8))
+
+        # Lower bound clamp (t < first time) - just assert clamped values
+        u_low, _ = getDataVel(set, wind, wf, -1.0, tmp_m, floris)
+        @test all(isapprox.(u_low, [6.0, 7.0, 8.0]; atol=1e-8))
+
+        # Upper bound clamp (t > last time) - just assert clamped values
+        u_high, _ = getDataVel(set, wind, wf, 15.0, tmp_m, floris)
+        @test all(isapprox.(u_high, [8.0, 9.0, 10.0]; atol=1e-8))
+
+        # Sanity: different query times produce distinct vectors
+        @test u_mid != [6.0,7.0,8.0] && u_mid != [8.0,9.0,10.0]
     end
 end
