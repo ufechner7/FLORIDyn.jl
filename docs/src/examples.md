@@ -22,9 +22,13 @@ The configuration file is `2021_54T_NordseeOne.yaml` in the data folder.
 
 ### Velocity reduction visualization
 
-The following figure shows the velocity reduction field produced by the example workflow (first selecting the second project using the first menu entry, then selecting the second menu entry):
+The following video shows the velocity reduction field produced by the example workflow (first selecting the second project using the first menu entry, then selecting the second menu entry):
 
-![Velocity reduction](ff_velocity_reduction.png)
+```@raw html
+<div style="display: flex; justify-content: center;">
+  <iframe src="https://www.dropbox.com/scl/fi/ckfdr9ap6hdfgxkpz36jd/ff_velocity_reduction_animation.mp4?rlkey=kgbxb9pvhx997c3b4vgytc8lf&st=ijcbs1xt&raw=1" height="378" width="943" allowfullscreen></iframe>
+</div>
+```
 
 The example assumes an inflow with constant wind speed and no turbulence. The wind direction changes during the simulation from `255°` to `195°`. The windfield was simulated for 20 minutes, while running the simulation on a laptop with an 7840U CPU took only 1.56s (without visualization). The wind direction is the direction where the wind is coming from, clockwise positive, with `0°` defined as wind from the North.
 
