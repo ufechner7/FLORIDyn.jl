@@ -59,7 +59,7 @@ jobs:
         run: |
           VERSION=5.1.1
           RELEASE_NAME=ffmpeg-${VERSION}-amd64-static
-          wget --max-redirect=20 -O ffmpeg-5.1.1-amd64-static.tar.xz "https://www.dropbox.com/scl/fi/6nnii3cfli4v15jqy00go/ffmpeg-5.1.1-amd64-static.tar.xz?dl=1"
+          wget --timeout=8 --tries=30 "https://github.com/ufechner7/Artifacts/raw/refs/heads/main/ffmpeg-5.1.1-amd64-static.tar.xz"
           tar -xf ${RELEASE_NAME}.tar.xz
           mv ${RELEASE_NAME}/ffmpeg ${RELEASE_NAME}/ffprobe /usr/local/bin/
           rm -rf ${RELEASE_NAME}
