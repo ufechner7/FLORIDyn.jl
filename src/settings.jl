@@ -102,7 +102,15 @@ A mutable struct representing wind settings.
     input_shear::String
     correction::WindCorrection
     perturbation::WindPerturbation
-    vel::Union{Nothing, Float64} = nothing
+    # Wind velocity data container.
+    # Supported:
+    #   Float64          -> constant wind speed
+    #   AbstractMatrix   -> interpolation / per-turbine time series (incl. EnKF)
+    #   WindVelType      -> constant w/ error covariance
+    #   WindVelMatrix    -> interpolation w/ error covariance variants
+    # (I_and_I / RW_with_Mean estimators are currently unimplemented; they should
+    # introduce a dedicated type later rather than relying on Any.)
+    vel::Union{Nothing, Float64, AbstractMatrix, WindVelType, WindVelMatrix} = nothing
     dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType, WindDirTriple} = nothing
     ti::Union{Nothing, Float64, Matrix{Float64}} = nothing
     shear::Union{Nothing, WindShear, Matrix{Float64}} = nothing
