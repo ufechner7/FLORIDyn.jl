@@ -33,13 +33,16 @@ Supported (unit tested in `test_getDataVel_branches.jl`)
 - EnKF turbine interpolation branch: `wind.input_vel == "EnKF_InterpTurbine"` calling
     `getWindSpeedT_EnKF(Velocity_EnKF_InterpTurbine(), ...)` with clamping of out-of-range times.
 
-Not yet implemented (guarded / broken tests)
-- `"I_and_I"`: requires a stable estimator struct (state, offsets, yaw, torque, pitch). Current path
-    is placeholder; test marked `@test_broken`.
+Not yet fully integrated (guarded / broken tests)
+- `"I_and_I"`: an internal estimator state struct (`WSEStruct` in `windfield_velocity.jl`) already exists
+    and the low-level update routine `WindSpeedEstimatorIandI_FLORIDyn` runs, but a public, documented
+    construction path (export, convenience constructor, validation of required fields, tests) is missing.
+    The branch is therefore kept experimental and the test remains `@test_broken` until we provide a
+    stable API (e.g. `build_IandI_estimator(wf, data; kwargs...)`).
 - `"RW_with_Mean"`: random-walk-with-mean model commented out; current call raises `MethodError`.
 
 Planned cleanups / TODO
-1. Provide concrete exported estimator type & finalize I_and_I logic.
+1. Provide concrete exported estimator type & finalize `I_and_I` logic.
 2. Re-introduce Random Walk with Mean model (`Velocity_RW_with_Mean`).
 
 Behavior summary
