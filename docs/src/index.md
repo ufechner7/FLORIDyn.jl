@@ -15,7 +15,11 @@ The code uses the Gaussian wake model derived in [3].
 - Apply heterogeneous and time-varying wind speeds and directions
 - Test different modeling approaches
 
-![Flow Field](flowfield.png)
+```@raw html
+<div style="display: flex; justify-content: center;">
+  <iframe src="https://www.dropbox.com/scl/fi/85ujwjfcjtg6hcanhkhso/ff_wind_speed_animation.mp4?rlkey=97srxqybootd5f0exkdbmnv4s&st=boe1fhtk&raw=1" height="436" width="510" allowfullscreen></iframe>
+</div>
+```
 
 ## Status
 All examples work, most key examples are selectable via a menu:
