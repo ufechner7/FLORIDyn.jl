@@ -54,6 +54,7 @@ all_test_files = [
     "test_floridyn_cl.jl",
     "test_runfloridyn.jl",
     "test_floris.jl",
+    "test_getDataVel_branches.jl",
     "test_correction.jl",
     "test_controller.jl",
     "test_settings.jl",
