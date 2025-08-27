@@ -45,6 +45,41 @@ in the wind farm. The function handles multiple input modes through conditional 
 4. **Standard temporal interpolation mode** (default): Uses direct temporal interpolation 
    with `getWindSpeedT` for all turbines.
 
+## Current Support Status
+
+Supported and tested:
+- Default branch with velocity model types passed via `set.vel_mode`:
+    - `Velocity_Constant`
+    - `Velocity_Interpolation`
+    - `Velocity_Constant_wErrorCov`
+    - `Velocity_Interpolation_wErrorCov`
+    - `Velocity_InterpTurbine`
+    - `Velocity_InterpTurbine_wErrorCov`
+    - `Velocity_ZOH_wErrorCov`
+
+Partially implemented / NOT currently operational:
+- `wind.input_vel == "I_and_I"`:
+    - Marked "NOT YET IMPLEMENTED" in source. Requires a dedicated estimator struct
+        providing fields (`WSE`, timing, yaw, torque, pitch, etc.). Existing pathway
+        executes but lacks a stable, exported type and comprehensive tests.
+    - Tests are marked `@test_broken`.
+- `wind.input_vel == "RW_with_Mean"`:
+    - Underlying `getWindSpeedT(::Velocity_RW_with_Mean, ...)` implementation is
+        commented out. Current call pattern will raise a `MethodError`.
+- `wind.input_vel == "EnKF_InterpTurbine"`:
+    - Dispatch for `getWindSpeedT_EnKF` expects a leading model type
+        (`Velocity_EnKF_InterpTurbine`) but `getDataVel` currently calls it without
+        passing that type, so the branch raises a `MethodError`.
+
+Planned / future action items:
+1. Introduce concrete estimator type(s) for I_and_I and integrate with exported API.
+2. Implement / restore Random Walk with Mean velocity model (`Velocity_RW_with_Mean`).
+3. Align EnKF branch call signature (e.g. `getWindSpeedT_EnKF(set.vel_mode, wind.vel, ...)`).
+4. Replace ad-hoc collection allocations (`collect(1:wf.nT)`) with reused buffers.
+
+Until these are addressed, only the default branch (and the velocity model types listed
+above) should be relied upon in production runs.
+
 # Examples
 ```julia
 # Get wind velocity for all turbines at current simulation time
