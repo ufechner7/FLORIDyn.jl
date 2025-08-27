@@ -350,8 +350,8 @@ projects:
             @test vis.print_filenames == false
             @test vis.video_folder == "video"
             @test vis.output_folder == "out"
-            @test vis.v_min ≈ 2.0
-            @test vis.v_max ≈ 10.0
+            @test vis.v_min ≈ 1.0
+            @test vis.v_max ≈ 9.0
             @test vis.rel_v_min ≈ 20.0
             @test vis.rel_v_max ≈ 100.0
             @test vis.turb_max ≈ 35.0
