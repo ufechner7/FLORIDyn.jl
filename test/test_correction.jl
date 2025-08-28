@@ -580,5 +580,63 @@ sim_time = 20600.0  # default simulation time for initial direction tests
         FLORIDyn.correctVel(Velocity_Influence(), set_vi, wf_v4, wind_vi, 10.0, floris_dummy, tmpM)
         @test isapprox(wf_v4.States_WF[2,1], 8.0; atol=1e-8)
     end
+
+    @testset "correctVel Velocity_None basic cases" begin
+        # Settings and inputs (constant velocity 9.5 m/s)
+        set_vn = Settings(Velocity_Constant(), Direction_Constant(), TI_Constant(), Shear_PowerLaw(), Direction_None(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+        correction_vn = FLORIDyn.WindCorrection("Constant","Constant","Constant")
+        perturbation_vn = FLORIDyn.WindPerturbation(false,0.0,false,0.0,false,0.0)
+        wind_vn = FLORIDyn.Wind(
+            input_vel = "Constant",
+            input_dir = "Constant",
+            input_ti = "Constant",
+            input_shear = "PowerLaw",
+            correction = correction_vn,
+            perturbation = perturbation_vn,
+            vel = 9.5,
+            dir = [0.0 270.0],
+            ti = 0.09,
+            shear = nothing,
+        )
+        floris_dummy = FLORIDyn.Floris(
+            alpha = 1.88, beta = 0.0,
+            k_a = 0.0, k_b = 0.0, k_fa = 0.0, k_fb = 0.0, k_fc = 0.0, k_fd = 0.0,
+            eta = 1, p_p = 1.0, airDen = 1.225, TIexp = 1, rotor_points = nothing,
+        )
+        tmpM = ones(2,1)
+
+        # Case 1: 4-column States_WF (velocity, direction, ti, orientation)
+        wf4 = WindFarm(
+            nT = 2,
+            nOP = 2,
+            States_WF = [5.0 200.0 0.05 10.0; 6.0 205.0 0.06 20.0],
+            StartI = [1 2],   # treat as vector of indices so wf.States_WF[StartI,1] is length 2
+            D = [120.0,120.0],
+            intOPs = Matrix{Float64}[],
+        )
+        ret_wf4, ret_wind4 = FLORIDyn.correctVel(Velocity_None(), set_vn, wf4, wind_vn, 100.0, floris_dummy, tmpM)
+        @test ret_wf4 === wf4
+        @test ret_wind4 === wind_vn
+        @test all(isapprox.(wf4.States_WF[:,1], 9.5; atol=1e-8))
+        # Non-velocity columns unchanged
+        @test wf4.States_WF[:,2] == [200.0,205.0]
+        @test wf4.States_WF[:,3] == [0.05,0.06]
+        @test wf4.States_WF[:,4] == [10.0,20.0]
+
+        # Case 2: 3-column States_WF (no orientation column)
+        wf3 = WindFarm(
+            nT = 3,
+            nOP = 3,
+            States_WF = [7.0 180.0 0.07; 8.0 190.0 0.08; 6.5 185.0 0.09],
+            StartI = [1 2 3],  # vector form
+            D = [120.0,120.0,120.0],
+            intOPs = Matrix{Float64}[],
+        )
+        FLORIDyn.correctVel(Velocity_None(), set_vn, wf3, wind_vn, 250.0, floris_dummy, ones(3,1))
+        @test all(isapprox.(wf3.States_WF[:,1], 9.5; atol=1e-8))
+        @test size(wf3.States_WF,2) == 3  # still 3 columns
+        @test wf3.States_WF[:,2] == [180.0,190.0,185.0]
+        @test wf3.States_WF[:,3] == [0.07,0.08,0.09]
+    end
 end
 nothing
