@@ -14,13 +14,13 @@ approach for turbulence intensity handling in FLORIDyn simulations.
 # Arguments
 - `::TI_None`: Dispatch type indicating no turbulence intensity correction algorithm
 - `set::Settings`: Settings object containing simulation configuration and turbulence model parameters
-  - `set.turb_mode`: Turbulence model configuration specifying the retrieval method
+    - `set.turb_mode`: Turbulence model configuration specifying the retrieval method
 - `wf::WindFarm`: Wind farm object containing the state matrices to be updated
-  - `wf.States_WF`: Wind field states matrix where column 3 contains turbulence intensity values
-  - `wf.StartI`: Starting indices for each turbine's observation points
-  - `wf.nT`: Number of turbines
+    - `wf.States_WF`: Wind field states matrix where column 3 contains turbulence intensity values
+    - `wf.StartI`: Starting indices for each turbine's observation points
+    - `wf.nT`: Number of turbines
 - `wind::Wind`: Wind configuration object containing turbulence intensity data
-  - `wind.ti`: Turbulence intensity data or model parameters
+    - `wind.ti`: Turbulence intensity data or model parameters
 - `t`: Current simulation time for time-dependent turbulence intensity retrieval
 
 # Returns
@@ -58,12 +58,12 @@ function correctTI!(::TI_None, set::Settings, wf::WindFarm, wind::Wind, t)
     # Get new turbulent intensity value
     TI = getDataTI(set, wind, wf, t)
 
-  # Update TI at the turbine (first OP) row for each turbine to avoid shape mismatch.
-  # Replicating across additional OP columns (if any) is unnecessary for baseline mode.
-  @inbounds for iT in 1:wf.nT
-    row = wf.StartI[iT, 1]
-    wf.States_WF[row, 3] = TI[iT]
-  end
+    # Update TI at the turbine (first OP) row for each turbine to avoid shape mismatch.
+    # Replicating across additional OP columns (if any) is unnecessary for baseline mode.
+    @inbounds for iT in 1:wf.nT
+        row = wf.StartI[iT, 1]
+        wf.States_WF[row, 3] = TI[iT]
+    end
 
     return nothing
 end
@@ -79,11 +79,11 @@ around the underlying turbulence intensity retrieval system.
 
 # Arguments
 - `set::Settings`: Settings object containing simulation configuration
-  - `set.turb_mode`: Turbulence model configuration specifying the retrieval method
+    - `set.turb_mode`: Turbulence model configuration specifying the retrieval method
 - `wind::Wind`: Wind configuration object containing turbulence intensity data
-  - `wind.ti`: Turbulence intensity data, parameters, or model configuration
+    - `wind.ti`: Turbulence intensity data, parameters, or model configuration
 - `wf::WindFarm`: Wind farm object containing turbine information
-  - `wf.nT`: Number of turbines in the wind farm
+    - `wf.nT`: Number of turbines in the wind farm
 - `t`: Current simulation time for time-dependent turbulence intensity models
 
 # Returns
@@ -111,12 +111,11 @@ println("TI for turbine 1: ", TI_values[1])
 """
 function getDataTI(set::Settings, wind::Wind, wf::WindFarm, t)
     TI = getWindTiT(set.turb_mode, wind.ti, collect(1:wf.nT), t)
-
     return TI
 end
 
 """
-  correctTI!(::TI_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
+    correctTI!(::TI_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
 
 Influence-based turbulence intensity correction translated from the legacy MATLAB
 `correctTi` function. Adjusts each turbine's ambient TI based on upstream
@@ -147,43 +146,43 @@ operating point (OP) influence definitions in `wf.intOPs` and dependencies in `w
 - Gracefully handles empty / missing containers.
 """
 function correctTI!(::TI_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
-  # Base TI values for all turbines
-  TI = getDataTI(set, wind, wf, t)
+    # Base TI values for all turbines
+    TI = getDataTI(set, wind, wf, t)
 
-  nT = wf.nT
-  has_dep = !isempty(wf.dep)
-  has_intOPs = !isempty(wf.intOPs)
+    nT = wf.nT
+    has_dep = !isempty(wf.dep)
+    has_intOPs = !isempty(wf.intOPs)
 
-  @inbounds for iT in 1:nT
-    start_idx = wf.StartI[iT, 1]
-    dep_i = (has_dep && length(wf.dep) >= iT) ? wf.dep[iT] : Int[]
-    if isempty(dep_i)
-      wf.States_WF[start_idx, 3] = TI[iT]
-      continue
+    @inbounds for iT in 1:nT
+        start_idx = wf.StartI[iT, 1]
+        dep_i = (has_dep && length(wf.dep) >= iT) ? wf.dep[iT] : Int[]
+        if isempty(dep_i)
+            wf.States_WF[start_idx, 3] = TI[iT]
+            continue
+        end
+
+        intOPs_i = (has_intOPs && length(wf.intOPs) >= iT) ? wf.intOPs[iT] : Array{Float64,2}(undef,0,0)
+        nrows = size(intOPs_i, 1)
+
+        if nrows == 1 && size(intOPs_i, 2) == 4
+            row = intOPs_i
+            idx1 = Int(row[1]); w1 = row[2]
+            idx2 = Int(row[3]); w2 = row[4]
+            wf.States_WF[start_idx, 3] = wf.States_WF[idx1, 3] * w1 + wf.States_WF[idx2, 3] * w2
+        elseif nrows > 1 && size(intOPs_i, 2) == 4
+            acc = 0.0
+            @inbounds for r in 1:nrows
+                row = intOPs_i[r, :]
+                idx1 = Int(row[1]); w1 = row[2]
+                idx2 = Int(row[3]); w2 = row[4]
+                acc += wf.States_WF[idx1, 3] * w1 + wf.States_WF[idx2, 3] * w2
+            end
+            wf.States_WF[start_idx, 3] = acc / nrows
+        else
+            # Fallback to base TI if malformed or missing
+            wf.States_WF[start_idx, 3] = TI[iT]
+        end
     end
-
-    intOPs_i = (has_intOPs && length(wf.intOPs) >= iT) ? wf.intOPs[iT] : Array{Float64,2}(undef,0,0)
-    nrows = size(intOPs_i, 1)
-
-    if nrows == 1 && size(intOPs_i,2) == 4
-      row = intOPs_i
-      idx1 = Int(row[1]); w1 = row[2]
-      idx2 = Int(row[3]); w2 = row[4]
-      wf.States_WF[start_idx, 3] = wf.States_WF[idx1, 3]*w1 + wf.States_WF[idx2, 3]*w2
-    elseif nrows > 1 && size(intOPs_i,2) == 4
-      acc = 0.0
-      @inbounds for r in 1:nrows
-        row = intOPs_i[r, :]
-        idx1 = Int(row[1]); w1 = row[2]
-        idx2 = Int(row[3]); w2 = row[4]
-        acc += wf.States_WF[idx1, 3]*w1 + wf.States_WF[idx2, 3]*w2
-      end
-      wf.States_WF[start_idx, 3] = acc / nrows
-    else
-      # Fallback to base TI if malformed or missing
-      wf.States_WF[start_idx, 3] = TI[iT]
-    end
-  end
-  return nothing
+    return nothing
 end
 
