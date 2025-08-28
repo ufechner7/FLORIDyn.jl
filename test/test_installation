@@ -1,0 +1,15 @@
+#!/bin/bash -eu
+# SPDX-FileCopyrightText: 2025 Uwe Fechner
+# SPDX-License-Identifier: MIT
+
+rm -rf /tmp/testdepot
+mkdir /tmp/testdepot
+rm -rf /tmp/test
+mkdir /tmp/test
+cd /tmp/test
+export JULIA_DEPOT_PATH=/tmp/testdepot 
+mkdir test 
+cd test
+julia --project=. -e 'using Pkg; pkg"add https://github.com/ufechner7/FLORIDyn.jl"'
+julia --project -e 'using FLORIDyn; FLORIDyn.install_examples()'
+julia --project -e 'using FLORIDyn; include("examples/main_mini.jl")'
