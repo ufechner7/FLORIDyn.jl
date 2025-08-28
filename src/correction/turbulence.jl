@@ -115,3 +115,103 @@ function getDataTI(set::Settings, wind::Wind, wf::WindFarm, t)
     return TI
 end
 
+# function T = correctTi(T,Wind,SimTime)
+# %CORRECTTI Correction of the turbulent intensity
+# %% Get Data
+# TI = getDataTI(Wind,T,SimTime);
+# %% Correct
+# for iT = 1:T.nT
+#     if isempty(T.dep{iT})
+#         T.States_WF(T.StartI(iT),3) = TI(iT);
+#         continue
+#     end
+    
+#     % Assign amb. TI based on what the influencing OPs carry
+#     if size(T.intOPs{iT},1)==1
+#         % Only one turbine influencing
+#         T.States_WF(T.StartI(iT),3) = ...
+#             T.States_WF(T.intOPs{iT}(1),3) * T.intOPs{iT}(2) + ...
+#             T.States_WF(T.intOPs{iT}(3),3) * T.intOPs{iT}(4);
+#     else
+#         % More than one, currently only taking the mean, but could be more
+#         % sophisticated (e.g. only from uninfluenced wind turbines,
+#         % weighted by distance to OP)
+#         T.States_WF(T.StartI(iT),1) = mean(...
+#             T.States_WF(T.intOPs{iT}(:,1),3) .* T.intOPs{iT}(:,2) + ...
+#             T.States_WF(T.intOPs{iT}(:,3),3) .* T.intOPs{iT}(:,4));
+#     end
+# end
+# end
+
+"""
+  correctTI!(::TI_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
+
+Influence-based turbulence intensity correction translated from the legacy MATLAB
+`correctTi` function. Adjusts each turbine's ambient TI based on upstream
+operating point (OP) influence definitions in `wf.intOPs` and dependencies in `wf.dep`.
+
+# Behavior per turbine iT
+1. If `wf.dep[iT]` is empty: assign raw TI value `TI[iT]`.
+2. If `wf.intOPs[iT]` has exactly one row of length 4: treat it as `[idx1 w1 idx2 w2]`
+   and set TI to `w1*TI_idx1 + w2*TI_idx2` using current `wf.States_WF[:,3]` values.
+3. Else if it has multiple rows (each 4 columns): compute mean of the per-row
+   interpolated TI values `(w1*TI_idx1 + w2*TI_idx2)` (simple average, no weighting).
+4. Malformed / missing interpolation data: fallback to raw `TI[iT]`.
+
+# Arguments
+- `::TI_Influence`: Strategy marker
+- `set::Settings`: Simulation settings (used to obtain base TI via `getDataTI`)
+- `wf::WindFarm`: Wind farm state (modified in-place; column 3 is TI)
+- `wind::Wind`: Wind data source
+- `t`: Simulation time
+
+# Returns
+- `nothing` (updates `wf.States_WF` in-place)
+
+# Notes
+- Uses existing `wf.States_WF[idx,3]` values when forming influenced TI; order of
+  iteration means earlier turbines' TI may already reflect influence.
+- Does NOT currently apply distance weighting—mirrors MATLAB mean behavior.
+- Gracefully handles empty / missing containers.
+"""
+function correctTI!(::TI_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
+  # Base TI values for all turbines
+  TI = getDataTI(set, wind, wf, t)
+
+  nT = wf.nT
+  has_dep = !isempty(wf.dep)
+  has_intOPs = !isempty(wf.intOPs)
+
+  @inbounds for iT in 1:nT
+    start_idx = wf.StartI[iT, 1]
+    dep_i = (has_dep && length(wf.dep) >= iT) ? wf.dep[iT] : Int[]
+    if isempty(dep_i)
+      wf.States_WF[start_idx, 3] = TI[iT]
+      continue
+    end
+
+    intOPs_i = (has_intOPs && length(wf.intOPs) >= iT) ? wf.intOPs[iT] : Array{Float64,2}(undef,0,0)
+    nrows = size(intOPs_i, 1)
+
+    if nrows == 1 && size(intOPs_i,2) == 4
+      row = intOPs_i
+      idx1 = Int(row[1]); w1 = row[2]
+      idx2 = Int(row[3]); w2 = row[4]
+      wf.States_WF[start_idx, 3] = wf.States_WF[idx1, 3]*w1 + wf.States_WF[idx2, 3]*w2
+    elseif nrows > 1 && size(intOPs_i,2) == 4
+      acc = 0.0
+      @inbounds for r in 1:nrows
+        row = intOPs_i[r, :]
+        idx1 = Int(row[1]); w1 = row[2]
+        idx2 = Int(row[3]); w2 = row[4]
+        acc += wf.States_WF[idx1, 3]*w1 + wf.States_WF[idx2, 3]*w2
+      end
+      wf.States_WF[start_idx, 3] = acc / nrows
+    else
+      # Fallback to base TI if malformed or missing
+      wf.States_WF[start_idx, 3] = TI[iT]
+    end
+  end
+  return nothing
+end
+

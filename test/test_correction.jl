@@ -354,5 +354,84 @@ wind = FLORIDyn.Wind(
         @test all(wf_d.States_WF[:,2] .== 255.0)
         @test all(wf_d.States_WF[wf_d.StartI,4] .== 255.0)
     end
+
+    @testset "correctTI! TI_Influence basic cases" begin
+        # Turbulence interpolation data (constant 0.10 across time)
+        TI_array = [0.0 0.10; 100.0 0.10]
+        wind_ti = FLORIDyn.Wind(
+            input_vel = "Constant",
+            input_dir = "Interpolation",
+            input_ti = "Interpolation",
+            input_shear = "PowerLaw",
+            correction = correction,
+            perturbation = perturbation,
+            vel = 8.2,
+            dir = [0.0 250.0; 10.0 250.0],
+            ti = TI_array,
+            shear = shear,
+        )
+        set_infl_ti = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Interpolation(), Shear_PowerLaw(), Direction_None(), Velocity_None(), TI_Influence(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+        t = 50.0
+
+        # Case 1: No dependencies
+        wf1 = WindFarm(
+            nT = 2,
+            nOP = 2,
+            States_WF = [0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0],
+            StartI = [1 1; 2 2],
+            D = [120.0, 120.0],
+            intOPs = Matrix{Float64}[],
+            dep = [Int[], Int[]],
+        )
+        correctTI!(set_infl_ti.cor_turb_mode, set_infl_ti, wf1, wind_ti, t)
+        @test all(isapprox.(wf1.States_WF[:,3], 0.10; atol=1e-8))
+
+        # Seed upstream TI values for influence tests
+        wf_base_states = [0.0 0.0 0.08 0.0; 0.0 0.0 0.12 0.0; 0.0 0.0 0.16 0.0]
+
+        # Case 2: Single intOP row
+        wf2 = WindFarm(
+            nT = 3,
+            nOP = 6,
+            States_WF = copy(wf_base_states),
+            StartI = [1 1; 2 2; 3 3],
+            D = [120.0,120.0,120.0],
+            intOPs = [Matrix{Float64}(undef,0,0), [1 0.25 3 0.75], Matrix{Float64}(undef,0,0)],
+            dep = [Int[], [1,3], Int[]],
+        )
+        correctTI!(set_infl_ti.cor_turb_mode, set_infl_ti, wf2, wind_ti, t)
+        expected_ti = 0.10*0.25 + 0.16*0.75  # turbine 1 updated to 0.10 first
+        @test isapprox(wf2.States_WF[2,3], expected_ti; atol=1e-8)
+
+        # Case 3: Multiple rows -> mean of per-row interpolations
+        int_rows = [1 0.5 2 0.5; 1 0.2 2 0.8]
+        wf3 = WindFarm(
+            nT = 3,
+            nOP = 6,
+            States_WF = copy(wf_base_states),
+            StartI = [1 1; 2 2; 3 3],
+            D = [120.0,120.0,120.0],
+            intOPs = [Matrix{Float64}(undef,0,0), Matrix{Float64}(undef,0,0), int_rows],
+            dep = [Int[], Int[], [1,2]],
+        )
+        correctTI!(set_infl_ti.cor_turb_mode, set_infl_ti, wf3, wind_ti, t)
+        local1 = 0.10*0.5 + 0.10*0.5
+        local2 = 0.10*0.2 + 0.10*0.8
+        expected3 = (local1 + local2)/2
+        @test isapprox(wf3.States_WF[3,3], expected3; atol=1e-8)
+
+        # Case 4: Malformed intOPs -> fallback to base TI
+        wf4 = WindFarm(
+            nT = 2,
+            nOP = 4,
+            States_WF = [0.0 0.0 0.07 0.0; 0.0 0.0 0.09 0.0],
+            StartI = [1 1; 2 2],
+            D = [120.0,120.0],
+            intOPs = [Matrix{Float64}(undef,0,0), [1 0.5 2]],
+            dep = [Int[], [1,2]],
+        )
+        correctTI!(set_infl_ti.cor_turb_mode, set_infl_ti, wf4, wind_ti, t)
+        @test isapprox(wf4.States_WF[2,3], 0.10; atol=1e-8)
+    end
 end
 nothing
