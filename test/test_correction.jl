@@ -288,17 +288,71 @@ wind = FLORIDyn.Wind(
         @test wf5.States_WF[2,2] == 255.0
     end
 
-    # @testset "correctDir! without 4th state column" begin
-    #     dir_strategy = Direction_All()
-    #     mock_t = MockT(zeros(3, 3), 1)
-    #     wind = :mockwind
-    #     sim_time = :simtime
+    @testset "correctDir! Direction_All variants" begin
+        # 4-column case
+        set_all = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_All(), 
+                        Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+        wf_a = WindFarm(
+            States_WF = [10.0 180.0 0.05 90.0; 8.5 200.0 0.06 100.0; 9.2 220.0 0.055 95.0],
+            StartI = [1 1; 2 2; 3 3],
+            nT = 3,
+            D = [126.0,126.0,126.0],
+            nOP = 4,
+            intOPs = Matrix{Float64}[]
+        )
+        correctDir!(set_all.cor_dir_mode, set_all, wf_a, wind, 20600.0)
+        @test all(wf_a.States_WF[:,2] .== 255.0)
+        @test all(wf_a.States_WF[wf_a.StartI,4] .== 255.0)
 
-    #     correctDir!(dir_strategy, mock_t, wind, sim_time)
+        # 3-column case (no orientation column)
+        wf_b = WindFarm(
+            States_WF = [10.0 180.0 0.05; 8.5 200.0 0.06; 9.2 220.0 0.055],
+            StartI = [1 1; 2 2; 3 3],
+            nT = 3,
+            D = [126.0,126.0,126.0],
+            nOP = 4,
+            intOPs = Matrix{Float64}[]
+        )
+        correctDir!(set_all.cor_dir_mode, set_all, wf_b, wind, 20600.0)
+        @test all(wf_b.States_WF[:,2] .== 255.0)
+        @test size(wf_b.States_WF,2) == 3  # unchanged column count
 
-    #     # @test all(mock_t.States_WF[:, 2] .== 999.9)
-    #     # Should not throw an error or modify column 4
-    #     # @test size(mock_t.States_WF, 2) == 3
-    # end
+        # Interpolation over time (verify varying phi applied uniformly)
+        wf_c = WindFarm(
+            States_WF = [0.0 0.0 0.0 0.0; 0.0 0.0 0.0 0.0],
+            StartI = [1 1; 2 2],
+            nT = 2,
+            D = [120.0,120.0],
+            nOP = 2,
+            intOPs = Matrix{Float64}[]
+        )
+        # Before change segment end
+        correctDir!(set_all.cor_dir_mode, set_all, wf_c, wind, 20600.0)
+        @test all(wf_c.States_WF[:,2] .== 255.0)
+        # Mid-transition between 20600 and 20900 should linearly interpolate (halfway at 20750)
+        correctDir!(set_all.cor_dir_mode, set_all, wf_c, wind, 20750.0)
+        @test all(isapprox.(wf_c.States_WF[:,2], 225.0; atol=1e-6))
+        # After transition end
+        correctDir!(set_all.cor_dir_mode, set_all, wf_c, wind, 20900.0)
+        @test all(wf_c.States_WF[:,2] .== 195.0)
+
+        # Side effects: only direction (and orientation if present) changes
+        wf_d = WindFarm(
+            States_WF = [10.0 180.0 0.05 90.0; 8.5 200.0 0.06 100.0],
+            StartI = [1 1; 2 2],
+            nT = 2,
+            D = [126.0,126.0],
+            nOP = 2,
+            intOPs = Matrix{Float64}[]
+        )
+        vel_before = copy(wf_d.States_WF[:,1])
+        turb_before = copy(wf_d.States_WF[:,3])
+        res = correctDir!(set_all.cor_dir_mode, set_all, wf_d, wind, 0.0)
+        @test res === nothing
+        @test wf_d.States_WF[:,1] == vel_before
+        @test wf_d.States_WF[:,3] == turb_before
+        @test all(wf_d.States_WF[:,2] .== 255.0)
+        @test all(wf_d.States_WF[wf_d.StartI,4] .== 255.0)
+    end
 end
 nothing
