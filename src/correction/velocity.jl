@@ -12,82 +12,68 @@ function correctVel(::Velocity_None, set, wf, Wind, SimTime, paramFLORIS, tmpM)
 end
 
 """
-    getDataVel(set::Settings, wind::Wind, wf::WindFarm, t, tmp_m, floris::Floris)
+        getDataVel(set::Settings, wind::Wind, wf::WindFarm, t, tmp_m, floris::Floris)
 
-Retrieve wind velocity data for all turbines at the current simulation time using various input modes.
+Return the wind speed vector `u` for all turbines at simulation time `t` according to the
+configured input / model mode. Also returns (potentially updated) `wind`.
 
-# Arguments
-- `set::Settings`: Simulation settings containing the velocity mode configuration
-- `wind::Wind`: Wind field data structure containing velocity information and input type
-- `wf::WindFarm`: Wind farm object containing turbine states and configuration
-- `t`: Current simulation time for temporal interpolation
-- `tmp_m`: Temporary matrix containing reduction factors and other intermediate calculations
-- `floris::Floris`: FLORIS model parameters including wake model coefficients
+Arguments
+- `set::Settings`: simulation settings (uses `set.vel_mode`)
+- `wind::Wind`: wind field state (`wind.input_vel` selects special branches)
+- `wf::WindFarm`: wind farm (uses `wf.nT`, `wf.States_WF`)
+- `t`: current simulation time
+- `tmp_m`: temporary matrix (only used for I_and_I wake reduction)
+- `floris::Floris`: FLORIS parameters (yaw exponent etc., only I_and_I branch)
 
-# Returns
-- `u`: Wind velocity values for all turbines at the specified time
-- `wind::Wind`: Updated wind field data structure (may be modified for certain input modes)
+Supported (unit tested in `test_getDataVel_branches.jl`)
+- Standard interpolation / constant variants via `set.vel_mode`:
+    `Velocity_Constant`, `Velocity_Interpolation`, `Velocity_Constant_wErrorCov`,
+    `Velocity_Interpolation_wErrorCov`, `Velocity_InterpTurbine`,
+    `Velocity_InterpTurbine_wErrorCov`, `Velocity_ZOH_wErrorCov`.
+- EnKF turbine interpolation branch: `wind.input_vel == "EnKF_InterpTurbine"` calling
+    `getWindSpeedT_EnKF(Velocity_EnKF_InterpTurbine(), ...)` with clamping of out-of-range times.
 
-# Description
-This function reads wind velocity data and returns the current wind speed (U) for all turbines 
-in the wind farm. The function handles multiple input modes through conditional logic:
+Not yet fully integrated (guarded / broken tests)
+- `"I_and_I"`: an internal estimator state struct (`WSEStruct` in `windfield_velocity.jl`) already exists
+    and the low-level update routine `WindSpeedEstimatorIandI_FLORIDyn` runs, but a public, documented
+    construction path (export, convenience constructor, validation of required fields, tests) is missing.
+    The branch is therefore kept experimental and the test remains `@test_broken` until we provide a
+    stable API (e.g. `build_IandI_estimator(wf, data; kwargs...)`).
+- `"RW_with_Mean"`: random-walk-with-mean model commented out; current call raises `MethodError`.
 
-1. **Interpolation and Integration mode** (`"I_and_I"`): Uses `getWindSpeedT` with turbine positions, 
-   wind direction, and FLORIS parameters. Applies wake effects reduction if the simulation time 
-   exceeds the wind speed estimator offset.
+Planned cleanups / TODO
+1. Provide concrete exported estimator type & finalize `I_and_I` logic.
+2. Re-introduce Random Walk with Mean model (`Velocity_RW_with_Mean`).
 
-2. **Random Walk with Mean mode** (`"RW_with_Mean"`): Uses the current wind farm state from 
-   `wf.States_WF[wf.StartI, 1]` with the wind velocity model.
+Behavior summary
+- Default: `u = getWindSpeedT(set.vel_mode, wind.vel, 1:nT, t)`.
+- EnKF: per-turbine linear interpolation table with time clamping.
+- I_and_I: (future) estimator integration plus optional wake reduction using `tmp_m[:,1]`.
+- RW_with_Mean: (future) stochastic update around mean with mean-pull term.
 
-3. **Ensemble Kalman Filter mode** (`"EnKF_InterpTurbine"`): Uses EnKF-based interpolation 
-   at turbine locations via `getWindSpeedT_EnKF`.
+All returned velocities are in m/s. Only I_and_I may mutate `wind.vel` estimator state.
 
-4. **Standard temporal interpolation mode** (default): Uses direct temporal interpolation 
-   with `getWindSpeedT` for all turbines.
-
-# Examples
+Example
 ```julia
-# Get wind velocity for all turbines at current simulation time
-u, updated_wind = getDataVel(settings, wind_data, wind_farm, 100.0, temp_matrix, floris_params)
-
-# The returned u contains velocity values for all turbines
-velocity_turbine_1 = u[1]
+u, wind = getDataVel(set, wind, wf, 100.0, tmp_m, floris)
 ```
-
-# Notes
-- The function automatically handles different wind input modes through conditional logic
-- For I_and_I mode, wake effects are applied based on timing and reduction factors
-- The wind structure may be modified and returned for certain input modes
-- Velocity values are in m/s
-- Wake reduction is only applied in I_and_I mode when sufficient time has elapsed
-
-# See also
-- [`Settings`](@ref): Simulation settings structure
-- [`Wind`](@ref): Wind field data structure
-- [`WindFarm`](@ref): Wind farm configuration structure
-- [`Floris`](@ref): FLORIS model parameters structure
 """
 function getDataVel(set::Settings, wind::Wind, wf::WindFarm, t, tmp_m, floris::Floris)
-    # Initialize u
+    idx = 1:wf.nT  # avoid temporary allocation from collect
     u = nothing
-
-    # Determine which input mode to use
     if wind.input_vel == "I_and_I"
-        u, wind.vel = getWindSpeedT(set.vel_mode, wind.vel, collect(1:wf.nT), t,
-                                   wf.States_WF[wf.StartI, 2], floris.p_p)
-
+        u, wind.vel = getWindSpeedT(set.vel_mode, wind.vel, idx, t,
+                                    wf.States_WF[wf.StartI, 2], floris.p_p)
         if (t - wind.vel.StartTime) > wind.vel.WSE.Offset
-            # Ufree = Ueff / reduction
             u = u ./ tmp_m[:, 1]
         end
     elseif wind.input_vel == "RW_with_Mean"
         u = getWindSpeedT(wf.States_WF[wf.StartI, 1], wind.vel)
     elseif wind.input_vel == "EnKF_InterpTurbine"
-        u = getWindSpeedT_EnKF(wind.vel, collect(1:wf.nT), t)
+        u = getWindSpeedT_EnKF(Velocity_EnKF_InterpTurbine(), wind.vel, idx, t)
     else
-        u = getWindSpeedT(set.vel_mode, wind.vel, collect(1:wf.nT), t)
+        u = getWindSpeedT(set.vel_mode, wind.vel, idx, t)
     end
-
     return u, wind
 end
 
