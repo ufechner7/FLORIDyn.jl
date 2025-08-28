@@ -556,7 +556,7 @@ function install_examples(add_packages=true)
     copy_bin()
     copy_model_settings()
     if add_packages
-        Pkg.add(["LaTeXStrings", "Timers"])
+        Pkg.add(["LaTeXStrings", "Timers", "TerminalPager"])
     end
 end
 
