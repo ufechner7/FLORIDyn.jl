@@ -150,6 +150,31 @@ or similar. First, select a project and a measurement by choosing the first menu
 with `include("examples/<MY_EXAMPLE.jl>")`. Some examples require that Julia runs in single-threaded mode.
 If you want to run such an example, start Julia with `jl2`.
 
+## Creating a new project
+The file `data/projects.yaml` currently looks like this:
+```yaml
+projects:
+  - project:
+      name: 2021_9T_Data
+      description: A reference simulation with 9 turbines
+      settings: 2021_9T_Data.yaml
+      vis: vis_default.yaml
+  - project:
+      name: 2021_9T_Data_full
+      description: 9 turbines, no visualization, full output incl. 3 videos
+      settings: 2021_9T_Data.yaml
+      vis: vis_full_9T.yaml
+  - project:
+      name: 2021_54T_NordseeOne
+      description: A reference simulation with 54 turbines
+      settings: 2021_54T_NordseeOne.yaml
+      vis: vis_54T.yaml
+```
+You can edit in manually and add a new project. A project combines a `settings` file and a `vis` (visualisation) file.
+To create a custom visualisation file, copy one of the existing vis_xxx.yaml files, give it a nice name, and create
+a new project entry. Then, you can select in the `menu()` your new project, and it will be used by all the visualisation
+options in the menu. 
+
 ## Running a custom simulation
 To run your own simulation you need to follow these steps:
 1. Create a copy of an existing YAML files in the data folder. Give them a good name. The file `turbine-specs.yaml` does not have to be copied. If you need additional turbine definitions, just add them to this file.
