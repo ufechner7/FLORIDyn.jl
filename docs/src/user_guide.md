@@ -82,7 +82,7 @@ macOS (zsh or bash):
 ```bash
 alias jl='./bin/run_julia'
 alias jl2='./bin/run_julia2'
-source ~/.zshrc      # for zsh
+source ~/.zshrc          # for zsh
 # or
 source ~/.bash_profile   # for bash
 ```
