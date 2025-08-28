@@ -197,6 +197,97 @@ wind = FLORIDyn.Wind(
         @test all(wf.States_WF[:, 2] .== 255.0)    # directions updated
     end
 
+    @testset "correctDir! Direction_Influence basic cases" begin
+        # Reuse global wind (dir_array) so phi at chosen times is 255.0
+        set_infl = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_Influence(), 
+                        Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+        sim_time = 50.0  # Within first plateau => phi = 255
+
+        # Case 1: No dependencies -> raw phi applied
+        wf1 = WindFarm(
+            nT = 2,
+            nOP = 4,
+            States_WF = [0.0 180.0 0.05 0.0; 0.0 170.0 0.05 0.0],
+            StartI = [1 1; 2 2],
+            D = [120.0, 120.0],
+            intOPs = Matrix{Float64}[],
+            Weight = Vector{Float64}[],
+            dep = [Int[], Int[]],
+        )
+        correctDir!(set_infl.cor_dir_mode, set_infl, wf1, wind, sim_time)
+        @test all(wf1.States_WF[:, 2] .== 255.0)
+        @test all(wf1.States_WF[:, 4] .== 255.0)
+
+        # Base pre-update states for later cases
+        base_states = [0.0 260.0 0.05 0.0; 0.0 200.0 0.05 0.0; 0.0 210.0 0.05 0.0]
+
+        # Case 2: Single intOP row (two indices + weights) for turbine 2
+        wf2 = WindFarm(
+            nT = 3,
+            nOP = 6,
+            States_WF = copy(base_states),
+            StartI = [1 1; 2 2; 3 3],
+            D = [120.0, 120.0, 120.0],
+            intOPs = [Matrix{Float64}(undef,0,0), [1 0.25 3 0.75], Matrix{Float64}(undef,0,0)],
+            Weight = [Float64[], Float64[], Float64[]],
+            dep = [Int[], [1,3], Int[]],
+        )
+        correctDir!(set_infl.cor_dir_mode, set_infl, wf2, wind, sim_time)
+        expected_dir = 255.0*0.25 + 210.0*0.75  # turbine 1 updated to 255 before combining
+        @test isapprox(wf2.States_WF[2, 2], expected_dir; atol=1e-8)
+        @test wf2.States_WF[1,2] == 255.0
+        @test wf2.States_WF[3,2] == 255.0
+
+        # Case 3: Multiple intOP rows with non-zero weights
+        int_rows = [1 0.5 2 0.5; 1 0.8 2 0.2]
+        weights = [0.6, 0.4]
+        wf3 = WindFarm(
+            nT = 3,
+            nOP = 6,
+            States_WF = [0.0 260.0 0.05 0.0; 0.0 200.0 0.05 0.0; 0.0 180.0 0.05 0.0],
+            StartI = [1 1; 2 2; 3 3],
+            D = [120.0, 120.0, 120.0],
+            intOPs = [Matrix{Float64}(undef,0,0), Matrix{Float64}(undef,0,0), int_rows],
+            Weight = [Float64[], Float64[], weights],
+            dep = [Int[], Int[], [1,2]],
+        )
+        correctDir!(set_infl.cor_dir_mode, set_infl, wf3, wind, sim_time)
+        @test wf3.States_WF[1,2] == 255.0
+        @test wf3.States_WF[2,2] == 255.0
+        local1 = 255.0*0.5 + 255.0*0.5
+        local2 = 255.0*0.8 + 255.0*0.2
+        expected3 = (0.6*local1 + 0.4*local2)/(0.6+0.4)
+        @test isapprox(wf3.States_WF[3,2], expected3; atol=1e-8)
+
+        # Case 4: Multiple rows but zero weights -> fallback to phi
+        wf4 = WindFarm(
+            nT = 2,
+            nOP = 4,
+            States_WF = [0.0 260.0 0.05 0.0; 0.0 200.0 0.05 0.0],
+            StartI = [1 1; 2 2],
+            D = [120.0, 120.0],
+            intOPs = [Matrix{Float64}(undef,0,0), [1 0.5 2 0.5; 1 0.5 2 0.5]],
+            Weight = [Float64[], [0.0, 0.0]],
+            dep = [Int[], [1,2]],
+        )
+        correctDir!(set_infl.cor_dir_mode, set_infl, wf4, wind, sim_time)
+        @test wf4.States_WF[2,2] == 255.0
+
+        # Case 5: Malformed intOPs shape -> fallback to phi
+        wf5 = WindFarm(
+            nT = 2,
+            nOP = 4,
+            States_WF = [0.0 260.0 0.05 0.0; 0.0 200.0 0.05 0.0],
+            StartI = [1 1; 2 2],
+            D = [120.0, 120.0],
+            intOPs = [Matrix{Float64}(undef,0,0), [1 0.5 2]],  # wrong shape
+            Weight = [Float64[], Float64[]],
+            dep = [Int[], [1,2]],
+        )
+        correctDir!(set_infl.cor_dir_mode, set_infl, wf5, wind, sim_time)
+        @test wf5.States_WF[2,2] == 255.0
+    end
+
     # @testset "correctDir! without 4th state column" begin
     #     dir_strategy = Direction_All()
     #     mock_t = MockT(zeros(3, 3), 1)
