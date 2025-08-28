@@ -62,7 +62,7 @@ function getDataDir(set::Settings, wind::Wind, wf::WindFarm, t)
 end
 
 """
-    correctDir!(::Direction_All, set::Settings, wf::WindFarm, wind::Wind, t)
+    correctDir!(::Direction_All, set, wf, wind, t)
 
 Apply direction correction to all turbines in the wind farm using the Direction_All strategy.
 
@@ -104,6 +104,7 @@ current_direction = wind_farm.States_WF[1, 2]  # Updated direction for first tur
 - Direction values are typically in radians following standard wind engineering conventions
 
 # See also
+- [`correctDir!(::Direction_None, set, wf, wind, t)`](@ref): Alternative direction correction strategy
 - [`getDataDir`](@ref): Function for retrieving wind direction data
 - [`Direction_All`](@ref): Direction correction strategy type
 - [`Settings`](@ref): Simulation settings structure
@@ -123,7 +124,7 @@ function correctDir!(::Direction_All, set::Settings, wf::WindFarm, wind::Wind, t
 end
 
 """
-    correctDir!(::Direction_None, set::Settings, wf::WindFarm, wind::Wind, t)
+    correctDir!(::Direction_None, set, wf, wind, t)
 
 Apply basic direction correction using the Direction_None strategy.
 
@@ -168,7 +169,7 @@ op_orientation = wind_farm.States_WF[wind_farm.StartI, 4]  # Matches turbine dir
 - "None" refers to minimal correction strategy, not absence of all direction updates
 
 # See also
-- [`correctDir!(::Direction_All, ...)`](@ref): Alternative direction correction strategy
+- [`correctDir!(::Direction_All, set, wf, wind, t)`](@ref): Alternative direction correction strategy
 - [`getDataDir`](@ref): Function for retrieving wind direction data
 - [`Direction_None`](@ref): Direction correction strategy type
 - [`Settings`](@ref): Simulation settings structure
@@ -188,7 +189,7 @@ function correctDir!(::Direction_None, set::Settings, wf::WindFarm, wind::Wind, 
 end
 
 """
-    correctDir!(::Direction_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
+    correctDir!(::Direction_Influence, set, wf, wind, t)
 
 Influence-based wind direction correction. Each turbine's direction may depend on
 upstream operating point (OP) combinations defined in `wf.intOPs` and weighted by
