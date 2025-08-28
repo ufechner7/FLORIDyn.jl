@@ -13,7 +13,7 @@ This file lists the contributors to FLORIDyn.jl, a Julia implementation of the F
 - Translation from MATLAB to Julia
 - Affiliation: TU Delft, Wind-Energy Research Group
 
-**Marcus Becker**
+**Marcus Becker** ([@MarcusBecker-GitHub](https://github.com/MarcusBecker-GitHub/))
 - Original author of [FLORIDyn_Matlab](https://github.com/TUDelft-DataDrivenControl/FLORIDyn_Matlab)
 - Creator of the FLORIDyn framework and methodology
 - Affiliation: TU Delft, Data-Driven Control Group
