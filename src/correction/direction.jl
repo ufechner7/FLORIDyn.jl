@@ -13,7 +13,7 @@ Retrieve wind direction data for all turbines at the current simulation time.
 - `t`: Current simulation time for temporal interpolation
 
 # Returns
-- `phi`: Wind direction values (typically in radians) for all turbines at the specified time
+- `phi`: Wind direction values (in degrees) for all turbines at the specified time
 
 # Description
 This function reads wind direction data and returns the current wind direction angle (phi) for all 
