@@ -54,7 +54,8 @@ function getDataDir(set::Settings, wind::Wind, wf::WindFarm, t)
     if wind.input_dir == "RW_with_Mean"
         phi = getWindDirT(set.dir_mode,wf.States_WF[wf.StartI, 2], wind.dir)
     else
-        phi = getWindDirT(set.dir_mode, wind.dir, collect(1:wf.nT), t)
+        # Use a range (1:wf.nT) to avoid allocating an index vector
+        phi = getWindDirT(set.dir_mode, wind.dir, 1:wf.nT, t)
     end
 
     return phi
