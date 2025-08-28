@@ -187,3 +187,99 @@ function correctDir!(::Direction_None, set::Settings, wf::WindFarm, wind::Wind, 
     return nothing
 end
 
+"""
+    correctDir!(::Direction_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
+
+Influence-based wind direction correction. Each turbine's direction may depend on
+upstream operating point (OP) combinations defined in `wf.intOPs` and weighted by
+`wf.Weight` according to dependency lists in `wf.dep`.
+
+# Behavior per turbine iT
+1. No dependencies (`wf.dep[iT]` empty): assign raw interpolated direction `phi[iT]`.
+2. Single interpolation row (`size(wf.intOPs[iT],1)==1` with 4 columns): treat row as
+   `[idx1 w1 idx2 w2]` and set direction to `w1*dir[idx1] + w2*dir[idx2]` using current
+   (already corrected) turbine directions.
+3. Multiple rows (each 4 columns) with non-zero total weight: first compute each row's
+   local interpolated direction, then take a weight-averaged sum using `wf.Weight[iT]`.
+   Zero or missing weights => fallback to raw `phi[iT]`.
+4. Malformed / missing interpolation data: fallback to raw `phi[iT]`.
+
+Column 4 (OP orientation) is synchronized to the updated turbine direction when present.
+
+# Arguments
+- `::Direction_Influence`: Strategy marker
+- `set::Settings`: Simulation settings (used to fetch direction data)
+- `wf::WindFarm`: Wind farm state (modified in-place)
+- `wind::Wind`: Wind data source
+- `t`: Simulation time
+
+# Returns
+- `nothing` (updates `wf` in-place)
+
+# Notes
+- Assumes rows of `wf.intOPs[iT]` are of the form `[idx1 w1 idx2 w2]`.
+- Uses already updated `wf.States_WF[idx,2]` values within the current loop iteration.
+- Robust to missing `dep`, `Weight`, or `intOPs` entries (falls back gracefully).
+"""
+function correctDir!(::Direction_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
+    # Base directions for all turbines
+    phi = getDataDir(set, wind, wf, t)
+
+    nT = wf.nT
+    has_dep = !isempty(wf.dep)
+    has_intOPs = !isempty(wf.intOPs)
+    has_weights = !isempty(wf.Weight)
+    has_orientation = size(wf.States_WF, 2) == 4
+
+    @inbounds for iT in 1:nT
+        dep_i = (has_dep && length(wf.dep) >= iT) ? wf.dep[iT] : Int[]
+        start_idx = wf.StartI[iT, 1]
+
+        if isempty(dep_i)
+            # No dependencies -> raw direction
+            wf.States_WF[start_idx, 2] = phi[iT]
+            if has_orientation
+                wf.States_WF[start_idx, 4] = wf.States_WF[start_idx, 2]
+            end
+            continue
+        end
+
+        intOPs_i = (has_intOPs && length(wf.intOPs) >= iT) ? wf.intOPs[iT] : Array{Float64,2}(undef,0,0)
+        weights_i = (has_weights && length(wf.Weight) >= iT) ? wf.Weight[iT] : Float64[]
+
+        if size(intOPs_i, 1) == 1 && size(intOPs_i, 2) == 4
+            r = intOPs_i
+            idx1 = Int(r[1]); w1 = r[2]
+            idx2 = Int(r[3]); w2 = r[4]
+            wf.States_WF[start_idx, 2] = wf.States_WF[idx1, 2] * w1 + wf.States_WF[idx2, 2] * w2
+        elseif size(intOPs_i, 1) > 0 && size(intOPs_i, 2) == 4
+            if isempty(weights_i) || sum(weights_i) == 0.0
+                wf.States_WF[start_idx, 2] = phi[iT]
+            else
+                sum_wP = 0.0
+                sum_w = 0.0
+                nrows = size(intOPs_i, 1)
+                @inbounds for iiT in 1:nrows
+                    w = (iiT <= length(weights_i)) ? weights_i[iiT] : 0.0
+                    w == 0.0 && continue
+                    row = intOPs_i[iiT, :]
+                    idx1 = Int(row[1]); w1 = row[2]
+                    idx2 = Int(row[3]); w2 = row[4]
+                    local_dir = wf.States_WF[idx1, 2] * w1 + wf.States_WF[idx2, 2] * w2
+                    sum_wP += w * local_dir
+                    sum_w += w
+                end
+                wf.States_WF[start_idx, 2] = sum_w > 0 ? (sum_wP / sum_w) : phi[iT]
+            end
+        else
+            # Fallback for malformed/missing intOPs
+            wf.States_WF[start_idx, 2] = phi[iT]
+        end
+
+        if has_orientation
+            wf.States_WF[start_idx, 4] = wf.States_WF[start_idx, 2]
+        end
+    end
+    return nothing
+end
+
