@@ -1,0 +1,40 @@
+# Wind Turbine Specifications
+# This file contains technical specifications for supported wind turbine types
+# All positions are in meters [x, y, z] with z being the nacelle height
+# Rotor diameters are in meters
+
+turbines:
+  "DTU 10MW":
+    nacelle_position: [0.0, 0.0, 119.0]
+    rotor_diameter: 178.4
+    description: "DTU 10MW reference turbine"
+    
+  "DTU 5MW":
+    nacelle_position: [0.0, 0.0, 119.0]  # Placeholder values
+    rotor_diameter: 178.4                 # Placeholder values
+    description: "DTU 5MW reference turbine (placeholder values)"
+    
+  "Senvion 6.2M":
+    nacelle_position: [0.0, 0.0, 123.0]  # 152.0 - 29.0 = 123.0
+    rotor_diameter: 126.0
+    description: "Senvion 6.2M wind turbine"
+    
+  "V116":
+    nacelle_position: [0.0, 0.0, 84.0]
+    rotor_diameter: 116.0
+    description: "Vestas V116 wind turbine"
+    
+  "V117":
+    nacelle_position: [0.0, 0.0, 84.0]
+    rotor_diameter: 117.0
+    description: "Vestas V117 wind turbine"
+    
+  "V162":
+    nacelle_position: [0.0, 0.0, 119.0]
+    rotor_diameter: 162.0
+    description: "Vestas V162 wind turbine"
+    
+  "GE Haliade X":
+    nacelle_position: [0.0, 0.0, 150.0]
+    rotor_diameter: 220.0
+    description: "GE Haliade X offshore wind turbine"

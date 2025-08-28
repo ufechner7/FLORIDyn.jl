@@ -16,6 +16,7 @@ Structures defined in this file:
 - Floris: Mutable struct for FLORIS wake model parameters and coefficients
 - FloriDyn: Struct for FLORIDyn dynamic model settings (operating points, perturbations)
 - TurbineArray: Struct for turbine array configuration (positions, types, initial states)
+- TurbineData: Struct for turbine technical specifications (nacelle positions, rotor diameters)
 - Vis: Mutable struct for visualization settings and plotting control
 
 Functions defined in this file:
@@ -24,7 +25,7 @@ Functions defined in this file:
 - Base.getproperty: Custom property accessor for Vis struct (computed paths)
 - setup: Main configuration loader that parses YAML files into simulation components
 - Settings: Constructor function that creates Settings struct from Wind, Sim, Con parameters
-- getTurbineData: Retrieve nacelle positions and rotor diameters for turbine types
+- getTurbineData: Retrieve nacelle positions and rotor diameters for turbine types (loads from turbine_specs.yaml)
 - importSOWFAFile: Import and parse SOWFA simulation data files
 - condenseSOWFAYaw: Process and condense SOWFA yaw angle data arrays
 - isdelftblue: Detect if running on Delft Blue HPC environment
@@ -38,6 +39,7 @@ Functions defined in this file:
 This file serves as the main configuration hub for FLORIDyn, handling YAML parsing,
 struct initialization, and providing utilities for project and measurement management.
 The structures use the @with_kw macro for keyword-based constructors with default values.
+Turbine specifications are loaded from data/turbine_specs.yaml for extensibility.
 =#
 
 """
@@ -275,6 +277,30 @@ struct TurbineArray
     pos::Matrix{Float64}
     type::Vector{String}
     init_States::Matrix{Float64}
+end
+
+"""
+    TurbineData
+
+A structure containing technical specifications for wind turbines.
+
+# Fields
+- `nac_pos::Matrix{Float64}`: An `N × 3` matrix where each row corresponds to the (x, y, z) 
+                              coordinates of the nacelle position for each turbine in meters.
+- `rotor_diameter::Vector{Float64}`: A vector of rotor diameters corresponding to each turbine in meters.
+
+# Example
+```julia
+# Get turbine data for specific types
+names = ["DTU 10MW", "V116", "GE Haliade X"]
+turbine_data = getTurbineData(names)
+println("First turbine nacelle height: ", turbine_data.nac_pos[1, 3], " m")
+println("First turbine rotor diameter: ", turbine_data.rotor_diameter[1], " m")
+```
+"""
+struct TurbineData
+    nac_pos::Matrix{Float64}
+    rotor_diameter::Vector{Float64}
 end
 
 """
@@ -652,12 +678,13 @@ function Settings(wind::Wind, sim::Sim, con::Con, parallel=false, threading=fals
 end
 
 """
-    getTurbineData(names::Vector{String}) -> NamedTuple
+    getTurbineData(names::Vector{String}) -> TurbineData
 
 Retrieve nacelle positions and rotor diameters for a given list of wind turbine types.
 
 # Arguments
-- `names::Vector{String}`: A vector of wind turbine type names. Supported types include:
+- `names::Vector{String}`: A vector of wind turbine type names. Supported types are loaded
+  from the `data/turbine_specs.yaml` file and currently include:
   - `"DTU 10MW"`
   - `"DTU 5MW"`
   - `"Senvion 6.2M"`
@@ -667,48 +694,49 @@ Retrieve nacelle positions and rotor diameters for a given list of wind turbine 
   - `"GE Haliade X"`
 
 # Returns
-- A `NamedTuple` with the following fields:
-  - `NacPos::Matrix{Float64}`: An `N × 3` matrix where each row corresponds to the (x, y, z) coordinates of the nacelle position for each turbine.
-  - `D::Vector{Float64}`: A vector of rotor diameters corresponding to each turbine.
+- A [`TurbineData`](@ref) struct with the following fields:
+  - `nac_pos::Matrix{Float64}`: An `N × 3` matrix where each row corresponds to the (x, y, z) coordinates of the nacelle position for each turbine.
+  - `rotor_diameter::Vector{Float64}`: A vector of rotor diameters corresponding to each turbine.
 
 # Raises
 - `ArgumentError` if an unknown or misspelled turbine name is encountered.
+
+# Example
+```julia
+names = ["DTU 10MW", "V116"]
+turbine_data = getTurbineData(names)
+println("Nacelle positions: ", turbine_data.nac_pos)
+println("Rotor diameters: ", turbine_data.rotor_diameter)
+```
+
+# Data Source
+Turbine specifications are loaded from `data/turbine_specs.yaml`. To add new turbine types,
+add entries to this file following the existing format.
 """
 function getTurbineData(names::Vector{String})
+    # Load turbine specifications from YAML file
+    turbine_specs_file = _resolve_data_path("turbine_specs.yaml")
+    turbine_data = YAML.load_file(turbine_specs_file)
+    turbines_dict = turbine_data["turbines"]
+    
     num = length(names)
-    # Initialize NacPos as a num x 3 Matrix
-    NacPos = zeros(Float64, num, 3)
-    D = zeros(Float64, num)
+    # Initialize arrays
+    nac_pos = zeros(Float64, num, 3)
+    rotor_diameter = zeros(Float64, num)
 
     for i in 1:num
         name = names[i]
-        if name == "DTU 10MW"
-            NacPos[i, :] = [0.0, 0.0, 119.0]
-            D[i] = 178.4
-        elseif name == "DTU 5MW"
-            NacPos[i, :] = [0.0, 0.0, 119.0]  # Placeholder
-            D[i] = 178.4                      # Placeholder
-        elseif name == "Senvion 6.2M"
-            NacPos[i, :] = [0.0, 0.0, 152.0 - 29.0]
-            D[i] = 126.0
-        elseif name == "V116"
-            NacPos[i, :] = [0.0, 0.0, 84.0]
-            D[i] = 116.0
-        elseif name == "V117"
-            NacPos[i, :] = [0.0, 0.0, 84.0]
-            D[i] = 117.0
-        elseif name == "V162"
-            NacPos[i, :] = [0.0, 0.0, 119.0]
-            D[i] = 162.0
-        elseif name == "GE Haliade X"
-            NacPos[i, :] = [0.0, 0.0, 150.0]
-            D[i] = 220.0
+        if haskey(turbines_dict, name)
+            turbine_spec = turbines_dict[name]
+            nac_pos[i, :] = turbine_spec["nacelle_position"]
+            rotor_diameter[i] = turbine_spec["rotor_diameter"]
         else
-            error("Turbine type '$name' not known or misspelled.")
+            available_types = join(keys(turbines_dict), ", ")
+            error("Turbine type '$name' not found in turbine specifications. Available types: $available_types")
         end
     end
 
-    return (NacPos = NacPos, D = D)
+    return TurbineData(nac_pos, rotor_diameter)
 end
 
 """
