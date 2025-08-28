@@ -60,9 +60,17 @@ function correctTI!(::TI_None, set::Settings, wf::WindFarm, wind::Wind, t)
 
     # Update TI at the turbine (first OP) row for each turbine to avoid shape mismatch.
     # Replicating across additional OP columns (if any) is unnecessary for baseline mode.
-    @inbounds for iT in 1:wf.nT
-        row = wf.StartI[iT, 1]
-        wf.States_WF[row, 3] = TI[iT]
+    if ndims(wf.StartI) == 2 && size(wf.StartI,2) > 1 && size(wf.StartI,1) >= wf.nT
+        @inbounds for iT in 1:wf.nT
+            wf.States_WF[wf.StartI[iT,1], 3] = TI[iT]
+        end
+    else
+        # Fallback: treat StartI as a flat collection of indices (row vector or length >= nT)
+        # Support both matrix with one row and plain vector
+        flat = vec(wf.StartI)
+        @inbounds for iT in 1:min(wf.nT, length(flat))
+            wf.States_WF[flat[iT], 3] = TI[iT]
+        end
     end
 
     return nothing
