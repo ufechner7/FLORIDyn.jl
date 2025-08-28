@@ -34,8 +34,5 @@ struct Direction_Influence <: DirCorrection end
     Direction_None <: DirCorrection
 
 A marker struct used to indicate that no direction corrections should be applied.
-
-# WARNING
-This correction type is **not yet implemented**!
 """
 struct Direction_None <: DirCorrection end

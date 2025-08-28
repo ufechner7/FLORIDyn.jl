@@ -120,3 +120,69 @@ function correctDir!(::Direction_All, set::Settings, wf::WindFarm, wind::Wind, t
     end
     return nothing
 end
+
+"""
+    correctDir!(::Direction_None, set::Settings, wf::WindFarm, wind::Wind, t)
+
+Apply basic direction correction using the Direction_None strategy.
+
+# Arguments
+- `::Direction_None`: The direction correction strategy type that applies minimal corrections
+- `set::Settings`: Simulation settings containing the direction mode configuration
+- `wf::WindFarm`: Wind farm object containing turbine states and configuration (modified in-place)
+- `wind::Wind`: Wind field data structure containing direction information and input type
+- `t`: Current simulation time for temporal interpolation
+
+# Returns
+- `nothing`: This function modifies the wind farm state in-place and returns nothing
+
+# Description
+This function applies a basic direction correction using the Direction_None strategy. Despite 
+its name suggesting "no correction," this function still performs essential direction updates:
+
+1. **Data Retrieval**: Calls `getDataDir` to obtain current wind direction data for all turbines
+2. **State Update**: Updates the wind direction for all turbines (`wf.States_WF[:, 2]`) to the 
+   first direction value from the retrieved data
+3. **Observation Point Orientation**: If the state matrix has 4 columns, sets the observation 
+   point orientation (`wf.States_WF[wf.StartI, 4]`) to match the current turbine wind direction
+
+The key difference from `Direction_All` is in the observation point orientation handling: 
+instead of using the retrieved direction data directly, it uses the current turbine state.
+
+# Examples
+```julia
+# Apply basic direction correction
+correctDir!(Direction_None(), settings, wind_farm, wind_data, 100.0)
+
+# Check the updated state
+turbine_direction = wind_farm.States_WF[1, 2]  # All turbines have same direction
+op_orientation = wind_farm.States_WF[wind_farm.StartI, 4]  # Matches turbine direction
+```
+
+# Notes
+- This function modifies the wind farm state in-place (indicated by the `!` suffix)
+- All turbines receive the same direction value (`phi[1]`)
+- The observation point orientation copies the turbine direction rather than using raw data
+- Direction values are typically in radians following standard wind engineering conventions
+- "None" refers to minimal correction strategy, not absence of all direction updates
+
+# See also
+- [`correctDir!(::Direction_All, ...)`](@ref): Alternative direction correction strategy
+- [`getDataDir`](@ref): Function for retrieving wind direction data
+- [`Direction_None`](@ref): Direction correction strategy type
+- [`Settings`](@ref): Simulation settings structure
+- [`WindFarm`](@ref): Wind farm configuration structure
+- [`Wind`](@ref): Wind field data structure
+"""
+function correctDir!(::Direction_None, set::Settings, wf::WindFarm, wind::Wind, t)
+    # Get Data
+    phi = getDataDir(set, wind, wf, t)
+    # Correct
+    wf.States_WF[:, 2] .= phi[1]
+    # OP Orientation = turbine wind direction
+    if size(wf.States_WF, 2) == 4
+       wf.States_WF[wf.StartI, 4] .= wf.States_WF[wf.StartI, 2]
+    end
+    return nothing
+end
+
