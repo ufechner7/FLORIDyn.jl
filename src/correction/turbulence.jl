@@ -58,12 +58,12 @@ function correctTI!(::TI_None, set::Settings, wf::WindFarm, wind::Wind, t)
     # Get new turbulent intensity value
     TI = getDataTI(set, wind, wf, t)
 
-    # Update the TI value in the States_WF matrix
-    try
-       wf.States_WF[wf.StartI, 3] .= TI'
-    catch e
-        error("Error updating wf.States_WF: $(e.msg)")
-    end
+  # Update TI at the turbine (first OP) row for each turbine to avoid shape mismatch.
+  # Replicating across additional OP columns (if any) is unnecessary for baseline mode.
+  @inbounds for iT in 1:wf.nT
+    row = wf.StartI[iT, 1]
+    wf.States_WF[row, 3] = TI[iT]
+  end
 
     return nothing
 end
