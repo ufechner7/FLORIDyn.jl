@@ -170,16 +170,22 @@ projects:
       settings: 2021_54T_NordseeOne.yaml
       vis: vis_54T.yaml
 ```
-You can edit in manually and add a new project. A project combines a `settings` file and a `vis` (visualisation) file.
-To create a custom visualisation file, copy one of the existing vis_xxx.yaml files, give it a nice name, and create
+You can edit it manually and add a new project. A project combines a `settings` file and a `vis` (visualisation) file.
+To create a custom visualisation file, copy one of the existing `vis_xxx.yaml` files, give it a nice name, and create
 a new project entry. Then, you can select in the `menu()` your new project, and it will be used by all the visualisation
 options in the menu. 
 
 ## Running a custom simulation
 To run your own simulation you need to follow these steps:
-1. Create a copy of an existing YAML files in the data folder. Give them a good name. The file `turbine-specs.yaml` does not have to be copied. If you need additional turbine definitions, just add them to this file.
+1. Create a copy of an existing setting YAML file in the data folder. Give them a good name. 
+The file `turbine-specs.yaml` does not have to be copied. If you need additional turbine definitions, 
+just add them to this file.
 2. Modify the custom YAML file according to your needs, following the comments in the YAML file.
 3. Create a subfolder with the name of the custom YAML file and copy all required CSV files.
 4. Update/ generate the CSV files according to your needs.
-5. Copy the script `main_mini.jl` and adapt it according to your needs.
-6. Run your new script using the command `include("examples/<my_script.jl>")`
+5. Create a new project file as explained in the last section
+6. Use the `menu()` function to execute your simulation and to visualize the results
+
+### Optionally
+1. Copy the script `main_mini.jl` and adapt it according to your needs.
+2. Run your new script using the command `include("examples/<my_script.jl>")`
