@@ -104,14 +104,13 @@ current_direction = wind_farm.States_WF[1, 2]  # Updated direction for first tur
 - Direction values are typically in radians following standard wind engineering conventions
 
 # See also
-- [`correctDir!(::Direction_None, set, wf, wind, t)`](@ref): Alternative direction correction strategy
 - [`getDataDir`](@ref): Function for retrieving wind direction data
 - [`Direction_All`](@ref): Direction correction strategy type
 - [`Settings`](@ref): Simulation settings structure
 - [`WindFarm`](@ref): Wind farm configuration structure
 - [`Wind`](@ref): Wind field data structure
 """
-function correctDir!(::Direction_All, set::Settings, wf::WindFarm, wind::Wind, t)
+function correctDir!(::Direction_All, set, wf, wind, t)
     # Get Data
     phi = getDataDir(set, wind, wf, t)
     # Correct
@@ -169,14 +168,13 @@ op_orientation = wind_farm.States_WF[wind_farm.StartI, 4]  # Matches turbine dir
 - "None" refers to minimal correction strategy, not absence of all direction updates
 
 # See also
-- [`correctDir!(::Direction_All, set, wf, wind, t)`](@ref): Alternative direction correction strategy
 - [`getDataDir`](@ref): Function for retrieving wind direction data
 - [`Direction_None`](@ref): Direction correction strategy type
 - [`Settings`](@ref): Simulation settings structure
 - [`WindFarm`](@ref): Wind farm configuration structure
 - [`Wind`](@ref): Wind field data structure
 """
-function correctDir!(::Direction_None, set::Settings, wf::WindFarm, wind::Wind, t)
+function correctDir!(::Direction_None, set, wf, wind, t)
     # Get Data
     phi = getDataDir(set, wind, wf, t)
     # Correct
