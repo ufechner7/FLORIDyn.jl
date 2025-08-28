@@ -49,8 +49,8 @@ vis:
     - name: "msr_eff_wind_speed"    # Measurement effective wind speed
       separated: true
       skip: false
-  v_min:  2.0   # Minimum velocity for color scale in flow field visualizations [m/s] 
-  v_max: 10.0   # Maximum velocity for color scale in flow field visualizations [m/s]
+  v_min:  1.0   # Minimum velocity for color scale in flow field visualizations [m/s] 
+  v_max:  9.0   # Maximum velocity for color scale in flow field visualizations [m/s]
   # Minimum relative velocity value for velocity reduction visualizations (msr=VelReduction)
   # Controls the color scale for relative wind speed plots. Range: 0 .. 100 %
   rel_v_min:  20.0 # Unit: [%]

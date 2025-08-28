@@ -17,9 +17,9 @@ using FLORIDyn, Test
                 ("GE Haliade X", [0.0, 0.0, 150.0], 220.0)
             ]
                 data = getTurbineData([name])
-                @test size(data.NacPos) == (1,3)
-                @test data.NacPos[1, :] ≈ expected_pos
-                @test data.D[1] ≈ expected_D
+                @test size(data.nac_pos) == (1,3)
+                @test data.nac_pos[1, :] ≈ expected_pos
+                @test data.rotor_diameter[1] ≈ expected_D
             end
         end
 
@@ -27,13 +27,13 @@ using FLORIDyn, Test
         @testset "Multiple turbines" begin
             names = ["DTU 10MW", "V117", "GE Haliade X"]
             data = getTurbineData(names)
-            @test size(data.NacPos) == (3,3)
-            @test data.NacPos[1, :] ≈ [0.0, 0.0, 119.0]
-            @test data.D[1] ≈ 178.4
-            @test data.NacPos[2, :] ≈ [0.0, 0.0, 84.0]
-            @test data.D[2] ≈ 117.0
-            @test data.NacPos[3, :] ≈ [0.0, 0.0, 150.0]
-            @test data.D[3] ≈ 220.0
+            @test size(data.nac_pos) == (3,3)
+            @test data.nac_pos[1, :] ≈ [0.0, 0.0, 119.0]
+            @test data.rotor_diameter[1] ≈ 178.4
+            @test data.nac_pos[2, :] ≈ [0.0, 0.0, 84.0]
+            @test data.rotor_diameter[2] ≈ 117.0
+            @test data.nac_pos[3, :] ≈ [0.0, 0.0, 150.0]
+            @test data.rotor_diameter[3] ≈ 220.0
         end
 
         # # Test unknown turbine raises error
@@ -46,8 +46,8 @@ using FLORIDyn, Test
         # Test empty input returns empty arrays
         @testset "Empty input" begin
             data = getTurbineData(String[])
-            @test size(data.NacPos) == (0, 3)
-            @test length(data.D) == 0
+            @test size(data.nac_pos) == (0, 3)
+            @test length(data.rotor_diameter) == 0
         end
     end
     
@@ -350,8 +350,8 @@ projects:
             @test vis.print_filenames == false
             @test vis.video_folder == "video"
             @test vis.output_folder == "out"
-            @test vis.v_min ≈ 2.0
-            @test vis.v_max ≈ 10.0
+            @test vis.v_min ≈ 1.0
+            @test vis.v_max ≈ 9.0
             @test vis.rel_v_min ≈ 20.0
             @test vis.rel_v_max ≈ 100.0
             @test vis.turb_max ≈ 35.0
