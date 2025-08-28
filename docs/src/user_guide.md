@@ -1,13 +1,13 @@
-# User guide
+# User Guide
 
 This page contains information for users of FLORIDyn.jl.
 
 ## Installation of FLORIDyn
-How to install FLORIDyn is explained in the section [Installation](@ref).
+Installation is explained in the section [Installation](@ref).
 
 ## Launching Julia
 ### Launching Julia in the global environment
-Just type `julia`. 
+Just type `julia`.
 ```julia
    _       _ _(_)_     |  Documentation: https://docs.julialang.org
   (_)     | (_) (_)    |
@@ -17,9 +17,9 @@ Just type `julia`.
  _/ |\__'_|_|_|\__'_|  |  Official https://julialang.org/ release
 |__/                   |
 
-julia> 
+julia>
 ```
-If you now type `]` and then `st` you can see the name of the environment and which packages it contains:
+Press `]` and then type `st` to see the active environment and its packages:
 ```
 (@v1.11) pkg> st
 Status `~/.julia/environments/v1.11/Project.toml`
@@ -33,11 +33,11 @@ Status `~/.julia/environments/v1.11/Project.toml`
   [1e6cf692] TestEnv v1.102.1
   [21f18d07] Timers v0.1.5
 ```
-If there are unused packages in your global environment, then remove them by typing `rm <PACKAGE_NAME>`, if packages are outdated update them with `up`. You can leave the package manager mode by typing `<BACK>` and quit Julia by typing `<CTRL>+<D>`.
+Remove unused packages with `rm <PACKAGE_NAME>`. Update outdated packages with `up`. Leave package mode with Backspace (←) and quit Julia with `Ctrl+D`.
 
 ### Launching Julia in the local environment
-#### The standard way
-Launch a terminal in the correct folder, and then type `julia --project`. If you now enter the package manager mode with `]`, you should see:
+#### Standard way
+Open a terminal in the project folder and type `julia --project`. Enter package mode (`]`) and you should see:
 ```
 (FLORIDyn) pkg> st
 Project FLORIDyn v0.1.0
@@ -64,70 +64,43 @@ Status `~/repos/FLORIDyn.jl/Project.toml`
 Info Packages marked with ⌅ have new versions available but compatibility constraints restrict them from upgrading. To see why use `status --outdated`
 ```
 
-#### The advanced way
-It is faster and gives better results if you start Julia using a script. Currently, two user scripts are provided:
-- The script `./bin/run_julia` checks for missing dependencies and starts Julia with 11 threads. Adapt the script such that this number matches the number of fast cores of your CPU.
-- The script `./bin/run_julia2` checks for missing dependencies and starts Julia with one thread.
+#### Advanced way
+Starting Julia via a helper script can be faster and more consistent. Two scripts are provided:
+- `./bin/run_julia`: Checks for missing dependencies and starts Julia with 11 threads (adjust to your CPU’s fast cores).
+- `./bin/run_julia2`: Same check, starts Julia single-threaded.
 
-To make these scripts easier to use, you can create bash aliases. 
+Create aliases:
 
-**On Linux or Windows:**
-Add the following lines to your `~/.bashrc` file:
-
+Linux / Windows (bash):
 ```bash
 alias jl='./bin/run_julia'
 alias jl2='./bin/run_julia2'
-```
-
-After adding these aliases, reload your bash configuration:
-```bash
 source ~/.bashrc
 ```
 
-**On Mac:**
-Add the following lines to your `~/.zshrc` file (for zsh, which is the default shell on modern macOS) or `~/.bash_profile` file (for bash):
-
+macOS (zsh or bash):
 ```bash
 alias jl='./bin/run_julia'
 alias jl2='./bin/run_julia2'
-```
-
-After adding these aliases, reload your shell configuration:
-```bash
-source ~/.zshrc    # for zsh
+source ~/.zshrc      # for zsh
 # or
-source ~/.bash_profile    # for bash
+source ~/.bash_profile   # for bash
 ```
 
-Now you can launch Julia with multithreading by simply typing `jl` or with single threading by typing `jl2`.
-
+Now run multi-threaded with `jl` or single-threaded with `jl2`.
 
 ## Multithreading
-Modern CPUs can have many cores. Threading is one way to split calculations so that they are calculated
-in parallel on multiple cores. In Julia, the `@threads` macro can be used in front of a for loop to do calculations
-in parallel. This only works if the iterations are independent of each other, it will not work if iteration `n+1`
-depends on results calculated by iteration `n`. Threads - in contrast to processes - share the same memory. If the
-input data is immutable and accessed in a read only way, the threads can use the same input data. Each thread needs
-its own buffer for mutable data. If each thread writes to a unique, non-overlapping portion of an output array, 
-this operation is thread-safe and does not require locks or other synchronization mechanisms.
+Modern CPUs have multiple cores. Threading lets independent loop iterations run in parallel using `Threads.@threads`. Only use it when iterations don’t depend on previous results. Threads share memory; immutable / read-only inputs can be shared; each thread needs separate mutable buffers. Writing to disjoint slices of an output array is thread-safe without locks.
 
-If the functions that are executed in parallel allocate memory, then the pressure on the garbage collector increases
-with the number of threads. This creates a practical limit for the number of threads that can be used in one process,
-unless the parallel code is allocation free.
+If parallel functions allocate heavily, garbage collection pressure grows with thread count, limiting scaling unless allocation is reduced.
 
-In this simulation software, currently only the function [getMeasurements](@ref) uses multithreading. It can increase 
-the performance of the simulation with flow field calculation by a factor of four to five.
+Currently only [getMeasurements](@ref) uses multithreading; it can speed up the simulation (with flow-field calculation) by about 4–5×.
 
 ## Multitasking
-Running a simulation with online visualization is problematic, because firstly updating the GUI costs time, 
-and secondly the currently used visualization library is not thread safe. Therefore we use a second process for
-visualization. The second process is started at the beginning, which increases the time-to-first-plot by about
-five seconds. The line ` @spawnat 2 Main.rmt_plot_flow_field(wf, X, Y, Z, vis; msr=msr)` calls the remote plotting
-function on the second process and transfers the required data. This is safe and very fast.
+Running a simulation with online visualization in the same process is problematic: GUI updates cost time and the visualization library isn’t thread-safe. Therefore a second process handles visualization. It is started up-front (adds ~5 seconds time-to-first-plot). The line `@spawnat 2 Main.rmt_plot_flow_field(wf, X, Y, Z, vis; msr=msr)` runs the remote plotting function on process 2 and transfers the needed data efficiently.
 
 ## Running the examples
-
-To run the examples, launch Julia with one of the start scripts and then type `menu()`. You should see:
+Start Julia with one of the scripts, then call `menu()`:
 ```
 julia> menu()
 
@@ -135,23 +108,20 @@ Choose function to execute or `q` to quit:
  > select_project();                  print(CLEAR_SCR)
    select_measurement();              print(CLEAR_SCR)
    "plot_flow_field";                 PLT=1; include("main.jl")
-   "plot_measurements";               = PLT=4; include("main.jl")
-   "plot_measurements_lineplot";      = PLT=5; include("main.jl")
-   "flow_field_vel_reduction_online"; = PLT=6; include("main.jl")
-   "create_video_from_saved_frames";  = PLT=7; include("main.jl")
+   "plot_measurements";               PLT=4; include("main.jl")
+   "plot_measurements_lineplot";      PLT=5; include("main.jl")
+   "flow_field_vel_reduction_online"; PLT=6; include("main.jl")
+   "create_video_from_saved_frames";  PLT=7; include("main.jl")
    "run_all_visualisations";          include("main_all.jl")
    "read_results";                    include("read_results.jl")
    "plot_wind_direction";             include("plot_wind_dir.jl")
-   "play_videos";                     = include("play_video.jl")
+   "play_videos";                     include("play_video.jl")
    open_documentation()
    quit
 ```
-or similar. First, select a project and a measurement by choosing the first menu entries. Then, you can show any of the visualizations by selecting one of them with the cursor keys and then pressing <ENTER>. There might be additional examples that are not yet integrated in the menu. You can execute them
-with `include("examples/<MY_EXAMPLE.jl>")`. Some examples require that Julia runs in single-threaded mode.
-If you want to run such an example, start Julia with `jl2`.
-
+First select a project and a measurement. Then pick a visualization with the cursor keys and press Enter. Some examples aren’t in the menu; run them with `include("examples/<EXAMPLE>.jl")`. 
 ## Creating a new project
-The file `data/projects.yaml` currently looks like this:
+`data/projects.yaml`:
 ```yaml
 projects:
   - project:
@@ -170,22 +140,18 @@ projects:
       settings: 2021_54T_NordseeOne.yaml
       vis: vis_54T.yaml
 ```
-You can edit it manually and add a new project. A project combines a `settings` file and a `vis` (visualisation) file.
-To create a custom visualisation file, copy one of the existing `vis_xxx.yaml` files, give it a nice name, and create
-a new project entry. Then, you can select in the `menu()` your new project, and it will be used by all the visualisation
-options in the menu. 
+Add a new project by combining a `settings` file and a `vis` (visualization) file. To create a custom visualization file, copy an existing `vis_*.yaml`, rename it, adjust its content, and add a project entry. Then select it via `menu()`.
 
 ## Running a custom simulation
-To run your own simulation you need to follow these steps:
-1. Create a copy of an existing setting YAML file in the data folder. Give them a good name. 
-The file `turbine-specs.yaml` does not have to be copied. If you need additional turbine definitions, 
-just add them to this file.
-2. Modify the custom YAML file according to your needs, following the comments in the YAML file.
-3. Create a subfolder with the name of the custom YAML file and copy all required CSV files.
-4. Update/ generate the CSV files according to your needs.
-5. Create a new project file as explained in the last section
-6. Use the `menu()` function to execute your simulation and to visualize the results
+Steps:
+1. Copy an existing settings YAML file in `data/` and give it a meaningful name.  
+   The file `turbine_specs.yaml` need not be copied; just append new turbine definitions if needed.
+2. Modify the settings YAML as required (follow inline comments).
+3. Create a subfolder (named like the settings file, without extension) and copy all required CSV files.
+4. Generate or update the CSV files.
+5. Add a new project entry (see previous section).
+6. Use `menu()` to run the simulation and visualize results.
 
-### Optionally
-1. Copy the script `main_mini.jl` and adapt it according to your needs.
-2. Run your new script using the command `include("examples/<my_script.jl>")`
+### Optional
+1. Copy `main_mini.jl` and adapt it.
+2. Run it with `include("examples/<my_script>.jl")`.
