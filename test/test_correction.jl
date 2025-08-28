@@ -27,21 +27,22 @@ wind = FLORIDyn.Wind(
     0.062,
     shear
 )
+sim_time = 20600.0  # default simulation time for initial direction tests
 @testset verbose=true "correction" begin
     @testset "correctDir!" begin
         # Setup
         set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_All(), 
-                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+                        Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
         wf = WindFarm(
-            States_WF = zeros(3, 4),
-            StartI = [2 2; 3 3],
             nT = 3,
-            D = [126.0, 126.0, 126.0],
-            nOP = 4,
-            intOPs = [[1 0.5 2 0.5; 2 0.5 3 0.5]]
+            nOP = 3,
+            States_WF = [8.0 200.0 0.05 0.0; 9.0 205.0 0.06 0.0; 7.5 210.0 0.07 0.0],
+            StartI = [1 1; 2 2; 3 3],
+            D = [120.0,120.0,120.0],
+            intOPs = [ Matrix{Float64}(undef,0,0), [1.0 0.4 2.0 0.6; 2.0 0.3 3.0 0.7], Matrix{Float64}(undef,0,0) ],
+            dep = [ Int[], [1,2], Int[] ],
+            Weight = [ Float64[], [0.2, 0.8], Float64[] ],
         )
-        sim_time = 20000  # dummy input
-
         # Call the function
         correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
 
@@ -53,29 +54,24 @@ wind = FLORIDyn.Wind(
     @testset "correctDir! Direction_None with 4 columns" begin
         # Setup
         set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_None(), 
-                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+                        Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
         wf = WindFarm(
-            States_WF = [10.0 180.0 0.05 90.0; 8.5 190.0 0.06 100.0; 9.2 185.0 0.055 95.0],
-            StartI = [2 2; 3 3],
-            nT = 3,
-            D = [126.0, 126.0, 126.0],
-            nOP = 4,
-            intOPs = [[1 0.5 2 0.5; 2 0.5 3 0.5]]
+            nT = 2,
+            nOP = 2,
+            States_WF = [8.0 200.0 0.05 0.0; 9.0 205.0 0.06 0.0],
+            StartI = [1 1; 2 2],
+            D = [120.0,120.0],
+            intOPs = [ Matrix{Float64}(undef,0,0), [1.0 0.5 2.0 0.5] ],
+            dep = [ Int[], [1,2] ],
+            Weight = [ Float64[], [0.0] ],
         )
-        sim_time = 20000  # dummy input
-
-        # Store initial states for comparison
-        initial_direction = wf.States_WF[wf.StartI[1], 2]  # Direction at StartI position
-        
         # Call the function
         correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
 
         # Validate that all turbines get the same direction (phi[1])
         @test all(wf.States_WF[:, 2] .== 255.0)
-        
-        # Validate that OP orientation matches the turbine wind direction (not phi[1])
         # For Direction_None, OP orientation should copy the current turbine state
-        @test wf.States_WF[wf.StartI[1], 4] == 255.0  # Should match updated turbine direction
+        @test wf.States_WF[wf.StartI[1], 4] == 255.0
     end
 
     @testset "correctDir! Direction_None with 3 columns" begin
@@ -485,6 +481,104 @@ wind = FLORIDyn.Wind(
         )
         correctTI!(set_infl_ti.cor_turb_mode, set_infl_ti, wf4, wind_ti, t)
         @test isapprox(wf4.States_WF[2,3], 0.10; atol=1e-8)
+    end
+
+    @testset "correctVel Velocity_Influence basic cases" begin
+        correction_vi = FLORIDyn.WindCorrection("Constant","Constant","Constant")
+        perturbation_vi = FLORIDyn.WindPerturbation(false,0.0,false,0.0,false,0.0)
+        set_vi = Settings(Velocity_Constant(), Direction_Constant(), TI_Constant(), Shear_PowerLaw(), Direction_None(), Velocity_Influence(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+        floris_dummy = FLORIDyn.Floris(
+            alpha = 1.88,
+            beta = 0.0,
+            k_a = 0.0,
+            k_b = 0.0,
+            k_fa = 0.0,
+            k_fb = 0.0,
+            k_fc = 0.0,
+            k_fd = 0.0,
+            eta = 1,
+            p_p = 1.0,
+            airDen = 1.225,
+            TIexp = 1,
+            rotor_points = nothing,
+        )
+        tmpM = ones(3,1)
+    wind_vi = FLORIDyn.Wind(
+            input_vel = "Constant",
+            input_dir = "Constant",
+            input_ti = "Constant",
+            input_shear = "PowerLaw",
+            correction = correction_vi,
+            perturbation = perturbation_vi,
+            vel = 8.0,
+            dir = [0.0 250.0],
+            ti = 0.08,
+            shear = nothing,
+        )
+
+        # Case 1: No dependencies
+        wf_v1 = WindFarm(
+            nT = 2,
+            nOP = 2,
+            States_WF = [5.0 200.0 0.05; 6.0 205.0 0.06],
+            StartI = [1 1; 2 2],
+            D = [120.0,120.0],
+            intOPs = Matrix{Float64}[],
+            dep = [Int[], Int[]],
+            Weight = Vector{Float64}[],
+        )
+    FLORIDyn.correctVel(Velocity_Influence(), set_vi, wf_v1, wind_vi, 10.0, floris_dummy, tmpM)
+        @test all(isapprox.(wf_v1.States_WF[:,1], 8.0; atol=1e-8))
+
+        # Case 2: Single-row interpolation for turbine 1
+        wf_v2 = WindFarm(
+            nT = 2,
+            nOP = 2,
+            States_WF = [8.0 200.0 0.05; 7.0 205.0 0.06],
+            StartI = [1 1; 2 2],
+            D = [120.0,120.0],
+            intOPs = [ [1.0 0.25 2.0 0.75], Matrix{Float64}(undef,0,0) ],
+            dep = [ [1,2], Int[] ],
+            Weight = Vector{Float64}[],
+        )
+        # Expected uses pre-correction states
+        pre2 = copy(wf_v2.States_WF[:,1])
+        exp2 = pre2[1]*0.25 + pre2[2]*0.75
+        FLORIDyn.correctVel(Velocity_Influence(), set_vi, wf_v2, wind_vi, 10.0, floris_dummy, tmpM)
+        @test isapprox(wf_v2.States_WF[1,1], exp2; atol=1e-8)
+
+        # Case 3: Multi-row with weights
+        wf_v3 = WindFarm(
+            nT = 3,
+            nOP = 3,
+            States_WF = [8.0 200.0 0.05; 9.0 205.0 0.06; 7.5 210.0 0.07],
+            StartI = [1 1; 2 2; 3 3],
+            D = [120.0,120.0,120.0],
+            intOPs = [ Matrix{Float64}(undef,0,0), [1.0 0.4 2.0 0.6; 2.0 0.3 3.0 0.7], Matrix{Float64}(undef,0,0) ],
+            dep = [ Int[], [1,2], Int[] ],
+            Weight = [ Float64[], [0.2, 0.8], Float64[] ],
+        )
+    # Compute expected before correction (turbine 1 has no deps -> will become base 8.0 first)
+    pre3 = copy(wf_v3.States_WF[:,1])
+    row1 = 8.0*0.4 + pre3[2]*0.6            # indices 1 (after correction) and 2 (pre-correction)
+    row2 = pre3[2]*0.3 + pre3[3]*0.7        # indices 2 and 3 pre-correction
+    exp3 = (0.2*row1 + 0.8*row2)/(0.2+0.8)
+    FLORIDyn.correctVel(Velocity_Influence(), set_vi, wf_v3, wind_vi, 10.0, floris_dummy, tmpM)
+    @test isapprox(wf_v3.States_WF[2,1], exp3; atol=1e-8)
+
+        # Case 4: Zero weights fallback
+        wf_v4 = WindFarm(
+            nT = 2,
+            nOP = 2,
+            States_WF = [8.0 200.0 0.05; 9.0 205.0 0.06],
+            StartI = [1 1; 2 2],
+            D = [120.0,120.0],
+            intOPs = [ Matrix{Float64}(undef,0,0), [1.0 0.5 2.0 0.5] ],
+            dep = [ Int[], [1,2] ],
+            Weight = [ Float64[], [0.0] ],
+        )
+        FLORIDyn.correctVel(Velocity_Influence(), set_vi, wf_v4, wind_vi, 10.0, floris_dummy, tmpM)
+        @test isapprox(wf_v4.States_WF[2,1], 8.0; atol=1e-8)
     end
 end
 nothing
