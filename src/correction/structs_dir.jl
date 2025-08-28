@@ -24,9 +24,6 @@ struct Direction_All <: DirCorrection end
     Direction_Influence <: DirCorrection
 
 A marker struct used to represent direction correction based on influence modeling.
-
-# WARNING
-This correction type is **not yet implemented**!
 """
 struct Direction_Influence <: DirCorrection end
 
