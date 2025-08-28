@@ -355,6 +355,59 @@ wind = FLORIDyn.Wind(
         @test all(wf_d.States_WF[wf_d.StartI,4] .== 255.0)
     end
 
+    @testset "correctTI! TI_None basic cases" begin
+        # Use TI interpolation so we exercise getWindTiT path
+        TI_array = [0.0 0.075; 100.0 0.075]
+        wind_ti_none = FLORIDyn.Wind(
+            input_vel = "Constant",
+            input_dir = "Interpolation",
+            input_ti = "Interpolation",
+            input_shear = "PowerLaw",
+            correction = correction,
+            perturbation = perturbation,
+            vel = 8.2,
+            dir = [0.0 250.0; 10.0 250.0],
+            ti = TI_array,
+            shear = shear,
+        )
+        set_ti_none = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Interpolation(), Shear_PowerLaw(), Direction_None(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+        t = 50.0
+
+        # Case 1: 4-column States_WF, TI column initially zero
+        wf_a_ti = WindFarm(
+            nT = 2,
+            nOP = 2,
+            States_WF = [10.0 180.0 0.0 90.0; 9.5 185.0 0.0 95.0],
+            StartI = [1 1; 2 2],
+            D = [120.0,120.0],
+            intOPs = Matrix{Float64}[],
+            dep = [Int[], Int[]],
+        )
+        correctTI!(set_ti_none.cor_turb_mode, set_ti_none, wf_a_ti, wind_ti_none, t)
+        @test all(isapprox.(wf_a_ti.States_WF[:,3], 0.075; atol=1e-8))
+        # Other columns unchanged
+        @test wf_a_ti.States_WF[:,1] == [10.0, 9.5]
+        @test wf_a_ti.States_WF[:,2] == [180.0, 185.0]
+
+        # Case 2: 3-column States_WF (no orientation column)
+        wf_b_ti = WindFarm(
+            nT = 3,
+            nOP = 3,
+            States_WF = [8.0 170.0 0.01; 8.2 172.0 0.02; 8.1 171.0 0.03],
+            StartI = [1 1; 2 2; 3 3],
+            D = [120.0,120.0,120.0],
+            intOPs = Matrix{Float64}[],
+            dep = [Int[], Int[], Int[]],
+        )
+        correctTI!(set_ti_none.cor_turb_mode, set_ti_none, wf_b_ti, wind_ti_none, t)
+        @test all(isapprox.(wf_b_ti.States_WF[:,3], 0.075; atol=1e-8))
+        @test size(wf_b_ti.States_WF,2) == 3
+
+        # Case 3: Return value is nothing
+        ret = correctTI!(set_ti_none.cor_turb_mode, set_ti_none, wf_b_ti, wind_ti_none, t)
+        @test ret === nothing
+    end
+
     @testset "correctTI! TI_Influence basic cases" begin
         # Turbulence interpolation data (constant 0.10 across time)
         TI_array = [0.0 0.10; 100.0 0.10]
