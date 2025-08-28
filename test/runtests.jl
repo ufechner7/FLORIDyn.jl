@@ -76,8 +76,9 @@ if Threads.nthreads() > 1
     push!(all_test_files, "test_parallel.jl")
 end
 
-# Files that need error suppression
-suppress_error_files = [
+# Files that need suppression of warnings
+# The warnings happen due to intentional use of parameters that are out-of-bounds in the tests
+suppress_warning_files = [
     "test_dir.jl",
     "test_shear.jl",
     "test_tit.jl", 
@@ -119,7 +120,7 @@ end
 
 @testset verbose=true "FLORIDyn Tests" begin
     # Run tests with error suppression for specific files
-    files_needing_suppression = intersect(test_files_to_run, suppress_error_files)
+    files_needing_suppression = intersect(test_files_to_run, suppress_warning_files)
     if !isempty(files_needing_suppression)
         @suppress_err begin
             for test_file in files_needing_suppression
@@ -129,7 +130,7 @@ end
     end
     
     # Run remaining tests without error suppression
-    files_without_suppression = setdiff(test_files_to_run, suppress_error_files)
+    files_without_suppression = setdiff(test_files_to_run, suppress_warning_files)
     for test_file in files_without_suppression
         println("-->> Running test file: $test_file")
         include(test_file)
