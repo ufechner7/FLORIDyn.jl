@@ -161,7 +161,7 @@ function correctTI!(::TI_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
     has_dep = !isempty(wf.dep)
     has_intOPs = !isempty(wf.intOPs)
 
-    @inbounds for iT in 1:nT
+    for iT in 1:nT
         start_idx = wf.StartI[iT, 1]
         dep_i = (has_dep && length(wf.dep) >= iT) ? wf.dep[iT] : Int[]
         if isempty(dep_i)
@@ -179,7 +179,7 @@ function correctTI!(::TI_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
             wf.States_WF[start_idx, 3] = wf.States_WF[idx1, 3] * w1 + wf.States_WF[idx2, 3] * w2
         elseif nrows > 1 && size(intOPs_i, 2) == 4
             acc = 0.0
-            @inbounds for r in 1:nrows
+            for r in 1:nrows
                 row = intOPs_i[r, :]
                 idx1 = Int(row[1]); w1 = row[2]
                 idx2 = Int(row[3]); w2 = row[4]
