@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    correctTI!(::TI_None, set::Settings, wf::WindFarm, wind::Wind, t) -> Nothing
+    correctTI!(::TI_None, set::Settings, wf, wind, t) -> Nothing
 
 Update turbulence intensity values in the wind farm state matrix without correction.
 
@@ -51,7 +51,7 @@ current_ti = wf.States_WF[wf.StartI, 3]
 - [`getDataTI`](@ref): Function used to retrieve turbulence intensity data
 - [`TI_None`](@ref): Dispatch type for no correction strategy
 """
-function correctTI!(::TI_None, set::Settings, wf::WindFarm, wind::Wind, t)
+function correctTI!(::TI_None, set::Settings, wf, wind, t)
     # correctTI! updates the turbulent intensity (TI) value inT.States_WF
     # at the rowT.StartI and column 3, using data from getDataTI.
 
@@ -204,7 +204,7 @@ correctTI!(TI_Influence(), settings, wf, wind, 100.0)
 
 # See also
 - [`getDataTI`](@ref): Function for retrieving ambient turbulence intensity data
-- [`correctTI!(::TI_None, ...)`](@ref): Simpler TI correction without influence
+- [`correctTI!(::TI_None, set::Settings, wf, wind, t)`](@ref): Simpler TI correction without influence
 - [`Settings`](@ref): Simulation settings structure containing turbulence intensity mode
 - [`WindFarm`](@ref): Wind farm configuration structure with dependency data
 - [`Wind`](@ref): Wind field data structure containing turbulence intensity information
