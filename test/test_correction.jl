@@ -227,7 +227,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
             nT = 2,
             nOP = 4,
             States_WF = [0.0 180.0 0.05 0.0; 0.0 170.0 0.05 0.0],
-            StartI = [1 1; 2 2],
+            StartI = [1 2],  # 1 x nT layout (each turbine's start row)
             D = [120.0, 120.0],
             intOPs = Matrix{Float64}[],
             Weight = Vector{Float64}[],
@@ -245,7 +245,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
             nT = 3,
             nOP = 6,
             States_WF = copy(base_states),
-            StartI = [1 1; 2 2; 3 3],
+            StartI = [1 2 3],
             D = [120.0, 120.0, 120.0],
             intOPs = [Matrix{Float64}(undef,0,0), [1 0.25 3 0.75], Matrix{Float64}(undef,0,0)],
             Weight = [Float64[], Float64[], Float64[]],
@@ -264,7 +264,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
             nT = 3,
             nOP = 6,
             States_WF = [0.0 260.0 0.05 0.0; 0.0 200.0 0.05 0.0; 0.0 180.0 0.05 0.0],
-            StartI = [1 1; 2 2; 3 3],
+            StartI = [1 2 3],
             D = [120.0, 120.0, 120.0],
             intOPs = [Matrix{Float64}(undef,0,0), Matrix{Float64}(undef,0,0), int_rows],
             Weight = [Float64[], Float64[], weights],
@@ -283,7 +283,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
             nT = 2,
             nOP = 4,
             States_WF = [0.0 260.0 0.05 0.0; 0.0 200.0 0.05 0.0],
-            StartI = [1 1; 2 2],
+            StartI = [1 2],
             D = [120.0, 120.0],
             intOPs = [Matrix{Float64}(undef,0,0), [1 0.5 2 0.5; 1 0.5 2 0.5]],
             Weight = [Float64[], [0.0, 0.0]],
@@ -297,7 +297,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
             nT = 2,
             nOP = 4,
             States_WF = [0.0 260.0 0.05 0.0; 0.0 200.0 0.05 0.0],
-            StartI = [1 1; 2 2],
+            StartI = [1 2],
             D = [120.0, 120.0],
             intOPs = [Matrix{Float64}(undef,0,0), [1 0.5 2]],  # wrong shape
             Weight = [Float64[], Float64[]],
@@ -305,6 +305,29 @@ sim_time = 20600.0  # default simulation time for initial direction tests
         )
         correctDir!(set_infl.cor_dir_mode, set_infl, wf5, wind, sim_time)
         @test wf5.States_WF[2,2] == 255.0
+
+        # Case 6: Orientation only updated at StartI rows (additional non-start rows present)
+        wf6 = WindFarm(
+            nT = 2,
+            nOP = 4,
+            States_WF = [0.0 180.0 0.05 1.0; 0.0 190.0 0.05 2.0; 0.0 200.0 0.05 3.0; 0.0 210.0 0.05 4.0],
+            StartI = [1 3],  # turbine 1 -> row 1, turbine 2 -> row 3
+            D = [120.0, 120.0],
+            intOPs = Matrix{Float64}[],
+            Weight = Vector{Float64}[],
+            dep = [Int[], Int[]],
+        )
+        correctDir!(set_infl.cor_dir_mode, set_infl, wf6, wind, sim_time)
+        # Directions only at start rows updated to phi
+        @test wf6.States_WF[1,2] == 255.0
+        @test wf6.States_WF[3,2] == 255.0
+        @test wf6.States_WF[2,2] == 190.0
+        @test wf6.States_WF[4,2] == 210.0
+        # Orientation updated only at StartI rows
+        @test wf6.States_WF[1,4] == 255.0
+        @test wf6.States_WF[3,4] == 255.0
+        @test wf6.States_WF[2,4] == 2.0
+        @test wf6.States_WF[4,4] == 4.0
     end
 
     @testset "correctDir! Direction_All variants" begin

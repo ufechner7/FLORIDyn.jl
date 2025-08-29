@@ -216,40 +216,81 @@ function correctDir!(::Direction_None, set, wf, wind, t)
 end
 
 """
-    correctDir!(::Direction_Influence, set, wf, wind, t)
+    correctDir!(::Direction_Influence, set::Settings, wf, wind, t)
 
-Influence-based wind direction correction. Each turbine's direction may depend on
-upstream operating point (OP) combinations defined in `wf.intOPs` and weighted by
-`wf.Weight` according to dependency lists in `wf.dep`.
-
-# Behavior per turbine iT
-1. No dependencies (`wf.dep[iT]` empty): assign raw interpolated direction `phi[iT]`.
-2. Single interpolation row (`size(wf.intOPs[iT],1)==1` with 4 columns): treat row as
-   `[idx1 w1 idx2 w2]` and set direction to `w1*dir[idx1] + w2*dir[idx2]` using current
-   (already corrected) turbine directions.
-3. Multiple rows (each 4 columns) with non-zero total weight: first compute each row's
-   local interpolated direction, then take a weight-averaged sum using `wf.Weight[iT]`.
-   Zero or missing weights => fallback to raw `phi[iT]`.
-4. Malformed / missing interpolation data: fallback to raw `phi[iT]`.
-
-Column 4 (OP orientation) is synchronized to the updated turbine direction when present.
+Apply influence-based wind direction correction where each turbine's direction depends on
+upstream operational points through dependency relationships and interpolation weights.
 
 # Arguments
-- `::Direction_Influence`: Strategy marker
-- `set::Settings`: Simulation settings (used to fetch direction data)
-- `wf::WindFarm`: Wind farm state (modified in-place)
-- `wind::Wind`: Wind data source
-- `t`: Simulation time
+- `::Direction_Influence`: Direction correction strategy that uses dependency-based influence modeling
+- `set::Settings`: Simulation settings containing direction mode and interpolation parameters
+- `wf::WindFarm`: Wind farm object with turbine states and dependency configuration (modified in-place)
+- `wind::Wind`: Wind field data containing direction time series or model parameters
+- `t`: Current simulation time for temporal interpolation
 
 # Returns
-- `nothing` (updates `wf` in-place)
+- `nothing`: Modifies wind farm state in-place
 
-# Notes
-- Assumes rows of `wf.intOPs[iT]` are of the form `[idx1 w1 idx2 w2]`.
-- Uses already updated `wf.States_WF[idx,2]` values within the current loop iteration.
-- Robust to missing `dep`, `Weight`, or `intOPs` entries (falls back gracefully).
+# Description
+This correction strategy implements sophisticated dependency-based direction modeling where each
+turbine's wind direction is influenced by upstream operational points. The function processes
+each turbine individually based on its dependency configuration:
+
+## Processing Logic per Turbine
+1. **No Dependencies**: If `wf.dep[iT]` is empty, assigns the raw ambient direction `phi[iT]`
+2. **Single Influence Row**: For `wf.intOPs[iT]` with one 4-column row `[idx1 w1 idx2 w2]`,
+   computes direction as `w1 * States_WF[idx1,2] + w2 * States_WF[idx2,2]`
+3. **Multiple Influence Rows**: For multiple 4-column rows with corresponding weights in 
+   `wf.Weight[iT]`, computes weighted average of per-row interpolated directions
+4. **Fallback Cases**: Uses raw ambient direction `phi[iT]` for malformed data or zero weights
+
+## Key Features
+- **Index Validation**: Validates all operational point indices before accessing state data
+- **Robust Handling**: Gracefully handles missing or malformed dependency/weight/interpolation data
+- **Sequential Processing**: Uses already-corrected turbine directions within the same iteration
+- **Orientation Sync**: Updates OP orientation (column 4) to match corrected turbine direction
+
+## Data Structure Requirements
+- `wf.dep[iT]`: Vector of turbine indices that influence turbine `iT`
+- `wf.intOPs[iT]`: Matrix where each row is `[idx1 w1 idx2 w2]` for linear interpolation
+- `wf.Weight[iT]`: Vector of weights for combining multiple influence rows
+- `wf.StartI`: 1×nT matrix containing starting row indices for each turbine
+
+# Examples
+```julia
+# Single influence case - turbine 2 influenced by OPs at indices 1 and 3
+wf.dep[2] = [1, 3]
+wf.intOPs[2] = [1 0.3 3 0.7]  # 30% from OP 1, 70% from OP 3
+correctDir!(Direction_Influence(), settings, wf, wind, 100.0)
+
+# Multiple influence case with weighted combination
+wf.dep[3] = [1, 2, 4]
+wf.intOPs[3] = [1 0.5 2 0.5; 2 0.8 4 0.2]  # Two influence combinations
+wf.Weight[3] = [0.6, 0.4]  # Weights for combining the two influences
+correctDir!(Direction_Influence(), settings, wf, wind, 100.0)
+```
+
+# Implementation Details
+- Uses `StartI[1, iT]` indexing (1×nT matrix layout) to access turbine starting positions
+- Performs bounds checking on all operational point indices before state access
+- Skips invalid indices or zero weights to maintain numerical stability
+- Updates orientation column only for the specific turbine's starting position
+- More computationally intensive than `Direction_None` or `Direction_All` due to dependency processing
+
+# Error Handling
+- Invalid operational point indices are skipped with fallback to ambient direction
+- Missing dependency/weight/interpolation arrays are treated as empty (no influence)
+- Zero or negative weights are ignored in weighted averaging calculations
+- Malformed interpolation matrices (wrong dimensions) trigger fallback behavior
+
+# See also
+- [`getDataDir`](@ref): Function for retrieving ambient wind direction data
+- [`Direction_None`](@ref), [`Direction_All`](@ref): Simpler correction strategies
+- [`Settings`](@ref): Simulation settings structure containing direction mode
+- [`WindFarm`](@ref): Wind farm configuration structure with dependency data
+- [`Wind`](@ref): Wind field data structure
 """
-function correctDir!(::Direction_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
+function correctDir!(::Direction_Influence, set::Settings, wf, wind, t)
     # NOTE: This implementation mirrors the logic of the original MATLAB version (see
     # commented reference below) while fixing indexing and adding robustness.
     # Differences vs MATLAB:
