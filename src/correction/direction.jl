@@ -250,21 +250,36 @@ Column 4 (OP orientation) is synchronized to the updated turbine direction when 
 - Robust to missing `dep`, `Weight`, or `intOPs` entries (falls back gracefully).
 """
 function correctDir!(::Direction_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
-    # Base directions for all turbines
-    phi = getDataDir(set, wind, wf, t)
+    # NOTE: This implementation mirrors the logic of the original MATLAB version (see
+    # commented reference below) while fixing indexing and adding robustness.
+    # Differences vs MATLAB:
+    #  * Uses 1-based row-major Julia arrays with StartI stored as a 1×nT matrix;
+    #    therefore we index StartI as StartI[1, iT] (previous code used StartI[iT,1]
+    #    causing BoundsError for iT>1).
+    #  * Orientation (column 4) is only updated for the specific turbine start row
+    #    (the MATLAB code assigns all StartI rows each iteration; final value equals
+    #    last turbine's direction – likely unintended side effect).
+
+    phi = getDataDir(set, wind, wf, t)  # base ambient directions per turbine
 
     nT = wf.nT
-    has_dep = !isempty(wf.dep)
-    has_intOPs = !isempty(wf.intOPs)
-    has_weights = !isempty(wf.Weight)
+    has_dep        = !isempty(wf.dep)
+    has_intOPs     = !isempty(wf.intOPs)
+    has_weights    = !isempty(wf.Weight)
     has_orientation = size(wf.States_WF, 2) == 4
 
-    for iT in 1:nT
-        dep_i = (has_dep && length(wf.dep) >= iT) ? wf.dep[iT] : Int[]
-        start_idx = wf.StartI[iT, 1]
+    nStatesWF = size(wf.States_WF, 1)
+
+    @inbounds for iT in 1:nT
+        # Safe retrieval of dependency / interpolation / weight lists
+        dep_i      = (has_dep     && length(wf.dep)     >= iT) ? wf.dep[iT]     : Int[]
+        intOPs_i   = (has_intOPs  && length(wf.intOPs)  >= iT) ? wf.intOPs[iT]  : Array{Float64}(undef, 0, 0)
+        weights_i  = (has_weights && length(wf.Weight)  >= iT) ? wf.Weight[iT]  : Float64[]
+
+        start_idx = wf.StartI[1, iT]  # FIX: correct indexing (row 1, turbine iT)
 
         if isempty(dep_i)
-            # No dependencies -> raw direction
+            # No dependencies -> assign raw ambient direction
             wf.States_WF[start_idx, 2] = phi[iT]
             if has_orientation
                 wf.States_WF[start_idx, 4] = wf.States_WF[start_idx, 2]
@@ -272,40 +287,45 @@ function correctDir!(::Direction_Influence, set::Settings, wf::WindFarm, wind::W
             continue
         end
 
-        intOPs_i = (has_intOPs && length(wf.intOPs) >= iT) ? wf.intOPs[iT] : Array{Float64,2}(undef,0,0)
-        weights_i = (has_weights && length(wf.Weight) >= iT) ? wf.Weight[iT] : Float64[]
-
+        # Single influencing row: direct linear combination
         if size(intOPs_i, 1) == 1 && size(intOPs_i, 2) == 4
             r = intOPs_i
             idx1 = Int(r[1]); w1 = r[2]
             idx2 = Int(r[3]); w2 = r[4]
-            wf.States_WF[start_idx, 2] = wf.States_WF[idx1, 2] * w1 + wf.States_WF[idx2, 2] * w2
+            valid = 0 < idx1 <= nStatesWF && 0 < idx2 <= nStatesWF
+            if valid
+                wf.States_WF[start_idx, 2] = wf.States_WF[idx1, 2] * w1 + wf.States_WF[idx2, 2] * w2
+            else
+                wf.States_WF[start_idx, 2] = phi[iT]  # fallback
+            end
+
+        # Multiple rows: weighted average of per-row interpolated combinations
         elseif size(intOPs_i, 1) > 0 && size(intOPs_i, 2) == 4
+            # Effective number of usable rows limited by available weights / dependencies
+            nrows = size(intOPs_i, 1)
             if isempty(weights_i) || sum(weights_i) == 0.0
                 wf.States_WF[start_idx, 2] = phi[iT]
             else
                 sum_wP = 0.0
-                sum_w = 0.0
-                nrows = size(intOPs_i, 1)
-                for iiT in 1:nrows
-                    w = (iiT <= length(weights_i)) ? weights_i[iiT] : 0.0
+                sum_w  = 0.0
+                for row_idx in 1:nrows
+                    w = (row_idx <= length(weights_i)) ? weights_i[row_idx] : 0.0
                     w == 0.0 && continue
-                    row = intOPs_i[iiT, :]
+                    row = intOPs_i[row_idx, :]
                     idx1 = Int(row[1]); w1 = row[2]
                     idx2 = Int(row[3]); w2 = row[4]
-                    # Validate indices before accessing States_WF
-                    if idx1 > 0 && idx1 <= size(wf.States_WF, 1) && idx2 > 0 && idx2 <= size(wf.States_WF, 1)
-                        local_dir = wf.States_WF[idx1, 2] * w1 + wf.States_WF[idx2, 2] * w2
-                    else
-                        continue  # Skip invalid indices
+                    # Validate indices
+                    if !(0 < idx1 <= nStatesWF && 0 < idx2 <= nStatesWF)
+                        continue
                     end
+                    local_dir = wf.States_WF[idx1, 2] * w1 + wf.States_WF[idx2, 2] * w2
                     sum_wP += w * local_dir
-                    sum_w += w
+                    sum_w  += w
                 end
                 wf.States_WF[start_idx, 2] = sum_w > 0 ? (sum_wP / sum_w) : phi[iT]
             end
         else
-            # Fallback for malformed/missing intOPs
+            # Malformed / missing interpolation matrix -> fallback
             wf.States_WF[start_idx, 2] = phi[iT]
         end
 
