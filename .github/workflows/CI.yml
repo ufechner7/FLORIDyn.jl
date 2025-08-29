@@ -76,7 +76,7 @@ jobs:
         with:
           files: lcov.info
   test-windows:
-    name: Julia 1 - windows-latest - x64 - threads:1
+    name: Julia 1 - windows-2022 - x64 - threads:1
     runs-on: windows-latest
     timeout-minutes: 60
     permissions:
