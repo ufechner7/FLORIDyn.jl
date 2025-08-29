@@ -64,10 +64,10 @@ end
 """
     correctDir!(::Direction_All, set, wf, wind, t)
 
-Apply direction correction to all turbines in the wind farm using the Direction_All strategy.
+Apply direction correction to all operational points in the wind farm using the Direction_All strategy.
 
 # Arguments
-- `::Direction_All`: The direction correction strategy type that applies corrections to all turbines
+- `::Direction_All`: The direction correction strategy type that applies corrections to all operational points
 - `set::Settings`: Simulation settings containing the direction mode configuration
 - `wf::WindFarm`: Wind farm object containing turbine states and configuration (modified in-place)
 - `wind::Wind`: Wind field data structure containing direction information and input type
@@ -78,34 +78,54 @@ Apply direction correction to all turbines in the wind farm using the Direction_
 
 # Description
 This function applies a direction correction using the Direction_All strategy, which updates the 
-wind direction for all turbines in the wind farm. The function performs the following operations:
+wind direction for all operational points in the wind farm. The function performs the following operations:
 
 1. **Data Retrieval**: Calls `getDataDir` to obtain current wind direction data for all turbines
-2. **State Update**: Updates the wind direction in the wind farm state (`wf.States_WF[:, 2]`)
-3. **Observation Point Orientation**: If the state matrix has 4 columns, also updates the 
-   observation point orientation (`wf.States_WF[wf.StartI, 4]`) to match the wind direction
+2. **Universal State Update**: Updates the wind direction for all operational points (`wf.States_WF[:, 2]`)
+3. **Observation Point Orientation**: If the state matrix has 4 columns, updates the observation 
+   point orientation (`wf.States_WF[wf.StartI, 4]`) for turbine starting positions only
 
-The correction is applied uniformly to all turbines using the first direction value from the 
-retrieved direction data.
+The correction applies a uniform direction (`phi[1]`) to all operational points, representing 
+a scenario where the entire wind field experiences the same directional conditions.
+
+# Key Behavior
+- **All OPs Updated**: Every operational point receives the same direction value
+- **Uniform Direction**: Uses `phi[1]` for all operational points regardless of turbine
+- **Selective OP Orientation**: Only turbine starting positions get OP orientation updates
+- **Complete Coverage**: Affects the entire wind farm state matrix at once
+
+This strategy is suitable for:
+- Scenarios with uniform wind direction across the entire wind farm
+- Rapid directional changes affecting all operational points simultaneously
+- Simplified modeling where spatial direction variations are negligible
 
 # Examples
 ```julia
-# Apply direction correction to all turbines
+# Apply direction correction to all operational points
 correctDir!(Direction_All(), settings, wind_farm, wind_data, 100.0)
 
-# The wind farm state is modified in-place
-current_direction = wind_farm.States_WF[1, 2]  # Updated direction for first turbine
+# All operational points now have identical wind direction
+@assert all(wind_farm.States_WF[:, 2] .== phi[1])
+
+# OP orientations match wind direction for turbine starting positions only
+if size(wind_farm.States_WF, 2) == 4
+    for i in 1:wind_farm.nT
+        start_idx = wind_farm.StartI[i, 1]
+        @assert wind_farm.States_WF[start_idx, 4] == wind_farm.States_WF[start_idx, 2]
+    end
+end
 ```
 
-# Notes
-- This function modifies the wind farm state in-place (indicated by the `!` suffix)
-- All turbines receive the same direction correction value (`phi[1]`)
-- The observation point orientation is only updated if the state matrix has 4 columns
-- Direction values are typically in radians following standard wind engineering conventions
+# Implementation Notes
+- Uses first element of direction vector (`phi[1]`) for all operational points
+- Broadcasts the same direction value to all rows of column 2
+- OP orientation (column 4) is updated only for turbine starting positions (`wf.StartI`)
+- More comprehensive than `Direction_None` which only affects starting positions
+- Compatible with different wind input modes (constant, interpolated, random walk)
 
 # See also
 - [`getDataDir`](@ref): Function for retrieving wind direction data
-- [`Direction_All`](@ref): Direction correction strategy type
+- [`Direction_None`](@ref), [`Direction_Influence`](@ref): Alternative correction strategies
 - [`Settings`](@ref): Simulation settings structure
 - [`WindFarm`](@ref): Wind farm configuration structure
 - [`Wind`](@ref): Wind field data structure
@@ -125,10 +145,10 @@ end
 """
     correctDir!(::Direction_None, set, wf, wind, t)
 
-Apply uniform wind direction to all turbines without wake-based corrections.
+Apply wind direction correction only to turbine starting positions without wake-based corrections.
 
 # Arguments
-- `::Direction_None`: Direction correction strategy that applies no influence-based corrections
+- `::Direction_None`: Direction correction strategy that applies minimal corrections
 - `set::Settings`: Simulation settings containing direction mode and interpolation parameters
 - `wf::WindFarm`: Wind farm object with turbine states and configuration (modified in-place)
 - `wind::Wind`: Wind field data containing direction time series or model parameters
@@ -138,40 +158,45 @@ Apply uniform wind direction to all turbines without wake-based corrections.
 - `nothing`: Modifies wind farm state in-place
 
 # Description
-This correction strategy applies a uniform wind direction to all turbines based on the ambient 
-wind field data, without considering wake influences or turbine interactions. It represents 
-the baseline case where all turbines experience the same ambient wind direction.
+This correction strategy applies wind direction updates only to the starting positions of each 
+turbine (indexed by `wf.StartI`) rather than to all operational points. This represents a 
+minimal correction approach that updates turbine base states without affecting downstream 
+operational points.
 
 The function performs these operations:
 1. **Data Retrieval**: Obtains current wind direction via [`getDataDir`](@ref)
-2. **Uniform Assignment**: Sets all turbine directions to the same value (`phi[1]`)
-3. **Observation Point Sync**: If present, aligns OP orientation with turbine direction
+2. **Selective Assignment**: Sets only turbine starting positions (`wf.StartI`) to `phi[1]`
+3. **Observation Point Sync**: If present, aligns OP orientation with the uniform direction value
 
-Unlike [`correctDir!`](@ref) with `Direction_All` or `Direction_Influence`, this strategy 
-ignores spatial variations and wake-induced direction changes, making it suitable for:
-- Baseline simulations without wake steering effects
-- Initial conditions before applying wake corrections
-- Simplified models where uniform flow assumptions are acceptable
+This approach differs from [`Direction_All`](@ref) by only updating turbine starting positions 
+rather than all operational points, making it suitable for:
+- Scenarios where only turbine base states need direction updates
+- Reduced computational overhead compared to full state corrections
+- Initial turbine positioning without affecting wake propagation states
 
 # Examples
 ```julia
-# Apply uniform direction correction
+# Apply direction correction to turbine starting positions only
 correctDir!(Direction_None(), settings, wind_farm, wind_data, 100.0)
 
-# All turbines now have identical wind direction
-@assert all(wf.States_WF[:, 2] .== wf.States_WF[1, 2])
+# Only starting positions are updated with uniform direction
+for i in 1:wind_farm.nT
+    start_idx = wind_farm.StartI[i, 1]
+    @assert wind_farm.States_WF[start_idx, 2] == phi[1]
+end
 
-# OP orientations match turbine directions (if 4-column state matrix)
+# OP orientations match the uniform direction (if 4-column state matrix)
 if size(wf.States_WF, 2) == 4
-    @assert wf.States_WF[wf.StartI, 4] == wf.States_WF[wf.StartI, 2]
+    @assert all(wf.States_WF[wf.StartI, 4] .== phi[1])
 end
 ```
 
 # Implementation Notes
-- Uses first element of direction vector (`phi[1]`) for all turbines
-- OP orientation tracks updated turbine state, not raw wind data
+- Uses first element of direction vector (`phi[1]`) for all turbine starting positions
+- Only affects turbine starting positions (`wf.StartI`), not all operational points
+- OP orientation is set to the raw direction value (`phi[1]`), not the turbine state
 - Compatible with different wind input modes (constant, interpolated, random walk)
-- Maintains consistency between turbine direction and OP orientation columns
+- More computationally efficient than full state corrections
 
 # See also
 - [`correctDir!`](@ref): Generic direction correction interface
