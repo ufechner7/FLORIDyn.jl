@@ -5,10 +5,10 @@ if Threads.nthreads() > 1
     function init_plotting()
         # Only add a worker if we don't have any dedicated worker processes
         if nprocs() < 2  # nprocs() counts main + workers, so < 2 means no dedicated workers
-            println("No dedicated workers found, adding 1 worker...")
             if workers() < [2]
                 sleep(0.5)
                 if workers() < [2]
+                    println("No dedicated workers found, adding 1 worker...")
                     addprocs(1)
                 end
             end
