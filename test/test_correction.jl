@@ -503,7 +503,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
             rotor_points = nothing,
         )
         tmpM = ones(3,1)
-    wind_vi = FLORIDyn.Wind(
+        wind_vi = FLORIDyn.Wind(
             input_vel = "Constant",
             input_dir = "Constant",
             input_ti = "Constant",
