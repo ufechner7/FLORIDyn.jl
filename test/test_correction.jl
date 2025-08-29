@@ -68,10 +68,13 @@ sim_time = 20600.0  # default simulation time for initial direction tests
         # Call the function
         correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
 
-        # Validate that all turbines get the same direction (phi[1])
-        @test all(wf.States_WF[:, 2] .== 255.0)
-        # For Direction_None, OP orientation should copy the current turbine state
-        @test wf.States_WF[wf.StartI[1], 4] == 255.0
+        # Validate that only starting positions get the same direction (phi[1])
+        # Direction_None only updates starting positions, not all operational points
+        @test wf.States_WF[wf.StartI[1, 1], 2] == 255.0  # First turbine starting position
+        @test wf.States_WF[wf.StartI[2, 1], 2] == 255.0  # Second turbine starting position
+        # For Direction_None, OP orientation should be set to phi[1] directly
+        @test wf.States_WF[wf.StartI[1, 1], 4] == 255.0
+        @test wf.States_WF[wf.StartI[2, 1], 4] == 255.0
     end
 
     @testset "correctDir! Direction_None with 3 columns" begin
@@ -91,8 +94,11 @@ sim_time = 20600.0  # default simulation time for initial direction tests
         # Call the function
         correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
 
-        # Validate that all turbines get the same direction
-        @test all(wf.States_WF[:, 2] .== 255.0)
+        # Validate that only starting positions get the direction update
+        # Direction_None only updates starting positions [2, 3], not all rows
+        @test wf.States_WF[2, 2] == 255.0  # Starting position for first turbine
+        @test wf.States_WF[3, 2] == 255.0  # Starting position for second turbine
+        @test wf.States_WF[1, 2] == 180.0  # Non-starting position should remain unchanged
         
         # Validate that we still have only 3 columns (no OP orientation column added)
         @test size(wf.States_WF, 2) == 3
@@ -128,19 +134,26 @@ sim_time = 20600.0  # default simulation time for initial direction tests
         correctDir!(set_none.cor_dir_mode, set_none, wf_none, wind, sim_time)
         correctDir!(set_all.cor_dir_mode, set_all, wf_all, wind, sim_time)
 
-        # Both should set all turbine directions to the same value
-        @test all(wf_none.States_WF[:, 2] .== 255.0)
+        # Key difference: Direction_None only updates starting positions, Direction_All updates all OPs
+        # Direction_None: Only starting positions [2,3] should be updated to 255.0
+        @test wf_none.States_WF[2, 2] == 255.0  # Starting position updated
+        @test wf_none.States_WF[3, 2] == 255.0  # Starting position updated  
+        @test wf_none.States_WF[1, 2] == 180.0  # Non-starting position unchanged
+        
+        # Direction_All: All operational points should be updated to 255.0
         @test all(wf_all.States_WF[:, 2] .== 255.0)
-        @test wf_none.States_WF[:, 2] == wf_all.States_WF[:, 2]
         
-        # Key difference: OP orientation handling
-        # Direction_All: OP orientation = phi[1] (retrieved direction data)
-        # Direction_None: OP orientation = current turbine state (after update)
-        @test wf_all.States_WF[wf_all.StartI[1], 4] == 255.0  # phi[1]
-        @test wf_none.States_WF[wf_none.StartI[1], 4] == 255.0  # current turbine state (same in this case)
+        # The arrays should NOT be equal due to different update strategies
+        @test wf_none.States_WF[:, 2] != wf_all.States_WF[:, 2]
         
-        # In this test case, both should be equal since turbine state gets updated to phi[1]
-        @test wf_none.States_WF[wf_none.StartI[1], 4] == wf_all.States_WF[wf_all.StartI[1], 4]
+        # OP orientation handling
+        # Direction_All: OP orientation = updated turbine state for starting positions
+        # Direction_None: OP orientation = phi[1] directly for starting positions
+        @test wf_all.States_WF[wf_all.StartI[1, 1], 4] == wf_all.States_WF[wf_all.StartI[1, 1], 2]  # Copies turbine state
+        @test wf_none.States_WF[wf_none.StartI[1, 1], 4] == 255.0  # Set to phi[1] directly
+        
+        # In this case, both OP orientations should be equal since both end up as 255.0
+        @test wf_none.States_WF[wf_none.StartI[1, 1], 4] == wf_all.States_WF[wf_all.StartI[1, 1], 4]
     end
 
     @testset "correctDir! Direction_None with different wind input modes" begin
@@ -162,7 +175,12 @@ sim_time = 20600.0  # default simulation time for initial direction tests
             @test_nowarn correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
             # Direction column should be updated
             @test all(isa.(wf.States_WF[:, 2], Float64))
-            @test length(unique(wf.States_WF[:, 2])) == 1  # All turbines same direction
+            # Direction_None only updates starting positions, so not all turbines have same direction
+            # Check that starting positions are updated correctly
+            @test all(isa.(wf.States_WF[wf.StartI, 2], Float64))
+            # Starting positions should have same direction value
+            starting_directions = wf.States_WF[wf.StartI, 2]
+            @test length(unique(starting_directions)) == 1  # Starting positions same direction
         end
     end
 
@@ -182,15 +200,20 @@ sim_time = 20600.0  # default simulation time for initial direction tests
         # Store original state for comparison (only non-direction columns)
         original_col1 = copy(wf.States_WF[:, 1])  # velocities
         original_col3 = copy(wf.States_WF[:, 3])  # turbulence
+        original_col2 = copy(wf.States_WF[:, 2])  # directions (to check selective update)
 
         # Function should return nothing
         result = correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
         @test result === nothing
 
-        # Only direction columns should be modified
+        # Only direction columns should be modified, and only for starting positions
         @test wf.States_WF[:, 1] == original_col1  # velocities unchanged
         @test wf.States_WF[:, 3] == original_col3  # turbulence unchanged
-        @test all(wf.States_WF[:, 2] .== 255.0)    # directions updated
+        
+        # Direction_None only updates starting positions
+        @test wf.States_WF[2, 2] == 255.0  # Starting position updated
+        @test wf.States_WF[3, 2] == 255.0  # Starting position updated
+        @test wf.States_WF[1, 2] == original_col2[1]  # Non-starting position unchanged
     end
 
     @testset "correctDir! Direction_Influence basic cases" begin
