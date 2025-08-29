@@ -117,7 +117,7 @@ function correctVel(::Velocity_Influence, set::Settings, wf::WindFarm, wind::Win
 
     for iT in 1:nT
         dep_i = (has_dep && length(wf.dep) >= iT) ? wf.dep[iT] : Int[]
-        start_idx = wf.StartI[1, iT]  # FIX: correct indexing (row 1, turbine iT)
+        start_idx = wf.StartI[1, iT]  # Indexing: row 1, turbine iT (StartI is a 1×nT matrix)
 
         if isempty(dep_i)
             wf.States_WF[start_idx, 1] = u[iT]
