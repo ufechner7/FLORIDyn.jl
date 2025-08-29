@@ -84,9 +84,20 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v5
+      - name: Cache Chocolatey FFmpeg
+        id: cache-ffmpeg-choco
+        uses: actions/cache@v4
+        with:
+          path: C:\ProgramData\chocolatey\lib\ffmpeg
+          key: ${{ runner.os }}-choco-ffmpeg-latest
       - name: Install FFmpeg (Chocolatey)
+        if: steps.cache-ffmpeg-choco.outputs.cache-hit != 'true'
         run: |
           choco install ffmpeg -y
+      - name: Install matplotlib (pip)
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install matplotlib
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -95,9 +106,9 @@ jobs:
         with:
           version: '1' # latest stable Julia
           arch: x64
-      - name: Rebuild PyCall
-        run: julia -e 'using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
       - uses: julia-actions/cache@v2
+      - name: Rebuild PyCall
+        run: julia -e 'ENV["PYTHON"]="python"; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
