@@ -45,3 +45,4 @@ vis.online = false
 @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
 @time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
 nothing
+# plt.plot(wf.States_WF[:,2])
