@@ -120,9 +120,9 @@ See also [`MSR`](@ref).
 Converts the input string `s` to a MSR (Measurement System Representation) enumeration.
 
 Supports the following string formats:
-- Enum names: "VelReduction", "AddedTurbulence", "EffWind"
-- Flow field names: "flow_field_vel_reduction", "flow_field_added_turbulence", "flow_field_eff_wind_speed"
-- Measurement names: "msr_vel_reduction", "msr_added_turbulence", "msr_eff_wind_speed"
+- Enum names: `"VelReduction"`, `"AddedTurbulence"`, `"EffWind"`
+- Flow field names: `"flow_field_vel_reduction"`, `"flow_field_added_turbulence"`, `"flow_field_eff_wind_speed"`
+- Measurement names: `"msr_vel_reduction"`, `"msr_added_turbulence"`, `"msr_eff_wind_speed"`
 
 See also [`MSR`](@ref).
 """
