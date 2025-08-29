@@ -67,7 +67,13 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}      
+          arch: ${{ matrix.arch }}  
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Rebuild PyCall
+        run: julia -e 'using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'    
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
