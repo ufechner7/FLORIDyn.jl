@@ -317,7 +317,7 @@ function correctDir!(::Direction_Influence, set::Settings, wf, wind, t)
         intOPs_i   = (has_intOPs  && length(wf.intOPs)  >= iT) ? wf.intOPs[iT]  : Array{Float64}(undef, 0, 0)
         weights_i  = (has_weights && length(wf.Weight)  >= iT) ? wf.Weight[iT]  : Float64[]
 
-        start_idx = wf.StartI[1, iT]  # FIX: correct indexing (row 1, turbine iT)
+        start_idx = wf.StartI[1, iT]  # correct indexing: StartI is 1×nT, so use row 1, turbine iT
 
         if isempty(dep_i)
             # No dependencies -> assign raw ambient direction
