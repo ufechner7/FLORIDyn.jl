@@ -63,7 +63,7 @@ function correctVel(::Velocity_Influence, set::Settings, wf::WindFarm, wind::Win
     has_intOPs = !isempty(wf.intOPs)
     has_weights = !isempty(wf.Weight)
 
-    @inbounds for iT in 1:nT
+    for iT in 1:nT
         dep_i = (has_dep && length(wf.dep) >= iT) ? wf.dep[iT] : Int[]
         start_idx = wf.StartI[iT, 1]
 
