@@ -23,36 +23,86 @@ end
 """
     correctVel(::Velocity_Influence, set::Settings, wf::WindFarm, wind::Wind, t, floris, tmpM)
 
-Influence-based free-stream wind speed correction translated from the legacy MATLAB
-`correctVel` routine. Each turbine's ambient (free) wind speed state `States_WF[:,1]`
-can depend on upstream observation point (OP) interpolations defined in `wf.intOPs`
-and weighted by wake influence factors in `wf.Weight` with dependency lists in `wf.dep`.
-
-# Behavior per turbine iT
-1. No dependencies (`wf.dep[iT]` empty): assign raw velocity `u[iT]`.
-2. Single interpolation row (size 1x4): treat row as `[idx1 w1 idx2 w2]` and set
-   velocity to `w1*U[idx1] + w2*U[idx2]` using already updated `wf.States_WF[idx,1]`.
-3. Multiple rows (each 4 columns) with non-zero total weight: compute per-row
-   interpolated velocities then take weighted average using `wf.Weight[iT]`.
-4. Missing / zero weights -> fallback to raw `u[iT]`.
-5. Malformed or missing interpolation data -> fallback to raw `u[iT]`.
+Apply influence-based wind velocity correction where each turbine's wind speed depends on
+upstream operational points through dependency relationships and interpolation weights.
 
 # Arguments
-- `::Velocity_Influence`: Strategy marker dispatch type
-- `set::Settings`: Simulation settings (used to obtain base velocities via `getDataVel`)
-- `wf::WindFarm`: Wind farm state (modified in-place; column 1 is free wind speed)
-- `wind::Wind`: Wind data source (may be updated by `getDataVel` in estimator modes)
-- `t`: Simulation time
-- `floris`: FLORIS parameter container (passed through to `getDataVel` if needed)
-- `tmpM`: Temporary matrix used in special velocity retrieval modes (e.g. I_and_I)
+- `::Velocity_Influence`: Velocity correction strategy that uses dependency-based influence modeling
+- `set::Settings`: Simulation settings containing velocity mode and interpolation parameters
+- `wf::WindFarm`: Wind farm object with turbine states and dependency configuration (modified in-place)
+- `wind::Wind`: Wind field data containing velocity time series or model parameters (may be updated)
+- `t`: Current simulation time for temporal interpolation
+- `floris`: FLORIS parameter container containing wake model parameters
+- `tmpM`: Temporary matrix used in special velocity retrieval modes (e.g., I_and_I estimator)
 
 # Returns
-- Updated `(wf, wind)` tuple (mutates `wf` in-place; returns `wind` for API symmetry)
+- `(wf, wind)`: Updated wind farm and wind objects (mutates `wf` in-place; returns `wind` for API consistency)
 
-# Notes
-- Assumes rows of `wf.intOPs[iT]` are `[idx1 w1 idx2 w2]`.
-- Uses already updated values within the same loop for chained dependencies.
-- Robust to missing `dep`, `Weight` or `intOPs` entries (graceful fallback).
+# Description
+This correction strategy implements sophisticated dependency-based velocity modeling where each
+turbine's ambient wind speed is influenced by upstream operational points. The function processes
+each turbine individually based on its dependency configuration and updates column 1 of the
+wind farm state matrix (`wf.States_WF[:, 1]`).
+
+## Processing Logic per Turbine
+1. **No Dependencies**: If `wf.dep[iT]` is empty, assigns the raw ambient velocity `u[iT]`
+2. **Single Influence Row**: For `wf.intOPs[iT]` with one 4-column row `[idx1 w1 idx2 w2]`,
+   computes velocity as `w1 * States_WF[idx1,1] + w2 * States_WF[idx2,1]`
+3. **Multiple Influence Rows**: For multiple 4-column rows with corresponding weights in 
+   `wf.Weight[iT]`, computes weighted average of per-row interpolated velocities
+4. **Fallback Cases**: Uses raw ambient velocity `u[iT]` for malformed data or zero weights
+
+## Key Features
+- **Index Validation**: Validates all operational point indices before accessing state data
+- **Robust Handling**: Gracefully handles missing or malformed dependency/weight/interpolation data
+- **Sequential Processing**: Uses already-corrected turbine velocities within the same iteration
+- **Bounds Checking**: Prevents out-of-bounds access to the wind farm state matrix
+
+## Data Structure Requirements
+- `wf.dep[iT]`: Vector of turbine indices that influence turbine `iT`
+- `wf.intOPs[iT]`: Matrix where each row is `[idx1 w1 idx2 w2]` for linear interpolation
+- `wf.Weight[iT]`: Vector of weights for combining multiple influence rows
+- `wf.StartI`: 1×nT matrix containing starting row indices for each turbine
+
+# Examples
+```julia
+# Single influence case - turbine 1 influenced by OPs at indices 2 and 4
+wf.dep[1] = [2, 4]
+wf.intOPs[1] = [2 0.4 4 0.6]  # 40% from OP 2, 60% from OP 4
+wf_updated, wind_updated = correctVel(Velocity_Influence(), settings, wf, wind, 100.0, floris, tmpM)
+
+# Multiple influence case with weighted combination
+wf.dep[2] = [1, 3, 5]
+wf.intOPs[2] = [1 0.3 3 0.7; 3 0.2 5 0.8]  # Two influence combinations
+wf.Weight[2] = [0.7, 0.3]  # Weights for combining the two influences
+wf_updated, wind_updated = correctVel(Velocity_Influence(), settings, wf, wind, 100.0, floris, tmpM)
+```
+
+# Implementation Details
+- Uses `StartI[1, iT]` indexing (1×nT matrix layout) to access turbine starting positions
+- Performs bounds checking on all operational point indices before state access
+- Skips invalid indices or zero weights to maintain numerical stability
+- More computationally intensive than `Velocity_None` due to dependency processing
+- Calls `getDataVel` to obtain base ambient velocities for all turbines
+
+# Error Handling
+- Invalid operational point indices are skipped with fallback to ambient velocity
+- Missing dependency/weight/interpolation arrays are treated as empty (no influence)
+- Zero or negative weights are ignored in weighted averaging calculations
+- Malformed interpolation matrices (wrong dimensions) trigger fallback behavior
+
+# Wind Data Integration
+- Base velocities obtained via `getDataVel` which supports multiple input modes
+- Compatible with constant, interpolated, EnKF, and estimator-based velocity sources
+- May update `wind` object state for certain estimator modes (I_and_I, RW_with_Mean)
+
+# See also
+- [`getDataVel`](@ref): Function for retrieving ambient wind velocity data
+- [`correctVel(::Velocity_None, ...)`](@ref): Simpler velocity correction without influence
+- [`Settings`](@ref): Simulation settings structure containing velocity mode
+- [`WindFarm`](@ref): Wind farm configuration structure with dependency data
+- [`Wind`](@ref): Wind field data structure
+- [`Floris`](@ref): FLORIS parameter structure for wake modeling
 """
 function correctVel(::Velocity_Influence, set::Settings, wf::WindFarm, wind::Wind, t, floris, tmpM)
     # Base free wind speeds (may update wind state depending on mode)
@@ -62,10 +112,12 @@ function correctVel(::Velocity_Influence, set::Settings, wf::WindFarm, wind::Win
     has_dep = !isempty(wf.dep)
     has_intOPs = !isempty(wf.intOPs)
     has_weights = !isempty(wf.Weight)
+    
+    nStatesWF = size(wf.States_WF, 1)
 
     for iT in 1:nT
         dep_i = (has_dep && length(wf.dep) >= iT) ? wf.dep[iT] : Int[]
-        start_idx = wf.StartI[iT, 1]
+        start_idx = wf.StartI[1, iT]  # FIX: correct indexing (row 1, turbine iT)
 
         if isempty(dep_i)
             wf.States_WF[start_idx, 1] = u[iT]
@@ -83,7 +135,13 @@ function correctVel(::Velocity_Influence, set::Settings, wf::WindFarm, wind::Win
                 r = intOPs_i
                 idx1 = Int(r[1]); w1 = r[2]
                 idx2 = Int(r[3]); w2 = r[4]
-                wf.States_WF[start_idx, 1] = wf.States_WF[idx1, 1] * w1 + wf.States_WF[idx2, 1] * w2
+                # Validate indices before accessing States_WF
+                valid = 0 < idx1 <= nStatesWF && 0 < idx2 <= nStatesWF
+                if valid
+                    wf.States_WF[start_idx, 1] = wf.States_WF[idx1, 1] * w1 + wf.States_WF[idx2, 1] * w2
+                else
+                    wf.States_WF[start_idx, 1] = u[iT]  # fallback
+                end
             end
         elseif size(intOPs_i,1) > 0 && size(intOPs_i,2) == 4
             if isempty(weights_i) || sum(weights_i) == 0.0
@@ -98,6 +156,10 @@ function correctVel(::Velocity_Influence, set::Settings, wf::WindFarm, wind::Win
                     row = intOPs_i[iiT, :]
                     idx1 = Int(row[1]); w1 = row[2]
                     idx2 = Int(row[3]); w2 = row[4]
+                    # Validate indices before accessing States_WF
+                    if !(0 < idx1 <= nStatesWF && 0 < idx2 <= nStatesWF)
+                        continue
+                    end
                     local_u = wf.States_WF[idx1, 1] * w1 + wf.States_WF[idx2, 1] * w2
                     sum_wU += w * local_u
                     sum_w += w
@@ -177,4 +239,50 @@ function getDataVel(set::Settings, wind::Wind, wf::WindFarm, t, tmp_m, floris::F
     end
     return u, wind
 end
+
+# function [T,Wind] = correctVel(T,Wind,SimTime,paramFLORIS,tmpM)
+# %CORRECTVEL Correction of the Velocity state of the OPs
+
+# %% get data
+# [U, Wind] = getDataVel(Wind,T,SimTime,tmpM,paramFLORIS);
+# %% Correct
+# for iT = 1:T.nT
+#     if isempty(T.dep{iT})
+#         T.States_WF(T.StartI(iT),1) = U(iT);
+#         continue
+#     end
+    
+#     % Assign free wind speed based on what the influencing OPs carry
+#     if size(T.intOPs{iT},1)==1
+#         % Only one turbine influencing
+#         T.States_WF(T.StartI(iT),1) = ...
+#             T.States_WF(T.intOPs{iT}(1),1) * T.intOPs{iT}(2) + ...
+#             T.States_WF(T.intOPs{iT}(3),1) * T.intOPs{iT}(4);
+#     else
+#         % Weighted average of the wind speed state in the OPs that
+#         % influence this turbine. The weight is based on how much FLORIS
+#         % thinks this turbine is influenced by another wake. With the Gauss
+#         % model its currently based on the gaussian weight.
+#         if sum(T.weight{iT}) == 0
+#             % Turbine is actually not influenced -> skip
+#             T.States_WF(T.StartI(iT),1) = U(iT);
+#             continue
+#         else
+#             % Sum the weighted wind speeds and the weights
+#             sum_wU = 0;
+#             sum_w  = 0;
+#             for iiT = 1:length(T.dep{iT})
+#                 sum_wU = sum_wU + T.weight{iT}(iiT) * (...
+#                     T.States_WF(T.intOPs{iT}(iiT,1),1) .* T.intOPs{iT}(iiT,2) + ...
+#                     T.States_WF(T.intOPs{iT}(iiT,3),1) .* T.intOPs{iT}(iiT,4));
+                
+#                 sum_w = sum_w + T.weight{iT}(iiT);
+#             end
+#             % Divide to get weigthed average
+#             T.States_WF(T.StartI(iT),1) = sum_wU / sum_w;
+#         end
+#     end
+# end
+# end
+
 
