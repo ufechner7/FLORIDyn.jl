@@ -220,7 +220,7 @@ function correctTI!(::TI_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
     nStatesWF = size(wf.States_WF, 1)
 
     for iT in 1:nT
-        start_idx = wf.StartI[1, iT]  # FIX: correct indexing (row 1, turbine iT)
+        start_idx = wf.StartI[1, iT]  # correct indexing: first row, turbine iT
         dep_i = (has_dep && length(wf.dep) >= iT) ? wf.dep[iT] : Int[]
         if isempty(dep_i)
             wf.States_WF[start_idx, 3] = TI[iT]
