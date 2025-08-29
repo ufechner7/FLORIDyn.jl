@@ -31,7 +31,7 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
-set.cor_turb_mode=TI_Influence()
+set.cor_vel_mode=Velocity_Influence()
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
