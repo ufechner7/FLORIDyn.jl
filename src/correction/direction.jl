@@ -114,10 +114,10 @@ function correctDir!(::Direction_All, set, wf, wind, t)
     # Get Data
     phi = getDataDir(set, wind, wf, t)
     # Correct
-    wf.States_WF[wf.StartI, 2] .= phi[1]
+    wf.States_WF[:, 2] .= phi[1]
     # OP Orientation = turbine wind direction
     if size(wf.States_WF, 2) == 4
-       wf.States_WF[wf.StartI, 4] .= phi[1]
+       wf.States_WF[wf.StartI, 4] .= wf.States_WF[wf.StartI, 2]
     end
     return nothing
 end
@@ -182,10 +182,10 @@ function correctDir!(::Direction_None, set, wf, wind, t)
     # Get Data
     phi = getDataDir(set, wind, wf, t)
     # Correct
-    wf.States_WF[:, 2] .= phi[1]
+    wf.States_WF[wf.StartI, 2] .= phi[1]
     # OP Orientation = turbine wind direction
     if size(wf.States_WF, 2) == 4
-       wf.States_WF[wf.StartI, 4] .= wf.States_WF[wf.StartI, 2]
+       wf.States_WF[wf.StartI, 4] .= phi[1]
     end
     return nothing
 end
