@@ -6,10 +6,11 @@ if Threads.nthreads() > 1
         # Only add a worker if we don't have any dedicated worker processes
         if nprocs() < 2  # nprocs() counts main + workers, so < 2 means no dedicated workers
             println("No dedicated workers found, adding 1 worker...")
-            sleep(1)
             if workers() < [2]
-                addprocs(1)
-                sleep(1)
+                sleep(0.5)
+                if workers() < [2]
+                    addprocs(1)
+                end
             end
             if workers() != [2]
                 @warn "workers: $(workers()), nthreads: $(Threads.nthreads())"
