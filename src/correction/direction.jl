@@ -234,7 +234,7 @@ function correctDir!(::Direction_Influence, set::Settings, wf::WindFarm, wind::W
     has_weights = !isempty(wf.Weight)
     has_orientation = size(wf.States_WF, 2) == 4
 
-    @inbounds for iT in 1:nT
+    for iT in 1:nT
         dep_i = (has_dep && length(wf.dep) >= iT) ? wf.dep[iT] : Int[]
         start_idx = wf.StartI[iT, 1]
 
@@ -262,13 +262,18 @@ function correctDir!(::Direction_Influence, set::Settings, wf::WindFarm, wind::W
                 sum_wP = 0.0
                 sum_w = 0.0
                 nrows = size(intOPs_i, 1)
-                @inbounds for iiT in 1:nrows
+                for iiT in 1:nrows
                     w = (iiT <= length(weights_i)) ? weights_i[iiT] : 0.0
                     w == 0.0 && continue
                     row = intOPs_i[iiT, :]
                     idx1 = Int(row[1]); w1 = row[2]
                     idx2 = Int(row[3]); w2 = row[4]
-                    local_dir = wf.States_WF[idx1, 2] * w1 + wf.States_WF[idx2, 2] * w2
+                    # Validate indices before accessing States_WF
+                    if idx1 > 0 && idx1 <= size(wf.States_WF, 1) && idx2 > 0 && idx2 <= size(wf.States_WF, 1)
+                        local_dir = wf.States_WF[idx1, 2] * w1 + wf.States_WF[idx2, 2] * w2
+                    else
+                        continue  # Skip invalid indices
+                    end
                     sum_wP += w * local_dir
                     sum_w += w
                 end
