@@ -204,17 +204,26 @@ where:
     
     # Velocity
     if wind.perturbation.vel
-    wf.States_WF[:, 1] .+= wind.perturbation.vel_sigma * randn(wf.nOP * wf.nT)
+        σ = wind.perturbation.vel_sigma
+        @inbounds @simd for i in axes(wf.States_WF,1)
+            wf.States_WF[i,1] += σ * randn()
+        end
     end
 
     # Direction
     if wind.perturbation.dir
-    wf.States_WF[:, 2] .+= wind.perturbation.dir_sigma * randn(wf.nOP * wf.nT)
+        σ = wind.perturbation.dir_sigma
+        @inbounds @simd for i in axes(wf.States_WF,1)
+            wf.States_WF[i,2] += σ * randn()
+        end
     end
 
     # Turbulence Intensity
     if wind.perturbation.ti
-    wf.States_WF[:, 3] .+= wind.perturbation.ti_sigma * randn(wf.nOP * wf.nT)
+        σ = wind.perturbation.ti_sigma
+        @inbounds @simd for i in axes(wf.States_WF,1)
+            wf.States_WF[i,3] += σ * randn()
+        end
     end
 
     return nothing
@@ -599,12 +608,19 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
                 OP6 = OP1_r * wf.States_OP[OP1_i, 6] + OP2_r * wf.States_OP[OP2_i, 6]
             end
             # Interpolate turbine states into buffer row (in-place, column-wise)
-            @inbounds for j in 1:size(wf.States_T, 2)
-                ub.tmp_Tst_buffer[iiT, j] = OP1_r * wf.States_T[OP1_i, j] + OP2_r * wf.States_T[OP2_i, j]
-            end
-            # Interpolate wind-field states into buffer row (in-place, column-wise)
-            @inbounds for j in 1:size(wf.States_WF, 2)
-                ub.tmp_WF_buffer[iiT, j] = OP1_r * wf.States_WF[OP1_i, j] + OP2_r * wf.States_WF[OP2_i, j]
+            @inbounds begin
+                trow1 = @view wf.States_T[OP1_i, :]
+                trow2 = @view wf.States_T[OP2_i, :]
+                out_t = @view ub.tmp_Tst_buffer[iiT, :]
+                @simd for j in eachindex(out_t)
+                    out_t[j] = OP1_r * trow1[j] + OP2_r * trow2[j]
+                end
+                wfrow1 = @view wf.States_WF[OP1_i, :]
+                wfrow2 = @view wf.States_WF[OP2_i, :]
+                out_wf = @view ub.tmp_WF_buffer[iiT, :]
+                @simd for j in eachindex(out_wf)
+                    out_wf[j] = OP1_r * wfrow1[j] + OP2_r * wfrow2[j]
+                end
             end
 
             si = wf.StartI[wf.dep[iT][iiT]]
@@ -669,8 +685,11 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
                     plot_OP_view[iiT, 2] = y
 
                     # Interpolate wind-field states into plotting buffer (in-place)
-                    for j in 1:size(wf.States_WF, 2)
-                        plot_WF_view[iiT, j] = OP1_r * wf.States_WF[OP1_i, j] + OP2_r * wf.States_WF[OP2_i, j]
+                    wfrow1 = @view wf.States_WF[OP1_i, :]
+                    wfrow2 = @view wf.States_WF[OP2_i, :]
+                    prow = @view plot_WF_view[iiT, :]
+                    @inbounds @simd for j in eachindex(prow)
+                        prow[j] = OP1_r * wfrow1[j] + OP2_r * wfrow2[j]
                     end
 
                     # Distance from OP position to turbine base (2D)
