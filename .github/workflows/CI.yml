@@ -41,11 +41,6 @@ jobs:
           - '1'
           - 'auto'
     steps:
-      - name: Wait for dpkg lock
-        run: sudo bash -c 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do echo "Waiting for dpkg lock..."; sleep 1; done'
-      - name: Install matplotlib
-        run: if [ "$RUNNER_OS" = "Linux" ]; then sudo apt-get install -y python3-matplotlib; fi
-        shell: bash
       - name: Load cached FFmpeg
         id: cache-ffmpeg
         uses: actions/cache@v4
@@ -67,18 +62,33 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
-          arch: ${{ matrix.arch }}      
+          arch: ${{ matrix.arch }}  
+      - name: Build PyCall
+        run: julia -e 'ENV["PYTHON"]=""; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
+        shell: bash
+      - name: Install matplotlib
+        run: julia -e 'using Pkg; Pkg.add("ControlPlots"); using ControlPlots'
+        shell: bash
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
+        if: matrix.threads != 'auto'
+        env:
+          JULIA_NUM_THREADS: ${{ matrix.threads }}
+      - uses: julia-actions/julia-runtest@v1
+        if: matrix.threads == 'auto'
+        with:
+          coverage: false
         env:
           JULIA_NUM_THREADS: ${{ matrix.threads }}
       - uses: julia-actions/julia-processcoverage@v1
+        if: matrix.threads != 'auto'
       - uses: codecov/codecov-action@v5
+        if: matrix.threads != 'auto'
         with:
           files: lcov.info
   test-windows:
-    name: Julia 1 - windows-latest - x64 - threads:1
+    name: Julia 1 - windows-2022 - x64 - threads:1
     runs-on: windows-latest
     timeout-minutes: 60
     permissions:
@@ -86,20 +96,23 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v5
+      - name: Cache Chocolatey FFmpeg
+        id: cache-ffmpeg-choco
+        uses: actions/cache@v4
+        with:
+          path: C:\ProgramData\chocolatey\lib\ffmpeg
+          key: ${{ runner.os }}-choco-ffmpeg-latest
       - name: Install FFmpeg (Chocolatey)
+        if: steps.cache-ffmpeg-choco.outputs.cache-hit != 'true'
         run: |
           choco install ffmpeg -y
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1' # latest stable Julia
           arch: x64
-      - name: Rebuild PyCall
-        run: julia -e 'using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
       - uses: julia-actions/cache@v2
+      - name: Rebuild PyCall
+        run: julia -e 'ENV["PYTHON"]=""; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
