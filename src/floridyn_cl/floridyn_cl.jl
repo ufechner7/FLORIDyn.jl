@@ -271,7 +271,7 @@ where:
 - Self-interaction (turbine affecting itself) is explicitly excluded
 - The coordinate transformation accounts for the SOWFA wind direction convention
 """
-@views function findTurbineGroups(wf::WindFarm, floridyn::FloriDyn; ub::UnifiedBuffers=nothing)
+@views function findTurbineGroups(wf::WindFarm, floridyn::FloriDyn; ub::Union{Nothing,UnifiedBuffers}=nothing)
     # Extract parameters from settings struct
     dw = floridyn.deltaDW
     cw = floridyn.deltaCW

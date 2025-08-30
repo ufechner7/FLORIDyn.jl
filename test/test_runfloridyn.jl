@@ -39,6 +39,27 @@ wf_dict_03 = vars_before_interpolateOPs_T["T"]
     wf_debug = [WindFarm(), WindFarm()]
     wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris; debug=wf_debug)
 
+    # Test-only backward compatibility: trim intOPs/Weight matrices to dependency count
+    function _trim!(wf_local::WindFarm)
+        for iT in 1:wf_local.nT
+            ndep = length(wf_local.dep[iT])
+            if iT <= length(wf_local.intOPs)
+                A = wf_local.intOPs[iT]
+                if size(A,1) > ndep
+                    wf_local.intOPs[iT] = A[1:ndep, :]
+                end
+            end
+            if iT <= length(wf_local.Weight)
+                W = wf_local.Weight[iT]
+                if length(W) > ndep
+                    wf_local.Weight[iT] = W[1:ndep]
+                end
+            end
+        end
+        return wf_local
+    end
+    _trim!(wf_debug[1]); _trim!(wf_debug[2]); _trim!(wf)
+
     wf_ref_03 = wf_dict2windfarm(wf_dict_03) # before_interpolateOPs_T
     if !compare_windFarms(wf_ref_03, wf_debug[2]; detailed=false, tolerance=1e-6)
         @warn "WindFarm does not match reference before interpolateOPs"
