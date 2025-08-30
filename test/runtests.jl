@@ -57,6 +57,7 @@ all_test_files = [
     "test_getDataVel_branches.jl",
     "test_correction.jl",
     "test_direction_none.jl",
+    "test_direction_influence.jl",
     "test_controller.jl",
     "test_settings.jl",
     "test_high_res_time.jl",
