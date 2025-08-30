@@ -271,15 +271,19 @@ where:
 - Self-interaction (turbine affecting itself) is explicitly excluded
 - The coordinate transformation accounts for the SOWFA wind direction convention
 """
-@views function findTurbineGroups(wf::WindFarm, floridyn::FloriDyn)
+@views function findTurbineGroups(wf::WindFarm, floridyn::FloriDyn; ub::UnifiedBuffers=nothing)
     # Extract parameters from settings struct
     dw = floridyn.deltaDW
     cw = floridyn.deltaCW
     uw = floridyn.deltaUW
 
-    # Initialize outputs
-    vv_dep = Vector{Vector{Int64}}(undef,wf.nT)  # Equivalent of cell array in MATLAB[1][3]
-    dep  = falses(wf.nT, wf.nT)
+    # Initialize / reuse buffers
+    dep  = if ub === nothing || size(ub.dep_bool_buffer,1) != wf.nT
+        falses(wf.nT, wf.nT)
+    else
+        fill!(ub.dep_bool_buffer, false)
+        ub.dep_bool_buffer
+    end
 
     for iT in 1:wf.nT
         for iiT in 1:wf.nT
@@ -326,28 +330,24 @@ where:
         end
     end
 
-    # Extract indices manually to avoid allocations in findall
-    for iT in 1:wf.nT
-        # Count true values first
-        count = 0
-        @inbounds for iiT in 1:wf.nT
-            if dep[iT, iiT]
-                count += 1
-            end
-        end
-        
-        # Allocate vector of exact size and fill it
-        vv_dep[iT] = Vector{Int64}(undef, count)
-        idx = 1
-        @inbounds for iiT in 1:wf.nT
-            if dep[iT, iiT]
-                vv_dep[iT][idx] = iiT
-                idx += 1
-            end
+    # Reuse wf.dep vectors if sized; else allocate once
+    if length(wf.dep) != wf.nT
+        wf.dep = [Int[] for _ in 1:wf.nT]
+    end
+    @inbounds for iT in 1:wf.nT
+        dvec = wf.dep[iT]
+        empty!(dvec)
+        for iiT in 1:wf.nT
+            dep[iT, iiT] || continue
+            push!(dvec, iiT)
         end
     end
+    return wf.dep
+end
 
-    return vv_dep
+# Overload without keyword for performance-critical inner loop usage when UnifiedBuffers available
+@inline @views function findTurbineGroups(wf::WindFarm, floridyn::FloriDyn, ub::UnifiedBuffers)
+    return findTurbineGroups(wf, floridyn; ub)
 end
 
 """
@@ -390,7 +390,9 @@ function interpolateOPs!(unified_buffers::UnifiedBuffers, intOPs::Vector{Matrix{
     @assert length(wf.dep) > 0 "No dependencies found! Ensure `findTurbineGroups` was called first."
 
     for iT in 1:wf.nT  # For every turbine
-        for iiT in 1:length(wf.dep[iT])  # for every influencing turbine
+        local ndep = length(wf.dep[iT])
+        ndep == 0 && continue
+        for iiT in 1:ndep  # for every influencing turbine
             iiaT = wf.dep[iT][iiT]       # actual turbine index
 
             # Compute squared distances from OPs of turbine iiaT to current turbine
@@ -800,7 +802,8 @@ applying control strategies and updating turbine states over time.
 
 """
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris; rmt_plot_fn=nothing,
-                          msr=VelReduction, debug=nothing, collect_md::Bool=true, collect_interactions::Bool=true)
+                          msr=VelReduction, debug=nothing, collect_md::Bool=true, collect_interactions::Bool=true,
+                          dep_interval::Int=1, dep_eps::Float64=0.0)
     nT = wf.nT
     sim_steps = sim.n_sim_steps
     ma = collect_md ? (fill(0.0, sim_steps * nT, 6)) : nothing
@@ -813,9 +816,11 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
     buffers = FLORIDyn.IterateOPsBuffers(wf)
     # Create unified buffers for all operations with FLORIS parameters
     unified_buffers = create_unified_buffers(wf, floris)
-    # Create buffers for interpolateOPs! (will be resized as needed)
-    intOPs_buffers = [Matrix{Float64}(undef, 0, 4) for _ in 1:wf.nT]
+    # Create max-sized intOPs buffers (nOP per turbine worst-case dependencies)
+    intOPs_buffers = [zeros(wf.nT, 4) for _ in 1:wf.nT]  # reuse rows; effective rows = length(wf.dep[iT])
     
+    # Track last dependency-relevant wind direction snapshot (use turbine start indices)
+    last_phi = copy(wf.States_WF[wf.StartI, 2])
     for it in 1:sim_steps
         sim.sim_step = it
 
@@ -826,19 +831,35 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         perturbationOfTheWF!(wf, wind)
 
         # ========== Get FLORIS reductions ==========
-        wf.dep = findTurbineGroups(wf, floridyn)
+        recompute_dep = (dep_interval > 0 && (it == 1 || (it - 1) % dep_interval == 0))
+        if !recompute_dep && dep_eps > 0
+            # Check max change vs last snapshot
+            @inbounds begin
+                maxΔ = 0.0
+                phi_view = wf.States_WF[wf.StartI, 2]
+                for i in 1:length(phi_view)
+                    d = abs(phi_view[i] - last_phi[i])
+                    if d > maxΔ; maxΔ = d; end
+                    maxΔ > dep_eps && break
+                end
+                if maxΔ > dep_eps
+                    recompute_dep = true
+                end
+            end
+        end
+        if recompute_dep
+            wf.dep = findTurbineGroups(wf, floridyn, unified_buffers)
+            copyto!(last_phi, wf.States_WF[wf.StartI, 2])
+        end
         if sim_steps == 1 && ! isnothing(debug)
             debug[2] = deepcopy(wf)
         end
         begin
-            # Resize buffers if dependencies changed
-            for iT in 1:wf.nT
-                if size(intOPs_buffers[iT], 1) != length(wf.dep[iT])
-                    intOPs_buffers[iT] = zeros(length(wf.dep[iT]), 4)
-                end
+            # Clear only rows that will be written (not strictly necessary as they are overwritten)
+            if recompute_dep
+                interpolateOPs!(unified_buffers, intOPs_buffers, wf)
+                wf.intOPs = intOPs_buffers  # first length(wf.dep[iT]) rows valid
             end
-            interpolateOPs!(unified_buffers, intOPs_buffers, wf)
-            wf.intOPs = intOPs_buffers
         end
         if sim_steps == 1 && ! isnothing(debug)
             debug[1] = deepcopy(wf)

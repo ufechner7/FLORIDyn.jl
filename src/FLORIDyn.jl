@@ -50,6 +50,7 @@ export discretizeRotor, calcCt, States
 export prepareSimulation, importSOWFAFile, centerline!, angSOWFA2world, initSimulation
 export runFLORIS!, init_states, getUadv
 export runFLORIDyn, iterateOPs!, setUpTmpWFAndRun!, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
+export reset!
 export getVars!
 export getMeasurements, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
 export run_floridyn, plot_flow_field, plot_measurements, plot_x, close_all, turbines
@@ -364,7 +365,9 @@ function create_unified_buffers(wf::WindFarm, rotor_points=50)
         plot_WF_buffer,
         plot_OP_buffer,
         floris_buffers,
-        GP
+    GP,
+    falses(wf.nT, wf.nT),
+    zeros(Int, wf.nT)
     )
 end
 
@@ -402,6 +405,33 @@ include("visualisation/pretty_print.jl")
 include("visualisation/smart_plotting.jl")
 
 """
+    reset!(wf::WindFarm, wf_template::WindFarm, sim::Sim, sim_template::Sim)
+
+In-place restore of mutable runtime fields in `wf` and `sim` from template snapshots.
+Avoids allocating new large arrays (used for fast benchmarking loops).
+Only fields mutated during simulation are copied; structural fields are assumed identical.
+"""
+function reset!(wf::WindFarm, wf_template::WindFarm, sim::Sim, sim_template::Sim)
+    @inbounds begin
+        copyto!(wf.States_WF, wf_template.States_WF)
+        copyto!(wf.States_OP, wf_template.States_OP)
+        copyto!(wf.States_T,  wf_template.States_T)
+        wf.dep = [copy(d) for d in wf_template.dep]
+        wf.intOPs = [copy(m) for m in wf_template.intOPs]
+        wf.Weight = [copy(v) for v in wf_template.Weight]
+        if size(wf.red_arr) == size(wf_template.red_arr)
+            copyto!(wf.red_arr, wf_template.red_arr)
+        else
+            wf.red_arr = copy(wf_template.red_arr)
+        end
+        # Simulation state
+        sim.sim_step = sim_template.sim_step
+        sim.start_time = sim_template.start_time
+    end
+    return wf
+end
+
+"""
     run_floridyn(plt, set, wf, wind, sim, con, vis, 
                  floridyn, floris; msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
 
@@ -424,12 +454,12 @@ for running FLORIDyn simulations with appropriate plotting callbacks.
 # Returns
 - Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
 """
-function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction, collect_md::Bool=true, collect_interactions::Bool=true)
+function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction, collect_md::Bool=true, collect_interactions::Bool=true, dep_interval::Int=1, dep_eps::Float64=0.0)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Multi-threading mode: use remote plotting callback
         # The rmt_plot_flow_field function should be defined via remote_plotting.jl
         try
-            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr, collect_md, collect_interactions)
+            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr, collect_md, collect_interactions, dep_interval, dep_eps)
         catch e
             if isa(e, UndefVarError)
                 error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
@@ -439,7 +469,7 @@ function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=V
         end
     else
         # Single-threading mode: no plotting callback
-    return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, collect_md, collect_interactions)
+    return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, collect_md, collect_interactions, dep_interval, dep_eps)
     end
 end
 

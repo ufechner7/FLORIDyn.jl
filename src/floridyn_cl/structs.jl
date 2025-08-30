@@ -350,5 +350,7 @@ struct UnifiedBuffers
     plot_OP_buffer::Matrix{Float64}
     floris_buffers::FLORISBuffers  # Will be FLORISBuffers when FLORIS is available
     gp::WindFarm                   # Optional WindFarm buffer for grid-point computations
+    dep_bool_buffer::BitMatrix     # Boolean dependency matrix buffer (nT × nT)
+    dep_counts::Vector{Int}        # Counts per turbine for dependencies
 end
 

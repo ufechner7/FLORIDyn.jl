@@ -41,14 +41,18 @@ Measures ONLY the simulation loop (excludes setup, initialisation, compilation).
 run_floridyn(plt, set, deepcopy(wf), wind, deepcopy(sim), con, vis, floridyn, floris; collect_md=false, collect_interactions=false)
 GC.gc()
 
-const initial_wf = deepcopy(wf)
+const initial_wf = deepcopy(wf)  # template
 const initial_sim = deepcopy(sim)
 
 @btime begin
-    run_floridyn($plt, $set, wf_copy, $wind, sim_copy, $con, $vis, $floridyn, $floris; collect_md=false, collect_interactions=false)
-end setup=(wf_copy=deepcopy(initial_wf); sim_copy=deepcopy(initial_sim)) evals=1
+    reset!(wf_copy, $initial_wf, sim_copy, $initial_sim)
+    run_floridyn($plt, $set, wf_copy, $wind, sim_copy, $con, $vis, $floridyn, $floris; collect_md=false, collect_interactions=false, dep_interval=5, dep_eps=0.05)
+end setup=(wf_copy=deepcopy($initial_wf); sim_copy=deepcopy($initial_sim)) evals=1
 
 nothing
 
 # Previous: ~1.064 s including measurement allocations
 # New benchmark isolates pure simulation runtime.
+
+#  859.720 ms (422479 allocations: 1.03 GiB)
+#  728.781 ms (453457 allocations: 1.03 GiB)
