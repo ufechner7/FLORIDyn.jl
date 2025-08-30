@@ -46,7 +46,7 @@ wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, flori
 
 turbines_wf = wf.turbines
 
-@testset verbose=true "Flow Field Comparison" begin
+@testset verbose=true "Flow Field Comparison Direction None" begin
     Z, X, Y    = calcFlowField(set, wf, wind, floris)
     msr = 1
     A = Z_ref[:,:,msr]
