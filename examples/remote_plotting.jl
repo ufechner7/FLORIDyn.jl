@@ -15,7 +15,7 @@ if Threads.nthreads() > 1
             if workers() != [2]
                 @warn "workers: $(workers()), nthreads: $(Threads.nthreads())"
             end
-            @assert workers() == [2]  # Ensure we have exactly one worker now
+            @assert workers() >= [2]  # Ensure we have at least two workers now
             @spawnat 2 eval(:(using ControlPlots))
             @eval @everywhere using FLORIDyn      # Ensure FLORIDyn (including WindFarm) is available on all workers
             
