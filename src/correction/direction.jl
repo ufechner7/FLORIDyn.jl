@@ -322,8 +322,9 @@ function correctDir!(::Direction_Influence, set::Settings, wf, wind, t)
         if isempty(dep_i)
             # No dependencies -> assign raw ambient direction
             wf.States_WF[start_idx, 2] = phi[iT]
+            # OP Orientation = turbine wind direction (MATLAB behavior: assign to ALL StartI)
             if has_orientation
-                wf.States_WF[start_idx, 4] = wf.States_WF[start_idx, 2]
+                wf.States_WF[wf.StartI, 4] .= wf.States_WF[start_idx, 2]
             end
             continue
         end
@@ -370,8 +371,9 @@ function correctDir!(::Direction_Influence, set::Settings, wf, wind, t)
             wf.States_WF[start_idx, 2] = phi[iT]
         end
 
+        # OP Orientation = turbine wind direction (MATLAB behavior: assign to ALL StartI)
         if has_orientation
-            wf.States_WF[start_idx, 4] = wf.States_WF[start_idx, 2]
+            wf.States_WF[wf.StartI, 4] .= wf.States_WF[start_idx, 2]
         end
     end
     return nothing
