@@ -393,34 +393,42 @@ function interpolateOPs!(unified_buffers::UnifiedBuffers, intOPs::Vector{Matrix{
         for iiT in 1:length(wf.dep[iT])  # for every influencing turbine
             iiaT = wf.dep[iT][iiT]       # actual turbine index
 
-            # Compute distances from OPs of turbine iiaT to current turbine
+            # Compute squared distances from OPs of turbine iiaT to current turbine
             start_idx = wf.StartI[iiaT]
             turb_pos_x = wf.posBase[iT, 1]
             turb_pos_y = wf.posBase[iT, 2]
 
-            # Compute Euclidean distances to the turbine position (non-allocating)
-            @views dist = unified_buffers.dist_buffer[1:wf.nOP]
-            for i in 1:wf.nOP
+            @views dist_sq = unified_buffers.dist_buffer[1:wf.nOP]
+            @inbounds for i in 1:wf.nOP
                 op_idx = start_idx + i - 1
                 dx = wf.States_OP[op_idx, 1] - turb_pos_x
                 dy = wf.States_OP[op_idx, 2] - turb_pos_y
-                dist[i] = sqrt(dx * dx + dy * dy)
+                dist_sq[i] = dx * dx + dy * dy
             end
 
-            # Sort indices by distance (reuse buffer)
-            @views sorted_indices = unified_buffers.sorted_indices_buffer[1:wf.nOP]
-            for i in 1:wf.nOP
-                sorted_indices[i] = i
+            # Find indices of two smallest distances (linear scan)
+            min1_idx = 1
+            min2_idx = 2
+            if dist_sq[min2_idx] < dist_sq[min1_idx]
+                min1_idx, min2_idx = min2_idx, min1_idx
             end
-            sort!(sorted_indices, by=i -> dist[i])
+            @inbounds for i in 3:wf.nOP
+                d = dist_sq[i]
+                if d < dist_sq[min1_idx]
+                    min2_idx = min1_idx
+                    min1_idx = i
+                elseif d < dist_sq[min2_idx]
+                    min2_idx = i
+                end
+            end
 
-            if sorted_indices[1] == 1
+            if min1_idx == 1
                 # Closest is first OP (unlikely)
                 intOPs[iT][iiT, 1] = wf.StartI[iiaT]
                 intOPs[iT][iiT, 2] = 1.0
                 intOPs[iT][iiT, 3] = wf.StartI[iiaT] + 1
                 intOPs[iT][iiT, 4] = 0.0
-            elseif sorted_indices[1] == wf.nOP
+            elseif min1_idx == wf.nOP
                 # Closest is last OP (possible)
                 intOPs[iT][iiT, 1] = wf.StartI[iiaT] + wf.nOP - 2
                 intOPs[iT][iiT, 2] = 0.0
@@ -428,8 +436,8 @@ function interpolateOPs!(unified_buffers::UnifiedBuffers, intOPs::Vector{Matrix{
                 intOPs[iT][iiT, 4] = 1.0
             else
                 # Use two closest OPs for interpolation
-                indOP1 = wf.StartI[iiaT] - 1 + sorted_indices[1]
-                indOP2 = wf.StartI[iiaT] - 1 + sorted_indices[2]
+                indOP1 = wf.StartI[iiaT] - 1 + min1_idx
+                indOP2 = wf.StartI[iiaT] - 1 + min2_idx
 
                 a_x = wf.States_OP[indOP1, 1]
                 a_y = wf.States_OP[indOP1, 2]
@@ -506,7 +514,14 @@ needs to be minimized.
 function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
     # Reuse the provided M_buffer instead of allocating new
     ub.M_buffer .= 0.0  # Clear the buffer
-    wf.Weight = [Float64[] for _ in 1:wf.nT]
+    if length(wf.Weight) == wf.nT
+        # Preserve existing vectors; just empty them
+        @inbounds for i in 1:wf.nT
+            empty!(wf.Weight[i])
+        end
+    else
+        wf.Weight = [Float64[] for _ in 1:wf.nT]
+    end
     # Initialize red_arr without reallocating when size matches
     if size(wf.red_arr) == (wf.nT, wf.nT)
         fill!(wf.red_arr, 1.0)
@@ -784,13 +799,13 @@ Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models,
 applying control strategies and updating turbine states over time.
 
 """
-function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris; rmt_plot_fn=nothing, 
-                          msr=VelReduction, debug=nothing)
+function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris; rmt_plot_fn=nothing,
+                          msr=VelReduction, debug=nothing, collect_md::Bool=true, collect_interactions::Bool=true)
     nT = wf.nT
     sim_steps = sim.n_sim_steps
-    ma = zeros(sim_steps * nT, 6)
-    ma[:, 1] .= 1.0  # Set first column to 1
-    vm_int   = Vector{Matrix{Float64}}(undef, sim_steps)
+    ma = collect_md ? (fill(0.0, sim_steps * nT, 6)) : nothing
+    if collect_md; ma[:, 1] .= 1.0; end
+    vm_int = (collect_interactions && collect_md) ? Vector{Matrix{Float64}}(undef, sim_steps) : nothing
 
     sim_time = sim.start_time
     plot_state = nothing  # Initialize animation state
@@ -831,11 +846,15 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
         tmpM = unified_buffers.M_buffer
 
-        ma[(it - 1) * nT + 1 : it * nT, 2:4] .= @view tmpM[1:nT, :]
-        ma[(it - 1) * nT + 1 : it * nT, 1]   .= sim_time
+        if collect_md
+            ma[(it - 1) * nT + 1 : it * nT, 2:4] .= @view tmpM[1:nT, :]
+            ma[(it - 1) * nT + 1 : it * nT, 1]   .= sim_time
+        end
         wf.States_T[wf.StartI, 3] = tmpM[1:nT, 2]
    
-        vm_int[it] = wf.red_arr
+        if collect_interactions && collect_md
+            vm_int[it] = wf.red_arr
+        end
 
         # ========== wind field corrections ==========
         wf, wind = correctVel(set.cor_vel_mode, set, wf, wind, sim_time, floris, @view(tmpM[1:nT, :]))
@@ -843,7 +862,9 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         correctTI!(set.cor_turb_mode, set, wf, wind, sim_time)
 
         # Save free wind speed as measurement
-        ma[(it-1)*nT+1 : it*nT, 5] = wf.States_WF[wf.StartI, 1]
+        if collect_md
+            ma[(it-1)*nT+1 : it*nT, 5] = wf.States_WF[wf.StartI, 1]
+        end
 
         # ========== Get Control settings ==========
         wf.States_T[wf.StartI, 2] = (
@@ -853,7 +874,9 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
 
         # ========== Calculate Power ==========
         P = getPower(wf, @view(tmpM[1:nT, :]), floris, con)
-        ma[(it-1)*nT+1:it*nT, 6] = P
+        if collect_md
+            ma[(it-1)*nT+1:it*nT, 6] = P
+        end
 
         # ========== Live Plotting ============
         if vis.online
@@ -872,12 +895,17 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         sim_time += sim.time_step
     end
     # Convert `ma` to DataFrame and scale measurements
-    md = DataFrame(
-        (ma * diagm([1; 100; 100; 1; 1; 1e-6])),
-        [:Time, :ForeignReduction, :AddedTurbulence, :EffWindSpeed, :FreeWindSpeed, :PowerGen]
-    )
-    mi = hcat(md.Time, hcat(vm_int...)')
-    return wf, md, mi
+    if collect_md
+        scaled = ma * diagm([1; 100; 100; 1; 1; 1e-6])
+        md = DataFrame(
+            scaled,
+            [:Time, :ForeignReduction, :AddedTurbulence, :EffWindSpeed, :FreeWindSpeed, :PowerGen]
+        )
+        mi = collect_interactions ? hcat(md.Time, hcat(vm_int...)') : Matrix{Float64}(undef, 0, 0)
+        return wf, md, mi
+    else
+        return wf, DataFrame(), Matrix{Float64}(undef, 0, 0)
+    end
 end
 
 # Method dispatch for create_unified_buffers with Floris objects

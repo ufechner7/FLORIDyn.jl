@@ -31,7 +31,24 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 wf = initSimulation(wf, sim)
 
 vis.online = false
-@btime run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+"""
+Benchmark for a large 54 turbine case.
+
+Measures ONLY the simulation loop (excludes setup, initialisation, compilation).
+"""
+
+# Warm-up (compile) — not timed by BenchmarkTools below
+run_floridyn(plt, set, deepcopy(wf), wind, deepcopy(sim), con, vis, floridyn, floris; collect_md=false, collect_interactions=false)
+GC.gc()
+
+const initial_wf = deepcopy(wf)
+const initial_sim = deepcopy(sim)
+
+@btime begin
+    run_floridyn($plt, $set, wf_copy, $wind, sim_copy, $con, $vis, $floridyn, $floris; collect_md=false, collect_interactions=false)
+end setup=(wf_copy=deepcopy(initial_wf); sim_copy=deepcopy(initial_sim)) evals=1
+
 nothing
 
-# 1.064s on desktop
+# Previous: ~1.064 s including measurement allocations
+# New benchmark isolates pure simulation runtime.
