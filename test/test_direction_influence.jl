@@ -17,8 +17,10 @@ X_ref = vars["X"]
 Y_ref = vars["Y"]
 Z_ref = vars["Z"]
 
-function rel_err(a, b)
-    return norm(a - b) / norm(b)
+if ! isdefined(Main, :rel_err)
+    function rel_err(a, b)
+        return norm(a - b) / norm(b)
+    end
 end
 
 # Load vis settings from YAML file
