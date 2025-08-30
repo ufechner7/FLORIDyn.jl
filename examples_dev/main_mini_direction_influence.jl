@@ -40,8 +40,10 @@ wf = initSimulation(wf, sim)
 toc()
 
 vis.online = false
+vis.v_min = 2.0
+vis.v_max = 10.0
 # Matlab: 0.43s for 9T on desktop
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
-@time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
+@time plot_flow_field(wf, X, Y, Z, vis; msr=EffWind, plt)
 nothing
