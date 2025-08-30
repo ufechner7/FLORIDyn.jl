@@ -1,7 +1,6 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Testcase for bug https://github.com/ufechner7/FLORIDyn.jl/issues/35
 using FLORIDyn, MAT, Test, DistributedNext, LinearAlgebra, Statistics, DataFrames
 
 if !isdefined(Main, :TestHelpers)
