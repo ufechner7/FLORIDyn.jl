@@ -33,3 +33,5 @@ wf = initSimulation(wf, sim)
 vis.online = false
 @btime run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 nothing
+
+# 1.064s on desktop
