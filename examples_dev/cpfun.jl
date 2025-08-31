@@ -4,7 +4,9 @@
 #   ct(tsr, pitch_deg) -> Ct
 #   cp_matrix, ct_matrix, tsr_values, pitch_values
 using CSV, DataFrames
+import DataFrames.SentinelArrays
 using Interpolations
+using ControlPlots
 
 cp_df = CSV.read("data/DTU_10MW/cp.csv", DataFrame; header=1)
 ct_df = CSV.read("data/DTU_10MW/ct.csv", DataFrame; header=1)
@@ -32,5 +34,18 @@ ct(tsr, pitch) = _ct_itp(tsr, pitch)
 println("Cp(5.0, 10.0°) = ", cp(5.0, 10.0))
 println("Ct(5.0, 10.0°) = ", ct(5.0, 10.0))
 
-const tsr_values = _tsr_vals
-const pitch_values = _pitch_vals
+tsr_values::Vector{Float64}   = _tsr_vals
+pitch_values::Vector{Float64} = _pitch_vals
+
+# Build grids (no meshgrid in exported plt): result shape matches cp_matrix (length(tsr) × length(pitch))
+TSR = repeat(tsr_values, 1, length(pitch_values))
+PITCH = repeat(pitch_values', length(tsr_values), 1)
+fig = plt.figure(figsize=(7,5))
+ax = fig.add_subplot(1,1,1, projection="3d")
+surf = ax.plot_surface(TSR, PITCH, cp_matrix; cmap="viridis", linewidth=0, antialiased=true)
+ax.set_xlabel("TSR (-)")
+ax.set_ylabel("Pitch (deg)")
+ax.set_zlabel("Cp (-)")
+ax.set_title("DTU 10MW Cp Surface")
+fig.colorbar(surf, shrink=0.8, aspect=12, label="Cp", pad=0.1)  # pad increases distance from plot
+plt.tight_layout()
