@@ -46,7 +46,7 @@ Don't forget to type the `dot` at the end of the last command.
 Then add FLORIDyn from  Julia's package manager, by typing:
 ```julia
 using Pkg
-pkg"add https://github.com/ufechner7/FLORIDyn.jl"
+pkg"add FLORIDyn"
 ``` 
 at the Julia prompt. You can run the unit tests with the command:
 ```julia
@@ -82,6 +82,9 @@ Technische Universiteit Delft hereby disclaims all copyright interest in the pac
 Prof.dr. H.G.C. (Henri) Werij, Dean of Aerospace Engineering, Technische Universiteit Delft.
 
 See the copyright notices in the source files, and the list of authors in [AUTHORS.md](AUTHORS.md).
+
+## Sponsors
+This research has been partly funded by Rijksdienst voor Ondernemend (RVO) Nederland under contract HEP24-03681024 through the EuroWindWakes project which is a Horizon Europe Partnership.
 
 ## References
 Citation of the FLORIDyn model:  
