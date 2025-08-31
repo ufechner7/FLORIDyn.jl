@@ -34,6 +34,16 @@ ct(tsr, pitch) = _ct_itp(tsr, pitch)
 println("Cp(5.0, 10.0°) = ", cp(5.0, 10.0))
 println("Ct(5.0, 10.0°) = ", ct(5.0, 10.0))
 
+# Maxima (table resolution)
+max_cp, lin_cp = findmax(cp_matrix)
+idx_cp = CartesianIndices(cp_matrix)[lin_cp]
+rcp, ccp = idx_cp.I
+println("Max Cp = $(max_cp) at TSR=$( _tsr_vals[rcp] ), Pitch=$( _pitch_vals[ccp] )° (table grid)")
+max_ct, lin_ct = findmax(ct_matrix)
+idx_ct = CartesianIndices(ct_matrix)[lin_ct]
+rct, cct = idx_ct.I
+println("Max Ct = $(max_ct) at TSR=$( _tsr_vals[rct] ), Pitch=$( _pitch_vals[cct] )° (table grid)")
+
 tsr_values::Vector{Float64}   = _tsr_vals
 pitch_values::Vector{Float64} = _pitch_vals
 
