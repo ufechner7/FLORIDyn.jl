@@ -1,4 +1,7 @@
-# Load DTU 10MW Cp and Ct tables (TSR vs blade pitch) and provide interpolation.
+# Copyright (c) 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Load DTU 10MW Cp and Ct tables (TSR vs blade pitch), provide interpolation and plot the results.
 # Exposes:
 #   cp(tsr, pitch_deg) -> Cp
 #   ct(tsr, pitch_deg) -> Ct
