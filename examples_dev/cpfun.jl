@@ -6,7 +6,7 @@
 using CSV, DataFrames
 import DataFrames.SentinelArrays
 using Interpolations
-using ControlPlots
+using ControlPlots, LaTeXStrings
 
 cp_df = CSV.read("data/DTU_10MW/cp.csv", DataFrame; header=1)
 ct_df = CSV.read("data/DTU_10MW/ct.csv", DataFrame; header=1)
@@ -40,12 +40,23 @@ pitch_values::Vector{Float64} = _pitch_vals
 # Build grids (no meshgrid in exported plt): result shape matches cp_matrix (length(tsr) × length(pitch))
 TSR = repeat(tsr_values, 1, length(pitch_values))
 PITCH = repeat(pitch_values', length(tsr_values), 1)
-fig = plt.figure(figsize=(7,5))
-ax = fig.add_subplot(1,1,1, projection="3d")
-surf = ax.plot_surface(TSR, PITCH, cp_matrix; cmap="viridis", linewidth=0, antialiased=true)
-ax.set_xlabel("TSR (-)")
-ax.set_ylabel("Pitch (deg)")
-ax.set_zlabel("Cp (-)")
-ax.set_title("DTU 10MW Cp Surface")
-fig.colorbar(surf, shrink=0.8, aspect=12, label="Cp", pad=0.1)  # pad increases distance from plot
+fig_cp = plt.figure("Cp Surface", figsize=(7,5))
+ax_cp = fig_cp.add_subplot(1,1,1, projection="3d")
+surf = ax_cp.plot_surface(TSR, PITCH, cp_matrix; cmap="viridis", linewidth=0, antialiased=true)
+ax_cp.set_xlabel("TSR (-)")
+ax_cp.set_ylabel("Pitch (deg)")
+ax_cp.set_zlabel(L"C_p (-)")
+ax_cp.set_title("DTU 10MW")
+fig_cp.colorbar(surf, shrink=0.8, aspect=12, label=L"C_p", pad=0.1)  # pad increases distance from plot
+plt.tight_layout()
+
+# Ct surface plot (same style)
+fig_ct = plt.figure("Ct Surface", figsize=(7,5))
+ax_ct = fig_ct.add_subplot(1,1,1, projection="3d")
+surf2 = ax_ct.plot_surface(TSR, PITCH, ct_matrix; cmap="viridis", linewidth=0, antialiased=true)
+ax_ct.set_xlabel("TSR (-)")
+ax_ct.set_ylabel("Pitch (deg)")
+ax_ct.set_zlabel(L"C_t (-)")
+ax_ct.set_title("DTU 10MW")
+fig_ct.colorbar(surf2, shrink=0.8, aspect=12, label=L"C_t", pad=0.1)
 plt.tight_layout()
