@@ -1,7 +1,12 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
+using FLORIDyn, Test, Statistics, Parameters, DistributedNext
+if (@isdefined plt) && !isnothing(plt)
+    plt.ion()
+else
+    plt = nothing
+end
 
 @testset verbose=true "floridyncl" begin
     include("test_prepare_simulation.jl")

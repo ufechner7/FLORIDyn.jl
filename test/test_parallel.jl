@@ -14,11 +14,6 @@ if ! isinteractive()
         using FLORIDyn
     end
 
-    if !isdefined(Main, :ControlPlots)
-        using ControlPlots
-        @info "using ControlPlots"
-    end
-
     function get_parameters(vis, settings_file)
         # get the settings for the wind field, simulator and controller
         wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -43,7 +38,7 @@ if ! isinteractive()
                 wf, md, set, floris, wind = get_parameters(vis, settings_file)
                 @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
                 msr = MSR(mod(i - 1, 3) + 1)  # Convert to 1-based indexing (1, 2, 3, 1, 2, 3)
-                plot_flow_field(wf, X, Y, Z, vis; msr, plt=ControlPlots.plt)
+                plot_flow_field(wf, X, Y, Z, vis; msr, plt)
                 @test true
                 GC.gc()  # Force garbage collection between iterations
             end
