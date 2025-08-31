@@ -2,9 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 using FLORIDyn, Test, Statistics, Parameters, DistributedNext
-if (@isdefined plt) && !isnothing(plt)
-    plt.ion()
-else
+if Threads.nthreads() == 1; using ControlPlots; end
+if !(@isdefined plt)
     plt = nothing
 end
 
