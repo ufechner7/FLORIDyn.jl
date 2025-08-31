@@ -83,6 +83,9 @@ Prof.dr. H.G.C. (Henri) Werij, Dean of Aerospace Engineering, Technische Univers
 
 See the copyright notices in the source files, and the list of authors in [AUTHORS.md](AUTHORS.md).
 
+## Sponsors
+This research has been partly funded by Rijksdienst voor Ondernemend (RVO) Nederland under contract HEP24-03681024 through the EuroWindWakes project which is a Horizon Europe Partnership.
+
 ## References
 Citation of the FLORIDyn model:  
 [1] FLORIDyn - A dynamic and flexible framework for real-time wind farm control, M. Becker, D. Allaerts, J.W. van Wingerden, 2022, [DOI 10.1088/1742-6596/2265/3/032103](http://doi.org/10.1088/1742-6596/2265/3/032103)
