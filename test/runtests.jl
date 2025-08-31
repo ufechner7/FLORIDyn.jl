@@ -44,6 +44,9 @@ FLORIDyn.set_rng(rng)
 
 include("../examples/remote_plotting.jl")
 
+sleep(1)
+GC.gc()
+
 # Define all available test files
 all_test_files = [
     "test_dir.jl",

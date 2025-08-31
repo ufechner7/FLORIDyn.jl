@@ -46,7 +46,7 @@ Don't forget to type the `dot` at the end of the last command.
 Then add FLORIDyn from  Julia's package manager, by typing:
 ```julia
 using Pkg
-pkg"add https://github.com/ufechner7/FLORIDyn.jl"
+pkg"add FLORIDyn"
 ``` 
 at the Julia prompt. You can run the unit tests with the command:
 ```julia
