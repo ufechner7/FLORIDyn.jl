@@ -183,7 +183,9 @@ end
         if Threads.nthreads() > 1 && nprocs() > 1
             @spawnat 2 rmt_close_all()
         else
-            plt.close("all")
+            if !isnothing(plt)
+                plt.close("all")
+            end
         end
     end
 end # testset floridyncl
