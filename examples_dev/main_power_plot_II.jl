@@ -4,13 +4,9 @@
 # MainFLORIDyn Center-Line model
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 
-# Minimal example of how to run a simulation using FLORIDyn.jl 
-# for benchmarking the 54 turbine layout.
-using Timers
-tic()
-using FLORIDyn, TerminalPager, DistributedNext 
+# Minimal example of how to run a simulation using FLORIDyn.jl
+using FLORIDyn, TerminalPager, DistributedNext, Statistics
 if Threads.nthreads() == 1; using ControlPlots; end
-toc()
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
@@ -22,17 +18,19 @@ if (@isdefined plt) && !isnothing(plt)
 else
     plt = nothing
 end
+pltctrl = nothing
+# Provide ControlPlots module only for pure sequential plotting (single-threaded, no workers)
+if Threads.nthreads() == 1
+    pltctrl = ControlPlots
+end
 
 # Automatic parallel/threading setup
-tic()
-include("remote_plotting.jl")
-toc()
+include("../examples/remote_plotting.jl")
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 dt = 350
 sim.end_time += dt
-
 
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
@@ -43,10 +41,32 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 
 # Run initial conditions
 wf = initSimulation(wf, sim)
-toc()
 
 vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-@time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
-@time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
-nothing
+plot_measurements(wf, md, vis; separated=false, msr=VelReduction, plt, pltctrl)
+
+data_column = "ForeignReduction"
+ylabel = "Rel. Wind Speed [%]"
+
+times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
+nT = wf.nT
+power_sum = zeros(length(times))
+for iT in 1:nT
+    local rel_power, rel_speed
+    rel_speed = plot_data[1][iT] ./ 100
+    rel_power = rel_speed .^3
+    power_sum .+= rel_power
+end
+power_sum ./= nT
+
+if ! isnothing(plt)
+    plt.figure()
+    plt.plot(times,power_sum .* 100)
+    plt.title("Relative Power Output")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Rel. Power Output [%]")
+    plt.grid(true)
+end
+
+println("\nMean Relative Power Output: $(round((mean(power_sum) * 100), digits=2)) %")
