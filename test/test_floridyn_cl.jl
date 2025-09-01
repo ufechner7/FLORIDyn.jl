@@ -179,7 +179,7 @@ end
         @test size(md) == (36, 6)
         # @test minimum(md.ForeignReduction) ≈ 72.57019949691814 # Matlab: 73.8438
         # @test mean(md.ForeignReduction)    ≈ 98.54434468415639 # Matlab: 98.
-        sleep(1)
+        sleep(2)
         if Threads.nthreads() > 1 && nprocs() > 1
             @spawnat 2 rmt_close_all()
         else
