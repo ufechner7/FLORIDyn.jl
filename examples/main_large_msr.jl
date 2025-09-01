@@ -21,6 +21,11 @@ if (@isdefined plt) && !isnothing(plt)
 else
     plt = nothing
 end
+pltctrl = nothing
+# Provide ControlPlots module only for pure sequential plotting (single-threaded, no workers)
+if Threads.nthreads() == 1
+    pltctrl = ControlPlots
+end
 
 # Automatic parallel/threading setup
 tic()
@@ -65,5 +70,6 @@ end
 vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 # plot_measurements(wf, md, vis; separated=false, plt)
-plotMeasurements(plt, wf, md, vis; separated=false, msr=VelReduction)    
+# plotMeasurements(plt, wf, md, vis; separated=false, msr=VelReduction)    
+plot_measurements(wf, md, vis; separated=false, msr=VelReduction, plt, pltctrl)
 nothing
