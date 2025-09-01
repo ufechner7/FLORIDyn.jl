@@ -6,8 +6,8 @@
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 ## Introduction
-A dynamic wind farm simulation software, translated from [FLORIDyn_Matlab](https://github.com/TUDelft-DataDrivenControl/FLORIDyn_Matlab) [1], which was written by Marcus Becker.
-The code uses the Gaussian wake model derived in [3].
+A dynamic wind farm simulation software, translated from [FLORIDyn_Matlab](https://github.com/TUDelft-DataDrivenControl/FLORIDyn_Matlab) [\[1\]](#ref1), which was written by Marcus Becker.
+The code uses the Gaussian wake model derived in [\[3\]](#ref3).
 
 ## Model features
 - Simulate wind farms dynamically at a low computational cost
@@ -87,14 +87,16 @@ See the copyright notices in the source files, and the list of authors in [AUTHO
 This research has been partly funded by Rijksdienst voor Ondernemend (RVO) Nederland under contract HEP24-03681024 through the EuroWindWakes project which is a Horizon Europe Partnership.
 
 ## References
+<a id="ref1"></a>
 Citation of the FLORIDyn model:  
 [1] FLORIDyn - A dynamic and flexible framework for real-time wind farm control, M. Becker, D. Allaerts, J.W. van Wingerden, 2022, [DOI 10.1088/1742-6596/2265/3/032103](http://doi.org/10.1088/1742-6596/2265/3/032103)
 
 Used FLORIS model:  
 [2] Experimental and theoretical study of wind turbine wakes in yawed conditions, M. Bastankhah, F. Porté-Agel, 2020, [DOI 10.1017/jfm.2016.595](http://doi.org/10.1017/jfm.2016.595)
 
+<a id="ref3"></a>
 Gaussian wake model:  
-[3] Experimental and theoretical study of wind turbine wakes in yawed conditions", M. Bastankhah, F. Porté-Agel, 2016, Journal of Fluid Mechanics. 2016;806:506-541. [DOI 10.1017/jfm.2016.595](http://doi.org/10.1017/jfm.2016.595)
+[3] Experimental and theoretical study of wind turbine wakes in yawed conditions, M. Bastankhah, F. Porté-Agel, 2016, Journal of Fluid Mechanics 806:506-541. [DOI 10.1017/jfm.2016.595](http://doi.org/10.1017/jfm.2016.595)
 
 Additional references for smaller subcomponents can be found in the code or in the related publications.
 
