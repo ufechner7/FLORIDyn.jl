@@ -113,6 +113,9 @@ jobs:
       - uses: julia-actions/cache@v2
       - name: Rebuild PyCall
         run: julia -e 'ENV["PYTHON"]=""; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
+      - name: Install matplotlib
+        run: julia -e 'using Pkg; Pkg.add("ControlPlots"); using ControlPlots'
+        shell: bash
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
