@@ -11,7 +11,7 @@ SPDX-FileCopyrightText = "2025 Uwe Fechner"
 SPDX-License-Identifier = "CC-BY-4.0"
 
 [[annotations]]
-path = ["README.md", "data/*.yaml", "data/2021_9T_Data/*.csv", "data/2021_54T_NordseeOne/*.csv", "examples_dev/README.txt", "test/data/*.mat"]
+path = ["README.md", "CHANGELOG.md", "data/*.yaml", "data/2021_9T_Data/*.csv", "data/2021_54T_NordseeOne/*.csv", "examples_dev/README.txt", "test/data/*.mat"]
 SPDX-FileCopyrightText = "2025 Marcus Becker, Uwe Fechner"
 SPDX-License-Identifier = "CC-BY-4.0"
 

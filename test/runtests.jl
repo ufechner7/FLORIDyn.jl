@@ -44,6 +44,10 @@ FLORIDyn.set_rng(rng)
 
 include("../examples/remote_plotting.jl")
 
+sleep(1)
+GC.gc()
+@info "Finished GC.gc()!"
+
 # Define all available test files
 all_test_files = [
     "test_dir.jl",
@@ -126,6 +130,7 @@ end
     if !isempty(files_needing_suppression)
         @suppress_err begin
             for test_file in files_needing_suppression
+                println("--->> Running test file: $test_file")
                 include(test_file)
             end
         end

@@ -94,3 +94,35 @@ function getYaw(::Yaw_SOWFA, con_yaw_data::AbstractMatrix, iT, t)
         error("Invalid type for iT. Should be Integer or Vector of Integers.")
     end
 end
+
+"""
+    getYaw(::Yaw_Constant, con_yaw_data::AbstractMatrix, iT, t)
+
+Return a single constant yaw angle (degrees) for one or multiple turbines.
+
+Assumptions / Simplified Layout:
+- `con_yaw_data` is a matrix with at least one row and one column.
+- Only the value `con_yaw_data[1,1]` is used; any extra rows/columns are ignored.
+
+Arguments:
+- `::Yaw_Constant`: dispatch marker
+- `con_yaw_data`: matrix whose first element holds the constant yaw angle
+- `iT`: turbine index (Integer) or vector of indices
+- `t`: ignored (kept for a uniform interface)
+
+Returns:
+- `Float64` when `iT` is an Integer
+- `Vector{Float64}` when `iT` is a vector
+"""
+function getYaw(::Yaw_Constant, con_yaw_data::AbstractMatrix, iT, t)
+    size(con_yaw_data, 1) == 0 && error("con_yaw_data must have at least one row")
+    size(con_yaw_data, 2) == 0 && error("con_yaw_data must have at least one column")
+    yaw = con_yaw_data[1,1]
+    if isa(iT, Integer)
+        return yaw
+    elseif isa(iT, AbstractVector{<:Integer})
+        return fill(yaw, length(iT))
+    else
+        error("Invalid type for iT. Should be Integer or Vector of Integers.")
+    end
+end

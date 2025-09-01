@@ -1,7 +1,11 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
+using FLORIDyn, Test, Statistics, Parameters, DistributedNext
+if Threads.nthreads() == 1; using ControlPlots; end
+if !(@isdefined plt)
+    plt = nothing
+end
 
 @testset verbose=true "floridyncl" begin
     include("test_prepare_simulation.jl")
@@ -175,11 +179,13 @@ using FLORIDyn, Test, ControlPlots, Statistics, Parameters, DistributedNext
         @test size(md) == (36, 6)
         # @test minimum(md.ForeignReduction) ≈ 72.57019949691814 # Matlab: 73.8438
         # @test mean(md.ForeignReduction)    ≈ 98.54434468415639 # Matlab: 98.
-        sleep(1)
+        sleep(2)
         if Threads.nthreads() > 1 && nprocs() > 1
             @spawnat 2 rmt_close_all()
         else
-            plt.close("all")
+            if !isnothing(plt)
+                plt.close("all")
+            end
         end
     end
 end # testset floridyncl
