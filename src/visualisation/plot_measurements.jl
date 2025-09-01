@@ -182,8 +182,12 @@ Returns
 - `turbine_labels::Vector{String}`: Y-axis labels per subplot (same ylabel repeated)
 - `subplot_labels::Vector{Vector{String}}`: Line labels per subplot
 """
-function prepare_large_plot_inputs(wf::WindFarm, md::DataFrame, data_column::AbstractString, ylabel::AbstractString)
-    rows, lines = get_layout(wf.nT)
+function prepare_large_plot_inputs(wf::WindFarm, md::DataFrame, data_column::AbstractString, ylabel::AbstractString; simple=false)
+    if simple
+        rows, lines = 1, wf.nT
+    else
+        rows, lines = get_layout(wf.nT)
+    end
     n_turbines = wf.nT
     turbines = 1:wf.nT
     measurement_data = md[!, data_column]
@@ -194,7 +198,6 @@ function prepare_large_plot_inputs(wf::WindFarm, md::DataFrame, data_column::Abs
         push!(measurements, measurement_data[iT:wf.nT:end])
     end
     msr_matrix = hcat(measurements...)
-    rows, lines = get_layout(wf.nT)
     plot_data = Any[]
     turbine_labels = String[]
     subplot_labels = Vector{String}[]
