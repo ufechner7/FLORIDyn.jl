@@ -5,7 +5,7 @@
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 
 # Minimal example of how to run a simulation using FLORIDyn.jl
-using FLORIDyn, TerminalPager, DistributedNext 
+using FLORIDyn, TerminalPager, DistributedNext, Statistics
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
@@ -48,6 +48,16 @@ ylabel = "Rel. Wind Speed [%]"
 msr_name = "msr_velocity_reduction"
 
 times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
-plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
-        fig=title, xlabel="rel_time [s]", ysize=9, bottom=0.02, pltctrl, legend_size=6, loc="center left")
-nothing
+# plot_x(times, plot_data...; ylabels=turbine_labels, labels=subplot_labels,
+#         fig=title, xlabel="rel_time [s]", ysize=9, bottom=0.02, pltctrl, legend_size=6, loc="center left")
+nT = wf.nT
+power_sum = zeros(length(times))
+for iT in 1:nT
+    rel_speed = plot_data[1][iT] ./ 100
+    rel_power = rel_speed .^3
+    power_sum .+= rel_power
+end
+power_sum ./= nT
+
+plt.plot(times,power_sum)
+plt.grid(true)
