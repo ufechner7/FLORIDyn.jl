@@ -30,9 +30,9 @@ toc()
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
-dt = 350
+dt = 400
 sim.end_time += dt
-wind_dir = 180.0
+wind_dir = 270
 con.yaw = "Constant"
 con.yaw_data = [wind_dir;;]
 wind.input_dir = "Constant"

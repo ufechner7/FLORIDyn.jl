@@ -31,13 +31,18 @@ include("../examples/remote_plotting.jl")
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 dt = 350
 sim.end_time += dt
+wind_dir = 180.0
+con.yaw = "Constant"
+con.yaw_data = [wind_dir;;]
+wind.input_dir = "Constant"
 
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
-set.dir_mode=Direction_Constant()
-wind.input_dir = "Constant"
+set.dir_mode = Direction_Constant()
+set.control_mode = Yaw_Constant()
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+wind.dir[1,1] = wind_dir
 
 # Run initial conditions
 wf = initSimulation(wf, sim)
@@ -70,3 +75,4 @@ if ! isnothing(plt)
 end
 
 println("\nMean Relative Power Output: $(round((mean(power_sum) * 100), digits=2)) %")
+println("\nFinal Relative Power Output: $(round((power_sum[end] * 100), digits=2)) %")
