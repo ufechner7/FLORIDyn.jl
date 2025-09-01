@@ -29,7 +29,7 @@ include("../examples/remote_plotting.jl")
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
-dt = 200
+dt = 350
 sim.end_time += dt
 
 # create settings struct with automatic parallel/threading detection
@@ -58,9 +58,13 @@ for iT in 1:nT
 end
 power_sum ./= nT
 
-plt.figure()
-plt.plot(times,power_sum .* 100)
-plt.title("Relative Power Output")
-plt.xlabel("Time [s]")
-plt.ylabel("Rel. Power Output [%]")
-plt.grid(true)
+if ! isnothing(plt)
+    plt.figure()
+    plt.plot(times,power_sum .* 100)
+    plt.title("Relative Power Output")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Rel. Power Output [%]")
+    plt.grid(true)
+end
+
+println("\nMean Relative Power Output: $(round((mean(power_sum) * 100), digits=2)) %")
