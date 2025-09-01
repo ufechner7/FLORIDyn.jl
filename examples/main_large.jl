@@ -32,8 +32,9 @@ toc()
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 dt = 350
 sim.end_time += dt
+wind_dir = 180.0
 con.yaw = "Constant"
-con.yaw_data = [225.0;;]
+con.yaw_data = [wind_dir;;]
 wind.input_dir = "Constant"
 
 # create settings struct with automatic parallel/threading detection
@@ -41,10 +42,8 @@ set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 set.dir_mode=Direction_Constant()
 set.control_mode=Yaw_Constant()
 
-# wind.dir[1,1] = 225.0
-
-
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+wind.dir[1,1] = wind_dir
 
 # Run initial conditions
 wf = initSimulation(wf, sim)
