@@ -95,24 +95,6 @@ function getYaw(::Yaw_SOWFA, con_yaw_data::AbstractMatrix, iT, t)
     end
 end
 
-# function yaw = getYaw(ConYawData,iT,~)
-# %GETYAW Return the yaw angle for the requested turbine(s)
-# % ======================================================================= %
-# % Individual Turbine value implementation
-# %   requires a .csv in the simulation folder called Control_YawInterp.csv
-# %   where each row is a
-# %       time, yaw_T0, yaw_T1, ... yaw_Tn
-# %   setpoint in time. The values are interploated linearly between the
-# %   setpoints.
-# % ======= Input ======
-# % ConYawData = (t,yaw_T0, yaw_T1, ... yaw_Tn)
-# % iT         = Index/Indeces of the turbines
-# % t          = time of request
-# % ======================================================================= %
-
-# yaw = ones(size(iT'))*ConYawData(1,1);
-# end
-
 """
     getYaw(::Yaw_Constant, con_yaw_data::AbstractMatrix, iT, t)
 
@@ -121,7 +103,6 @@ Return a single constant yaw angle (degrees) for one or multiple turbines.
 Assumptions / Simplified Layout:
 - `con_yaw_data` is a matrix with at least one row and one column.
 - Only the value `con_yaw_data[1,1]` is used; any extra rows/columns are ignored.
-- Time and per‑turbine layouts are NOT supported here (kept intentionally simple).
 
 Arguments:
 - `::Yaw_Constant`: dispatch marker
