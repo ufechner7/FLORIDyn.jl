@@ -20,7 +20,8 @@ if Threads.nthreads() > 1
             # Use a completely isolated plt instance for this specific task
             @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis; msr=EffWind, fig=nothing)
                 local_plt = ControlPlots.plt
-                return plotFlowField(local_plt, wf, X, Y, Z, vis; msr, fig)
+                plotFlowField(local_plt, wf, X, Y, Z, vis; msr, fig)
+                nothing
             end
             @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis, t_rel; msr=VelReduction)
                 global plot_state
@@ -36,7 +37,8 @@ if Threads.nthreads() > 1
                 local_plt = ControlPlots.plt
                 # Pass pltctrl=ControlPlots so that any internal plot_x calls on the (single-threaded) worker
                 # have the ControlPlots module available for plotting.
-                return plotMeasurements(local_plt, wf, md, vis; separated=separated, msr, pltctrl=ControlPlots)
+                plotMeasurements(local_plt, wf, md, vis; separated=separated, msr, pltctrl=ControlPlots)
+                nothing
             end
             @everywhere function rmt_plotx(times, plot_data...; ylabels=nothing, labels=nothing,
                                             fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, 
