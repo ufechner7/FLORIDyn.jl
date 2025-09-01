@@ -16,7 +16,7 @@ if ! isinteractive()
         if Threads.nthreads() == 1
             using ControlPlots; 
         else 
-            global pltctrl
+            global plt
             plt = nothing
         end
     end

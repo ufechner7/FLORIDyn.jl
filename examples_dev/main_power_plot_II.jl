@@ -5,11 +5,8 @@
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 
 # Minimal example of how to run a simulation using FLORIDyn.jl
-using Timers
-tic()
-using FLORIDyn, TerminalPager, DistributedNext 
+using FLORIDyn, TerminalPager, DistributedNext, Statistics
 if Threads.nthreads() == 1; using ControlPlots; end
-toc()
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
@@ -28,48 +25,54 @@ if Threads.nthreads() == 1
 end
 
 # Automatic parallel/threading setup
-tic()
-include("remote_plotting.jl")
-toc()
+include("../examples/remote_plotting.jl")
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
+dt = 350
+sim.end_time += dt
+wind_dir = 180.0
+con.yaw = "Constant"
+con.yaw_data = [wind_dir;;]
+wind.input_dir = "Constant"
 
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
+set.dir_mode = Direction_Constant()
+set.control_mode = Yaw_Constant()
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+wind.dir[1,1] = wind_dir
 
 # Run initial conditions
 wf = initSimulation(wf, sim)
-toc()
-
-function plot_dfs(df1, df2; fig=nothing, max_op=195)
-    # Filter dataframes to keep only rows where OP <= max_op
-    df1_filtered = filter(row -> row.OP <= max_op, df1)
-    df2_filtered = filter(row -> row.OP <= max_op, df2)
-    
-    turbine_dfs1 = [df for df in groupby(df1_filtered, :Turbine)]
-    turbine_dfs2 = [df for df in groupby(df2_filtered, :Turbine)]
-    
-    # Create vectors for each turbine plot (each containing two lines: Julia and Ref)
-    turbine_plots = [[collect(turbine_dfs1[i].TI), collect(turbine_dfs2[i].TI)] for i in 1:9]
-    ylabels = ["TI Turbine $i" for i in 1:9]
-    labels = [["Julia", "Ref"] for _ in 1:9]
-
-    if isnothing(fig)
-        fig = "Turbine TI Comparison"
-    end
-    
-    p = plotx(collect(turbine_dfs1[1].OP), turbine_plots...; 
-              xlabel="Operating Point", ylabels=ylabels, labels=labels, ysize=10,
-              fig, bottom=0.02)
-    display(p)
-end
 
 vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-# plot_measurements(wf, md, vis; separated=false, plt)
-# plotMeasurements(plt, wf, md, vis; separated=false, msr=VelReduction)    
 plot_measurements(wf, md, vis; separated=false, msr=VelReduction, plt, pltctrl)
-nothing
+
+data_column = "ForeignReduction"
+ylabel = "Rel. Wind Speed [%]"
+
+times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
+nT = wf.nT
+power_sum = zeros(length(times))
+for iT in 1:nT
+    local rel_power, rel_speed
+    rel_speed = plot_data[1][iT] ./ 100
+    rel_power = rel_speed .^3
+    power_sum .+= rel_power
+end
+power_sum ./= nT
+
+if ! isnothing(plt)
+    plt.figure()
+    plt.plot(times,power_sum .* 100)
+    plt.title("Relative Power Output")
+    plt.xlabel("Time [s]")
+    plt.ylabel("Rel. Power Output [%]")
+    plt.grid(true)
+end
+
+println("\nMean Relative Power Output: $(round((mean(power_sum) * 100), digits=2)) %")
+println("\nFinal Relative Power Output: $(round((power_sum[end] * 100), digits=2)) %")
