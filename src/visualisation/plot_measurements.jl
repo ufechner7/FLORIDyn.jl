@@ -66,7 +66,7 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
     if msr == VelReduction
         data_column = "ForeignReduction"
         title = "Velocity Reduction"
-        ylabel = "Vel Reduction [%]"
+        ylabel = "Rel. Wind Speed [%]"
         msr_name = "msr_velocity_reduction"
     elseif msr == AddedTurbulence
         data_column = "AddedTurbulence"
