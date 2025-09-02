@@ -10,9 +10,9 @@ settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 WIND_DIR_MIN        = 270-90
 WIND_DIR_MAX        = 270+90
-WIND_DIR_STEPS      = Int(180/2.5) # 2.5° steps
-LOAD_RESULTS        = false
-SAVE_RESULTS        = true
+WIND_DIR_STEPS      = 3  # Reduced for quick testing (was Int(180/2.5))
+LOAD_RESULTS        = true 
+SAVE_RESULTS        = false
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -30,28 +30,48 @@ end
 # Automatic parallel/threading setup
 include("../examples/remote_plotting.jl")
 
-function calc_pwr(wind_dir)
-    times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; dt=350, wind_dir=wind_dir)
-    return mean(rel_power), rel_power[end]
-end
+# Initialize global variables
+wind_dirs = Float64[]
+mean_pwrs = Float64[]
+final_pwrs = Float64[]
 
-if WIND_DIR_MIN == WIND_DIR_MAX
-    global wind_dirs, mean_pwrs, final_pwrs
-    local mean_pwrs, final_pwrs
-    mean_pwr, final_pwr = calc_pwr(WIND_DIR_MIN)
-    wind_dirs = [WIND_DIR_MIN]
-    mean_pwrs = [mean_pwr]
-    final_pwrs = [final_pwr]
+if LOAD_RESULTS
+    @info "Loading previously saved simulation results..."
+    results_filename = joinpath(vis.output_path, "results_power_vs_wind_dir.jld2")
+    try
+        global wind_dirs, mean_pwrs, final_pwrs
+        wind_dirs = load(results_filename, "wind_dirs")
+        mean_pwrs = load(results_filename, "mean_pwrs")
+        final_pwrs = load(results_filename, "final_pwrs")
+    catch e
+        @error "Failed to load simulation results: $e"
+        # Initialize empty arrays if loading fails
+        global wind_dirs, mean_pwrs, final_pwrs
+        wind_dirs = Float64[]
+        mean_pwrs = Float64[]
+        final_pwrs = Float64[]
+    end
 else
+    function calc_pwr(wind_dir)
+        times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; dt=350, wind_dir=wind_dir)
+        return mean(rel_power), rel_power[end]
+    end
+
     global wind_dirs, mean_pwrs, final_pwrs
-    local mean_pwrs, final_pwrs
-    wind_dirs = collect(LinRange(WIND_DIR_MIN, WIND_DIR_MAX, WIND_DIR_STEPS))
-    mean_pwrs = Float64[]
-    final_pwrs = Float64[]
-    for wd in wind_dirs
-        mean_pwr, final_pwr = calc_pwr(wd)
-        push!(mean_pwrs, mean_pwr)
-        push!(final_pwrs, final_pwr)
+    if WIND_DIR_MIN == WIND_DIR_MAX
+        mean_pwr, final_pwr = calc_pwr(WIND_DIR_MIN)
+        wind_dirs = [WIND_DIR_MIN]
+        mean_pwrs = [mean_pwr]
+        final_pwrs = [final_pwr]
+    else
+        wind_dirs = collect(LinRange(WIND_DIR_MIN, WIND_DIR_MAX, WIND_DIR_STEPS))
+        mean_pwrs = Float64[]
+        final_pwrs = Float64[]
+        for wd in wind_dirs
+            mean_pwr_, final_pwr_ = calc_pwr(wd)
+            push!(mean_pwrs, mean_pwr_)
+            push!(final_pwrs, final_pwr_)
+        end
     end
 end
 
@@ -69,6 +89,6 @@ if SAVE_RESULTS
 end
 
 plot_rmt(wind_dirs, final_pwrs; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
-         title="Relative Windfarm Power vs Wind Direction")
+         title="Relative Windfarm Power vs Wind Direction", pltctrl=pltctrl)
 
 
