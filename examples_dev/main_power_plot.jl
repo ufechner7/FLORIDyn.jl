@@ -27,19 +27,22 @@ end
 # Automatic parallel/threading setup
 include("../examples/remote_plotting.jl")
 
-function calc_rel_power(settings_file; dt=350)
+function calc_rel_power(settings_file; dt=350, wind_dir=180.0)
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
     sim.end_time += dt
+    con.yaw = "Constant"
+    con.yaw_data = [wind_dir;;]
+    wind.input_dir = "Constant"
 
     # create settings struct with automatic parallel/threading detection
     set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
+    set.dir_mode = Direction_Constant()
+    set.control_mode = Yaw_Constant()
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+    wind.dir[1,1] = wind_dir
 
-    # Run initial conditions
-    wf = initSimulation(wf, sim)
-    
     vis = Vis()
     vis.online = false
     @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
@@ -59,9 +62,10 @@ function calc_rel_power(settings_file; dt=350)
     return times, power_sum
 end
 
-times, power_sum = calc_rel_power(settings_file; dt=350)
+times, power_sum = calc_rel_power(settings_file; dt=350, wind_dir=180.0)
 
 p = plot_rmt(times, power_sum .* 100; xlabel="Time [s]", ylabel="Rel. Power Output [%]", pltctrl)
 display(p)
 
-println("\nMean Relative Power Output: $(round((mean(power_sum) * 100), digits=2)) %")
+println("\nMean Relative Power Output:  $(round((mean(power_sum) * 100), digits=2)) %")
+println("Final Relative Power Output: $(round((power_sum[end] * 100), digits=2)) %")
