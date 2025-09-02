@@ -58,7 +58,7 @@ for iT in 1:nT
 end
 power_sum ./= nT
 
-p = plot(times, power_sum .* 100; xlabel="Time [s]", ylabel="Rel. Power Output [%]")
+p = plot_rmt(times, power_sum .* 100; xlabel="Time [s]", ylabel="Rel. Power Output [%]", pltctrl)
 display(p)
 
 println("\nMean Relative Power Output: $(round((mean(power_sum) * 100), digits=2)) %")

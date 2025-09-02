@@ -136,6 +136,24 @@ function plot_x(times, plot_data...; ylabels=nothing, labels=nothing,
     nothing
 end
 
+function plot_rmt(X, Ys::AbstractVector{<:Number}; xlabel="", ylabel="",
+    xlims=nothing, ylims=nothing, ann=nothing, scatter=false, 
+    title="", fig="", ysize=14, pltctrl=nothing)
+
+    if Threads.nthreads() > 1 && nprocs() > 1 && pltctrl === nothing
+        # Use parallel plotting with remote worker
+        @spawnat 2 Main.rmt_plot(X, Ys; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+    else
+        # Use sequential plotting
+        if pltctrl === nothing
+            error("pltctrl argument is required for sequential plotting (threads=$(Threads.nthreads()), procs=$(nprocs())). Pass the ControlPlots module as pltctrl keyword.")
+        end
+        p = pltctrl.plot(X, Ys; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+        display(p)  # Ensure the plot is displayed
+    end
+    nothing
+end
+
 """
     close_all(plt)
 
