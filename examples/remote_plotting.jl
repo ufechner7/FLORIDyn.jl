@@ -48,6 +48,11 @@ if Threads.nthreads() > 1
                 display(p)  # Ensure the plot is displayed
                 nothing
             end
+            @everywhere function rmt_plot(X, Ys; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+                p=ControlPlots.plot(X, Ys; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+                display(p)  # Ensure the plot is displayed
+                nothing
+            end
             @everywhere function rmt_close_all()
                 local_plt = ControlPlots.plt
                 return local_plt.close("all")
