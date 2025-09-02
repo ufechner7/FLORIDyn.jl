@@ -136,9 +136,8 @@ function plot_x(times, plot_data...; ylabels=nothing, labels=nothing,
     nothing
 end
 
-function plot_rmt(X, Ys::AbstractVector{<:Number}; xlabel="", ylabel="",
-    xlims=nothing, ylims=nothing, ann=nothing, scatter=false, 
-    title="", fig="", ysize=14, pltctrl=nothing)
+function plot_rmt(X, Ys::AbstractVector{<:Number}; xlabel="", ylabel="", xlims=nothing, ylims=nothing, ann=nothing, 
+    scatter=false, title="", fig="", ysize=14, pltctrl=nothing)
 
     if Threads.nthreads() > 1 && nprocs() > 1 && pltctrl === nothing
         # Use parallel plotting with remote worker
