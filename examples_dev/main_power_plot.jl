@@ -42,7 +42,7 @@ wf = initSimulation(wf, sim)
 
 vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-plot_measurements(wf, md, vis; separated=false, msr=VelReduction, plt, pltctrl)
+# plot_measurements(wf, md, vis; separated=false, msr=VelReduction, plt, pltctrl)
 
 data_column = "ForeignReduction"
 ylabel = "Rel. Wind Speed [%]"
@@ -58,13 +58,7 @@ for iT in 1:nT
 end
 power_sum ./= nT
 
-if ! isnothing(plt)
-    plt.figure()
-    plt.plot(times,power_sum .* 100)
-    plt.title("Relative Power Output")
-    plt.xlabel("Time [s]")
-    plt.ylabel("Rel. Power Output [%]")
-    plt.grid(true)
-end
+p = plot(times, power_sum .* 100; xlabel="Time [s]", ylabel="Rel. Power Output [%]")
+display(p)
 
 println("\nMean Relative Power Output: $(round((mean(power_sum) * 100), digits=2)) %")
