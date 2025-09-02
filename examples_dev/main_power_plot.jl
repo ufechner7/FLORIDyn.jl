@@ -52,20 +52,19 @@ function calc_rel_power(settings_file; dt=350, wind_dir=180.0)
 
     times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
     nT = wf.nT
-    power_sum = zeros(length(times))
+    rel_power = zeros(length(times))
     for iT in 1:nT
         rel_speed = plot_data[1][iT] ./ 100
-        rel_power = rel_speed .^3
-        power_sum .+= rel_power
+        rel_power .+= rel_speed .^3
     end
-    power_sum ./= nT
-    return times, power_sum
+    rel_power ./= nT
+    return times, rel_power
 end
 
-times, power_sum = calc_rel_power(settings_file; dt=350, wind_dir=180.0)
+times, rel_power = calc_rel_power(settings_file; dt=350, wind_dir=270.0)
 
-p = plot_rmt(times, power_sum .* 100; xlabel="Time [s]", ylabel="Rel. Power Output [%]", pltctrl)
+p = plot_rmt(times, rel_power .* 100; xlabel="Time [s]", ylabel="Rel. Power Output [%]", pltctrl)
 display(p)
 
-println("\nMean Relative Power Output:  $(round((mean(power_sum) * 100), digits=2)) %")
-println("Final Relative Power Output: $(round((power_sum[end] * 100), digits=2)) %")
+println("\nMean Relative Power Output:  $(round((mean(rel_power) * 100), digits=2)) %")
+println("Final Relative Power Output: $(round((rel_power[end] * 100), digits=2)) %")
