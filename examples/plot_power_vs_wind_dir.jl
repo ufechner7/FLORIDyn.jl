@@ -90,5 +90,4 @@ end
 
 plot_rmt(wind_dirs, final_pwrs; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
          title="Relative Windfarm Power vs Wind Direction", pltctrl=pltctrl)
-
-
+         
