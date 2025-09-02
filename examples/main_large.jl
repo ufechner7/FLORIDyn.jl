@@ -30,23 +30,12 @@ toc()
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
-dt = 400
-sim.end_time += dt
-wind_dir = 270
-con.yaw = "Constant"
-con.yaw_data = [wind_dir;;]
-wind.input_dir = "Constant"
 
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
-set.dir_mode=Direction_Constant()
-set.control_mode=Yaw_Constant()
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 wind.dir[1,1] = wind_dir
-
-# Run initial conditions
-wf = initSimulation(wf, sim)
 toc()
 
 vis.online = false
