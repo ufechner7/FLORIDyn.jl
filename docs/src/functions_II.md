@@ -39,6 +39,7 @@ run_floridyn
 create_thread_buffers
 getMeasurements
 calcFlowField
+calc_rel_power
 plotFlowField
 plot_flow_field
 plotMeasurements
