@@ -10,9 +10,9 @@ settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 WIND_DIR_MIN        = 270-90
 WIND_DIR_MAX        = 270+90
-WIND_DIR_STEPS      = 3  # Reduced for quick testing (was Int(180/2.5))
-LOAD_RESULTS        = true 
-SAVE_RESULTS        = false
+WIND_DIR_STEPS      = Int(180/2.5)
+LOAD_RESULTS        = true
+SAVE_RESULTS        = true
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -39,19 +39,23 @@ if LOAD_RESULTS
     @info "Loading previously saved simulation results..."
     results_filename = joinpath(vis.output_path, "results_power_vs_wind_dir.jld2")
     try
-        global wind_dirs, mean_pwrs, final_pwrs
+        global wind_dirs, mean_pwrs, final_pwrs, RUN_SIMULATION
+        RUN_SIMULATION = false
         wind_dirs = load(results_filename, "wind_dirs")
         mean_pwrs = load(results_filename, "mean_pwrs")
         final_pwrs = load(results_filename, "final_pwrs")
     catch e
-        @error "Failed to load simulation results: $e"
+        @warn "Failed to load simulation results: $e"
+        @info "Proceeding to run new simulations..."
         # Initialize empty arrays if loading fails
-        global wind_dirs, mean_pwrs, final_pwrs
+        global wind_dirs, mean_pwrs, final_pwrs, RUN_SIMULATION
+        RUN_SIMULATION = true
         wind_dirs = Float64[]
         mean_pwrs = Float64[]
         final_pwrs = Float64[]
     end
-else
+end
+if RUN_SIMULATION
     function calc_pwr(wind_dir)
         times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; dt=350, wind_dir=wind_dir)
         return mean(rel_power), rel_power[end]
@@ -75,7 +79,7 @@ else
     end
 end
 
-if SAVE_RESULTS
+if SAVE_RESULTS && RUN_SIMULATION # save the results only if a simulation run happened
     @info "Saving simulation results..."
     results_filename = joinpath(vis.output_path, "results_power_vs_wind_dir.jld2")
     try
@@ -90,4 +94,3 @@ end
 
 plot_rmt(wind_dirs, final_pwrs; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
          title="Relative Windfarm Power vs Wind Direction", pltctrl=pltctrl)
-         
