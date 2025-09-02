@@ -28,20 +28,27 @@ end
 include("../examples/remote_plotting.jl")
 
 function calc_rel_power(settings_file; dt=350, wind_dir=180.0)
+    fixed_wind_dir = ! isnothing(wind_dir)
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
     sim.end_time += dt
-    con.yaw = "Constant"
-    con.yaw_data = [wind_dir;;]
-    wind.input_dir = "Constant"
+    if fixed_wind_dir
+        con.yaw = "Constant"
+        con.yaw_data = [wind_dir;;]
+        wind.input_dir = "Constant"
+    end
 
     # create settings struct with automatic parallel/threading detection
     set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
-    set.dir_mode = Direction_Constant()
-    set.control_mode = Yaw_Constant()
+    if fixed_wind_dir
+        set.dir_mode = Direction_Constant()
+        set.control_mode = Yaw_Constant()
+    end
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-    wind.dir[1,1] = wind_dir
+    if fixed_wind_dir
+        wind.dir[1,1] = wind_dir
+    end
 
     vis = Vis()
     vis.online = false
@@ -61,7 +68,7 @@ function calc_rel_power(settings_file; dt=350, wind_dir=180.0)
     return times, rel_power
 end
 
-times, rel_power = calc_rel_power(settings_file; dt=350, wind_dir=270.0)
+times, rel_power = calc_rel_power(settings_file; dt=350, wind_dir=nothing)
 
 p = plot_rmt(times, rel_power .* 100; xlabel="Time [s]", ylabel="Rel. Power Output [%]", pltctrl)
 display(p)
