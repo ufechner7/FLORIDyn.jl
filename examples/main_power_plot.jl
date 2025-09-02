@@ -1,15 +1,16 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Example how to plot the average, relative wind park power
-# Either a fixed or a variable wind direction can be used 
+# MainFLORIDyn Center-Line model
+# Improved FLORIDyn approach over the gaussian FLORIDyn model
+
+# Minimal example of how to run a simulation using FLORIDyn.jl
 using FLORIDyn, TerminalPager, DistributedNext, Statistics
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 PLOT_FLOW_FIELD = false
-WIND_DIR        = nothing # or the wind direction in deg, e.g. 270 for west-wind
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -27,7 +28,7 @@ end
 # Automatic parallel/threading setup
 include("../examples/remote_plotting.jl")
 
-times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; dt=350, wind_dir=WIND_DIR)
+times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; dt=350, wind_dir=nothing)
 
 p = plot_rmt(times, rel_power .* 100; xlabel="Time [s]", ylabel="Rel. Power Output [%]", pltctrl)
 display(p)
