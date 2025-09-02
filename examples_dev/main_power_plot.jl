@@ -27,36 +27,39 @@ end
 # Automatic parallel/threading setup
 include("../examples/remote_plotting.jl")
 
-# get the settings for the wind field, simulator and controller
-wind, sim, con, floris, floridyn, ta = setup(settings_file)
-dt = 350
-sim.end_time += dt
+function calc_rel_power(settings_file; dt=350)
+    # get the settings for the wind field, simulator and controller
+    wind, sim, con, floris, floridyn, ta = setup(settings_file)
+    sim.end_time += dt
 
-# create settings struct with automatic parallel/threading detection
-set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
+    # create settings struct with automatic parallel/threading detection
+    set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
-wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
-# Run initial conditions
-wf = initSimulation(wf, sim)
+    # Run initial conditions
+    wf = initSimulation(wf, sim)
 
-vis.online = false
-@time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-# plot_measurements(wf, md, vis; separated=false, msr=VelReduction, plt, pltctrl)
+    vis.online = false
+    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    # plot_measurements(wf, md, vis; separated=false, msr=VelReduction, plt, pltctrl)
 
-data_column = "ForeignReduction"
-ylabel = "Rel. Wind Speed [%]"
+    data_column = "ForeignReduction"
+    ylabel = "Rel. Wind Speed [%]"
 
-times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
-nT = wf.nT
-power_sum = zeros(length(times))
-for iT in 1:nT
-    local rel_power, rel_speed
-    rel_speed = plot_data[1][iT] ./ 100
-    rel_power = rel_speed .^3
-    power_sum .+= rel_power
+    times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
+    nT = wf.nT
+    power_sum = zeros(length(times))
+    for iT in 1:nT
+        rel_speed = plot_data[1][iT] ./ 100
+        rel_power = rel_speed .^3
+        power_sum .+= rel_power
+    end
+    power_sum ./= nT
+    return times, power_sum
 end
-power_sum ./= nT
+
+times, power_sum = calc_rel_power(settings_file; dt=350)
 
 p = plot_rmt(times, power_sum .* 100; xlabel="Time [s]", ylabel="Rel. Power Output [%]", pltctrl)
 display(p)
