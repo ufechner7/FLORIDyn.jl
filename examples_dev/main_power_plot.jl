@@ -39,10 +39,10 @@ function calc_rel_power(settings_file; dt=350)
 
     # Run initial conditions
     wf = initSimulation(wf, sim)
-
+    
+    vis = Vis()
     vis.online = false
     @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    # plot_measurements(wf, md, vis; separated=false, msr=VelReduction, plt, pltctrl)
 
     data_column = "ForeignReduction"
     ylabel = "Rel. Wind Speed [%]"
