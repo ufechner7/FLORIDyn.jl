@@ -10,6 +10,7 @@ if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
+PLOT_FLOW_FIELD = false
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -65,13 +66,18 @@ function calc_rel_power(settings_file; dt=350, wind_dir=180.0)
         rel_power .+= rel_speed .^3
     end
     rel_power ./= nT
-    return times, rel_power
+    return times, rel_power, set, wf, wind, floris
 end
 
-times, rel_power = calc_rel_power(settings_file; dt=350, wind_dir=nothing)
+times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; dt=350, wind_dir=nothing)
 
 p = plot_rmt(times, rel_power .* 100; xlabel="Time [s]", ylabel="Rel. Power Output [%]", pltctrl)
 display(p)
 
 println("\nMean Relative Power Output:  $(round((mean(rel_power) * 100), digits=2)) %")
 println("Final Relative Power Output: $(round((rel_power[end] * 100), digits=2)) %")
+
+if PLOT_FLOW_FIELD
+    Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
+    plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
+end
