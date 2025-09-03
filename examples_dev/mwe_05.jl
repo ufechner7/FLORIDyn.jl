@@ -23,4 +23,5 @@ include("../examples/remote_plotting.jl")
 X  = 0:0.1:2pi
 Y1 = sin.(X)
 Y2 = cos.(X)
-plot_rmt(X, [Y1, Y2]; xlabel=L"\alpha = [0..2\pi]", ylabel="Function Value", labels=["sin","cos"], fig="Dual", pltctrl)
+plot_rmt(X, [Y1, Y2]; xlabel=L"\alpha = [0..2\pi]", ylabel="Function Value", labels=["sin","cos"], xlims=(2, 6), 
+         fig="Dual", pltctrl)

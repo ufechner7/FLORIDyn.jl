@@ -121,8 +121,6 @@ if PLOT_TIs
             @warn "Failed to load simulation results for TI=$(100*ti) %: $e"
             continue
         end
-        # plot_rmt(wind_dirs, mean_pwrs; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
-        #          title="Mean Relative Windfarm Power vs Wind Direction", fig="TI: $(100*ti) %", pltctrl)
     end
     if !isempty(wind_dirs_)
         plot_rmt(wind_dirs_, final_pwr_vec; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
@@ -132,7 +130,7 @@ if PLOT_TIs
     end
 else
     @info "Plotting results for TI=$(100*TI) %..."
-    plot_rmt(wind_dirs, mean_pwrs; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
+    plot_rmt(wind_dirs, mean_pwrs; xlabel="Wind Direction (deg)", ylabel="Relative Power", xlims=(WIND_DIR_MIN, WIND_DIR_MAX),
              title="Mean Relative Windfarm Power vs Wind Direction", fig="TI: $(100*TI) %", pltctrl=pltctrl)
 end
 
