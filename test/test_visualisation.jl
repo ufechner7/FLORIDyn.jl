@@ -1248,7 +1248,7 @@ if ! isinteractive()
         @testset "calc_rel_power" begin
             @testset "function exists and is callable" begin
                 # Test that the function exists and has the right signature
-                @test isa(calc_rel_power, Function)
+                @test calc_rel_power isa Function
                 
                 # Test that we can get method information
                 methods_list = methods(calc_rel_power)
