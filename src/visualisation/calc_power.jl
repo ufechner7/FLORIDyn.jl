@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    calc_rel_power(settings_file; dt=350, wind_dir=180.0)
+    calc_rel_power(settings_file; dt=350, wind_dir=180.0, ti=0.062)
 
 Calculate relative power output for a wind farm simulation over time.
 
@@ -15,6 +15,8 @@ power output compared to undisturbed wind conditions.
 - `dt::Real=350`: Additional simulation time in seconds beyond the base configuration
 - `wind_dir::Union{Real,Nothing}=180.0`: Wind direction in degrees. If `nothing`, uses 
   variable wind direction from the settings file. If a number, uses constant wind direction.
+- `ti::Union{Real,Nothing}=0.062`: Turbulence intensity (TI) as a decimal (e.g., 0.062 = 6.2%). 
+  If `nothing`, uses the turbulence intensity from the settings file.
 
 # Returns
 A tuple containing:
@@ -39,19 +41,36 @@ The function automatically detects and uses multithreading if available
 (`Threads.nthreads() > 1`). When using fixed wind direction, the simulation 
 uses constant yaw and direction modes for improved performance.
 
+# Configuration
+When `wind_dir` is specified (not `nothing`):
+- Sets yaw control to "Constant" mode
+- Sets wind direction input to "Constant" mode  
+- Applies the specified wind direction to both controller and wind field
+- Uses `Direction_Constant()` and `Yaw_Constant()` modes for optimization
+
+When `ti` is specified (not `nothing`):
+- Overrides the turbulence intensity in the wind field with the specified value
+- Allows for parametric studies of turbulence intensity effects on power output
+
 # Example
 ```julia
-# Variable wind direction simulation
+# Variable wind direction with default turbulence intensity
 times, rel_power, set, wf, wind, floris = calc_rel_power("data/2021_9T_Data.yaml"; 
                                                          dt=200, wind_dir=nothing)
 
-# Fixed wind direction simulation  
+# Fixed wind direction with custom turbulence intensity
 times, rel_power, set, wf, wind, floris = calc_rel_power("data/2021_9T_Data.yaml"; 
-                                                         dt=100, wind_dir=270.0)
+                                                         dt=100, wind_dir=270.0, ti=0.10)
+
+# Low turbulence case study
+times, rel_power, set, wf, wind, floris = calc_rel_power("data/2021_9T_Data.yaml"; 
+                                                         dt=150, wind_dir=180.0, ti=0.02)
 
 # Analyze results
 mean_power = mean(rel_power)
 power_std = std(rel_power)
+println("Mean relative power: ", round(mean_power, digits=3))
+println("Power variability: ", round(power_std, digits=3))
 ```
 
 # See also
