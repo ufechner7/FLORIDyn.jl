@@ -1369,8 +1369,7 @@ if ! isinteractive()
                 
                 # Power should generally be between 0 and 1 for most wind conditions
                 # (unless there's significant speedup effects)
-                typical_power_range = 0.2 <= mean(rel_power) <= 1.2
-                @test typical_power_range
+                @test 0.2 <= mean(rel_power) <= 1.2
                 
                 # Standard deviation should be reasonable (not zero, but not extreme)
                 power_std = std(rel_power)
