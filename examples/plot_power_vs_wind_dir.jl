@@ -9,12 +9,14 @@ if Threads.nthreads() == 1; using ControlPlots; end
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 TI             = 0.062*1  # turbulence intensity for fixed wind direction simulations
+TIs            = [0.0, 0.062, 0.062*2]
 WIND_DIR_MIN        = 270-90
 WIND_DIR_MAX        = 270+90
 WIND_DIR_STEPS      = Int(180/2.5)+1
-LOAD_RESULTS        = true  # set to false to always run new simulations
+LOAD_RESULTS        = true   # set to false to always run new simulations
 RUN_SIMULATION      = false  # set to false to only load results
 SAVE_RESULTS        = true
+PLOT_TIs            = true   # plot results for different TIs in one plot
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -96,5 +98,25 @@ if SAVE_RESULTS && RUN_SIMULATION # save the results only if a simulation run ha
     end
 end
 
-plot_rmt(wind_dirs, final_pwrs; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
-         title="Relative Windfarm Power vs Wind Direction", fig="TI: $(100*TI) %", pltctrl)
+if PLOT_TIs
+    for ti in TIs
+        @info "Plotting results for TI=$(100*ti) %..."
+        results_filename_ = joinpath(vis.output_path, "results_power_vs_wind_dir_ti_$(ti).jld2")
+        try
+            wind_dirs_  = load(results_filename_, "wind_dirs")
+            final_pwrs_ = load(results_filename_, "final_pwrs")
+            TI_         = load(results_filename_, "TI")
+            @assert TI_ == ti
+        catch e
+            @warn "Failed to load simulation results for TI=$(100*ti) %: $e"
+            continue
+        end
+        # plot_rmt(wind_dirs, mean_pwrs; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
+        #          title="Mean Relative Windfarm Power vs Wind Direction", fig="TI: $(100*ti) %", pltctrl)
+    end
+else
+    @info "Plotting results for TI=$(100*TI) %..."
+    plot_rmt(wind_dirs, mean_pwrs; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
+             title="Mean Relative Windfarm Power vs Wind Direction", fig="TI: $(100*TI) %", pltctrl)
+end
+
