@@ -35,7 +35,6 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-wind.dir[1,1] = wind_dir
 toc()
 
 vis.online = false

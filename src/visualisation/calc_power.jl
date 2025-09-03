@@ -57,7 +57,7 @@ power_std = std(rel_power)
 # See also
 [`FLORIDyn.prepare_large_plot_inputs`](@ref), [`run_floridyn`](@ref), [`Settings`](@ref)
 """
-function calc_rel_power(settings_file; dt=350, wind_dir=180.0)
+function calc_rel_power(settings_file; dt=350, wind_dir=180.0, ti=0.062)
     fixed_wind_dir = ! isnothing(wind_dir)
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
@@ -78,6 +78,12 @@ function calc_rel_power(settings_file; dt=350, wind_dir=180.0)
     if fixed_wind_dir
         con.yaw_data[1,1] = wind_dir
         wind.dir[1,1]     = wind_dir
+    end
+    if !isnothing(ti)
+        wind.ti = ti
+        # for iT in 1:wf.nT
+        #     wf.ti[iT] = ti
+        # end
     end
 
     vis = Vis()
