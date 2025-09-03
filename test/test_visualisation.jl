@@ -6,6 +6,7 @@ if !isdefined(Main, :Test)
 end 
 using DataFrames  # Required for DataFrame functionality in turbines() tests
 using Statistics  # Required for mean, std functions in calc_rel_power tests
+using DistributedNext  # Required for nprocs() function in plot_x tests
 
 if ! isinteractive()
     global pltctrl

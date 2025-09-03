@@ -95,8 +95,13 @@ function calc_rel_power(settings_file; dt=350, wind_dir=180.0, ti=0.062)
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     if fixed_wind_dir
-        con.yaw_data[1,1] = wind_dir
-        wind.dir[1,1]     = wind_dir
+        # Ensure yaw_data exists and set the wind direction
+        if con.yaw_data === nothing || size(con.yaw_data) == (0, 0)
+            con.yaw_data = [wind_dir;;]
+        else
+            con.yaw_data[1,1] = wind_dir
+        end
+        wind.dir[1,1] = wind_dir
     end
     if !isnothing(ti)
         wind.ti = ti
