@@ -11,8 +11,8 @@ settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 TI             = 0.062*1  # turbulence intensity for fixed wind direction simulations
 TIs            = [0.0, 0.062, 0.062*2]
-WIND_DIR_MIN        = 270-90
-WIND_DIR_MAX        = 270+90
+WIND_DIR_MIN        = 270-90.0
+WIND_DIR_MAX        = 270+90.0
 WIND_DIR_STEPS      = Int(180/2.5)+1
 LOAD_RESULTS        = false   # set to false to always run new simulations
 RUN_SIMULATION      = false   # set to true to run simulations
@@ -108,7 +108,6 @@ if PLOT_TIs
         local results_filename_
         @info "Plotting results for TI=$(100*ti) %..."
         results_filename_ = joinpath(vis.output_path, "results_power_vs_wind_dir_ti_$(ti).jld2")
-        println("Loading from $results_filename_ ...")
         try
             global wind_dirs_, final_pwr_vec  # Ensure these are treated as global
             wind_dirs_  = JLD2.load(results_filename_, "wind_dirs")
@@ -123,7 +122,7 @@ if PLOT_TIs
         end
     end
     if !isempty(wind_dirs_)
-        plot_rmt(wind_dirs_, final_pwr_vec; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
+        plot_rmt(wind_dirs_, final_pwr_vec; xlabel="Wind Direction (deg)", ylabel="Relative Power", xlims=(WIND_DIR_MIN, WIND_DIR_MAX),
                  labels, fig="Mean Relative Windfarm Power vs Wind Direction", pltctrl=pltctrl)
     else
         @warn "No data to plot - all TI result files failed to load"
