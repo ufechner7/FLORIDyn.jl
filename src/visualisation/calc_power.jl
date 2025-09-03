@@ -81,9 +81,6 @@ function calc_rel_power(settings_file; dt=350, wind_dir=180.0, ti=0.062)
     end
     if !isnothing(ti)
         wind.ti = ti
-        # for iT in 1:wf.nT
-        #     wf.ti[iT] = ti
-        # end
     end
 
     vis = Vis()
