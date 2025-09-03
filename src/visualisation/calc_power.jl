@@ -64,7 +64,6 @@ function calc_rel_power(settings_file; dt=350, wind_dir=180.0)
     sim.end_time += dt
     if fixed_wind_dir
         con.yaw = "Constant"
-        con.yaw_data = [wind_dir;;]
         wind.input_dir = "Constant"
     end
 
@@ -77,7 +76,8 @@ function calc_rel_power(settings_file; dt=350, wind_dir=180.0)
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     if fixed_wind_dir
-        wind.dir[1,1] = wind_dir
+        con.yaw_data[1,1] = wind_dir
+        wind.dir[1,1]     = wind_dir
     end
 
     vis = Vis()

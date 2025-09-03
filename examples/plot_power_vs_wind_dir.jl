@@ -10,8 +10,9 @@ settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 WIND_DIR_MIN        = 270-90
 WIND_DIR_MAX        = 270+90
-WIND_DIR_STEPS      = Int(180/2.5)
-LOAD_RESULTS        = true
+WIND_DIR_STEPS      = Int(180/2.5)+1
+LOAD_RESULTS        = false
+RUN_SIMULATION      = true  # set to false to only load results
 SAVE_RESULTS        = true
 
 # Load vis settings from YAML file
@@ -72,6 +73,7 @@ if RUN_SIMULATION
         mean_pwrs = Float64[]
         final_pwrs = Float64[]
         for wd in wind_dirs
+            @info "wind_dir: $(wd)"
             mean_pwr_, final_pwr_ = calc_pwr(wd)
             push!(mean_pwrs, mean_pwr_)
             push!(final_pwrs, final_pwr_)

@@ -371,14 +371,14 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     yaw_method = con.yaw
     if yaw_method == "Constant"
         try
-            df = CSV.read("Control_YawConstant.csv", DataFrame)
+            df = CSV.read(joinpath(data_path, "Control_YawConstant.csv"), DataFrame; header=false)
             con.yaw_data = Matrix{Float64}(df)
         catch
             push!(loadDataWarnings, "Control_YawConstant.csv not found.")
         end
     elseif yaw_method == "InterpTurbine"
         try
-            df = CSV.read("Control_YawInterpolation.csv", DataFrame)
+            df = CSV.read(joinpath(data_path, "Control_YawInterpolation.csv"), DataFrame; header=false)
             con.yaw_data = Matrix{Float64}(df)
         catch
             push!(loadDataWarnings, "Control_YawInterpolation.csv not found.")
