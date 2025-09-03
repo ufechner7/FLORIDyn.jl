@@ -3,7 +3,8 @@
 
 # Example how to plot the average, relative wind park power
 # Either a fixed or a variable wind direction can be used 
-using FLORIDyn, TerminalPager, DistributedNext, Statistics, JLD2
+using FLORIDyn, TerminalPager, DistributedNext, Statistics
+import JLD2
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
@@ -13,10 +14,10 @@ TIs            = [0.0, 0.062, 0.062*2]
 WIND_DIR_MIN        = 270-90
 WIND_DIR_MAX        = 270+90
 WIND_DIR_STEPS      = Int(180/2.5)+1
-LOAD_RESULTS        = true   # set to false to always run new simulations
-RUN_SIMULATION      = false  # set to false to only load results
-SAVE_RESULTS        = true
-PLOT_TIs            = true   # plot results for different TIs in one plot
+LOAD_RESULTS        = false   # set to false to always run new simulations
+RUN_SIMULATION      = false   # set to true to run simulations
+SAVE_RESULTS        = false
+PLOT_TIs            = true  # set to false to avoid loading non-existent TI results
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -46,10 +47,10 @@ if LOAD_RESULTS
     try
         global wind_dirs, mean_pwrs, final_pwrs, RUN_SIMULATION, TI
         RUN_SIMULATION = false
-        wind_dirs = load(results_filename, "wind_dirs")
-        mean_pwrs = load(results_filename, "mean_pwrs")
-        final_pwrs = load(results_filename, "final_pwrs")
-        TI = load(results_filename, "TI")
+        wind_dirs = JLD2.load(results_filename, "wind_dirs")
+        mean_pwrs = JLD2.load(results_filename, "mean_pwrs")
+        final_pwrs = JLD2.load(results_filename, "final_pwrs")
+        TI = JLD2.load(results_filename, "TI")
     catch e
         @warn "Failed to load simulation results: $e"
         @info "Proceeding to run new simulations..."
@@ -63,7 +64,7 @@ if LOAD_RESULTS
 end
 if RUN_SIMULATION
     function calc_pwr(wind_dir)
-        times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; dt=350, wind_dir=wind_dir, ti=TI)
+        times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; dt=350, wind_dir=wind_dir)
         return mean(rel_power), rel_power[end]
     end
 
@@ -98,15 +99,24 @@ if SAVE_RESULTS && RUN_SIMULATION # save the results only if a simulation run ha
     end
 end
 
+wind_dirs_ = Float64[]  # Initialize as global 
+final_pwr_vec = Vector{Float64}[]
+labels = Vector{String}()
 if PLOT_TIs
+    global wind_dirs_, final_pwr_vec, labels  # Declare as global to avoid scoping issues
     for ti in TIs
+        local results_filename_
         @info "Plotting results for TI=$(100*ti) %..."
         results_filename_ = joinpath(vis.output_path, "results_power_vs_wind_dir_ti_$(ti).jld2")
+        println("Loading from $results_filename_ ...")
         try
-            wind_dirs_  = load(results_filename_, "wind_dirs")
-            final_pwrs_ = load(results_filename_, "final_pwrs")
-            TI_         = load(results_filename_, "TI")
+            global wind_dirs_, final_pwr_vec  # Ensure these are treated as global
+            wind_dirs_  = JLD2.load(results_filename_, "wind_dirs")
+            final_pwrs_ = JLD2.load(results_filename_, "final_pwrs")
+            TI_         = JLD2.load(results_filename_, "TI")
             @assert TI_ == ti
+            push!(final_pwr_vec, final_pwrs_)
+            push!(labels, "TI: $(100*ti) %")
         catch e
             @warn "Failed to load simulation results for TI=$(100*ti) %: $e"
             continue
@@ -114,9 +124,15 @@ if PLOT_TIs
         # plot_rmt(wind_dirs, mean_pwrs; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
         #          title="Mean Relative Windfarm Power vs Wind Direction", fig="TI: $(100*ti) %", pltctrl)
     end
+    if !isempty(wind_dirs_)
+        plot_rmt(wind_dirs_, final_pwr_vec; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
+                 labels, fig="Mean Relative Windfarm Power vs Wind Direction", pltctrl=pltctrl)
+    else
+        @warn "No data to plot - all TI result files failed to load"
+    end
 else
     @info "Plotting results for TI=$(100*TI) %..."
     plot_rmt(wind_dirs, mean_pwrs; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
-             title="Mean Relative Windfarm Power vs Wind Direction", fig="TI: $(100*TI) %", pltctrl)
+             title="Mean Relative Windfarm Power vs Wind Direction", fig="TI: $(100*TI) %", pltctrl=pltctrl)
 end
 
