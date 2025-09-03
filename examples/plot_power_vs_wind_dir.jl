@@ -114,7 +114,7 @@ if PLOT_TIs
             final_pwrs_ = JLD2.load(results_filename_, "final_pwrs")
             TI_         = JLD2.load(results_filename_, "TI")
             @assert TI_ == ti
-            push!(final_pwr_vec, final_pwrs_)
+            push!(final_pwr_vec, final_pwrs_ .* 100)
             push!(labels, "TI: $(100*ti) %")
         catch e
             @warn "Failed to load simulation results for TI=$(100*ti) %: $e"
@@ -122,14 +122,16 @@ if PLOT_TIs
         end
     end
     if !isempty(wind_dirs_)
-        plot_rmt(wind_dirs_, final_pwr_vec; xlabel="Wind Direction (deg)", ylabel="Relative Power", xlims=(WIND_DIR_MIN, WIND_DIR_MAX),
-                 labels, fig="Mean Relative Windfarm Power vs Wind Direction", pltctrl=pltctrl)
+        plot_rmt(wind_dirs_, final_pwr_vec; xlabel="Wind Direction [°]", ylabel="Relative Power [%]",
+                 xlims=(WIND_DIR_MIN, WIND_DIR_MAX), labels, fig="Mean Relative Windfarm Power vs Wind Direction", 
+                 pltctrl)
     else
         @warn "No data to plot - all TI result files failed to load"
     end
 else
     @info "Plotting results for TI=$(100*TI) %..."
-    plot_rmt(wind_dirs, mean_pwrs; xlabel="Wind Direction (deg)", ylabel="Relative Power", xlims=(WIND_DIR_MIN, WIND_DIR_MAX),
-             title="Mean Relative Windfarm Power vs Wind Direction", fig="TI: $(100*TI) %", pltctrl=pltctrl)
+    plot_rmt(wind_dirs, mean_pwrs; xlabel="Wind Direction (deg)", ylabel="Relative Power [%]", 
+             xlims=(WIND_DIR_MIN, WIND_DIR_MAX), title="Mean Relative Windfarm Power vs Wind Direction", 
+             fig="TI: $(100*TI) %", pltctrl=pltctrl)
 end
 
