@@ -136,6 +136,67 @@ function plot_x(times, plot_data...; ylabels=nothing, labels=nothing,
     nothing
 end
 
+"""
+    plot_rmt(X, Ys; xlabel="", ylabel="", labels=nothing, xlims=nothing, ylims=nothing, 
+             ann=nothing, scatter=false, title="", fig="", ysize=14, pltctrl=nothing)
+
+Smart plotting function for remote or sequential execution based on threading/processing environment.
+
+This function automatically chooses between parallel plotting (using remote workers) and 
+sequential plotting (using ControlPlots) based on the current Julia threading and 
+multiprocessing configuration.
+
+# Arguments
+- `X`: X-axis data (typically a vector)
+- `Ys`: Y-axis data. Can be a single vector or vector of vectors for multiple series
+- `xlabel::String=""`: Label for the X-axis
+- `ylabel::String=""`: Label for the Y-axis  
+- `labels::Union{Nothing,Vector{String}}=nothing`: Labels for each data series (for legend)
+- `xlims::Union{Nothing,Tuple}=nothing`: X-axis limits as (xmin, xmax)
+- `ylims::Union{Nothing,Tuple}=nothing`: Y-axis limits as (ymin, ymax)
+- `ann::Union{Nothing,Vector}=nothing`: Annotations to add to the plot
+- `scatter::Bool=false`: Whether to create a scatter plot instead of line plot
+- `title::String=""`: Plot title
+- `fig::String=""`: Figure window title/identifier
+- `ysize::Int=14`: Size of y-axis labels in points
+- `pltctrl::Union{Nothing,Module}=nothing`: ControlPlots module for sequential plotting
+
+# Behavior
+- **Multithreaded + Multiprocessing**: Uses `@spawnat 2 Main.rmt_plot()` for parallel execution
+- **Single-threaded or Single-process**: Uses `pltctrl.plot()` for sequential execution
+
+# Threading Requirements
+- **Parallel mode**: Requires `Threads.nthreads() > 1`, `nprocs() > 1`, and `pltctrl === nothing`
+- **Sequential mode**: Requires `pltctrl` to be the ControlPlots module
+
+# Examples
+```julia
+# Sequential plotting (single-threaded)
+using ControlPlots
+wind_dirs = [180.0, 200.0, 220.0, 240.0]
+powers = [0.85, 0.92, 0.88, 0.76]
+plot_rmt(wind_dirs, powers; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
+         title="Power vs Wind Direction", pltctrl=ControlPlots)
+
+# Multiple data series
+power_data = [[0.85, 0.92, 0.88, 0.76], [0.80, 0.89, 0.85, 0.72]]
+plot_rmt(wind_dirs, power_data; xlabel="Wind Direction (deg)", ylabel="Relative Power",
+         labels=["Configuration A", "Configuration B"], pltctrl=ControlPlots)
+
+# Parallel plotting (multithreaded + multiprocessing)
+# Automatically uses remote worker when threads > 1 and processes > 1
+plot_rmt(wind_dirs, powers; xlabel="Wind Direction (deg)", ylabel="Relative Power")
+```
+
+# Notes
+- The function returns `nothing` and displays the plot as a side effect
+- In parallel mode, plotting occurs on worker process 2 via `@spawnat`
+- In sequential mode, the plot is displayed using `display(p)` 
+- Error handling ensures appropriate `pltctrl` parameter for sequential execution
+
+# See Also
+[`plot_x`](@ref), [`plot_flow_field`](@ref), [`plot_measurements`](@ref)
+"""
 function plot_rmt(X, Ys; xlabel="", ylabel="", labels=nothing, xlims=nothing, ylims=nothing, ann=nothing, 
     scatter=false, title="", fig="", ysize=14, pltctrl=nothing)
 

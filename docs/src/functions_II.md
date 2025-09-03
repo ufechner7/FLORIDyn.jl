@@ -44,6 +44,7 @@ plotFlowField
 plot_flow_field
 plotMeasurements
 plot_measurements
+plot_rmt
 plot_x
 prepare_large_plot_inputs
 close_all
