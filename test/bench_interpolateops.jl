@@ -11,15 +11,15 @@ Uses the standard test configuration to ensure physical validity.
 """
 function create_test_setup()
     settings_file = "data/2021_9T_Data.yaml"
-    wind, sim, con, floris, floridyn, ta = setup(settings_file)
+    wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
     set = Settings(wind, sim, con)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     
-    return wf, wind, sim, con, floris, floridyn, ta, set
+    return wf, wind, sim, con, floris, floridyn, ta, tp, set
 end
 
 
-wf, wind, sim, con, floris, floridyn, ta, set = create_test_setup()
+wf, wind, sim, con, floris, floridyn, ta, tp, set = create_test_setup()
 wf_original = deepcopy(wf)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)

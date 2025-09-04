@@ -85,7 +85,7 @@ using .TestHelpers
     @testset "setUpTmpWFAndRun_basic" begin
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         # create settings struct
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
@@ -103,7 +103,7 @@ using .TestHelpers
     @testset "setUpTmpWFAndRun_vs_matlab" begin
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         # create settings struct
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)

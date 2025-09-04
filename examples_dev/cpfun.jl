@@ -11,6 +11,22 @@ import DataFrames.SentinelArrays
 using Interpolations
 using ControlPlots, LaTeXStrings
 
+function cp_fun(filename = "/home/ufechner/repos/FLORIDyn.jl/data/DTU_10MW/cp.csv")	
+    cp_df = CSV.read(filename, DataFrame; header=1)
+	# First column name contains a slash; get it programmatically
+    col_ts = names(cp_df)[1]
+    _tsr_vals = Float64.(cp_df[!, col_ts])
+    _pitch_vals = parse.(Float64, string.(names(cp_df)[2:end]))
+    cp_matrix = Array{Float64}(undef, size(cp_df,1), size(cp_df,2)-1)
+	for (j,col) in enumerate(names(cp_df)[2:end])
+	    cp_matrix[:, j] = Float64.(cp_df[!, col])
+	end
+	cp_matrix
+	cp_itp = interpolate((_tsr_vals, _pitch_vals), cp_matrix, Gridded(Linear()))
+	cp(tsr, pitch) = cp_itp(tsr, pitch)
+	return cp
+end
+
 cp_df = CSV.read("data/DTU_10MW/cp.csv", DataFrame; header=1)
 ct_df = CSV.read("data/DTU_10MW/ct.csv", DataFrame; header=1)
 
