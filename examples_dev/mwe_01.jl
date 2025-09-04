@@ -11,7 +11,7 @@ function get_parameters()
     settings_file = "data/2021_9T_Data.yaml"
 
     # get the settings for the wind field, simulator and controller
-    wind, sim, con, floris, floridyn, ta = setup(settings_file)
+    wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
 
     # create settings struct
     set = Settings(wind, sim, con)

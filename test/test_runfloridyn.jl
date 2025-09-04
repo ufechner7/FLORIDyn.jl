@@ -28,7 +28,7 @@ wf_dict_03 = vars_before_interpolateOPs_T["T"]
     global wf, wf_ref, wf_ref_03, wf_debug
     settings_file = "data/2021_9T_Data.yaml"
     # get the settings for the wind field, simulator and controller
-    wind, sim, con, floris, floridyn, ta = setup(settings_file)
+    wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
     # create settings struct
     set = Settings(wind, sim, con)
     vis = Vis(online=false, save=false, rel_v_min=20.0, up_int = 4)
