@@ -69,11 +69,11 @@ jobs:
       - name: Install matplotlib
         run: julia -e 'using Pkg; Pkg.add("ControlPlots"); using ControlPlots'
         shell: bash
+      - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-buildpkg@v1
       - name: Test visualisation (separate step for precompilation)
         run: julia --project -e 'include("test/test_visualisation.jl")'
         shell: bash
-      - uses: julia-actions/cache@v2
-      - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         if: matrix.threads != 'auto'
         env:
