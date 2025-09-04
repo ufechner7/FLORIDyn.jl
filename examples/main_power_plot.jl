@@ -30,8 +30,7 @@ include("../examples/remote_plotting.jl")
 
 times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; dt=350, wind_dir=nothing)
 
-p = plot_rmt(times, rel_power .* 100; xlabel="Time [s]", ylabel="Rel. Power Output [%]", pltctrl)
-display(p)
+plot_rmt(times, rel_power .* 100; xlabel="Time [s]", ylabel="Rel. Power Output [%]", pltctrl)
 
 println("\nMean Relative Power Output:  $(round((mean(rel_power) * 100), digits=2)) %")
 println("Final Relative Power Output: $(round((rel_power[end] * 100), digits=2)) %")
