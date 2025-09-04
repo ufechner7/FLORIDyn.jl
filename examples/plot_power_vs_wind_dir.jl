@@ -99,7 +99,7 @@ if SAVE_RESULTS && RUN_SIMULATION # save the results only if a simulation run ha
     end
 end
 
-wind_dirs_ = Float64[]  # Initialize as global 
+wind_dirs_ = Float64[]  # Initialize as global
 final_pwr_vec = Vector{Float64}[]
 labels = Vector{String}()
 if PLOT_TIs
