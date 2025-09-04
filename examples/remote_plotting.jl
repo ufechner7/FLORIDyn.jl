@@ -49,7 +49,11 @@ if Threads.nthreads() > 1
                 nothing
             end
             @everywhere function rmt_plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
-                p=ControlPlots.plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+                if isnothing(labels)
+                    p = pltctrl.plot(X, Ys; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+                else
+                    p = pltctrl.plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+                end
                 display(p)  # Ensure the plot is displayed
                 nothing
             end

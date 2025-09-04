@@ -208,7 +208,12 @@ function plot_rmt(X, Ys; xlabel="", ylabel="", labels=nothing, xlims=nothing, yl
         if pltctrl === nothing
             error("pltctrl argument is required for sequential plotting (threads=$(Threads.nthreads()), procs=$(nprocs())). Pass the ControlPlots module as pltctrl keyword.")
         end
-        p = pltctrl.plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+        if isnothing(labels)
+            p = pltctrl.plot(X, Ys; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+        else
+            p = pltctrl.plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+        end
+        
         display(p)  # Ensure the plot is displayed
     end
     nothing
