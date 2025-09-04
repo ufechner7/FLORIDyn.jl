@@ -660,8 +660,7 @@ The function performs these steps:
 
 # See Also
 - [`TurbineProperties`](@ref): Struct that uses cp_fun for aerodynamic modeling
-- [`Interpolations.jl`](@ref): Underlying interpolation library
-- [`CSV.jl`](@ref): CSV file reading functionality
+- [`Interpolations.jl`](https://github.com/JuliaMath/Interpolations.jl): Underlying interpolation library
 """
 function cp_fun(filename = "data/DTU_10MW/cp.csv")	
     cp_df = CSV.read(filename, DataFrame; header=1)
@@ -803,14 +802,14 @@ function TurbineProperties(filename::String)
 end
 
 """
-    setup(filename) -> (wind, sim, con, floris, floridyn, ta, tp, tp)
+    setup(filename) -> (wind, sim, con, floris, floridyn, ta, tp)
 
 Load wind farm configuration from a YAML file and parse all simulation components.
 
 This function reads the configuration file of the simulation and extracts all necessary 
 parameters for setting up a FLORIDyn simulation, including wind conditions, simulation 
-settings, control strategies, FLORIS model parameters, FLORIDyn dynamics, and turbine 
-array layout.
+settings, control strategies, FLORIS model parameters, FLORIDyn dynamics, turbine 
+array layout and turbine properties.
 
 # Arguments
 - `filename::String`: Path to the YAML configuration file.
