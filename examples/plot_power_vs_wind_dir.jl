@@ -9,7 +9,7 @@ if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
-TI             = 0.062*1  # turbulence intensity for fixed wind direction simulations
+TI             = 0.062  # turbulence intensity for fixed wind direction simulations
 TIs            = [0.0, 0.062, 0.062*2]
 WIND_DIR_MIN        = 270-90.0
 WIND_DIR_MAX        = 270+90.0
