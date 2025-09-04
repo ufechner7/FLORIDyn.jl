@@ -34,8 +34,8 @@ cp(tsr, pitch) = _cp_itp(tsr, pitch)
 ct(tsr, pitch) = _ct_itp(tsr, pitch)
 
 # Demo values
-println("Cp(5.0, 10.0°) = ", cp(5.0, 10.0))
-println("Ct(5.0, 10.0°) = ", ct(5.0, 10.0))
+println("Cp(8.0, 0.75°) = ", cp(8.0, 0.75))
+println("Ct(8.0, 0.75°) = ", ct(8.0, 0.75))
 
 # Maxima (table resolution)
 max_cp, lin_cp = findmax(cp_matrix)
