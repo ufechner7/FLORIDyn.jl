@@ -5,8 +5,8 @@ if !isdefined(Main, :Test)
     using Test
 end 
 using DataFrames  # Required for DataFrame functionality in turbines() tests
-using Statistics  # Required for mean, std functions in calc_rel_power tests
-using DistributedNext  # Required for nprocs() function in plot_x tests
+# using Statistics  # Required for mean, std functions in calc_rel_power tests
+# using DistributedNext  # Required for nprocs() function in plot_x tests
 
 if ! isinteractive()
     global pltctrl
@@ -912,7 +912,8 @@ if ! isinteractive()
                 @test_throws TypeError plot_measurements(wf, md, vis; separated=true, msr=4, plt)
                 @test_throws TypeError plot_measurements(wf, md, vis; separated=false, msr=-1, plt)
             end
-            
+
+            sleep(1)  # Small pause to ensure plots close properly
             # Test default msr value (should be 1)
             @testset "Default msr value" begin
                 try
@@ -929,7 +930,7 @@ if ! isinteractive()
                 try
                     sleep(parse(Int, sleep_duration))
                 catch
-                    sleep(10) # fallback to default if parsing fails
+                    sleep(1) # fallback to default if parsing fails
                 end
             end
         end
