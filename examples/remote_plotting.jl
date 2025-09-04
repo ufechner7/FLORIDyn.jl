@@ -7,7 +7,7 @@ if Threads.nthreads() > 1
         if nprocs() < 2  # nprocs() counts main + workers, so < 2 means no dedicated workers
             println("No dedicated workers found, adding 1 worker...")
             if workers() < [2]
-                addprocs(1)
+                addprocs(1; exeflags=["-t 1", "--project", "--gcthreads=1,0"])
             end
             if workers() != [2]
                 sleep(1)
