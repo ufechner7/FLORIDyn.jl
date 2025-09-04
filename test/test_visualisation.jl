@@ -837,107 +837,106 @@ if ! isinteractive()
         end
 
         println("===>> Running test set: plotMeasurements")
-        # @testset "plotMeasurements" begin
-        #     # Get test parameters
-        #     wf, set, floris, wind, md = get_parameters()
-        #     vis = Vis(online=false, save=false, unit_test=true)
+        @testset "plotMeasurements" begin
+            # Get test parameters
+            wf, set, floris, wind, md = get_parameters()
+            vis = Vis(online=false, save=false, unit_test=true)
             
-        #     # Test msr=VelReduction (velocity reduction) - existing tests
-        #     @testset "msr=VelReduction (velocity reduction)" begin
-        #         try
-        #             plot_measurements(wf, md, vis; separated=true, msr=VelReduction, plt)
-        #             println("✓ plot_measurements msr=VelReduction with separated=true completed successfully")
-        #         catch e
-        #             @error "plot_measurements msr=VelReduction with separated=true failed: $e"
-        #             rethrow(e)
-        #         end
+            # Test msr=VelReduction (velocity reduction) - existing tests
+            @testset "msr=VelReduction (velocity reduction)" begin
+                try
+                    plot_measurements(wf, md, vis; separated=true, msr=VelReduction, plt)
+                    println("✓ plot_measurements msr=VelReduction with separated=true completed successfully")
+                catch e
+                    @error "plot_measurements msr=VelReduction with separated=true failed: $e"
+                    rethrow(e)
+                end
                 
-        #         try
-        #             plot_measurements(wf, md, vis; separated=false, msr=VelReduction, plt)
-        #             println("✓ plot_measurements msr=VelReduction with separated=false completed successfully")
-        #         catch e
-        #             @error "plot_measurements msr=VelReduction with separated=false failed: $e"
-        #             rethrow(e)
-        #         end
-        #     end
+                try
+                    plot_measurements(wf, md, vis; separated=false, msr=VelReduction, plt)
+                    println("✓ plot_measurements msr=VelReduction with separated=false completed successfully")
+                catch e
+                    @error "plot_measurements msr=VelReduction with separated=false failed: $e"
+                    rethrow(e)
+                end
+            end
             
-        #     # Test msr=AddedTurbulence (added turbulence) - new tests
-        #     @testset "msr=AddedTurbulence (added turbulence)" begin
-        #         # Check if AddedTurbulence column exists and has data
-        #         if "AddedTurbulence" in names(md) && any(x -> !ismissing(x) && x != 0, md.AddedTurbulence)
-        #             try
-        #                 plot_measurements(wf, md, vis; separated=true, msr=AddedTurbulence, plt)
-        #                 println("✓ plot_measurements msr=AddedTurbulence with separated=true completed successfully")
-        #             catch e
-        #                 @warn "plot_measurements msr=AddedTurbulence with separated=true failed: $e"
-        #                 # Still test that it fails gracefully, not with unhandled errors
-        #                 @test isa(e, Exception)
-        #             end
+            # Test msr=AddedTurbulence (added turbulence) - new tests
+            @testset "msr=AddedTurbulence (added turbulence)" begin
+                # Check if AddedTurbulence column exists and has data
+                if "AddedTurbulence" in names(md) && any(x -> !ismissing(x) && x != 0, md.AddedTurbulence)
+                    try
+                        plot_measurements(wf, md, vis; separated=true, msr=AddedTurbulence, plt)
+                        println("✓ plot_measurements msr=AddedTurbulence with separated=true completed successfully")
+                    catch e
+                        @warn "plot_measurements msr=AddedTurbulence with separated=true failed: $e"
+                        # Still test that it fails gracefully, not with unhandled errors
+                        @test isa(e, Exception)
+                    end
                     
-        #             try
-        #                 plot_measurements(wf, md, vis; separated=false, msr=AddedTurbulence, plt)
-        #                 println("✓ plot_measurements msr=AddedTurbulence with separated=false completed successfully")
-        #             catch e
-        #                 @warn "plot_measurements msr=AddedTurbulence with separated=false failed: $e"
-        #                 @test isa(e, Exception)
-        #             end
-        #         else
-        #             @test_skip "Skipping msr=AddedTurbulence tests - AddedTurbulence column not available or contains no data"
-        #         end
-        #     end
+                    try
+                        plot_measurements(wf, md, vis; separated=false, msr=AddedTurbulence, plt)
+                        println("✓ plot_measurements msr=AddedTurbulence with separated=false completed successfully")
+                    catch e
+                        @warn "plot_measurements msr=AddedTurbulence with separated=false failed: $e"
+                        @test isa(e, Exception)
+                    end
+                else
+                    @test_skip "Skipping msr=AddedTurbulence tests - AddedTurbulence column not available or contains no data"
+                end
+            end
             
-        #     # Test msr=EffWind (effective wind speed) - new tests
-        #     @testset "msr=EffWind (effective wind speed)" begin
-        #         # Check if EffWindSpeed column exists and has data
-        #         if "EffWindSpeed" in names(md) && any(x -> !ismissing(x) && x != 0, md.EffWindSpeed)
-        #             try
-        #                 plot_measurements(wf, md, vis; separated=true, msr=EffWind, plt)
-        #                 println("✓ plot_measurements msr=EffWind with separated=true completed successfully")
-        #             catch e
-        #                 @warn "plot_measurements msr=EffWind with separated=true failed: $e"
-        #                 @test isa(e, Exception)
-        #             end
+            # Test msr=EffWind (effective wind speed) - new tests
+            @testset "msr=EffWind (effective wind speed)" begin
+                # Check if EffWindSpeed column exists and has data
+                if "EffWindSpeed" in names(md) && any(x -> !ismissing(x) && x != 0, md.EffWindSpeed)
+                    try
+                        plot_measurements(wf, md, vis; separated=true, msr=EffWind, plt)
+                        println("✓ plot_measurements msr=EffWind with separated=true completed successfully")
+                    catch e
+                        @warn "plot_measurements msr=EffWind with separated=true failed: $e"
+                        @test isa(e, Exception)
+                    end
                     
-        #             try
-        #                 plot_measurements(wf, md, vis; separated=false, msr=EffWind, plt)
-        #                 println("✓ plot_measurements msr=EffWind with separated=false completed successfully")
-        #             catch e
-        #                 @warn "plot_measurements msr=EffWind with separated=false failed: $e"
-        #                 @test isa(e, Exception)
-        #             end
-        #         else
-        #             @test_skip "Skipping msr=EffWind tests - EffWindSpeed column not available or contains no data"
-        #         end
-        #     end
+                    try
+                        plot_measurements(wf, md, vis; separated=false, msr=EffWind, plt)
+                        println("✓ plot_measurements msr=EffWind with separated=false completed successfully")
+                    catch e
+                        @warn "plot_measurements msr=EffWind with separated=false failed: $e"
+                        @test isa(e, Exception)
+                    end
+                else
+                    @test_skip "Skipping msr=EffWind tests - EffWindSpeed column not available or contains no data"
+                end
+            end
             
-        #     # Test error handling for invalid msr values
-        #     @testset "Invalid msr values" begin
-        #         @test_throws TypeError plot_measurements(wf, md, vis; separated=true, msr=0, plt)
-        #         @test_throws TypeError plot_measurements(wf, md, vis; separated=true, msr=4, plt)
-        #         @test_throws TypeError plot_measurements(wf, md, vis; separated=false, msr=-1, plt)
-        #     end
+            # Test error handling for invalid msr values
+            @testset "Invalid msr values" begin
+                @test_throws TypeError plot_measurements(wf, md, vis; separated=true, msr=0, plt)
+                @test_throws TypeError plot_measurements(wf, md, vis; separated=true, msr=4, plt)
+                @test_throws TypeError plot_measurements(wf, md, vis; separated=false, msr=-1, plt)
+            end
 
-        #     sleep(1)  # Small pause to ensure plots close properly
-        #     # Test default msr value (should be 1)
-        #     @testset "Default msr value" begin
-        #         try
-        #             # Test that calling without msr parameter defaults to msr=VelReduction
-        #             plot_measurements(wf, md, vis; separated=true, plt)
-        #             println("✓ plot_measurements with default msr completed successfully")
-        #         catch e
-        #             @error "plot_measurements with default msr failed: $e"
-        #             rethrow(e)
-        #         end
-        #     end
-        #     if Threads.nthreads() > 1
-        #         sleep_duration = get(ENV, "TEST_THREAD_SLEEP", "10")
-        #         try
-        #             sleep(parse(Int, sleep_duration))
-        #         catch
-        #             sleep(1) # fallback to default if parsing fails
-        #         end
-        #     end
-        # end
+            # Test default msr value (should be 1)
+            @testset "Default msr value" begin
+                try
+                    # Test that calling without msr parameter defaults to msr=VelReduction
+                    plot_measurements(wf, md, vis; separated=true, plt)
+                    println("✓ plot_measurements with default msr completed successfully")
+                catch e
+                    @error "plot_measurements with default msr failed: $e"
+                    rethrow(e)
+                end
+            end
+            if Threads.nthreads() > 1
+                sleep_duration = get(ENV, "TEST_THREAD_SLEEP", "10")
+                try
+                    sleep(parse(Int, sleep_duration))
+                catch
+                    sleep(1) # fallback to default if parsing fails
+                end
+            end
+        end
         
         println("===>> Running test set: createVideo")
         @testset "createVideo" begin
