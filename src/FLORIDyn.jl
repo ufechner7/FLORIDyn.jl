@@ -51,8 +51,8 @@ export prepareSimulation, importSOWFAFile, centerline!, angSOWFA2world, initSimu
 export runFLORIS!, init_states, getUadv
 export runFLORIDyn, iterateOPs!, setUpTmpWFAndRun!, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
 export getVars!
-export getMeasurements, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples
-export run_floridyn, plot_flow_field, plot_measurements, plot_x, close_all, turbines
+export getMeasurements, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples, calc_rel_power
+export run_floridyn, plot_flow_field, plot_measurements, plot_x, plot_rmt, close_all, turbines
 export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
 export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_results, find_floridyn_runs, compare_dataframes
 export isdelftblue, Measurement, parse_measurements
@@ -394,6 +394,7 @@ include("floridyn_cl/iterate.jl")
 
 include("controller/controller.jl")
 include("visualisation/calc_flowfield.jl")
+include("visualisation/calc_power.jl")
 include("visualisation/plot_flowfield.jl")
 include("visualisation/plot_measurements.jl")
 include("visualisation/create_video.jl")

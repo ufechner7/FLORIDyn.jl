@@ -90,6 +90,7 @@ suppress_warning_files = [
     "test_iterate.jl",
     "test_floridyn_cl.jl",
     "test_prepare_simulation.jl",
+    "test_visualisation.jl",
 ]
 
 # Get test files to run from test_args

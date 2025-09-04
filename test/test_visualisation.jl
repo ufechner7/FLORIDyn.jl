@@ -5,6 +5,12 @@ if !isdefined(Main, :Test)
     using Test
 end 
 using DataFrames  # Required for DataFrame functionality in turbines() tests
+if !isdefined(Main, :Statistics)
+    using Statistics  # Required for mean, std functions in calc_rel_power tests
+end
+if !isdefined(Main, :DistributedNext)
+    using DistributedNext  # Required for nprocs() function in plot_x tests
+end
 
 if ! isinteractive()
     global pltctrl
@@ -208,7 +214,7 @@ if ! isinteractive()
     @testset verbose=true "Visualisation Tests                                    " begin
         # Add explicit garbage collection at start
         GC.gc()
-        
+        println("===>> Running test set: getMeasurements")
         @testset "getMeasurements" begin
             # Create a simple test wind farm configuration
             @testset "basic functionality" begin
@@ -250,7 +256,8 @@ if ! isinteractive()
                 @test :getMeasurements in names(FLORIDyn)
             end
         end
-        
+
+        println("===>> Running test set: calcFlowField")
         @testset "calcFlowField" begin
             # Get test parameters once for all calcFlowField tests
             wf, set, floris, wind, md = get_parameters()
@@ -828,6 +835,8 @@ if ! isinteractive()
                 end
             end
         end
+
+        println("===>> Running test set: plotMeasurements")
         @testset "plotMeasurements" begin
             # Get test parameters
             wf, set, floris, wind, md = get_parameters()
@@ -907,7 +916,7 @@ if ! isinteractive()
                 @test_throws TypeError plot_measurements(wf, md, vis; separated=true, msr=4, plt)
                 @test_throws TypeError plot_measurements(wf, md, vis; separated=false, msr=-1, plt)
             end
-            
+
             # Test default msr value (should be 1)
             @testset "Default msr value" begin
                 try
@@ -924,11 +933,12 @@ if ! isinteractive()
                 try
                     sleep(parse(Int, sleep_duration))
                 catch
-                    sleep(10) # fallback to default if parsing fails
+                    sleep(1) # fallback to default if parsing fails
                 end
             end
         end
         
+        println("===>> Running test set: createVideo")
         @testset "createVideo" begin
             @testset "function exists and is callable" begin
                 # Test that the function exists and has the right signature
@@ -1047,6 +1057,8 @@ if ! isinteractive()
                 end
             end
         end
+
+        println("===>> Running test set: plot_x")
         @testset "plot_x" begin
             @testset "function exists and is callable" begin
                 # Test that the function exists and has the right signature
@@ -1243,8 +1255,246 @@ if ! isinteractive()
             end
         end
         
+        @testset "calc_rel_power" begin
+            @testset "function exists and is callable" begin
+                # Test that the function exists and has the right signature
+                @test calc_rel_power isa Function
+                
+                # Test that we can get method information
+                methods_list = methods(calc_rel_power)
+                @test length(methods_list) >= 1
+                
+                # Check that the function is exported
+                @test :calc_rel_power in names(FLORIDyn)
+            end
+            
+            @testset "basic functionality with default parameters" begin
+                # Test with minimal 9-turbine configuration for faster execution
+                settings_file = "data/2021_9T_Data.yaml"
+                
+                # Basic call with default parameters (using wind_dir=nothing like main_power_plot.jl)
+                times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; wind_dir=nothing)
+                
+                # Test return types and structure
+                @test isa(times, Vector{Float64})
+                @test isa(rel_power, Vector{Float64})
+                @test isa(set, Settings)
+                @test isa(wf, WindFarm)
+                @test isa(wind, Wind)  # Wind is imported directly, not FLORIDyn.Wind
+                @test isa(floris, Floris)
+                
+                # Test that arrays have consistent lengths
+                @test length(times) == length(rel_power)
+                @test length(times) > 0  # Should have data points
+                
+                # Test that time values are reasonable
+                @test all(times .>= 0.0)  # Times should be non-negative
+                @test issorted(times)     # Times should be monotonically increasing
+                
+                # Test that relative power values are reasonable
+                @test all(rel_power .>= 0.0)     # Power should be non-negative
+                @test all(rel_power .<= 2.0)     # Should not exceed 200% (reasonable upper bound)
+                @test all(isfinite.(rel_power))  # Should be finite values
+                
+                # Test that wind farm has expected structure
+                @test wf.nT > 0  # Should have turbines
+                @test wf.nT == 9  # Should be 9-turbine configuration
+            end
+            
+            @testset "custom dt parameter" begin
+                settings_file = "data/2021_9T_Data.yaml"
+                
+                # Test with shorter simulation time
+                dt_short = 50  # 50 seconds for faster testing
+                times_short, rel_power_short, set_short, wf_short, wind_short, floris_short = calc_rel_power(settings_file; dt=dt_short, wind_dir=180.0)
+                
+                # Test with longer simulation time  
+                dt_long = 100   # 100 seconds
+                times_long, rel_power_long, set_long, wf_long, wind_long, floris_long = calc_rel_power(settings_file; dt=dt_long, wind_dir=180.0)
+                
+                # Longer simulation should have more data points (or at least same)
+                @test length(times_long) >= length(times_short)
+                
+                # Both should produce valid results
+                @test all(isfinite.(rel_power_short))
+                @test all(isfinite.(rel_power_long))
+                @test all(rel_power_short .>= 0.0)
+                @test all(rel_power_long .>= 0.0)
+            end
+            
+            @testset "fixed wind direction parameter" begin
+                settings_file = "data/2021_9T_Data.yaml"
+                
+                # Test with fixed wind direction
+                wind_dir_270 = 270.0
+                times_270, rel_power_270, set_270, wf_270, wind_270, floris_270 = calc_rel_power(settings_file; dt=50, wind_dir=wind_dir_270)
+                
+                # Test with different wind direction
+                wind_dir_90 = 90.0
+                times_90, rel_power_90, set_90, wf_90, wind_90, floris_90 = calc_rel_power(settings_file; dt=50, wind_dir=wind_dir_90)
+                
+                # Test settings configuration for fixed wind direction
+                @test set_270.dir_mode isa Direction_Constant
+                @test set_270.control_mode isa Yaw_Constant
+                @test set_90.dir_mode isa Direction_Constant
+                @test set_90.control_mode isa Yaw_Constant
+                
+                # Test that wind direction is applied
+                @test wind_270.dir[1,1] ≈ wind_dir_270
+                @test wind_90.dir[1,1] ≈ wind_dir_90
+                
+                # Both should produce valid results
+                @test all(isfinite.(rel_power_270))
+                @test all(isfinite.(rel_power_90))
+                @test all(rel_power_270 .>= 0.0)
+                @test all(rel_power_90 .>= 0.0)
+                
+                # Time arrays should have same length for same dt
+                @test length(times_270) == length(times_90)
+            end
+            
+            @testset "variable wind direction (default)" begin
+                settings_file = "data/2021_9T_Data.yaml"
+                
+                # Test with variable wind direction (wind_dir=nothing, default)
+                times_var, rel_power_var, set_var, wf_var, wind_var, floris_var = calc_rel_power(settings_file; dt=50, wind_dir=nothing)
+                
+                # Test settings configuration for variable wind direction
+                @test !(set_var.dir_mode isa Direction_Constant)
+                @test !(set_var.control_mode isa Yaw_Constant)
+                
+                # Should produce valid results
+                @test isa(times_var, Vector{Float64})
+                @test isa(rel_power_var, Vector{Float64})
+                @test length(times_var) == length(rel_power_var)
+                @test all(isfinite.(rel_power_var))
+                @test all(rel_power_var .>= 0.0)
+            end
+            
+            @testset "power calculation physics" begin
+                settings_file = "data/2021_9T_Data.yaml"
+                
+                # Test the cubic relationship (P ∝ v³)
+                times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; dt=50, wind_dir=180.0)
+                
+                # Power should generally be between 0 and 1 for most wind conditions
+                # (unless there's significant speedup effects)
+                @test 0.2 <= mean(rel_power) <= 1.2
+                
+                # Standard deviation should be reasonable (not zero, but not extreme)
+                power_std = std(rel_power)
+                @test 0.0 <= power_std <= 0.5  # Reasonable variation
+                
+                # Test that individual turbine contributions make sense
+                # The function sums rel_speed^3 for all turbines and divides by nT
+                # So rel_power should be the average of cubic relative wind speeds
+                @test all(0.0 .<= rel_power .<= 2.0)  # Each turbine contributes 0-200% typically
+            end
+            
+            @testset "return value validation" begin
+                settings_file = "data/2021_9T_Data.yaml"
+                times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; dt=50)
+                
+                # Test times array properties
+                @testset "times array" begin
+                    @test isa(times, Vector{Float64})
+                    @test length(times) > 0
+                    @test issorted(times)
+                    @test all(times .>= 0.0)
+                    @test all(isfinite.(times))
+                end
+                
+                # Test rel_power array properties
+                @testset "rel_power array" begin
+                    @test isa(rel_power, Vector{Float64})
+                    @test length(rel_power) == length(times)
+                    @test all(isfinite.(rel_power))
+                    @test all(rel_power .>= 0.0)
+                    @test !all(rel_power .== 0.0)  # Should not be all zeros
+                end
+                
+                # Test Settings object
+                @testset "Settings object" begin
+                    @test isa(set, Settings)
+                    @test hasfield(typeof(set), :dir_mode)
+                    @test hasfield(typeof(set), :control_mode)
+                    @test hasfield(typeof(set), :parallel)
+                    @test hasfield(typeof(set), :threading)
+                end
+                
+                # Test WindFarm object
+                @testset "WindFarm object" begin
+                    @test isa(wf, WindFarm)
+                    @test wf.nT > 0
+                    @test hasfield(typeof(wf), :States_T)
+                    @test hasfield(typeof(wf), :nT)
+                end
+                
+                # Test Wind object
+                @testset "Wind object" begin
+                    @test isa(wind, Wind)  # Wind is imported directly
+                    @test hasfield(typeof(wind), :dir)
+                    @test size(wind.dir, 1) > 0
+                    @test size(wind.dir, 2) > 0
+                end
+                
+                # Test Floris object
+                @testset "Floris object" begin
+                    @test isa(floris, Floris)
+                    # Floris internal structure may vary, just test it exists
+                end
+            end
+            
+            @testset "performance and memory" begin
+                settings_file = "data/2021_9T_Data.yaml"
+                
+                # Test that function completes in reasonable time
+                @testset "execution time" begin
+                    start_time = time()
+                    times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; dt=30)
+                    execution_time = time() - start_time
+                    
+                    # Should complete within reasonable time (depends on system)
+                    @test execution_time < 30.0  # Should complete within 30 seconds for small dt
+                    @test length(times) > 0
+                    @test all(isfinite.(rel_power))
+                end
+                
+                # Test memory usage is reasonable
+                @testset "memory usage" begin
+                    # Run GC before test
+                    GC.gc()
+                    
+                    times, rel_power, set, wf, wind, floris = calc_rel_power(settings_file; dt=50)
+                    
+                    # Arrays should not be excessively large
+                    @test length(times) < 10000  # Should be reasonable number of time steps
+                    @test sizeof(rel_power) < 100_000  # Should not use excessive memory
+                end
+            end
+            
+            @testset "error handling" begin
+                # Test with non-existent settings file
+                @testset "invalid settings file" begin
+                    @test_throws SystemError calc_rel_power("nonexistent_file.yaml")
+                end
+                
+                # Test with invalid parameter types
+                @testset "invalid parameter types" begin
+                    settings_file = "data/2021_9T_Data.yaml"
+                    
+                    # Invalid dt type
+                    @test_throws MethodError calc_rel_power(settings_file; dt="invalid")
+                    
+                    # Invalid wind_dir type  
+                    @test_throws MethodError calc_rel_power(settings_file; wind_dir="invalid")
+                end
+            end
+        end
+        
     end
 
+    println("===>> Running test set: Pretty Print Functions")
     @testset verbose=true "Pretty Print Functions                                  " begin
         @testset "turbines(T::Dict)" begin
             @testset "basic functionality with States_T (capital T)" begin

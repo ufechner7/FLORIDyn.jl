@@ -7,7 +7,7 @@ if Threads.nthreads() > 1
         if nprocs() < 2  # nprocs() counts main + workers, so < 2 means no dedicated workers
             println("No dedicated workers found, adding 1 worker...")
             if workers() < [2]
-                addprocs(1)
+                addprocs(1; exeflags=["-t 1", "--project", "--gcthreads=1,0"])
             end
             if workers() != [2]
                 sleep(1)
@@ -45,6 +45,15 @@ if Threads.nthreads() > 1
                                             legend_size=nothing, loc=nothing)
                 p=ControlPlots.plotx(times, plot_data...; ylabels, labels, fig=fig, xlabel, ysize, bottom, 
                                      legend_size, loc)
+                display(p)  # Ensure the plot is displayed
+                nothing
+            end
+            @everywhere function rmt_plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+                if isnothing(labels)
+                    p = pltctrl.plot(X, Ys; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+                else
+                    p = pltctrl.plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+                end
                 display(p)  # Ensure the plot is displayed
                 nothing
             end
