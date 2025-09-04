@@ -210,7 +210,7 @@ if ! isinteractive()
     @testset verbose=true "Visualisation Tests                                    " begin
         # Add explicit garbage collection at start
         GC.gc()
-        
+        println("===>> Running test set: getMeasurements")
         @testset "getMeasurements" begin
             # Create a simple test wind farm configuration
             @testset "basic functionality" begin
@@ -252,7 +252,8 @@ if ! isinteractive()
                 @test :getMeasurements in names(FLORIDyn)
             end
         end
-        
+
+        println("===>> Running test set: calcFlowField")
         @testset "calcFlowField" begin
             # Get test parameters once for all calcFlowField tests
             wf, set, floris, wind, md = get_parameters()
@@ -830,6 +831,8 @@ if ! isinteractive()
                 end
             end
         end
+
+        println("===>> Running test set: plotMeasurements")
         @testset "plotMeasurements" begin
             # Get test parameters
             wf, set, floris, wind, md = get_parameters()
@@ -931,6 +934,7 @@ if ! isinteractive()
             end
         end
         
+        println("===>> Running test set: createVideo")
         @testset "createVideo" begin
             @testset "function exists and is callable" begin
                 # Test that the function exists and has the right signature
@@ -1049,6 +1053,8 @@ if ! isinteractive()
                 end
             end
         end
+
+        println("===>> Running test set: plot_x")
         @testset "plot_x" begin
             @testset "function exists and is callable" begin
                 # Test that the function exists and has the right signature
@@ -1484,6 +1490,7 @@ if ! isinteractive()
         
     end
 
+    println("===>> Running test set: Pretty Print Functions")
     @testset verbose=true "Pretty Print Functions                                  " begin
         @testset "turbines(T::Dict)" begin
             @testset "basic functionality with States_T (capital T)" begin
