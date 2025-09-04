@@ -76,7 +76,7 @@ println("Power variability: ", round(power_std, digits=3))
 # See also
 [`FLORIDyn.prepare_large_plot_inputs`](@ref), [`run_floridyn`](@ref), [`Settings`](@ref)
 """
-function calc_rel_power(settings_file; dt=350, wind_dir=180.0, ti=0.062)
+function calc_rel_power(settings_file; dt=350, wind_dir=nothing, ti=0.062)
     fixed_wind_dir = ! isnothing(wind_dir)
     # get the settings for the wind field, simulator and controller
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
