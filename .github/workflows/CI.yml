@@ -72,7 +72,7 @@ jobs:
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
       - name: Test visualisation (separate step for precompilation)
-        run: julia --project -e 'include("test/test_visualisation.jl")'
+        run: julia --project -t 1 --gcthreads=1,0-e 'include("test/test_visualisation.jl")'
         shell: bash
       - uses: julia-actions/julia-runtest@v1
         if: matrix.threads != 'auto'
