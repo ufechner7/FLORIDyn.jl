@@ -1,16 +1,14 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# MainFLORIDyn Center-Line model
-# Improved FLORIDyn approach over the gaussian FLORIDyn model
-
-# Minimal example of how to run a simulation using FLORIDyn.jl
+# Plot the relative power output of a wind farm over time
+# Optionally, plot the flow field at the end of the simulation
 using FLORIDyn, TerminalPager, DistributedNext, Statistics
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
-PLOT_FLOW_FIELD = false
+PLOT_FLOW_FIELD = false  # Set to false to skip flow field plotting
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
