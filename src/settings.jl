@@ -881,6 +881,9 @@ function setup(filename)
     ta = TurbineArray(pos, type, init_states)
     turbine = ta.type[1]  # assume all turbines are of the same type for now
     cp_file = abspath(joinpath(dirname(filename), replace(turbine, ' ' => '_'), "cp.csv"))
+    if !isfile(cp_file)
+        error("cp.csv file not found for turbine type '$(turbine)'. Expected at: $(cp_file). Please check your directory structure and naming convention.")
+    end
     tp = TurbineProperties(cp_file)
     return wind, sim, con, floris, floridyn, ta, tp
 end
