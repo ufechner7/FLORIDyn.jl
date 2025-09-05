@@ -28,8 +28,8 @@ for (j,col) in enumerate(names(cp_df)[2:end])
 end
 
 # Create gridded linear interpolations
-const _cp_itp = interpolate((_tsr_vals, _pitch_vals), cp_matrix, Gridded(Linear()))
-const _ct_itp = interpolate((_tsr_vals, _pitch_vals), ct_matrix, Gridded(Linear()))
+_cp_itp = interpolate((_tsr_vals, _pitch_vals), cp_matrix, Gridded(Linear()))
+_ct_itp = interpolate((_tsr_vals, _pitch_vals), ct_matrix, Gridded(Linear()))
 
 cp(tsr, pitch) = _cp_itp(tsr, pitch)
 ct(tsr, pitch) = _ct_itp(tsr, pitch)
