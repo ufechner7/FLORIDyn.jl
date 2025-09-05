@@ -76,6 +76,6 @@ fig_ct.colorbar(surf2, shrink=0.8, aspect=12, label=L"C_t", pad=0.1)
 plt.tight_layout()
 
 settings_file, vis_file = get_default_project()[2:3]
-# get the settings for the wind field, simulator and controller
+# get the settings for the wind field, simulator, controller and turbines
 _, _, _, _, _, _, tp = setup(settings_file)
 @info "tp.cp_fun(8, 0.75) = $(tp.cp_fun(8, 0.75))"
