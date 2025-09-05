@@ -672,7 +672,6 @@ function cp_fun(filename = "data/DTU_10MW/cp.csv")
 	for (j,col) in enumerate(names(cp_df)[2:end])
 	    cp_matrix[:, j] = Float64.(cp_df[!, col])
 	end
-	cp_matrix
 	cp_itp = interpolate((_tsr_vals, _pitch_vals), cp_matrix, Gridded(Linear()))
 	cp(tsr, pitch) = cp_itp(tsr, pitch)
 	return cp
