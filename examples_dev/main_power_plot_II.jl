@@ -28,7 +28,7 @@ end
 include("../examples/remote_plotting.jl")
 
 # get the settings for the wind field, simulator and controller
-wind, sim, con, floris, floridyn, ta = setup(settings_file)
+wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
 dt = 350
 sim.end_time += dt
 wind_dir = 180.0
