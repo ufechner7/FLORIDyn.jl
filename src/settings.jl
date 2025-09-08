@@ -663,6 +663,7 @@ The function performs these steps:
 - [`Interpolations.jl`](https://github.com/JuliaMath/Interpolations.jl): Underlying interpolation library
 """
 function cp_fun(filename = "data/DTU_10MW/cp.csv")	
+    local cp_df
     try
         cp_df = CSV.read(filename, DataFrame; header=1)
     catch err
@@ -883,7 +884,14 @@ function setup(filename)
     init_states = reduce(vcat, [s' for s in init_states])  # transpose and concatenate
 
     ta = TurbineArray(pos, type, init_states)
-    turbine = ta.type[1]  # assume all turbines are of the same type for now
+    
+    # Validate that all turbines have the same type
+    unique_types = unique(ta.type)
+    if length(unique_types) > 1
+        error("All turbines must have the same type. Found different types: $(join(unique_types, ", "))")
+    end
+    
+    turbine = ta.type[1]  # all turbines are validated to be of the same type
     cp_file = abspath(joinpath(dirname(filename), replace(turbine, ' ' => '_'), "cp.csv"))
     if !isfile(cp_file)
         error("cp.csv file not found for turbine type '$(turbine)'. Expected at: $(cp_file). Please check your directory structure and naming convention.")
