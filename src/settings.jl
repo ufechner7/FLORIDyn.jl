@@ -663,7 +663,11 @@ The function performs these steps:
 - [`Interpolations.jl`](https://github.com/JuliaMath/Interpolations.jl): Underlying interpolation library
 """
 function cp_fun(filename = "data/DTU_10MW/cp.csv")	
-    cp_df = CSV.read(filename, DataFrame; header=1)
+    try
+        cp_df = CSV.read(filename, DataFrame; header=1)
+    catch err
+        error("Failed to read CSV file '$(filename)': $(err). Please check that the file exists and is a valid CSV with the expected format.")
+    end
 	# First column name contains a slash; get it programmatically
     col_ts = names(cp_df)[1]
     _tsr_vals = Float64.(cp_df[!, col_ts])
