@@ -112,11 +112,11 @@ Arguments:
 
 Returns:
 - `Float64` when `iT` is an Integer
-- `Vector{Float64}` when `iT` is a vector
+- `Vector{Float64}` when `iT` is a vector   
 """
 function getYaw(::Yaw_Constant, con_yaw_data::AbstractMatrix, iT, t)
-    size(con_yaw_data, 1) == 0 && error("con_yaw_data must have at least one row")
-    size(con_yaw_data, 2) == 0 && error("con_yaw_data must have at least one column")
+    size(con_yaw_data, 1) == 0 && error("con_yaw_data must have at least one row: $(con_yaw_data)")
+    size(con_yaw_data, 2) == 0 && error("con_yaw_data must have at least one column: $(con_yaw_data)")
     yaw = con_yaw_data[1,1]
     if isa(iT, Integer)
         return yaw

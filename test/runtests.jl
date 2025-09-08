@@ -92,6 +92,7 @@ suppress_warning_files = [
     # average iteration currently produces no warnings; keep separate if needed later
     "test_floridyn_cl.jl",
     "test_prepare_simulation.jl",
+    "test_visualisation.jl",
 ]
 
 # Get test files to run from test_args
