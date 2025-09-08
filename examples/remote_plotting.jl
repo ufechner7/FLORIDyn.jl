@@ -9,7 +9,7 @@ if Threads.nthreads() > 1
                 sleep(0.5)
                 if workers() < [2]
                     println("No dedicated workers found, adding 1 worker...")
-                    addprocs(1)
+                    addprocs(1; exeflags=["-t 1", "--project", "--gcthreads=1,0"])
                 end
             end
             if workers() != [2]
@@ -22,7 +22,8 @@ if Threads.nthreads() > 1
             # Use a completely isolated plt instance for this specific task
             @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis; msr=EffWind, fig=nothing)
                 local_plt = ControlPlots.plt
-                return plotFlowField(local_plt, wf, X, Y, Z, vis; msr, fig)
+                plotFlowField(local_plt, wf, X, Y, Z, vis; msr, fig)
+                nothing
             end
             @everywhere function rmt_plot_flow_field(wf, X, Y, Z, vis, t_rel; msr=VelReduction)
                 global plot_state
@@ -38,13 +39,23 @@ if Threads.nthreads() > 1
                 local_plt = ControlPlots.plt
                 # Pass pltctrl=ControlPlots so that any internal plot_x calls on the (single-threaded) worker
                 # have the ControlPlots module available for plotting.
-                return plotMeasurements(local_plt, wf, md, vis; separated=separated, msr, pltctrl=ControlPlots)
+                plotMeasurements(local_plt, wf, md, vis; separated=separated, msr, pltctrl=ControlPlots)
+                nothing
             end
             @everywhere function rmt_plotx(times, plot_data...; ylabels=nothing, labels=nothing,
                                             fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, 
                                             legend_size=nothing, loc=nothing)
                 p=ControlPlots.plotx(times, plot_data...; ylabels, labels, fig=fig, xlabel, ysize, bottom, 
                                      legend_size, loc)
+                display(p)  # Ensure the plot is displayed
+                nothing
+            end
+            @everywhere function rmt_plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+                if isnothing(labels)
+                    p = pltctrl.plot(X, Ys; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+                else
+                    p = pltctrl.plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+                end
                 display(p)  # Ensure the plot is displayed
                 nothing
             end
