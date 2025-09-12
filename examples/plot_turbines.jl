@@ -16,7 +16,7 @@ function plot_turbines(ta::TurbineArray, turbine_groups)
     markers = ["^", "o", "s", "D", "v", "<", ">", "p"]
     
     # Create scatter plot of turbine locations
-    plt.figure(figsize=(12, 9))
+    plt.figure(figsize=(15, 6))  # Wider, shorter figure to match data proportions
     
     # Plot each group with different colors
     plotted_groups = Set{String}()
@@ -57,9 +57,27 @@ function plot_turbines(ta::TurbineArray, turbine_groups)
     plt.ylabel("Y Coordinate [m]")
     plt.title("Wind Farm Layout - Turbine Groups by X Coordinate")
     plt.grid(true, alpha=0.3)
-    plt.legend(loc="upper right")
-    plt.axis("equal")
-    plt.tight_layout()
+    plt.legend(loc="lower right")
+    
+    # Set axis limits to reduce unused space
+    y_min = minimum(y_coords)
+    y_max = maximum(y_coords)
+    y_range = y_max - y_min
+    y_margin = y_range * 0.05  # 5% margin on each side
+    
+    x_min = minimum(x_coords)
+    x_max = maximum(x_coords)
+    x_range = x_max - x_min
+    x_margin = x_range * 0.05  # 5% margin on each side
+
+    plt.xlim(x_min - x_margin, x_max + x_margin)
+    plt.ylim(y_min - y_margin, y_max + y_margin)
+    
+    # Don't force equal aspect ratio to allow better use of figure space
+    plt.tight_layout(pad=0.5)
+    
+    # Further reduce margins around the plot
+    plt.subplots_adjust(left=0.08, bottom=0.08, right=0.95, top=0.92)
     
     return plt.gcf()
 end
