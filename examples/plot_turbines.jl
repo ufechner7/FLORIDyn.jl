@@ -6,26 +6,58 @@ settings_file = get_default_project()[2]
 
 GROUPS = 4
 
-function plot_turbines(ta::TurbineArray)
+function plot_turbines(ta::TurbineArray, turbine_groups)
     # Extract x and y coordinates from the position matrix
     x_coords = ta.pos[:, 1]  # First column contains x coordinates
     y_coords = ta.pos[:, 2]  # Second column contains y coordinates
     
+    # Define colors for each group
+    colors = ["red", "blue", "green", "orange", "purple", "brown", "pink", "gray"]
+    markers = ["^", "o", "s", "D", "v", "<", ">", "p"]
+    
     # Create scatter plot of turbine locations
-    plt.figure(figsize=(10, 8))
-    plt.scatter(x_coords, y_coords, s=100, c="red", marker="^", label="Wind Turbines", alpha=0.7)
+    plt.figure(figsize=(12, 9))
+    
+    # Plot each group with different colors
+    plotted_groups = Set{String}()
+    
+    for group in turbine_groups
+        if group["name"] == "all"
+            continue  # Skip the "all" group
+        end
+        
+        group_turbines = group["turbines"]
+        group_name = group["name"]
+        group_id = group["id"]
+        
+        # Get coordinates for this group
+        group_x = [x_coords[t] for t in group_turbines]
+        group_y = [y_coords[t] for t in group_turbines]
+        
+        # Select color and marker for this group
+        color = colors[min(group_id, length(colors))]
+        marker = markers[min(group_id, length(markers))]
+        
+        # Plot this group
+        plt.scatter(group_x, group_y, s=120, c=color, marker=marker, 
+                   label="$group_name ($(length(group_turbines)) turbines)", 
+                   alpha=0.8, edgecolors="black", linewidth=0.5)
+        
+        push!(plotted_groups, group_name)
+    end
     
     # Add turbine IDs as labels
     for i in 1:length(x_coords)
         plt.annotate("T$i", (x_coords[i], y_coords[i]), xytext=(5, 5), 
-                    textcoords="offset points", fontsize=8)
+                    textcoords="offset points", fontsize=8, 
+                    bbox=Dict("boxstyle"=>"round,pad=0.2", "facecolor"=>"white", "alpha"=>0.7))
     end
     
     plt.xlabel("X Coordinate [m]")
     plt.ylabel("Y Coordinate [m]")
-    plt.title("Wind Farm Layout - Turbine Locations")
+    plt.title("Wind Farm Layout - Turbine Groups by X Coordinate")
     plt.grid(true, alpha=0.3)
-    plt.legend()
+    plt.legend(loc="upper right")
     plt.axis("equal")
     plt.tight_layout()
     
@@ -35,14 +67,26 @@ end
 # Load the settings and extract turbine data
 println("Loading turbine data from: $settings_file")
 try
+    # Load YAML data to get turbine groups
+    yaml_data = YAML.load_file(settings_file)
+    turbine_groups = yaml_data["turbine_groups"]
+    
     # Use setup function to load all configuration data including turbine array
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
     
     println("Found $(size(ta.pos, 1)) turbines in the configuration")
     println("Turbine types: $(unique(ta.type))")
     
-    # Plot the turbines
-    fig = plot_turbines(ta)
+    # Display group information
+    println("\nTurbine Groups:")
+    for group in turbine_groups
+        if group["name"] != "all"
+            println("  $(group["name"]): $(length(group["turbines"])) turbines")
+        end
+    end
+    
+    # Plot the turbines with group colors
+    fig = plot_turbines(ta, turbine_groups)
     
     # Display some statistics
     x_coords = ta.pos[:, 1]
@@ -53,7 +97,7 @@ try
     println("  Farm width: $(round(maximum(x_coords) - minimum(x_coords), digits=1)) m")
     println("  Farm height: $(round(maximum(y_coords) - minimum(y_coords), digits=1)) m")
     
-    println("\nPlot created successfully!")
+    println("\nPlot created successfully with group colors!")
     
 catch e
     println("Error loading or plotting turbine data: $e")
