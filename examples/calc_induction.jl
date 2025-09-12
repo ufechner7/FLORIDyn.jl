@@ -16,14 +16,17 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 time_step = sim.time_step  # seconds
 t_end = sim.end_time - sim.start_time  # relative end time in seconds
 
-function calc_axial_induction(turbine_group, time)
-    # Example: simple constant axial induction factor
-    return 1/3  # Constant value for all turbines
+function calc_induction_per_group(turbine_group, time)
+
+    # simple example: assume no wakes
+    demand = calc_demand(time)
+    induction = calc_induction(demand * cp_max)
+    return induction
 end
 
 function calc_axial_induction(turbine, time)
     turbine_group = turbine_group(ta, turbine)
-    return 1/3  # Constant value for all turbines
+    return calc_induction_per_group(turbine_group, time)
 end
 
 function calc_cp(induction)
@@ -104,13 +107,14 @@ end
 function plot_demand()
     # Create time vector from 0 to t_end with time_step intervals
     time_vector = 0:time_step:t_end
-    
+
     # Calculate demand for each time point
     demand_values = [calc_demand(t) for t in time_vector]
+    induction_values = [calc_induction_per_group(1, t) for t in time_vector]  # Example for group 1
     
     # Create the plot
-    ControlPlots.plot(time_vector, demand_values, 
+    ControlPlots.plot(time_vector, [demand_values, induction_values], 
                      xlabel="Time [s]", 
-                     ylabel="Demand [-]", 
-                     title="Demand vs Time")
+                     ylabel="Demand and Induction [-]", 
+                     title="Demand and Induction vs Time")
 end
