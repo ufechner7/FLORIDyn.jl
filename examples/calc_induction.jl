@@ -5,6 +5,8 @@
 
 using FLORIDyn, ControlPlots, YAML
 
+const cp_max = 16/27  # Betz limit
+
 settings_file = get_default_project()[2]
 
 # get the settings for the wind field, simulator, controller and turbine array
@@ -28,38 +30,60 @@ function calc_cp(induction)
     return 4 * induction * (1 - induction)^2
 end
 function calc_induction(cp)
-    # Solve cubic equation: 4a^3 - 8a^2 + 4a - cp = 0
-    # Using Cardano's method for cubic equations
-    a = 0.0
-    b = -2.0
-    c = 1.0
-    d = -cp / 4.0
-
-    Δ0 = b^2 - 3*a*c
-    Δ1 = 2*b^3 - 9*a*b*c + 27*a^2*d
-
-    C = ((Δ1 + sqrt(Δ1^2 - 4*Δ0^3)) / 2)^(1/3)
-
-    if C == 0
-        C = ((Δ1 - sqrt(Δ1^2 - 4*Δ0^3)) / 2)^(1/3)
-    end
-
-    ξ = exp(2π*im/3)  # Complex cube root of unity
-
-    roots = [
-        -(1/(3*a)) * (b + C + Δ0 / C),
-        -(1/(3*a)) * (b + ξ*C + Δ0 / (ξ*C)),
-        -(1/(3*a)) * (b + ξ^2*C + Δ0 / (ξ^2*C))
-    ]
-
-    # Filter real roots in the range [0, 1]
-    real_roots = filter(r -> isreal(r) && r >= 0 && r <= 1, roots)
+    # Solve the equation: cp = 4*a*(1-a)^2 for induction factor 'a'
     
-    if length(real_roots) == 0
-        error("No valid real root found for cp=$cp")
+    # Check if cp is within valid range
+    if cp < 0 || cp > cp_max
+        error("cp value $cp is outside valid range [0, $(cp_max)]")
     end
-
-    return real(real_roots[1])  # Return the first valid real root
+    
+    # Special cases
+    if cp ≈ 0
+        return 0.0
+    elseif cp ≈ cp_max
+        return 1/3
+    end
+    
+    # Use a simple bisection method which is more robust
+    f(a) = 4*a*(1-a)^2 - cp
+    
+    # Find the interval containing the root
+    # We know the function has roots in [0, 1/3] and [1/3, 1] for most cp values
+    a_low, a_high = 0.0, 1.0
+    
+    # Check if we need to search in the lower or upper interval
+    if f(1/3) >= 0
+        # Root is in [0, 1/3]
+        a_high = 1/3
+    else
+        # Root is in [1/3, 1]
+        a_low = 1/3
+    end
+    
+    # Bisection method
+    tolerance = 1e-12
+    max_iterations = 100
+    
+    for i in 1:max_iterations
+        a_mid = (a_low + a_high) / 2
+        f_mid = f(a_mid)
+        
+        if abs(f_mid) < tolerance || (a_high - a_low) < tolerance
+            return a_mid
+        end
+        
+        if f(a_low) * f_mid < 0
+            a_high = a_mid
+        else
+            a_low = a_mid
+        end
+        
+        if i == max_iterations
+            error("Bisection method did not converge for cp=$cp")
+        end
+    end
+    
+    return (a_low + a_high) / 2
 end
 
 function calc_demand(time)
