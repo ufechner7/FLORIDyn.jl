@@ -26,6 +26,7 @@ Functions defined in this file:
 - setup: Main configuration loader that parses YAML files into simulation components
 - Settings: Constructor function that creates Settings struct from Wind, Sim, Con parameters
 - getTurbineData: Retrieve nacelle positions and rotor diameters for turbine types (loads from turbine_specs.yaml)
+- turbine_group: Find the group ID for a specific turbine in the turbine array
 - importSOWFAFile: Import and parse SOWFA simulation data files
 - condenseSOWFAYaw: Process and condense SOWFA yaw angle data arrays
 - isdelftblue: Detect if running on Delft Blue HPC environment
@@ -1190,4 +1191,70 @@ function select_measurement()
     
     println("✓ Selected measurement type: $selected_name")
     return selected_msr
+end
+
+"""
+    turbine_group(ta::TurbineArray, turbine::Int) -> Int
+
+Find the group ID for a specific turbine in the turbine array.
+
+This function searches through all turbine groups in the array to find which group 
+contains the specified turbine and returns the group's ID. If a turbine belongs to 
+multiple groups, it returns the ID of the first non-"all" group found, or the "all" 
+group if no specific group is found.
+
+# Arguments
+- `ta::TurbineArray`: The turbine array containing the groups
+- `turbine::Int`: The turbine number (1-based index) to find the group for
+
+# Returns
+- `Int`: The ID of the group that contains the specified turbine
+
+# Throws
+- `ArgumentError`: If the turbine number is not found in any group or is out of bounds
+
+# Examples
+```julia
+# Load turbine array from configuration
+wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+
+# Find which group turbine 15 belongs to
+group_id = turbine_group(ta, 15)
+println("Turbine 15 belongs to group with ID: ", group_id)
+
+# Get the group name
+for group in ta.groups
+    if group.id == group_id
+        println("Group name: ", group.name)
+        break
+    end
+end
+```
+
+# Performance
+- Time complexity: O(n*m) where n is the number of groups and m is the average group size
+- For typical wind farm layouts, this is very fast since group counts are small
+"""
+function turbine_group(ta::TurbineArray, turbine::Int)
+    # Validate input
+    if turbine < 1 || turbine > size(ta.pos, 1)
+        throw(ArgumentError("Turbine number $turbine is out of bounds. Valid range: 1-$(size(ta.pos, 1))"))
+    end
+    
+    # First, search for specific groups (non-"all" groups)
+    for group in ta.groups
+        if group.name != "all" && turbine in group.turbines
+            return group.id
+        end
+    end
+    
+    # If not found in specific groups, search all groups (including "all")
+    for group in ta.groups
+        if turbine in group.turbines
+            return group.id
+        end
+    end
+    
+    # If we reach here, the turbine wasn't found in any group
+    throw(ArgumentError("Turbine $turbine not found in any group"))
 end
