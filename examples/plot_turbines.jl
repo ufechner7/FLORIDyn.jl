@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Marcus Becker, Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
 # plot the turbines of the given project
 
 using FLORIDyn, ControlPlots, YAML
