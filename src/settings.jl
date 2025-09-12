@@ -184,11 +184,13 @@ A mutable struct for configuration settings.
 - `yaw::String`: The yaw control strategy, e.g., "Constant", "Interpolation".
 - `yaw_data::Union{Nothing, Matrix{Float64}}`: Optional yaw data matrix.
 - `tanh_yaw::Bool`: Whether to use hyperbolic tangent yaw control.
+- `induction::String`: The induction control strategy, e.g., "Constant", "Interpolate".
 """
 @with_kw mutable struct Con
     yaw::String
     yaw_data::Union{Nothing, Matrix{Float64}} = nothing
     tanh_yaw::Bool = false
+    induction::String = "Constant"
 end
 
 """
@@ -249,6 +251,13 @@ A structure representing the settings for the FLORIDyn simulation environment.
     twf_model::String
 end
 
+# TurbineGroup represents a grouping of turbines for analysis
+struct TurbineGroup
+    name::String
+    id::Int
+    turbines::Vector{Int}
+end
+
 """
     TurbineArray
 
@@ -270,13 +279,16 @@ A structure representing the configuration and properties of a wind turbine arra
 pos = [0.0 0.0 0.0; 500.0 0.0 0.0]  # Two turbines 500m apart
 type = ["NREL_5MW", "NREL_5MW"]
 init_states = [0.33 0.0 0.1; 0.33 0.0 0.1]  # Both start with same initial conditions
-turbines = TurbineArray(pos, type, init_states)
+groups = [TurbineGroup("all", 0, [1, 2])]  # Default group containing all turbines
+turbines = TurbineArray(pos, type, init_states, groups)
 ```
+
 """
 struct TurbineArray
     pos::Matrix{Float64}
     type::Vector{String}
     init_States::Matrix{Float64}
+    groups::Vector{TurbineGroup}
 end
 
 """
@@ -638,7 +650,25 @@ function setup(filename)
     init_states = [Float64[t["a"], t["yaw"], t["ti"]] for t in turbines]
     init_states = reduce(vcat, [s' for s in init_states])  # transpose and concatenate
 
-    ta = TurbineArray(pos, type, init_states)
+    # Extract Turbine Groups
+    groups = TurbineGroup[]
+    if haskey(data, "turbine_groups")
+        turbine_groups_data = data["turbine_groups"]
+        for group_data in turbine_groups_data
+            group = TurbineGroup(
+                String(group_data["name"]),
+                Int(group_data["id"]),
+                Vector{Int}(group_data["turbines"])
+            )
+            push!(groups, group)
+        end
+    else
+        # Default: create an "all" group containing all turbines
+        all_turbine_ids = [i for i in 1:length(turbines)]
+        push!(groups, TurbineGroup("all", 0, all_turbine_ids))
+    end
+
+    ta = TurbineArray(pos, type, init_states, groups)
     wind, sim, con, floris, floridyn, ta
 end
 
