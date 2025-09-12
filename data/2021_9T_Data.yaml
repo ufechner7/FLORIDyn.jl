@@ -228,3 +228,16 @@ turbines:
       a: 0.33
       yaw: 0
       ti: 0.06
+turbine_groups:
+  - name: "all"
+    id: 0
+    turbines: [1,2,3,4,5,6,7,8,9]
+  - name: "row1"
+    id: 1
+    turbines: [1,2,3]
+  - name: "row2"
+    id: 2
+    turbines: [4,5,6]
+  - name: "row3"
+    id: 3
+    turbines: [7,8,9]
