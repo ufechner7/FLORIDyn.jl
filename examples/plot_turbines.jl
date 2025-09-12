@@ -4,6 +4,8 @@ using FLORIDyn, ControlPlots, YAML
 
 settings_file = get_default_project()[2]
 
+GROUPS = 4
+
 function plot_turbines(ta::TurbineArray)
     # Extract x and y coordinates from the position matrix
     x_coords = ta.pos[:, 1]  # First column contains x coordinates
