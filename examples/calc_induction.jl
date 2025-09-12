@@ -25,7 +25,7 @@ function calc_axial_induction(turbine, time)
 end
 
 function calc_demand(time)
-    # Example: time-varying demand with sinusoidal pattern
+    # Example: linearly increasing demand from 0.5 to 1.0 over the simulation time
     initial_demand = 0.5
     final_demand = 1.0
     t1 = 240.0  # Time to start increasing demand
