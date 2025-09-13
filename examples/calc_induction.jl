@@ -201,17 +201,44 @@ function plot_induction_matrix()
     # Calculate induction matrix for all turbines over time
     induction_matrix = calc_induction_matrix(ta, con, time_step, t_end)
     time_vector = 0:time_step:t_end
+    n_time_steps = size(induction_matrix, 1)
     
-    # Plot induction for each turbine
-    n_turbines = size(induction_matrix, 2)
-    turbine_data = [induction_matrix[:, i] for i in 1:n_turbines]
-    turbine_labels = ["Turbine $i" for i in 1:n_turbines]
+    # Initialize group data arrays
+    group_data = [Float64[] for _ in 1:4]  # Arrays for groups 1-4
     
-    ControlPlots.plot(time_vector, turbine_data,
+    # Calculate average induction for each group at each time step
+    for t_idx in 1:n_time_steps
+        group_sums = zeros(4)
+        group_counts = zeros(Int, 4)
+        
+        # Sum induction values for each group
+        for turbine in 1:size(ta.pos, 1)
+            group_id = FLORIDyn.turbine_group(ta, turbine)
+            if 1 <= group_id <= 4
+                group_sums[group_id] += induction_matrix[t_idx, turbine]
+                group_counts[group_id] += 1
+            end
+        end
+        
+        # Calculate averages and store
+        for group in 1:4
+            if group_counts[group] > 0
+                avg_induction = group_sums[group] / group_counts[group]
+            else
+                avg_induction = 0.0
+            end
+            push!(group_data[group], avg_induction)
+        end
+    end
+    
+    # Create labels with group information
+    group_labels = ["Group 1 (-0.2)", "Group 2 (-0.1)", "Group 3 (+0.1)", "Group 4 (+0.2)"]
+    
+    ControlPlots.plot(time_vector, group_data,
                      xlabel="Time [s]", 
                      ylabel="Axial Induction Factor [-]", 
-                     title="Axial Induction Factor vs Time for All Turbines",
-                     labels=turbine_labels)
+                     title="Average Axial Induction Factor vs Time by Turbine Group",
+                     labels=group_labels)
 end
 
 con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
