@@ -62,9 +62,9 @@ function calc_axial_induction(ta, con, turbine, time)
     elseif group_id == 3
         correction = +0.1 * interp_factor  # Small increase (balancing group 2)
     end
-    
-    # Apply correction and ensure result stays within valid bounds [0, 1/3]
-    corrected_induction = base_induction + correction
+
+    rel_power = calc_cp(base_induction) / cp_max + correction
+    corrected_induction = calc_induction(rel_power * cp_max)
     return max(0.0, min(1/3, corrected_induction))
 end
 
