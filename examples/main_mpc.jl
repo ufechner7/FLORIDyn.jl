@@ -44,6 +44,7 @@ con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
+set.induction_mode = Induction_MPC()
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 wind.dir=[270.0;;]
@@ -55,7 +56,7 @@ vis.online = false
 # @time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
 
 data_column = "ForeignReduction"
-ylabel = "Rel. Wind Speed [%]"
+ylabel      = "Rel. Wind Speed [%]"
 
 times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
 nT = wf.nT

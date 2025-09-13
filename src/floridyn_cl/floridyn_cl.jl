@@ -834,6 +834,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         if it == 1
             @info "wf.States_T[wf.StartI, 1]: ", wf.States_T[wf.StartI, 1]
             # @info "sim_time: $sim_time"
+            @info "set.induction_mode: ", set.induction_mode
             @info "Induction factors: ", getInduction(set.induction_mode, con.induction_data, (1:nT), sim_time-20000)'
             # @info "Initial yaw angles (deg): ", rad2deg.(wf.States_T[wf.StartI, 2])
         end
