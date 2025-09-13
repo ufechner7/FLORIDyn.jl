@@ -147,19 +147,26 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.0)
     
     # Apply corrections based on turbine group and time with linear interpolation
     # Rules:
-    # - apply a large reduction (0.2) in the power for group 1 at t=0
+    # - apply a large reduction (0.2) in the power for group 1 at t=t1
     # - at the same time, increase the power of group 4 by the same amount
-    # - apply a small reduction (0.1) in the power for group 2 at t=0  
+    # - apply a small reduction (0.1) in the power for group 2 at t=t1  
     # - at the same time, increase the power of group 3 by the same amount
-    # - interpolate linearly between t=0 and t=t_end with no correction at t=t_end
+    # - interpolate linearly between t=0 and t=t_end with no correction at t=t2
     
     base_induction = calc_induction_per_group(group_id, time)
+    t1 = 240.0  # Time to start increasing demand
+    t2 = 960.0  # Time to reach final demand
     
-    # Calculate interpolation factor (1.0 at t=0, 0.0 at t=t_end)
-    if t_end > 0
-        interp_factor = max(0.0, (t_end - time) / t_end)
+    # Calculate interpolation factor 
+    # 1.0 at t=t1 (full correction), 0.0 at t=t2 (no correction)
+    # Linear interpolation between t1 and t2
+    if time <= t1
+        interp_factor = 1.0  # Full correction before and at t1
+    elseif time >= t2
+        interp_factor = 0.0  # No correction at and after t2
     else
-        interp_factor = time == 0 ? 1.0 : 0.0
+        # Linear interpolation between t1 and t2
+        interp_factor = (t2 - time) / (t2 - t1)
     end
     
     # Apply corrections based on group
