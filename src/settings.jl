@@ -192,6 +192,7 @@ A mutable struct for configuration settings.
     yaw_data::Union{Nothing, Matrix{Float64}} = nothing
     tanh_yaw::Bool = false
     induction::String = "Constant"
+    induction_data::Union{Nothing, Matrix{Float64}} = nothing
 end
 
 """
