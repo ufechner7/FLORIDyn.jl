@@ -3,6 +3,10 @@
 
 # Calculate axial induction factor, and calculate the demand
 
+# TODO
+# - fill the field con.induction_data with a suitable Matrix
+# - use this induction data in the the function get_axial_induction
+
 using FLORIDyn, ControlPlots, YAML
 
 const cp_max = 16/27  # Betz limit
@@ -24,7 +28,7 @@ function calc_induction_per_group(turbine_group, time)
     return induction
 end
 
-function calc_axial_induction(turbine, time)
+function calc_axial_induction(ta, con, turbine, time)
     turbine_group = turbine_group(ta, turbine)
     return calc_induction_per_group(turbine_group, time)
 end
@@ -92,7 +96,7 @@ end
 function calc_demand(time)
     # Example: linearly increasing demand from 0.5 to 1.0 over the simulation time
     initial_demand = 0.5
-    final_demand = 1.0
+    final_demand = 0.8
     t1 = 240.0  # Time to start increasing demand
     t2 = 960.0  # Time to reach final demand
     if time < t1
