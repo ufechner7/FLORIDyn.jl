@@ -32,7 +32,8 @@ function calc_axial_induction(ta, con, turbine, time)
     # Check if pre-calculated induction data is available
     if hasfield(typeof(con), :induction_data) && !isnothing(con.induction_data)
         # Use pre-calculated data from con.induction_data
-        time_vector = 0:time_step:t_end
+        # First column is time, subsequent columns are turbine data
+        time_vector = con.induction_data[:, 1]
         
         # Find the time index that corresponds to the requested time
         time_idx = findfirst(t -> t >= time, time_vector)
@@ -41,8 +42,9 @@ function calc_axial_induction(ta, con, turbine, time)
         end
         
         # Return the pre-calculated induction value for this turbine and time
-        if turbine <= size(con.induction_data, 2) && time_idx <= size(con.induction_data, 1)
-            return con.induction_data[time_idx, turbine]
+        # turbine data starts from column 2 (column 1 is time)
+        if turbine + 1 <= size(con.induction_data, 2) && time_idx <= size(con.induction_data, 1)
+            return con.induction_data[time_idx, turbine + 1]
         end
     end
     
@@ -165,13 +167,17 @@ function calc_induction_matrix(ta, con, time_step, t_end)
     n_time_steps = length(time_vector)
     n_turbines = size(ta.pos, 1)  # Use ta.pos to get number of turbines
     
-    # Initialize matrix: rows = time steps, columns = turbines
-    induction_matrix = zeros(Float64, n_time_steps, n_turbines)
+    # Initialize matrix: rows = time steps, columns = time + turbines
+    # First column is time, subsequent columns are turbine induction factors
+    induction_matrix = zeros(Float64, n_time_steps, n_turbines + 1)
     
-    # Calculate induction for each turbine at each time step
+    # Fill the first column with time values
+    induction_matrix[:, 1] = collect(time_vector)
+    
+    # Calculate induction for each turbine at each time step (columns 2 onwards)
     for (t_idx, time) in enumerate(time_vector)
         for i in 1:n_turbines
-            induction_matrix[t_idx, i] = calc_axial_induction(ta, con, i, time)
+            induction_matrix[t_idx, i + 1] = calc_axial_induction(ta, con, i, time)
         end
     end
     
@@ -215,7 +221,7 @@ end
 function plot_induction_matrix()
     # Calculate induction matrix for all turbines over time
     induction_matrix = calc_induction_matrix(ta, con, time_step, t_end)
-    time_vector = 0:time_step:t_end
+    time_vector = induction_matrix[:, 1]  # Extract time from first column
     n_time_steps = size(induction_matrix, 1)
     
     # Initialize group data arrays
@@ -226,11 +232,11 @@ function plot_induction_matrix()
         group_sums = zeros(4)
         group_counts = zeros(Int, 4)
         
-        # Sum induction values for each group
+        # Sum induction values for each group (columns 2 onwards are turbine data)
         for turbine in 1:size(ta.pos, 1)
             group_id = FLORIDyn.turbine_group(ta, turbine)
             if 1 <= group_id <= 4
-                group_sums[group_id] += induction_matrix[t_idx, turbine]
+                group_sums[group_id] += induction_matrix[t_idx, turbine + 1]  # +1 because first column is time
                 group_counts[group_id] += 1
             end
         end
