@@ -4,9 +4,6 @@
 # Calculate axial induction factor, and calculate the demand
 
 # TODO
-# - fill the field con.induction_data with a suitable Matrix - DONE -
-#
-# - modify the function calc_axial_induction to apply a correction based on the turbine group and time
 # - use this induction data in the the function get_axial_induction
 
 using FLORIDyn, ControlPlots, YAML
@@ -32,6 +29,24 @@ function calc_induction_per_group(turbine_group, time)
 end
 
 function calc_axial_induction(ta, con, turbine, time)
+    # Check if pre-calculated induction data is available
+    if hasfield(typeof(con), :induction_data) && !isnothing(con.induction_data)
+        # Use pre-calculated data from con.induction_data
+        time_vector = 0:time_step:t_end
+        
+        # Find the time index that corresponds to the requested time
+        time_idx = findfirst(t -> t >= time, time_vector)
+        if isnothing(time_idx)
+            time_idx = length(time_vector)  # Use last time step if time is beyond range
+        end
+        
+        # Return the pre-calculated induction value for this turbine and time
+        if turbine <= size(con.induction_data, 2) && time_idx <= size(con.induction_data, 1)
+            return con.induction_data[time_idx, turbine]
+        end
+    end
+    
+    # Fallback to dynamic calculation if no pre-calculated data is available
     group_id = FLORIDyn.turbine_group(ta, turbine)
     
     # Apply corrections based on turbine group and time with linear interpolation
