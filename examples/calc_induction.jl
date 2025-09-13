@@ -100,4 +100,4 @@ end
 
 con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 
-nothing
+plot_induction_matrix()
