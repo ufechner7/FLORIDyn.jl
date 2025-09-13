@@ -26,6 +26,7 @@ Functions defined in this file:
 - setup: Main configuration loader that parses YAML files into simulation components
 - Settings: Constructor function that creates Settings struct from Wind, Sim, Con parameters
 - getTurbineData: Retrieve nacelle positions and rotor diameters for turbine types (loads from turbine_specs.yaml)
+- turbine_group: Find the group ID for a specific turbine in the turbine array
 - importSOWFAFile: Import and parse SOWFA simulation data files
 - condenseSOWFAYaw: Process and condense SOWFA yaw angle data arrays
 - isdelftblue: Detect if running on Delft Blue HPC environment
@@ -184,11 +185,14 @@ A mutable struct for configuration settings.
 - `yaw::String`: The yaw control strategy, e.g., "Constant", "Interpolation".
 - `yaw_data::Union{Nothing, Matrix{Float64}}`: Optional yaw data matrix.
 - `tanh_yaw::Bool`: Whether to use hyperbolic tangent yaw control.
+- `induction::String`: The induction control strategy, e.g., "Constant", "Interpolate".
 """
 @with_kw mutable struct Con
     yaw::String
     yaw_data::Union{Nothing, Matrix{Float64}} = nothing
     tanh_yaw::Bool = false
+    induction::String = "Constant"
+    induction_data::Union{Nothing, Matrix{Float64}} = nothing
 end
 
 """
@@ -249,6 +253,13 @@ A structure representing the settings for the FLORIDyn simulation environment.
     twf_model::String
 end
 
+# TurbineGroup represents a grouping of turbines for analysis
+struct TurbineGroup
+    name::String
+    id::Int
+    turbines::Vector{Int}
+end
+
 """
     TurbineArray
 
@@ -270,13 +281,16 @@ A structure representing the configuration and properties of a wind turbine arra
 pos = [0.0 0.0 0.0; 500.0 0.0 0.0]  # Two turbines 500m apart
 type = ["NREL_5MW", "NREL_5MW"]
 init_states = [0.33 0.0 0.1; 0.33 0.0 0.1]  # Both start with same initial conditions
-turbines = TurbineArray(pos, type, init_states)
+groups = [TurbineGroup("all", 0, [1, 2])]  # Default group containing all turbines
+turbines = TurbineArray(pos, type, init_states, groups)
 ```
+
 """
 struct TurbineArray
     pos::Matrix{Float64}
     type::Vector{String}
     init_States::Matrix{Float64}
+    groups::Vector{TurbineGroup}
 end
 
 """
@@ -638,7 +652,25 @@ function setup(filename)
     init_states = [Float64[t["a"], t["yaw"], t["ti"]] for t in turbines]
     init_states = reduce(vcat, [s' for s in init_states])  # transpose and concatenate
 
-    ta = TurbineArray(pos, type, init_states)
+    # Extract Turbine Groups
+    groups = TurbineGroup[]
+    if haskey(data, "turbine_groups")
+        turbine_groups_data = data["turbine_groups"]
+        for group_data in turbine_groups_data
+            group = TurbineGroup(
+                String(group_data["name"]),
+                Int(group_data["id"]),
+                Vector{Int}(group_data["turbines"])
+            )
+            push!(groups, group)
+        end
+    else
+        # Default: create an "all" group containing all turbines
+        all_turbine_ids = [i for i in 1:length(turbines)]
+        push!(groups, TurbineGroup("all", 0, all_turbine_ids))
+    end
+
+    ta = TurbineArray(pos, type, init_states, groups)
     wind, sim, con, floris, floridyn, ta
 end
 
@@ -673,8 +705,9 @@ function Settings(wind::Wind, sim::Sim, con::Con, parallel=false, threading=fals
     cor_turb_mode = str2type("TI_" * wind.correction.ti)
     iterate_mode = str2type(sim.dyn.op_iteration)
     control_mode = str2type("Yaw_" * con.yaw)
+    induction_mode = str2type("Induction_" * con.induction)
     Settings(vel_mode, dir_mode, turb_mode, shear_mode, cor_dir_mode, cor_vel_mode, cor_turb_mode, 
-             iterate_mode, control_mode, parallel, threading)
+             iterate_mode, control_mode, induction_mode, parallel, threading)
 end
 
 """
@@ -1160,4 +1193,70 @@ function select_measurement()
     
     println("✓ Selected measurement type: $selected_name")
     return selected_msr
+end
+
+"""
+    turbine_group(ta::TurbineArray, turbine::Int) -> Int
+
+Find the group ID for a specific turbine in the turbine array.
+
+This function searches through all turbine groups in the array to find which group 
+contains the specified turbine and returns the group's ID. If a turbine belongs to 
+multiple groups, it returns the ID of the first non-"all" group found, or the "all" 
+group if no specific group is found.
+
+# Arguments
+- `ta::TurbineArray`: The turbine array containing the groups
+- `turbine::Int`: The turbine number (1-based index) to find the group for
+
+# Returns
+- `Int`: The ID of the group that contains the specified turbine
+
+# Throws
+- `ArgumentError`: If the turbine number is not found in any group or is out of bounds
+
+# Examples
+```julia
+# Load turbine array from configuration
+wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+
+# Find which group turbine 15 belongs to
+group_id = turbine_group(ta, 15)
+println("Turbine 15 belongs to group with ID: ", group_id)
+
+# Get the group name
+for group in ta.groups
+    if group.id == group_id
+        println("Group name: ", group.name)
+        break
+    end
+end
+```
+
+# Performance
+- Time complexity: O(n*m) where n is the number of groups and m is the average group size
+- For typical wind farm layouts, this is very fast since group counts are small
+"""
+function turbine_group(ta::TurbineArray, turbine::Int)
+    # Validate input
+    if turbine < 1 || turbine > size(ta.pos, 1)
+        throw(ArgumentError("Turbine number $turbine is out of bounds. Valid range: 1-$(size(ta.pos, 1))"))
+    end
+    
+    # First, search for specific groups (non-"all" groups)
+    for group in ta.groups
+        if group.name != "all" && turbine in group.turbines
+            return group.id
+        end
+    end
+    
+    # If not found in specific groups, search all groups (including "all")
+    for group in ta.groups
+        if turbine in group.turbines
+            return group.id
+        end
+    end
+    
+    # If we reach here, the turbine wasn't found in any group
+    throw(ArgumentError("Turbine $turbine not found in any group"))
 end

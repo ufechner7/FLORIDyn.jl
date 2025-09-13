@@ -16,7 +16,7 @@ using Statistics, StaticArrays, Pkg, DistributedNext, Dates
 using REPL.TerminalMenus
 
 export MSR, toMSR, VelReduction, AddedTurbulence, EffWind
-export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray, TurbineData
+export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray, TurbineData, turbine_group
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
@@ -37,6 +37,7 @@ export Velocity_Influence, Velocity_None
 export TI_Influence, TI_None
 export IterateOPs_average, IterateOPs_basic, IterateOPs_buffer, IterateOPs_maximum, IterateOPs_weighted
 export Yaw_Constant, Yaw_InterpTurbine, Yaw_SOWFA
+export Induction_Constant, Induction_MPC
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
@@ -44,7 +45,7 @@ export getWindTiT
 export getWindSpeedT, getWindSpeedT_EnKF
 export getDataDir, getDataTI, getDataVel
 export correctDir!
-export getYaw
+export getYaw, getInduction
 
 export discretizeRotor, calcCt, States
 export prepareSimulation, importSOWFAFile, centerline!, angSOWFA2world, initSimulation
@@ -205,6 +206,7 @@ mutable struct Settings
     cor_turb_mode
     iterate_mode
     control_mode
+    induction_mode
     parallel::Bool
     threading::Bool
 end

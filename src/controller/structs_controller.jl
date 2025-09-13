@@ -36,3 +36,15 @@ A marker struct used to represent yaw control compatible with SOWFA (Simulator f
 This mode is specifically designed for integration with SOWFA simulation data.
 """
 struct Yaw_SOWFA <: ControllerModel end
+
+abstract type InductionModel end
+
+"""
+    Induction_Constant <: InductionModel
+"""
+struct Induction_Constant <: InductionModel end
+
+"""
+    Induction_MPC <: InductionModel
+"""
+struct Induction_MPC <: InductionModel end
