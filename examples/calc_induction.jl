@@ -33,7 +33,39 @@ end
 
 function calc_axial_induction(ta, con, turbine, time)
     group_id = FLORIDyn.turbine_group(ta, turbine)
-    return calc_induction_per_group(group_id, time)
+    
+    # Apply corrections based on turbine group and time with linear interpolation
+    # Rules:
+    # - apply a large reduction (0.2) in the power for group 1 at t=0
+    # - at the same time, increase the power of group 4 by the same amount
+    # - apply a small reduction (0.1) in the power for group 2 at t=0  
+    # - at the same time, increase the power of group 3 by the same amount
+    # - interpolate linearly between t=0 and t=t_end with no correction at t=t_end
+    
+    base_induction = calc_induction_per_group(group_id, time)
+    
+    # Calculate interpolation factor (1.0 at t=0, 0.0 at t=t_end)
+    if t_end > 0
+        interp_factor = max(0.0, (t_end - time) / t_end)
+    else
+        interp_factor = time == 0 ? 1.0 : 0.0
+    end
+    
+    # Apply corrections based on group
+    correction = 0.0
+    if group_id == 1
+        correction = -0.2 * interp_factor  # Large reduction
+    elseif group_id == 4
+        correction = +0.2 * interp_factor  # Large increase (balancing group 1)
+    elseif group_id == 2
+        correction = -0.1 * interp_factor  # Small reduction
+    elseif group_id == 3
+        correction = +0.1 * interp_factor  # Small increase (balancing group 2)
+    end
+    
+    # Apply correction and ensure result stays within valid bounds [0, 1/3]
+    corrected_induction = base_induction + correction
+    return max(0.0, min(1/3, corrected_induction))
 end
 
 function calc_cp(induction)
@@ -137,13 +169,32 @@ function plot_demand()
 
     # Calculate demand for each time point
     demand_values = [calc_demand(t) for t in time_vector]
-    induction_values = [calc_induction_per_group(1, t) for t in time_vector]  # Example for group 1
+    
+    # Calculate actual induction values for representative turbines from each group
+    # (This includes the time-dependent corrections implemented in calc_axial_induction)
+    
+    # Find representative turbines for each group
+    turbine_group1 = 1   # Turbine 1 is in group 1 (gets -0.2 reduction)
+    turbine_group2 = 2   # Turbine 2 is in group 2 (gets -0.1 reduction)
+    turbine_group3 = 3   # Turbine 3 is in group 3 (gets +0.1 increase)
+    turbine_group4 = 7   # Turbine 7 is in group 4 (gets +0.2 increase)
+    
+    # Calculate induction values using actual calc_axial_induction (with corrections)
+    induction_group1 = [calc_axial_induction(ta, con, turbine_group1, t) for t in time_vector]
+    induction_group2 = [calc_axial_induction(ta, con, turbine_group2, t) for t in time_vector]
+    induction_group3 = [calc_axial_induction(ta, con, turbine_group3, t) for t in time_vector]
+    induction_group4 = [calc_axial_induction(ta, con, turbine_group4, t) for t in time_vector]
+    
+    # Combine all data series
+    all_data = [demand_values, induction_group1, induction_group2, induction_group3, induction_group4]
+    labels = ["Demand", "Group 1 (-0.2)", "Group 2 (-0.1)", "Group 3 (+0.1)", "Group 4 (+0.2)"]
     
     # Create the plot
-    ControlPlots.plot(time_vector, [demand_values, induction_values], 
+    ControlPlots.plot(time_vector, all_data, 
                      xlabel="Time [s]", 
                      ylabel="Demand and Induction [-]", 
-                     title="Demand and Induction vs Time")
+                     title="Demand and Induction vs Time for All Groups",
+                     labels=labels)
 end
 
 function plot_induction_matrix()
