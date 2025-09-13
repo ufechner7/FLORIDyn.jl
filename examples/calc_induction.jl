@@ -4,7 +4,9 @@
 # Calculate axial induction factor, and calculate the demand
 
 # TODO
-# - fill the field con.induction_data with a suitable Matrix
+# - fill the field con.induction_data with a suitable Matrix - DONE -
+#
+# - modify the function calc_axial_induction to apply a correction based on the turbine group and time
 # - use this induction data in the the function get_axial_induction
 
 using FLORIDyn, ControlPlots, YAML
@@ -161,7 +163,6 @@ function plot_induction_matrix()
                      labels=turbine_labels)
 end
 
-# Example usage:
-# induction_matrix = calc_induction_matrix(ta, con, time_step, t_end)
-# println("Matrix dimensions: ", size(induction_matrix))
-# println("Time steps: ", size(induction_matrix, 1), ", Turbines: ", size(induction_matrix, 2))
+con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
+
+nothing
