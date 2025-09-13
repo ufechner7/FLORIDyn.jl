@@ -6,6 +6,7 @@
 using FLORIDyn
 
 const cp_max = 16/27  # Betz limit
+const dt = 400
 
 # Forward declarations - these functions are expected to be defined elsewhere
 # calc_induction(cp) - calculates induction factor from power coefficient
@@ -76,8 +77,8 @@ function calc_demand(time)
     # Example: linearly increasing demand from 0.5 to 1.0 over the simulation time
     initial_demand = 0.5
     final_demand = 0.8
-    t1 = 240.0  # Time to start increasing demand
-    t2 = 960.0  # Time to reach final demand
+    t1 = 240.0 + dt  # Time to start increasing demand
+    t2 = 960.0 + dt  # Time to reach final demand
     if time < t1
         return initial_demand
     elseif time < t2
@@ -154,10 +155,10 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8)
     # - interpolate linearly between t=0 and t=t_end with no correction at t=t2
     
     base_induction = calc_induction_per_group(group_id, time)
-    t1 = 240.0  # Time to start increasing demand
-    t2 = 960.0  # Time to reach final demand
-    
-    # Calculate interpolation factor 
+    t1 = 240.0 + dt  # Time to start increasing demand
+    t2 = 960.0 + dt  # Time to reach final demand
+
+    # Calculate interpolation factor
     # 1.0 at t=t1 (full correction), 0.0 at t=t2 (no correction)
     # Linear interpolation between t1 and t2
     if time <= t1
