@@ -10,7 +10,6 @@ using Timers
 tic()
 using FLORIDyn, TerminalPager, DistributedNext 
 if Threads.nthreads() == 1; using ControlPlots; end
-toc()
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
@@ -23,11 +22,14 @@ else
     plt = nothing
 end
 
-# Automatic parallel/threading setup
-tic()
-include("remote_plotting.jl")
-toc()
+pltctrl = nothing
+# Provide ControlPlots module only for pure sequential plotting (single-threaded, no workers)
+if Threads.nthreads() == 1
+    pltctrl = ControlPlots
+end
 
+# Automatic parallel/threading setup
+include("remote_plotting.jl")
 include("calc_induction_matrix.jl")
 
 # get the settings for the wind field, simulator and controller
@@ -49,6 +51,18 @@ toc()
 
 vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-@time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
-@time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
-nothing
+# @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
+# @time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
+
+data_column = "ForeignReduction"
+ylabel = "Rel. Wind Speed [%]"
+
+times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
+nT = wf.nT
+rel_power = zeros(length(times))
+for iT in 1:nT
+    rel_speed = plot_data[1][iT] ./ 100
+    rel_power .+= rel_speed .^3
+end
+rel_power ./= nT
+plot_rmt(times, rel_power .* 100; xlabel="Time [s]", ylabel="Rel. Power Output [%]", pltctrl)
