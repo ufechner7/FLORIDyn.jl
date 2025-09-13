@@ -4,7 +4,7 @@
 # Calculate axial induction factor, and calculate the demand
 
 # TODO
-# - use this induction data in the the function get_axial_induction
+# - integrate the function calc_axial_induction in FLORIDyn
 
 using FLORIDyn, ControlPlots, YAML
 
