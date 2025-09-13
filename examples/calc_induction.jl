@@ -15,13 +15,14 @@ settings_file = get_default_project()[2]
 
 # get the settings for the wind field, simulator, controller and turbine array
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
+set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
+wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
 # Calculate time step and relative end time based on simulation settings
 time_step = sim.time_step  # seconds
 t_end = sim.end_time - sim.start_time  # relative end time in seconds
 
 function calc_induction_per_group(turbine_group, time)
-
     # simple example: assume no wakes
     demand = calc_demand(time)
     induction = calc_induction(demand * cp_max)
@@ -29,13 +30,14 @@ function calc_induction_per_group(turbine_group, time)
 end
 
 function calc_axial_induction(ta, con, turbine, time)
-    turbine_group = turbine_group(ta, turbine)
-    return calc_induction_per_group(turbine_group, time)
+    group_id = FLORIDyn.turbine_group(ta, turbine)
+    return calc_induction_per_group(group_id, time)
 end
 
 function calc_cp(induction)
     return 4 * induction * (1 - induction)^2
 end
+
 function calc_induction(cp)
     # Solve the equation: cp = 4*a*(1-a)^2 for induction factor 'a'
     
@@ -108,6 +110,25 @@ function calc_demand(time)
     end
 end
 
+function calc_induction_matrix(ta, con, time_step, t_end)
+    # Create time vector from 0 to t_end with time_step intervals
+    time_vector = 0:time_step:t_end
+    n_time_steps = length(time_vector)
+    n_turbines = size(ta.pos, 1)  # Use ta.pos to get number of turbines
+    
+    # Initialize matrix: rows = time steps, columns = turbines
+    induction_matrix = zeros(Float64, n_time_steps, n_turbines)
+    
+    # Calculate induction for each turbine at each time step
+    for (t_idx, time) in enumerate(time_vector)
+        for i in 1:n_turbines
+            induction_matrix[t_idx, i] = calc_axial_induction(ta, con, i, time)
+        end
+    end
+    
+    return induction_matrix
+end
+
 function plot_demand()
     # Create time vector from 0 to t_end with time_step intervals
     time_vector = 0:time_step:t_end
@@ -122,3 +143,25 @@ function plot_demand()
                      ylabel="Demand and Induction [-]", 
                      title="Demand and Induction vs Time")
 end
+
+function plot_induction_matrix()
+    # Calculate induction matrix for all turbines over time
+    induction_matrix = calc_induction_matrix(ta, con, time_step, t_end)
+    time_vector = 0:time_step:t_end
+    
+    # Plot induction for each turbine
+    n_turbines = size(induction_matrix, 2)
+    turbine_data = [induction_matrix[:, i] for i in 1:n_turbines]
+    turbine_labels = ["Turbine $i" for i in 1:n_turbines]
+    
+    ControlPlots.plot(time_vector, turbine_data,
+                     xlabel="Time [s]", 
+                     ylabel="Axial Induction Factor [-]", 
+                     title="Axial Induction Factor vs Time for All Turbines",
+                     labels=turbine_labels)
+end
+
+# Example usage:
+# induction_matrix = calc_induction_matrix(ta, con, time_step, t_end)
+# println("Matrix dimensions: ", size(induction_matrix))
+# println("Time steps: ", size(induction_matrix, 1), ", Turbines: ", size(induction_matrix, 2))
