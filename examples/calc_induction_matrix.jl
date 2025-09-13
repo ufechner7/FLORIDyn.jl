@@ -100,7 +100,7 @@ Assumes no wake effects for simplicity.
 # Returns
 - Base induction factor for the group
 """
-function calc_induction_per_group(turbine_group, time; scaling = 1.1)
+function calc_induction_per_group(turbine_group, time; scaling = 1.247)
     # simple example: assume no wakes
     demand = calc_demand(time)
     induction = calc_induction(demand * scaling * cp_max)
