@@ -40,7 +40,6 @@ wind.input_dir="Constant"
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-con.yaw="Constant"
 wind.dir=[270.0;;]
 toc()
 
