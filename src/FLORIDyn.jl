@@ -205,6 +205,7 @@ mutable struct Settings
     cor_turb_mode
     iterate_mode
     control_mode
+    induction_mode
     parallel::Bool
     threading::Bool
 end

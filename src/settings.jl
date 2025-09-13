@@ -705,8 +705,9 @@ function Settings(wind::Wind, sim::Sim, con::Con, parallel=false, threading=fals
     cor_turb_mode = str2type("TI_" * wind.correction.ti)
     iterate_mode = str2type(sim.dyn.op_iteration)
     control_mode = str2type("Yaw_" * con.yaw)
+    induction_mode = str2type("Induction_" * con.induction)
     Settings(vel_mode, dir_mode, turb_mode, shear_mode, cor_dir_mode, cor_vel_mode, cor_turb_mode, 
-             iterate_mode, control_mode, parallel, threading)
+             iterate_mode, control_mode, induction_mode, parallel, threading)
 end
 
 """
