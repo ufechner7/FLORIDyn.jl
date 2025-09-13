@@ -75,7 +75,7 @@ end
 
 function calc_demand(time)
     # Example: linearly increasing demand from 0.5 to 1.0 over the simulation time
-    initial_demand = 0.5
+    initial_demand = 0.4
     final_demand = 0.8
     t1 = 240.0 + dt  # Time to start increasing demand
     t2 = 960.0 + dt  # Time to reach final demand
@@ -123,7 +123,7 @@ Includes group-based corrections and time interpolation.
 # Returns
 - Axial induction factor for the specified turbine
 """
-function calc_axial_induction(ta, con, turbine, time; correction_factor=1.0) # max 1.8
+function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8) # max 1.8
     # Check if pre-calculated induction data is available
     if hasfield(typeof(con), :induction_data) && !isnothing(con.induction_data)
         # Use pre-calculated data from con.induction_data
