@@ -1,0 +1,146 @@
+# Copyright (c) 2025 Marcus Becker, Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
+# Calculate induction matrix for all turbines over time
+
+using FLORIDyn
+
+const cp_max = 16/27  # Betz limit
+
+# Forward declarations - these functions are expected to be defined elsewhere
+# calc_demand(time) - calculates demand as function of time
+# calc_cp(induction) - calculates power coefficient from induction factor  
+# calc_induction(cp) - calculates induction factor from power coefficient
+# t_end - simulation end time (global variable)
+
+"""
+    calc_induction_per_group(turbine_group, time)
+
+Calculate base induction factor for a turbine group at a given time.
+Assumes no wake effects for simplicity.
+
+# Arguments
+- `turbine_group`: Group ID of the turbine
+- `time`: Current simulation time [s]
+
+# Returns
+- Base induction factor for the group
+"""
+function calc_induction_per_group(turbine_group, time)
+    # simple example: assume no wakes
+    demand = calc_demand(time)
+    induction = calc_induction(demand * cp_max)
+    return induction
+end
+
+"""
+    calc_axial_induction(ta, con, turbine, time)
+
+Calculate axial induction factor for a specific turbine at a given time.
+Includes group-based corrections and time interpolation.
+
+# Arguments
+- `ta`: TurbineArray containing turbine positions and configuration
+- `con`: Controller configuration object
+- `turbine`: Turbine index (1-based)
+- `time`: Current simulation time [s]
+
+# Returns
+- Axial induction factor for the specified turbine
+"""
+function calc_axial_induction(ta, con, turbine, time)
+    # Check if pre-calculated induction data is available
+    if hasfield(typeof(con), :induction_data) && !isnothing(con.induction_data)
+        # Use pre-calculated data from con.induction_data
+        # First column is time, subsequent columns are turbine data
+        time_vector = con.induction_data[:, 1]
+        
+        # Find the time index that corresponds to the requested time
+        time_idx = findfirst(t -> t >= time, time_vector)
+        if isnothing(time_idx)
+            time_idx = length(time_vector)  # Use last time step if time is beyond range
+        end
+        
+        # Return the pre-calculated induction value for this turbine and time
+        # turbine data starts from column 2 (column 1 is time)
+        if turbine + 1 <= size(con.induction_data, 2) && time_idx <= size(con.induction_data, 1)
+            return con.induction_data[time_idx, turbine + 1]
+        end
+    end
+    
+    # Fallback to dynamic calculation if no pre-calculated data is available
+    group_id = FLORIDyn.turbine_group(ta, turbine)
+    
+    # Apply corrections based on turbine group and time with linear interpolation
+    # Rules:
+    # - apply a large reduction (0.2) in the power for group 1 at t=0
+    # - at the same time, increase the power of group 4 by the same amount
+    # - apply a small reduction (0.1) in the power for group 2 at t=0  
+    # - at the same time, increase the power of group 3 by the same amount
+    # - interpolate linearly between t=0 and t=t_end with no correction at t=t_end
+    
+    base_induction = calc_induction_per_group(group_id, time)
+    
+    # Calculate interpolation factor (1.0 at t=0, 0.0 at t=t_end)
+    if t_end > 0
+        interp_factor = max(0.0, (t_end - time) / t_end)
+    else
+        interp_factor = time == 0 ? 1.0 : 0.0
+    end
+    
+    # Apply corrections based on group
+    correction = 0.0
+    if group_id == 1
+        correction = -0.2 * interp_factor  # Large reduction
+    elseif group_id == 4
+        correction = +0.2 * interp_factor  # Large increase (balancing group 1)
+    elseif group_id == 2
+        correction = -0.1 * interp_factor  # Small reduction
+    elseif group_id == 3
+        correction = +0.1 * interp_factor  # Small increase (balancing group 2)
+    end
+
+    rel_power = calc_cp(base_induction) / cp_max + correction
+    corrected_induction = calc_induction(rel_power * cp_max)
+    return max(0.0, min(1/3, corrected_induction))
+end
+
+"""
+    calc_induction_matrix(ta, con, time_step, t_end)
+
+Calculate a matrix of axial induction factors for all turbines over time.
+
+# Arguments
+- `ta`: TurbineArray containing turbine positions and configuration
+- `con`: Controller configuration object
+- `time_step`: Time step for the simulation [s]
+- `t_end`: End time of the simulation [s]
+
+# Returns
+- `induction_matrix`: Matrix where:
+  - First column contains time values
+  - Subsequent columns contain induction factors for each turbine
+  - Rows represent time steps
+"""
+function calc_induction_matrix(ta, con, time_step, t_end)
+    # Create time vector from 0 to t_end with time_step intervals
+    time_vector = 0:time_step:t_end
+    n_time_steps = length(time_vector)
+    n_turbines = size(ta.pos, 1)  # Use ta.pos to get number of turbines
+    
+    # Initialize matrix: rows = time steps, columns = time + turbines
+    # First column is time, subsequent columns are turbine induction factors
+    induction_matrix = zeros(Float64, n_time_steps, n_turbines + 1)
+    
+    # Fill the first column with time values
+    induction_matrix[:, 1] = collect(time_vector)
+    
+    # Calculate induction for each turbine at each time step (columns 2 onwards)
+    for (t_idx, time) in enumerate(time_vector)
+        for i in 1:n_turbines
+            induction_matrix[t_idx, i + 1] = calc_axial_induction(ta, con, i, time)
+        end
+    end
+    
+    return induction_matrix
+end
