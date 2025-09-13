@@ -99,5 +99,5 @@ function plot_induction_matrix()
 end
 
 con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
+plot_induction_matrix()
 
-nothing
