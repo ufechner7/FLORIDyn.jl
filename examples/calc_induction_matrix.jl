@@ -122,7 +122,7 @@ Includes group-based corrections and time interpolation.
 # Returns
 - Axial induction factor for the specified turbine
 """
-function calc_axial_induction(ta, con, turbine, time; correction_factor=1.5)
+function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8)
     # Check if pre-calculated induction data is available
     if hasfield(typeof(con), :induction_data) && !isnothing(con.induction_data)
         # Use pre-calculated data from con.induction_data
