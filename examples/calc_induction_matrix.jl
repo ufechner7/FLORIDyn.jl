@@ -178,7 +178,7 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.0)
     elseif group_id == 2
         correction = -0.1 * interp_factor  # Small reduction
     elseif group_id == 3
-        correction = +0.1 * interp_factor  # Small increase (balancing group 2)
+        correction = +0.0 * interp_factor  # Small increase (balancing group 2)
     end
     correction *= correction_factor  # Apply overall correction factor if needed
 
