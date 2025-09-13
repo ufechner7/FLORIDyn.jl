@@ -32,6 +32,7 @@ include("calc_induction_matrix.jl")
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
+sim.end_time += 420
 con.yaw="Constant"
 wind.input_dir="Constant"
 
@@ -39,7 +40,7 @@ wind.input_dir="Constant"
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-
+con.yaw="Constant"
 wind.dir=[270.0;;]
 toc()
 
