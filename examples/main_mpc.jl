@@ -36,6 +36,10 @@ sim.end_time += 420
 con.yaw="Constant"
 wind.input_dir="Constant"
 
+time_step = sim.time_step  # seconds
+t_end = sim.end_time - sim.start_time  # relative end time in seconds
+con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
+
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
