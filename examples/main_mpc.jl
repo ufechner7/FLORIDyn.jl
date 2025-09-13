@@ -61,9 +61,21 @@ ylabel      = "Rel. Wind Speed [%]"
 times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
 nT = wf.nT
 rel_power = zeros(length(times))
+
+# TODO: Create an array of induction factors for all turbines and times to avoid repeated calls
+induction_factors = zeros(nT, length(times))
+for (i, sim_time) in pairs(times)
+    induction_factors[:, i] = getInduction(set.induction_mode, con.induction_data, (1:nT), sim_time)
+end
 for iT in 1:nT
     rel_speed = plot_data[1][iT] ./ 100
-    rel_power .+= rel_speed .^3
+    induction_vec = induction_factors[iT, :]
+    cp_vec = 4 * induction_vec .* (1 .- induction_vec).^2
+    rel_power .+= rel_speed .^3 .* cp_vec ./ cp_max
+    # if iT % 10 == 0
+    #     @info "Induction factors (turbine $iT): ", length(induction_factors[iT, :])
+    #     @info "Rel. speed (turbine $iT): ", length(rel_speed)
+    # end
 end
 rel_power ./= nT
 
