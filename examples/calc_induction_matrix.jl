@@ -104,6 +104,8 @@ Assumes no wake effects for simplicity.
 function calc_induction_per_group(turbine_group, time; scaling = 1.247)
     # simple example: assume no wakes
     demand = calc_demand(time)
+    correction = 1-min(((time - 950)/270)^2, 1)
+    demand -= correction*0.016
     induction = calc_induction(demand * scaling * cp_max)
     return induction
 end
@@ -167,19 +169,19 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8) # m
         interp_factor = 0.0  # No correction at and after t2
     else
         # Linear interpolation between t1 and t2
-        interp_factor = (t2 - time) / (t2 - t1)
+        interp_factor = ((t2 - time) / (t2 - t1))
     end
     
     # Apply corrections based on group
     correction = 0.0
     if group_id == 1
-        correction = -0.15 * interp_factor  # Large reduction
+        correction = -0.13 * interp_factor  # Large reduction
     elseif group_id == 4
         correction = +0.2 * interp_factor  # Large increase (balancing group 1)
     elseif group_id == 2
         correction = -0.1 * interp_factor  # Small reduction
     elseif group_id == 3
-        correction = +0.0 * interp_factor  # Small increase (balancing group 2)
+        correction = -0.00 * interp_factor  # Small increase (balancing group 2)
     end
     correction *= correction_factor  # Apply overall correction factor if needed
 
