@@ -130,7 +130,7 @@ sim:
 # - Constant      reads a single orientation and applies it to all turbines at all times.
 # induction
 # - 'Constant'    sets the axial induction factor to a constant value of 1/3 for all turbines at all times.
-# - 'MPC'         uses the function calc_axial_induction to calculate the axial induction factor on-the-fly.
+# - 'MPC'         uses the con.induction_data matrix to set the axial induction factor for each turbine
 con:
   yaw: SOWFA
   induction: Constant
