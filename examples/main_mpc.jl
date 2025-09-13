@@ -45,6 +45,7 @@ con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 set.induction_mode = Induction_MPC()
+# set.induction_mode = Induction_Constant()
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 wind.dir=[270.0;;]
@@ -62,7 +63,6 @@ times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_i
 nT = wf.nT
 rel_power = zeros(length(times))
 
-# TODO: Create an array of induction factors for all turbines and times to avoid repeated calls
 induction_factors = zeros(nT, length(times))
 for (i, sim_time) in pairs(times)
     induction_factors[:, i] = getInduction(set.induction_mode, con.induction_data, (1:nT), sim_time)

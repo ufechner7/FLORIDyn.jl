@@ -3,9 +3,6 @@
 
 # Calculate axial induction factor, and calculate the demand
 
-# TODO
-# - integrate the function calc_axial_induction in FLORIDyn
-
 using FLORIDyn, ControlPlots, YAML
 
 include("calc_induction_matrix.jl")

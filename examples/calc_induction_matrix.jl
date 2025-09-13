@@ -100,7 +100,7 @@ Assumes no wake effects for simplicity.
 # Returns
 - Base induction factor for the group
 """
-function calc_induction_per_group(turbine_group, time; scaling = 1.10)
+function calc_induction_per_group(turbine_group, time; scaling = 1.23)
     # simple example: assume no wakes
     demand = calc_demand(time)
     induction = calc_induction(demand * scaling * cp_max)
@@ -122,7 +122,7 @@ Includes group-based corrections and time interpolation.
 # Returns
 - Axial induction factor for the specified turbine
 """
-function calc_axial_induction(ta, con, turbine, time)
+function calc_axial_induction(ta, con, turbine, time; correction_factor=0.0)
     # Check if pre-calculated induction data is available
     if hasfield(typeof(con), :induction_data) && !isnothing(con.induction_data)
         # Use pre-calculated data from con.induction_data
@@ -173,6 +173,7 @@ function calc_axial_induction(ta, con, turbine, time)
     elseif group_id == 3
         correction = +0.1 * interp_factor  # Small increase (balancing group 2)
     end
+    correction *= correction_factor  # Apply overall correction factor if needed
 
     rel_power = calc_cp(base_induction) / cp_max + correction
     corrected_induction = calc_induction(rel_power * cp_max)

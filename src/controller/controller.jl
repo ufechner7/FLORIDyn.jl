@@ -173,7 +173,7 @@ inductions = getInduction(Induction_Constant(), con_induction_data, [1, 2, 3], 5
 function getInduction(::Induction_Constant, con_induction_data::AbstractMatrix, iT, t)
     size(con_induction_data, 1) == 0 && error("con_induction_data must have at least one row: $(con_induction_data)")
     size(con_induction_data, 2) == 0 && error("con_induction_data must have at least one column: $(con_induction_data)")
-    induction = con_induction_data[1,1]
+    induction = 0.33
     if isa(iT, Integer)
         return induction
     elseif isa(iT, AbstractVector{<:Integer})
