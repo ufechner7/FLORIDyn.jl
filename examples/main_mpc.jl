@@ -86,3 +86,36 @@ demand_values = [calc_demand(t) for t in time_vector]
 
 plot_rmt(times, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
+
+# Calculate Mean Square Error between rel_power and demand_values
+mse = sum((rel_power[101:end] .- demand_values[101:end]).^2) / length(rel_power[101:end])
+println("Root Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
+println("Max Absolute Error:            $(round(maximum(abs.(rel_power[101:end] .- demand_values[101:end])) * 100, digits=2))%")
+
+# Print wind conditions
+println("\n--- Wind Conditions ---")
+if hasfield(typeof(wind), :vel) && !isnothing(wind.vel)
+    if isa(wind.vel, Matrix) && size(wind.vel, 2) > 1
+        wind_speed = wind.vel[1, 2]  # First time point, wind speed column
+    elseif isa(wind.vel, Real)
+        wind_speed = wind.vel
+    else
+        wind_speed = "Variable (see wind.vel)"
+    end
+    println("Free-flow wind speed: $wind_speed m/s")
+else
+    println("Free-flow wind speed: Not available")
+end
+
+if hasfield(typeof(wind), :ti) && !isnothing(wind.ti)
+    if isa(wind.ti, Matrix) && size(wind.ti, 2) > 1
+        turbulence_intensity = wind.ti[1, 2]  # First time point, TI column
+    elseif isa(wind.ti, Real)
+        turbulence_intensity = wind.ti
+    else
+        turbulence_intensity = "Variable (see wind.ti)"
+    end
+    println("Turbulence intensity: $(round(turbulence_intensity * 100, digits=1))%")
+else
+    println("Turbulence intensity: Not available")
+end
