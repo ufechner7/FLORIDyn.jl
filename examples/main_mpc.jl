@@ -14,6 +14,9 @@ if Threads.nthreads() == 1; using ControlPlots; end
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 
+USE_MPC = false
+USE_FEED_FORWARD = true
+
 # Load vis settings from YAML file
 vis = Vis(vis_file)
 if (@isdefined plt) && !isnothing(plt)
@@ -44,8 +47,11 @@ con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
-set.induction_mode = Induction_MPC()
-# set.induction_mode = Induction_Constant()
+if USE_FEED_FORWARD
+    set.induction_mode = Induction_MPC()
+else
+    set.induction_mode = Induction_Constant()
+end
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 wind.dir=[270.0;;]
