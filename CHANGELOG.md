@@ -1,3 +1,7 @@
+# FLORIDyn v0.5.5 - 2025-25-09
+## Fixed
+- Fix .zenodo.json
+
 # FLORIDyn v0.5.4 - 2025-25-09
 ## Fixed
 - Fix .zenodo.json
