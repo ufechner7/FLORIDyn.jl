@@ -12,29 +12,18 @@
             "affiliation": "Delft University of Technology"
         }
     ],
-    "contributors": [
-        {
-            "name": "van Wingerden, Jan-Willem",
-            "affiliation": "Delft University of Technology",
-            "type": "Supervisor"
-        }
-    ],
     "keywords": [
         "wind farm simulation",
-        "wake modeling",
+        "wake modeling", 
         "wind energy",
         "renewable energy",
-        "CFD",
         "Julia",
         "dynamic simulation",
-        "Gaussian wake model",
-        "wind turbine",
-        "power estimation"
+        "wind turbine"
     ],
-    "license": "BSD-3-Clause",
-    "language": "Julia",
-    "version": "0.5.3",
-    "publication_date": "2025-09-15",
+    "license": {
+        "id": "BSD-3-Clause"
+    },
     "upload_type": "software",
     "access_right": "open",
     "related_identifiers": [
@@ -47,22 +36,6 @@
             "identifier": "10.1088/1742-6596/2265/3/032103",
             "relation": "cites",
             "resource_type": "publication-article"
-        },
-        {
-            "identifier": "10.1017/jfm.2016.595",
-            "relation": "cites",
-            "resource_type": "publication-article"
-        }
-    ],
-    "grants": [
-        {
-            "id": "HEP24-03681024",
-            "title": "EuroWindWakes project"
-        }
-    ],
-    "communities": [
-        {
-            "identifier": "zenodo"
         }
     ]
 }
