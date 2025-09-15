@@ -41,7 +41,7 @@ keywords:
   - wind turbine
   - power estimation
 license: BSD-3-Clause
-version: 0.5.2
+version: 0.5.3
 date-released: '2025-09-15'
 references:
   - type: article
