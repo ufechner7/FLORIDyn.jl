@@ -1,3 +1,7 @@
+# FLORIDyn v0.5.4 - 2025-25-09
+## Fixed
+- Fix .zenodo.json
+
 # FLORIDyn v0.5.3 - 2025-25-09
 ## Added
 - Add power plots to the package itself, function calc_rel_power()
