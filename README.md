@@ -1,6 +1,7 @@
 # FLORIDyn
 
 [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://ufechner7.github.io/FLORIDyn.jl/dev)
+[![DOI](https://zenodo.org/badge/DOI/YOUR_DOI_HERE.svg)](https://doi.org/YOUR_DOI_HERE)
 [![Build Status](https://github.com/ufechner7/FLORIDyn.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/ufechner7/FLORIDyn.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![codecov](https://codecov.io/gh/ufechner7/FLORIDyn.jl/graph/badge.svg?token=O7wXT62VSR)](https://codecov.io/gh/ufechner7/FLORIDyn.jl)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
