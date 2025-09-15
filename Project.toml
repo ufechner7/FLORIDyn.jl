@@ -1,7 +1,7 @@
 name = "FLORIDyn"
 uuid = "fc770985-7669-4833-bc54-a38444eb6027"
 authors = ["Uwe Fechner <u.fechner-1@tudelft.nl>, Marcus Becker and contributors"]
-version = "0.5.2"
+version = "0.5.3"
 
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
