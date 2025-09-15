@@ -1,0 +1,68 @@
+{
+    "title": "FLORIDyn.jl: A dynamic wind farm simulation software",
+    "description": "A dynamic wind farm simulation software in Julia, translated from FLORIDyn_Matlab. The code uses the Gaussian wake model and enables simulation of wind farms dynamically at a low computational cost, estimation of power generated, added turbulence, and wake-induced losses.",
+    "creators": [
+        {
+            "name": "Fechner, Uwe",
+            "affiliation": "Delft University of Technology",
+            "orcid": "0000-0002-9199-6117"
+        },
+        {
+            "name": "Becker, Marcus",
+            "affiliation": "Delft University of Technology"
+        }
+    ],
+    "contributors": [
+        {
+            "name": "van Wingerden, Jan-Willem",
+            "affiliation": "Delft University of Technology",
+            "type": "Supervisor"
+        }
+    ],
+    "keywords": [
+        "wind farm simulation",
+        "wake modeling",
+        "wind energy",
+        "renewable energy",
+        "CFD",
+        "Julia",
+        "dynamic simulation",
+        "Gaussian wake model",
+        "wind turbine",
+        "power estimation"
+    ],
+    "license": "BSD-3-Clause",
+    "language": "Julia",
+    "version": "0.5.2",
+    "publication_date": "2025-09-15",
+    "upload_type": "software",
+    "access_right": "open",
+    "related_identifiers": [
+        {
+            "identifier": "https://github.com/ufechner7/FLORIDyn.jl",
+            "relation": "isSupplementTo",
+            "resource_type": "software"
+        },
+        {
+            "identifier": "10.1088/1742-6596/2265/3/032103",
+            "relation": "cites",
+            "resource_type": "publication-article"
+        },
+        {
+            "identifier": "10.1017/jfm.2016.595",
+            "relation": "cites",
+            "resource_type": "publication-article"
+        }
+    ],
+    "grants": [
+        {
+            "id": "HEP24-03681024",
+            "title": "EuroWindWakes project"
+        }
+    ],
+    "communities": [
+        {
+            "identifier": "zenodo"
+        }
+    ]
+}
