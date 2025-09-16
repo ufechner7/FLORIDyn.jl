@@ -1,0 +1,76 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: 'FLORIDyn.jl: A dynamic wind farm simulation software'
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Uwe
+    family-names: Fechner
+    email: u.fechner-1@tudelft.nl
+    affiliation: Delft University of Technology
+    orcid: 'https://orcid.org/0000-0002-9199-6117'
+  - given-names: Marcus
+    family-names: Becker
+    affiliation: Delft University of Technology
+identifiers:
+  - type: url
+    value: 'https://github.com/ufechner7/FLORIDyn.jl'
+    description: 'GitHub repository'
+repository-code: 'https://github.com/ufechner7/FLORIDyn.jl'
+url: 'https://ufechner7.github.io/FLORIDyn.jl/dev/'
+abstract: >-
+  A dynamic wind farm simulation software in Julia,
+  translated from FLORIDyn_Matlab. The code uses the
+  Gaussian wake model and enables simulation of wind farms
+  dynamically at a low computational cost, estimation of
+  power generated, added turbulence, and wake-induced
+  losses.
+keywords:
+  - wind farm simulation
+  - wake modeling
+  - wind energy
+  - renewable energy
+  - CFD
+  - Julia
+  - dynamic simulation
+  - Gaussian wake model
+  - wind turbine
+  - power estimation
+license: BSD-3-Clause
+version: 0.5.5
+date-released: '2025-09-15'
+references:
+  - type: article
+    authors:
+      - given-names: Marcus
+        family-names: Becker
+      - given-names: Daan
+        family-names: Allaerts
+      - given-names: Jan-Willem
+        family-names: van Wingerden
+    title: >-
+      FLORIDyn - A dynamic and flexible framework for
+      real-time wind farm control
+    journal: Journal of Physics Conference Series
+    year: 2022
+    volume: 2265
+    issue: 3
+    doi: 10.1088/1742-6596/2265/3/032103
+  - type: article
+    authors:
+      - given-names: Majid
+        family-names: Bastankhah
+      - given-names: Fernando
+        family-names: Porté-Agel
+    title: >-
+      Experimental and theoretical study of wind turbine
+      wakes in yawed conditions
+    journal: Journal of Fluid Mechanics
+    year: 2016
+    volume: 806
+    pages: 506-541
+    doi: 10.1017/jfm.2016.595

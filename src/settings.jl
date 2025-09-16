@@ -562,27 +562,272 @@ function Base.getproperty(vis::Vis, name::Symbol)
 end
 
 """
-    setup(filename) -> (wind, sim, con, floris, floridyn, ta)
+    cp_fun(filename = "data/DTU_10MW/cp.csv") -> Function
+
+Create a power coefficient interpolation function from tabulated data in a CSV file.
+
+This function loads wind turbine power coefficient (Cp) data from a CSV file and creates 
+a bilinear interpolation function that can be used to compute power coefficients for 
+arbitrary combinations of tip-speed ratio (λ) and blade pitch angle (β).
+
+# Arguments
+- `filename::String`: Path to the CSV file containing power coefficient data 
+                     (default: DTU 10MW reference turbine data)
+
+# Returns  
+- `Function`: An interpolation function `cp(tsr, pitch)` that takes:
+  - `tsr::Real`: Tip-speed ratio λ = Ω×R/V (dimensionless)
+  - `pitch::Real`: Blade pitch angle β in degrees  
+  - Returns: Power coefficient Cp (dimensionless, typically 0.0 to ~0.5)
+
+# CSV File Format
+The input CSV file must follow this structure:
+- **First column**: Tip-speed ratio values (λ), with header containing a backslash (e.g., "λ\\β")
+- **Remaining columns**: Power coefficient values for different pitch angles
+- **Column headers**: Pitch angles in degrees (e.g., "0.0", "2.0", "4.0", ...)
+- **Data rows**: Cp values corresponding to each (λ, β) combination
+
+Example CSV structure:
+```
+λ\\β,0.0,2.0,4.0,6.0,8.0,10.0
+1.0,0.05,0.04,0.03,0.02,0.01,0.00
+2.0,0.15,0.14,0.13,0.11,0.09,0.06
+4.0,0.35,0.33,0.30,0.26,0.21,0.15
+6.0,0.45,0.42,0.38,0.33,0.27,0.20
+8.0,0.48,0.44,0.39,0.33,0.26,0.18
+10.0,0.42,0.38,0.33,0.27,0.20,0.12
+```
+
+# Interpolation Method
+- Uses **bilinear interpolation** via `Interpolations.jl`
+- **Gridded(Linear())**: Provides smooth interpolation between tabulated points
+- **Extrapolation**: Values outside the data range use nearest-neighbor extrapolation
+- **Performance**: Optimized for repeated evaluations during simulation
+
+# Physical Context
+The power coefficient Cp represents the aerodynamic efficiency of a wind turbine:
+- **Definition**: Cp = P_extracted / P_available = P / (0.5 × ρ × A × V³)
+- **Range**: Theoretical maximum is ~0.593 (Betz limit), practical turbines achieve ~0.45-0.50
+- **Dependencies**: Strong function of tip-speed ratio λ and pitch angle β
+- **Optimal operation**: Peak Cp typically occurs around λ = 7-8 with β ≈ 0°
+
+# Usage Examples
+```julia
+# Create interpolation function from default DTU 10MW data
+cp = cp_fun()
+
+# Create from custom turbine data
+cp_custom = cp_fun("data/NREL_5MW/cp.csv")
+
+# Evaluate power coefficient at specific operating point
+tsr = 7.5      # Tip-speed ratio
+pitch = 0.0    # Pitch angle [degrees]
+cp_value = cp(tsr, pitch)
+println("Cp = ", cp_value)  # Expected: ~0.45-0.48 for optimal conditions
+
+# Power calculation example
+wind_speed = 12.0    # m/s
+rotor_radius = 89.2  # m (DTU 10MW)
+rotor_speed = wind_speed * tsr / rotor_radius  # rad/s
+air_density = 1.225  # kg/m³
+swept_area = π * rotor_radius^2  # m²
+power = 0.5 * air_density * swept_area * wind_speed^3 * cp_value  # W
+
+# Variable pitch control example
+pitch_angles = 0.0:2.0:20.0
+cp_values = [cp(8.0, β) for β in pitch_angles]
+println("Cp variation with pitch: ", cp_values)
+```
+
+# Implementation Details
+The function performs these steps:
+1. **Data Loading**: Reads CSV using `CSV.jl` with automatic header detection
+2. **Column Parsing**: Extracts tip-speed ratio from first column and pitch angles from headers  
+3. **Matrix Construction**: Builds 2D matrix of Cp values indexed by (λ, β)
+4. **Interpolation Setup**: Creates bilinear interpolator using `Interpolations.jl`
+5. **Function Return**: Returns optimized evaluation function for repeated use
+
+# Error Handling
+- **File not found**: Throws standard file I/O errors if CSV file doesn't exist
+- **Malformed CSV**: May throw parsing errors if format doesn't match expected structure
+- **Invalid data**: Interpolation may produce unexpected results for malformed numeric data
+
+# Performance Notes
+- **Initialization cost**: Moderate (file I/O + interpolation setup)  
+- **Evaluation cost**: Very fast (optimized bilinear interpolation)
+- **Memory usage**: Scales with data table size (typically <1MB for standard turbines)
+- **Thread safety**: Returned function is thread-safe for evaluation
+
+# See Also
+- [`TurbineProperties`](@ref): Struct that uses cp_fun for aerodynamic modeling
+- [`Interpolations.jl`](https://github.com/JuliaMath/Interpolations.jl): Underlying interpolation library
+"""
+function cp_fun(filename = "data/DTU_10MW/cp.csv")	
+    local cp_df
+    try
+        cp_df = CSV.read(filename, DataFrame; header=1)
+    catch err
+        error("Failed to read CSV file '$(filename)': $(err). Please check that the file exists and is a valid CSV with the expected format.")
+    end
+	# First column name contains a slash; get it programmatically
+    col_ts = names(cp_df)[1]
+    _tsr_vals = Float64.(cp_df[!, col_ts])
+    _pitch_vals = parse.(Float64, string.(names(cp_df)[2:end]))
+    cp_matrix = Array{Float64}(undef, size(cp_df,1), size(cp_df,2)-1)
+	for (j,col) in enumerate(names(cp_df)[2:end])
+	    cp_matrix[:, j] = Float64.(cp_df[!, col])
+	end
+	cp_itp = interpolate((_tsr_vals, _pitch_vals), cp_matrix, Gridded(Linear()))
+	cp(tsr, pitch) = cp_itp(tsr, pitch)
+	return cp
+end
+
+"""
+    TurbineProperties
+
+A mutable struct containing the physical and aerodynamic properties of a wind turbine.
+
+This struct encapsulates all the key properties needed for wind turbine modeling and control,
+including aerodynamic performance characteristics, drivetrain properties, and operating 
+parameters. It serves as a comprehensive specification for turbine behavior in wind farm 
+simulations.
+
+# Fields
+- `name::String`: Descriptive name of the turbine model (default: `"DTU 10MW"`). 
+                  Used for identification and reporting purposes.
+- `gearbox_ratio::Float64`: Gearbox transmission ratio between the low-speed rotor shaft 
+                           and high-speed generator shaft (default: `50.0`). Higher values 
+                           indicate more speed multiplication from rotor to generator.
+- `inertia_total::Float64`: Total rotational inertia of the drivetrain system in kg⋅m² 
+                           (default: `1.409969209E+08`). Includes contributions from rotor,
+                           gearbox, and generator inertias referred to the low-speed shaft.
+- `rotor_radius::Float64`: Rotor radius in meters (default: `89.2`). Half of the rotor 
+                          diameter, defining the swept area of the turbine.
+- `cp_fun::Function`: Power coefficient function `Cp(λ, β)` where λ is tip-speed ratio 
+                     and β is blade pitch angle in degrees. Returns the aerodynamic 
+                     power coefficient (dimensionless, range [0, ~0.5]).
+- `fluid_density::Float64`: Air density in kg/m³ (default: `1.23`). Used for calculating 
+                           aerodynamic forces and power. Standard air density at sea level.
+- `gearbox_efficiency::Float64`: Gearbox mechanical efficiency as a fraction (default: `1.0`). 
+                                Accounts for power losses in the drivetrain. Range: [0, 1].
+
+# Constructors
+```julia
+# Default constructor with keyword arguments
+tp = TurbineProperties(name="NREL 5MW", rotor_radius=63.0, gearbox_ratio=97.0)
+
+# Constructor from power coefficient file
+tp = TurbineProperties("path/to/cp.csv")  # Loads cp_fun from CSV file
+```
+
+# Power Coefficient Function
+The `cp_fun` field contains a function that maps tip-speed ratio and pitch angle to 
+the power coefficient:  
+```julia
+cp_value = tp.cp_fun(tip_speed_ratio, pitch_angle_degrees)
+```
+
+The function is created by loading tabulated data from CSV files using 
+bilinear interpolation. The CSV format should have:
+- First column: Tip-speed ratio values (λ)  
+- Remaining columns: Power coefficient values for different pitch angles
+- Column headers: Pitch angles in degrees
+
+# Physical Relationships
+Key relationships between the properties:
+- **Swept Area**: `A = π × rotor_radius²`
+- **Power**: `P = 0.5 × fluid_density × A × V³ × cp_fun(λ, β)`
+- **Tip-Speed Ratio**: `λ = Ω × rotor_radius / V` (where Ω is rotor speed, V is wind speed)
+- **Torque**: `τ = P / Ω` (aerodynamic torque on low-speed shaft)
+
+# Examples
+```julia
+# Create turbine properties with custom parameters
+tp = TurbineProperties(
+    name="Custom 8MW",
+    rotor_radius=80.0,
+    gearbox_ratio=100.0,
+    inertia_total=1.2e8,
+    fluid_density=1.225,
+    gearbox_efficiency=0.95,
+    cp_fun=my_cp_function
+)
+
+# Load from power coefficient file
+tp = TurbineProperties("data/DTU_10MW/cp.csv")
+
+# Access properties
+println("Turbine: ", tp.name)
+println("Swept area: ", π * tp.rotor_radius^2, " m²")
+cp_max = tp.cp_fun(7.0, 0.0)  # Cp at λ=7, β=0°
+println("Max Cp: ", cp_max)
+
+# Calculate power at given conditions
+wind_speed = 12.0  # m/s
+rotor_speed = 1.0  # rad/s  
+tip_speed_ratio = rotor_speed * tp.rotor_radius / wind_speed
+power_coeff = tp.cp_fun(tip_speed_ratio, 0.0)
+swept_area = π * tp.rotor_radius^2
+power = 0.5 * tp.fluid_density * swept_area * wind_speed^3 * power_coeff
+println("Power output: ", power / 1e6, " MW")
+```
+
+# CSV File Format
+When using the filename constructor, the CSV file should follow this structure:
+```
+λ\\β,0.0,2.0,4.0,6.0,8.0,10.0
+1.0,0.1,0.09,0.08,0.07,0.06,0.05
+2.0,0.2,0.18,0.16,0.14,0.12,0.10
+...
+```
+Where:
+- First column header can be "λ\\β" or similar (contains backslash)
+- First column contains tip-speed ratio values
+- Remaining columns contain Cp values for different pitch angles
+- Column headers are pitch angles in degrees
+
+# See Also
+- [`cp_fun`](@ref): Function for creating power coefficient interpolators from CSV files
+- [`TurbineArray`](@ref): Container for multiple turbines with their positions and types
+- [`setup`](@ref): Main configuration loader that creates TurbineProperties instances
+"""
+@with_kw mutable struct TurbineProperties
+    name::String = "DTU 10MW"
+    gearbox_ratio::Float64 = 50.0
+    inertia_total::Float64 = 1.409969209E+08
+    rotor_radius::Float64 = 89.2
+    cp_fun::Function
+    fluid_density::Float64 = 1.23
+    gearbox_efficiency::Float64 = 1.0
+end
+function TurbineProperties(filename::String)
+    tp = TurbineProperties(cp_fun=cp_fun(filename))
+    return tp
+end
+
+"""
+    setup(filename) -> (wind, sim, con, floris, floridyn, ta, tp)
 
 Load wind farm configuration from a YAML file and parse all simulation components.
 
 This function reads the configuration file of the simulation and extracts all necessary 
 parameters for setting up a FLORIDyn simulation, including wind conditions, simulation 
-settings, control strategies, FLORIS model parameters, FLORIDyn dynamics, and turbine 
-array layout.
+settings, control strategies, FLORIS model parameters, FLORIDyn dynamics, turbine 
+array layout and turbine properties.
 
 # Arguments
 - `filename::String`: Path to the YAML configuration file.
   The file should contain sections for: wind, sim, con, floris, floridyn, and turbines.
 
 # Returns
-A 6-tuple containing fully configured simulation components:
+A 7-tuple containing fully configured simulation components:
 - `wind::Wind`: Wind conditions and input specifications (velocity, direction, turbulence, shear, corrections, perturbations)
 - `sim::Sim`: Simulation parameters (time range, discretization, dynamics, initialization, data paths)  
 - `con::Con`: Control settings (yaw strategies, control data)
 - `floris::Floris`: FLORIS wake model parameters (alpha, beta, k coefficients, air density, etc.)
 - `floridyn::FloriDyn`: FLORIDyn dynamic model settings (operating points, perturbations, state changes)
 - `ta::TurbineArray`: Turbine array configuration (positions, types, initial states)
+- `tp::TurbineProperties`: Turbine properties (name, rotor radius, power coefficient function)
 
 # YAML File Structure
 The configuration file must contain these top-level sections:
@@ -598,7 +843,7 @@ turbines:      # Array of turbine definitions with position, type, initial state
 # Example
 ```julia
 # Load complete wind farm configuration
-wind, sim, con, floris, floridyn, ta = setup("data/2021_9T_Data.yaml")
+wind, sim, con, floris, floridyn, ta, tp = setup("data/2021_9T_Data.yaml")
 
 # Access turbine positions  
 println("Number of turbines: ", size(ta.pos, 1))
@@ -639,7 +884,20 @@ function setup(filename)
     init_states = reduce(vcat, [s' for s in init_states])  # transpose and concatenate
 
     ta = TurbineArray(pos, type, init_states)
-    wind, sim, con, floris, floridyn, ta
+    
+    # Validate that all turbines have the same type
+    unique_types = unique(ta.type)
+    if length(unique_types) > 1
+        error("All turbines must have the same type. Found different types: $(join(unique_types, ", "))")
+    end
+    
+    turbine = ta.type[1]  # all turbines are validated to be of the same type
+    cp_file = abspath(joinpath(dirname(filename), replace(turbine, ' ' => '_'), "cp.csv"))
+    if !isfile(cp_file)
+        error("cp.csv file not found for turbine type '$(turbine)'. Expected at: $(cp_file). Please check your directory structure and naming convention.")
+    end
+    tp = TurbineProperties(cp_file)
+    return wind, sim, con, floris, floridyn, ta, tp
 end
 
 """

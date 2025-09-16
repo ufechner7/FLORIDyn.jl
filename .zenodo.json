@@ -1,0 +1,40 @@
+{
+    "title": "FLORIDyn.jl: A dynamic wind farm simulation software",
+    "description": "A dynamic wind farm simulation software in Julia, translated from FLORIDyn_Matlab. The code uses the Gaussian wake model and enables simulation of wind farms dynamically at a low computational cost, estimation of power generated, added turbulence, and wake-induced losses.",
+    "creators": [
+        {
+            "name": "Fechner, Uwe",
+            "affiliation": "Delft University of Technology"
+        },
+        {
+            "name": "Becker, Marcus",
+            "affiliation": "Delft University of Technology"
+        }
+    ],
+    "keywords": [
+        "wind farm simulation",
+        "wake modeling", 
+        "wind energy",
+        "renewable energy",
+        "Julia",
+        "dynamic simulation",
+        "wind turbine"
+    ],
+    "license": {
+        "id": "BSD-3-Clause"
+    },
+    "upload_type": "software",
+    "access_right": "open",
+    "related_identifiers": [
+        {
+            "identifier": "https://github.com/ufechner7/FLORIDyn.jl",
+            "relation": "isSupplementTo",
+            "resource_type": "software"
+        },
+        {
+            "identifier": "10.1088/1742-6596/2265/3/032103",
+            "relation": "cites",
+            "resource_type": "publication-article"
+        }
+    ]
+}
