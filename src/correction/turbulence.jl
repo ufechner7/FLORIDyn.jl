@@ -208,6 +208,9 @@ correctTI!(TI_Influence(), settings, wf, wind, 100.0)
 - [`Settings`](@ref): Simulation settings structure containing turbulence intensity mode
 - [`WindFarm`](@ref): Wind farm configuration structure with dependency data
 - [`Wind`](@ref): Wind field data structure containing turbulence intensity information
+
+# WARNING:
+This correction method is not properly tested. Use at your own risk!
 """
 function correctTI!(::TI_Influence, set::Settings, wf::WindFarm, wind::Wind, t)
     # Base TI values for all turbines

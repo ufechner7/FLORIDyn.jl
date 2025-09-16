@@ -17,6 +17,9 @@ abstract type TurbulenceCorrection end
     TI_Influence <: TurbulenceCorrection
 
 A marker struct used to represent turbulence intensity correction based on influence modeling.
+
+# WARNING:
+This correction method is not properly tested. Use at your own risk!
 """
 struct TI_Influence <: TurbulenceCorrection end
 
