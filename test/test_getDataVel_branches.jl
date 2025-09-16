@@ -39,7 +39,8 @@ end
 
 # Build minimal Settings with adjustable velocity mode
 function _settings(vel_mode)
-    Settings(vel_mode, Direction_Constant(), TI_Constant(), Shear_PowerLaw(), Direction_Constant(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_Constant(), false, false)
+    return Settings(vel_mode, Direction_Constant(), TI_Constant(), Shear_PowerLaw(), 
+                    Direction_Constant(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_Constant(), Induction_Constant(), false, false)
 end
 
 @testset "getDataVel branches" begin

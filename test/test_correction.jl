@@ -31,7 +31,7 @@ wind = FLORIDyn.Wind(
     @testset "correctDir!" begin
         # Setup
         set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_All(), 
-                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
         wf = WindFarm(
             States_WF = zeros(3, 4),
             StartI = [2 2; 3 3],
