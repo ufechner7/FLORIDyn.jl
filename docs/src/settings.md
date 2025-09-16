@@ -244,6 +244,7 @@ Vis
 Floris
 FloriDyn
 TurbineArray
+TurbineProperties
 TurbineData
 FlowField
 Measurement
@@ -258,6 +259,7 @@ copy_examples
 copy_model_settings
 copy_bin
 copy_files
+cp_fun
 setup
 Settings
 Settings(wind::Wind, sim::Sim, con::Con)

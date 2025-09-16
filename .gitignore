@@ -12,3 +12,4 @@ out/
 *.cov
 *.mem
 data/default.yaml
+.zenodo_minimal.json
