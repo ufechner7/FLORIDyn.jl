@@ -1,3 +1,21 @@
+# FLORIDyn v0.5.5 - 2025-25-09
+## Fixed
+- Fix .zenodo.json
+
+# FLORIDyn v0.5.4 - 2025-25-09
+## Fixed
+- Fix .zenodo.json
+
+# FLORIDyn v0.5.3 - 2025-25-09
+## Added
+- Add power plots to the package itself, function calc_rel_power()
+- Add function plot_rmt
+## Fixed
+- Fix reading Control_YawConstant.csv
+## Changed
+- Update main_power_plot.jl
+- Delete main_power_plot_II.jl
+
 # FLORIDyn v0.5.2
 ## Added
 - Add function getYaw(::Yaw_Constant, ...)
