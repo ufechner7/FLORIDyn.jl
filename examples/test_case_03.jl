@@ -15,7 +15,7 @@ vis.online = true
 include("remote_plotting.jl")
 
 # get the settings for the wind field, simulator and controller
-wind, sim, con, floris, floridyn, ta = setup(settings_file)
+wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
 
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
