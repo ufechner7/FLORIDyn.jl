@@ -55,8 +55,6 @@ wind farm state matrix (`wf.States_WF[:, 1]`).
 ## Key Features
 - **Index Validation**: Validates all operational point indices before accessing state data
 - **Robust Handling**: Gracefully handles missing or malformed dependency/weight/interpolation data
-- **Sequential Processing**: Uses already-corrected turbine velocities within the same iteration
-- **Bounds Checking**: Prevents out-of-bounds access to the wind farm state matrix
 
 ## Data Structure Requirements
 - `wf.dep[iT]`: Vector of turbine indices that influence turbine `iT`
