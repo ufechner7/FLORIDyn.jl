@@ -7,7 +7,7 @@ using FLORIDyn, Test, LinearAlgebra
     @testset "prepare_simulation                                      " begin
         settings_file = "data/2021_9T_Data.yaml"
         # get the settings for the wind field, simulator and controller
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         # create settings struct
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
@@ -76,25 +76,25 @@ using FLORIDyn, Test, LinearAlgebra
         @test floris.rotor_points == 50
 
         # Test with constant wind direction
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         wind.input_dir = "Constant"
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
         # Test with InterpTurbine
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         wind.input_dir = "InterpTurbine"
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
         # Test with constant Interpolation_wErrorCov
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         wind.input_dir = "Interpolation_wErrorCov"
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         
         # Test with Constant_wErrorCov
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         wind.input_dir = "Constant_wErrorCov"
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
@@ -102,57 +102,57 @@ using FLORIDyn, Test, LinearAlgebra
         # Test with input_ti Interpolation
         # This will generate a demo CSV file if it does not exist
         rm("data/2021_9T_Data/WindTI.csv", force=true)
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         wind.input_ti = "Interpolation"
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
         #  wind.input_dir == "RW_with_Mean"
         # TODO: Compare the result with the Matlab version
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         wind.input_dir = "RW_with_Mean"
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
         # wind.input_dir == "InterpTurbine_wErrorCov"
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         wind.input_dir = "InterpTurbine_wErrorCov"
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
         # input_ti == "InterpTurbine"
         # TODO: Check that the changes to the function interpid() are correct
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         wind.input_ti = "InterpTurbine"
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
         # wind.input_shear == "Interpolation"
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         wind.input_shear = "Interpolation"
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
         # yaw_method == "Constant"
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         con.yaw = "Constant"
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
         # yaw_method == "InterpTurbine"
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         con.yaw = "InterpTurbine"
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         t = 0.0
         wind.input_dir = "RW_with_Mean"
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         phi = getDataDir(set, wind, wf, t)
 
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         t = 0.0
         wind.input_vel = "RW_with_Mean"
         set = Settings(wind, sim, con)

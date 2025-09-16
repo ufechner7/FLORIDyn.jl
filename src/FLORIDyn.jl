@@ -636,7 +636,7 @@ end
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
         settings_file = joinpath(path, "2021_9T_Data.yaml")
-        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         wf = initSimulation(wf, sim)
