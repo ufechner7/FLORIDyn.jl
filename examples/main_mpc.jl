@@ -71,7 +71,7 @@ rel_power = zeros(length(times))
 
 induction_factors = zeros(nT, length(times))
 for (i, sim_time) in pairs(times)
-    induction_factors[:, i] = getInduction(set.induction_mode, con.induction_data, (1:nT), sim_time)
+    induction_factors[:, i] = getInduction(set.induction_mode, con, (1:nT), sim_time)
 end
 for iT in 1:nT
     rel_speed = plot_data[1][iT] ./ 100
