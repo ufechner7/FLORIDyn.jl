@@ -170,10 +170,8 @@ inductions = getInduction(Induction_Constant(), con_induction_data, [1, 2, 3], 5
 # See Also
 - [`Induction_Constant`](@ref): Controller type for constant induction control
 """
-function getInduction(::Induction_Constant, con_induction_data::AbstractMatrix, iT, t)
-    size(con_induction_data, 1) == 0 && error("con_induction_data must have at least one row: $(con_induction_data)")
-    size(con_induction_data, 2) == 0 && error("con_induction_data must have at least one column: $(con_induction_data)")
-    induction = 0.33
+function getInduction(::Induction_Constant, con::Con, iT, t)
+    induction = con.induction_fixed
     if isa(iT, Integer)
         return induction
     elseif isa(iT, AbstractVector{<:Integer})
@@ -241,7 +239,8 @@ induction_oob = getInduction(Induction_MPC(), con_induction_data, 1, 5.0)  # Ret
 - [`Induction_MPC`](@ref): Controller type for MPC-style induction control
 - `Interpolations.linear_interpolation`: Underlying interpolation method used
 """
-function getInduction(::Induction_MPC, con_induction_data::AbstractMatrix, iT, t)  
+function getInduction(::Induction_MPC, con::Con, iT, t) 
+    con_induction_data = con.induction_data
     if t < con_induction_data[1, 1]
         @warn "The time $t is out of bounds, will use $(con_induction_data[1, 1]) instead."
         t = con_induction_data[1, 1]
