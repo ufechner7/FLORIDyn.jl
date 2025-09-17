@@ -11,8 +11,10 @@ The code uses the Gaussian wake model derived in [\[3\]](#ref3).
 
 ## Model features
 - Simulate wind farms dynamically at a low computational cost
-- Estimate the power generated, added turbulence, and wake-induced losses.
+- Estimate the power generated, added turbulence, and wake-induced losses
 - Apply heterogeneous and time-varying wind speeds and directions
+- Induction factor and yaw of the wind turbines can be controlled
+- The 3D wind field can be calculated/ estimated if the (time dependant) free-flow wind speed, wind turbulence, wind shear and wind direction are known
 - Test different modeling approaches
 
 ```@raw html
