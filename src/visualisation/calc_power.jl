@@ -102,6 +102,7 @@ function calc_rel_power(settings_file; dt=350, wind_dir=nothing, ti=0.062)
             con.yaw_data[1,1] = wind_dir
         end
         wind.dir[1,1] = wind_dir
+        con.yaw_fixed = wind_dir
     end
     if !isnothing(ti)
         wind.ti = ti
