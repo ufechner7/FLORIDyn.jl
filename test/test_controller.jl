@@ -364,20 +364,16 @@ end
             @test result == [0.33, 0.33, 0.33]
         end
         
-#         @testset "Error handling for Induction_Constant" begin
-#             # Test empty matrix error handling
-#             empty_data_rows = Array{Float64}(undef, 0, 1)
-#             @test_throws ErrorException getInduction(FLORIDyn.Induction_Constant(), empty_data_rows, 1, 0.0)
+        @testset "Error handling for Induction_Constant" begin
+            con = Con(yaw="Constant")
+            con.induction_fixed = 0.33
             
-#             empty_data_cols = Array{Float64}(undef, 1, 0)
-#             @test_throws ErrorException getInduction(FLORIDyn.Induction_Constant(), empty_data_cols, 1, 0.0)
-            
-#             # Test invalid iT parameter types
-#             con_induction_data = [0.33;;]
-#             @test_throws ErrorException getInduction(FLORIDyn.Induction_Constant(), con_induction_data, "invalid", 0.0)
-#             @test_throws ErrorException getInduction(FLORIDyn.Induction_Constant(), con_induction_data, 1.5, 0.0)
-#             @test_throws ErrorException getInduction(FLORIDyn.Induction_Constant(), con_induction_data, [1.5, 2.5], 0.0)
-#         end
+            # Test invalid iT parameter types
+            con_induction_data = [0.33;;]
+            @test_throws ErrorException getInduction(FLORIDyn.Induction_Constant(), con, "invalid", 0.0)
+            @test_throws ErrorException getInduction(FLORIDyn.Induction_Constant(), con, 1.5, 0.0)
+            @test_throws ErrorException getInduction(FLORIDyn.Induction_Constant(), con, [1.5, 2.5], 0.0)
+        end
     end
     
 #     @testset "Induction_MPC tests" begin
