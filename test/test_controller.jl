@@ -251,24 +251,25 @@ import FLORIDyn: getYaw
         @test length(result_subset) == 5
     end
     
-#     @testset "Yaw_Constant tests" begin
-#         @testset "Basic functionality" begin
-#             # Test with single constant value
-#             ConYawData = [225.0;;]  # 2D matrix with one element
+    @testset "Yaw_Constant tests" begin
+        @testset "Basic functionality" begin
+            # Test with single constant value
+            con = Con(yaw="Constant")
+            con.yaw_fixed = 225.0
             
-#             # Test single turbine
-#             @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData, 1, 0.0) ≈ 225.0
-#             @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData, 1, 100.0) ≈ 225.0  # Time ignored
-#             @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData, 5, 500.0) ≈ 225.0  # Turbine index ignored
+            # Test single turbine
+            @test getYaw(FLORIDyn.Yaw_Constant(), con, 1, 0.0) ≈ 225.0
+            @test getYaw(FLORIDyn.Yaw_Constant(), con, 1, 100.0) ≈ 225.0  # Time ignored
+            @test getYaw(FLORIDyn.Yaw_Constant(), con, 5, 500.0) ≈ 225.0  # Turbine index ignored
             
-#             # Test multiple turbines
-#             result = getYaw(FLORIDyn.Yaw_Constant(), ConYawData, [1, 2, 3], 0.0)
-#             @test result ≈ [225.0, 225.0, 225.0]
+            # Test multiple turbines
+            result = getYaw(FLORIDyn.Yaw_Constant(), con, [1, 2, 3], 0.0)
+            @test result ≈ [225.0, 225.0, 225.0]
             
-#             # Test with larger vector
-#             result_large = getYaw(FLORIDyn.Yaw_Constant(), ConYawData, 1:10, 42.5)
-#             @test result_large ≈ fill(225.0, 10)
-#         end
+            # Test with larger vector
+            result_large = getYaw(FLORIDyn.Yaw_Constant(), con, 1:10, 42.5)
+            @test result_large ≈ fill(225.0, 10)
+        end
         
 #         @testset "Different matrix sizes" begin
 #             # Test with larger matrix (only first element used)
@@ -363,7 +364,7 @@ import FLORIDyn: getYaw
 #             @test length(result_perf) == 1000
 #             @test all(result_perf .≈ 180.0)
 #         end
-#     end
+    end
 # end
 
 # # Import the getInduction function directly
