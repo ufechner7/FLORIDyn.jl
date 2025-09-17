@@ -271,41 +271,14 @@ import FLORIDyn: getYaw
             @test result_large ≈ fill(225.0, 10)
         end
         
-#         @testset "Different matrix sizes" begin
-#             # Test with larger matrix (only first element used)
-#             ConYawData = [180.0 190.0 200.0;
-#                          170.0 175.0 185.0;
-#                          160.0 165.0 170.0]
-            
-#             # Should only use ConYawData[1,1] = 180.0
-#             @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData, 1, 0.0) ≈ 180.0
-#             @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData, [1, 5, 10], 123.4) ≈ [180.0, 180.0, 180.0]
-            
-#             # Test with single row, multiple columns
-#             ConYawData_row = [90.0 95.0 100.0]
-#             @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData_row, 1, 0.0) ≈ 90.0
-#             @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData_row, [1, 2], 0.0) ≈ [90.0, 90.0]
-            
-#             # Test with single column, multiple rows
-#             ConYawData_col = reshape([45.0; 50.0; 55.0], :, 1)  # Convert to matrix
-#             @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData_col, 1, 0.0) ≈ 45.0
-#             @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData_col, [3, 7], 999.9) ≈ [45.0, 45.0]
-#         end
-        
-#         @testset "Error handling" begin
-#             # Test empty matrix
-#             ConYawData_empty_rows = reshape(Float64[], 0, 1)
-#             @test_throws ErrorException getYaw(FLORIDyn.Yaw_Constant(), ConYawData_empty_rows, 1, 0.0)
-            
-#             ConYawData_empty_cols = reshape(Float64[], 1, 0)
-#             @test_throws ErrorException getYaw(FLORIDyn.Yaw_Constant(), ConYawData_empty_cols, 1, 0.0)
-            
-#             # Test invalid turbine index types
-#             ConYawData = [135.0;;]
-#             @test_throws ErrorException getYaw(FLORIDyn.Yaw_Constant(), ConYawData, 1.5, 0.0)
-#             @test_throws ErrorException getYaw(FLORIDyn.Yaw_Constant(), ConYawData, "1", 0.0)
-#             @test_throws ErrorException getYaw(FLORIDyn.Yaw_Constant(), ConYawData, [1.5, 2.0], 0.0)
-#         end
+        @testset "Error handling" begin
+            # Test invalid turbine index types
+            con = Con(yaw="Constant")
+            con.yaw_fixed = 135.0
+            @test_throws ErrorException getYaw(FLORIDyn.Yaw_Constant(), con, 1.5, 0.0)
+            @test_throws ErrorException getYaw(FLORIDyn.Yaw_Constant(), con, "1", 0.0)
+            @test_throws ErrorException getYaw(FLORIDyn.Yaw_Constant(), con, [1.5, 2.0], 0.0)
+        end
         
 #         @testset "Edge cases and type variations" begin
 #             ConYawData = [270.5;;]
