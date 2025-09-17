@@ -376,73 +376,81 @@ end
         end
     end
     
-#     @testset "Induction_MPC tests" begin
-#         @testset "Basic interpolation with single turbine" begin
-#             # Test data: time column + one turbine induction column
-#             con_induction_data = [
-#                 0.0  0.30;
-#                 1.0  0.32;
-#                 2.0  0.34;
-#                 3.0  0.36;
-#                 4.0  0.38
-#             ]
+    @testset "Induction_MPC tests" begin
+        @testset "Basic interpolation with single turbine" begin
+            # Test data: time column + one turbine induction column
+            con_induction_data = [
+                0.0  0.30;
+                1.0  0.32;
+                2.0  0.34;
+                3.0  0.36;
+                4.0  0.38
+            ]
+
+            con = Con(yaw="MPC")
+            con.induction_data = con_induction_data
             
-#             # Test interpolation at exact time points
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, 0.0) ≈ 0.30
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, 1.0) ≈ 0.32
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, 2.0) ≈ 0.34
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, 3.0) ≈ 0.36
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, 4.0) ≈ 0.38
-            
-#             # Test interpolation at intermediate time points
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, 0.5) ≈ 0.31
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, 1.5) ≈ 0.33
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, 2.5) ≈ 0.35
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, 3.5) ≈ 0.37
-#         end
+            # Test interpolation at exact time points
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 1, 0.0) ≈ 0.30
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 1, 1.0) ≈ 0.32
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 1, 2.0) ≈ 0.34
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 1, 3.0) ≈ 0.36
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 1, 4.0) ≈ 0.38
+
+            # Test interpolation at intermediate time points
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 1, 0.5) ≈ 0.31
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 1, 1.5) ≈ 0.33
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 1, 2.5) ≈ 0.35
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 1, 3.5) ≈ 0.37
+        end
         
-#         @testset "Multiple turbines interpolation" begin
-#             # Test data: time column + three turbine induction columns
-#             con_induction_data = [
-#                 0.0  0.30  0.25  0.20;
-#                 1.0  0.32  0.27  0.22;
-#                 2.0  0.34  0.29  0.24;
-#                 3.0  0.36  0.31  0.26
-#             ]
+        @testset "Multiple turbines interpolation" begin
+            # Test data: time column + three turbine induction columns
+            con_induction_data = [
+                0.0  0.30  0.25  0.20;
+                1.0  0.32  0.27  0.22;
+                2.0  0.34  0.29  0.24;
+                3.0  0.36  0.31  0.26
+            ]
+
+            con = Con(yaw="MPC")
+            con.induction_data = con_induction_data
             
-#             # Test single turbine access
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, 1.5) ≈ 0.33
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 2, 1.5) ≈ 0.28
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 3, 1.5) ≈ 0.23
+            # Test single turbine access
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 1, 1.5) ≈ 0.33
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 2, 1.5) ≈ 0.28
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 3, 1.5) ≈ 0.23
+
+            # Test multiple turbine access
+            result = getInduction(FLORIDyn.Induction_MPC(), con, [1, 2, 3], 1.5)
+            @test result ≈ [0.33, 0.28, 0.23]
             
-#             # Test multiple turbine access
-#             result = getInduction(FLORIDyn.Induction_MPC(), con_induction_data, [1, 2, 3], 1.5)
-#             @test result ≈ [0.33, 0.28, 0.23]
-            
-#             # Test partial turbine selection
-#             result = getInduction(FLORIDyn.Induction_MPC(), con_induction_data, [2, 3], 2.5)
-#             @test result ≈ [0.30, 0.25]
-#         end
+            # Test partial turbine selection
+            result = getInduction(FLORIDyn.Induction_MPC(), con, [2, 3], 2.5)
+            @test result ≈ [0.30, 0.25]
+        end
         
-#         @testset "Out of bounds time handling" begin
-#             con_induction_data = [
-#                 0.0  0.30;
-#                 1.0  0.32;
-#                 2.0  0.34
-#             ]
+        @testset "Out of bounds time handling" begin
+            con_induction_data = [
+                0.0  0.30;
+                1.0  0.32;
+                2.0  0.34
+            ]
+            con = Con(yaw="MPC")
+            con.induction_data = con_induction_data
             
-#             # Test time before range (should warn and clamp to first time)
-#             @test_logs (:warn, r"The time -1.0 is out of bounds") begin
-#                 result = getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, -1.0)
-#                 @test result ≈ 0.30
-#             end
+            # Test time before range (should warn and clamp to first time)
+            @test_logs (:warn, r"The time -1.0 is out of bounds") begin
+                result = getInduction(FLORIDyn.Induction_MPC(), con, 1, -1.0)
+                @test result ≈ 0.30
+            end
             
-#             # Test time after range (should warn and clamp to last time)
-#             @test_logs (:warn, r"The time 5.0 is out of bounds") begin
-#                 result = getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, 5.0)
-#                 @test result ≈ 0.34
-#             end
-#         end
+            # Test time after range (should warn and clamp to last time)
+            @test_logs (:warn, r"The time 5.0 is out of bounds") begin
+                result = getInduction(FLORIDyn.Induction_MPC(), con, 1, 5.0)
+                @test result ≈ 0.34
+            end
+        end
         
 #         @testset "Single time point data" begin
 #             # Test data with only one time point
@@ -516,7 +524,7 @@ end
 #             @test isfinite(getInduction(FLORIDyn.Induction_MPC(), induction_data, 1, 0.0))
 #             @test isfinite(getInduction(FLORIDyn.Induction_MPC(), induction_data, 1, n_times-1))
 #         end
-#     end
+    end
     
 #     @testset "Type consistency between getYaw and getInduction" begin
 #         # Ensure both functions have consistent behavior and return types
