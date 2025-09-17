@@ -519,7 +519,7 @@ end
                 base_induction = 0.25 + 0.1 * (i-1) / (n_turbines-1)
                 induction_data[:, i+1] = base_induction .+ 0.05 * sin.(2π * times / 50.0)
             end
-            con = Con(yaw="MPC", induction="MPC")
+            con = Con(yaw="Constant", induction="MPC")
             con.induction_data = induction_data
 
             # Test performance with large dataset
