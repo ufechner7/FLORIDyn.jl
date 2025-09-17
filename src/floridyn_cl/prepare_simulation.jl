@@ -370,12 +370,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     # ========== Control Setup ==========
     yaw_method = con.yaw
     if yaw_method == "Constant"
-        try
-            df = CSV.read(joinpath(data_path, "Control_YawConstant.csv"), DataFrame; header=false)
-            con.yaw_data = Matrix{Float64}(df)
-        catch
-            push!(loadDataWarnings, "Control_YawConstant.csv not found.")
-        end
+        # use constant yaw angle from settings.yaw_fixed
     elseif yaw_method == "InterpTurbine"
         try
             df = CSV.read(joinpath(data_path, "Control_YawInterpolation.csv"), DataFrame; header=false)
@@ -389,10 +384,6 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     else
         error("Unknown yaw method: $yaw_method")
     end
-
-    # if !haskey(con, :tanhYaw)
-    #     con.tanhYaw = false
-    # end
 
     # # ========== Init State ===========
    wf.States_OP, wf.States_T, wf.States_WF = init_states(set, wf, wind, turbProp.init_States, floris, sim)
