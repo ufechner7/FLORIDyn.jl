@@ -867,7 +867,7 @@ vis:
                 # Function should be fast for typical wind farm sizes
                 # Allow generous time limit since test systems vary
                 avg_time = sum(times) / length(times)
-                @test avg_time < 10.0  # Should average less than 10ms per call
+                @test avg_time < 0.1  # Should average less than 0.1ms (100μs) per call
                 
                 # No call should be extremely slow
                 max_time = maximum(times)
