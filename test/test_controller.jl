@@ -342,32 +342,27 @@ import FLORIDyn: getYaw
             @test all(result_perf .≈ 180.0)
         end
     end
-
+end
 # # Import the getInduction function directly
 # import FLORIDyn: getInduction
 
-# @testset verbose=true "getInduction function tests" begin
+@testset verbose=true "getInduction function tests" begin
     
-#     @testset "Induction_Constant tests" begin
-#         @testset "Basic constant induction functionality" begin
-#             # Test data with single constant value
-#             con_induction_data = [0.33;;]
+    @testset "Induction_Constant tests" begin
+        @testset "Basic constant induction functionality" begin
+            # Test data with single constant value
+            con = Con(yaw="Constant")
+            con.induction_fixed = 0.33
             
-#             # Test single turbine
-#             @test getInduction(FLORIDyn.Induction_Constant(), con_induction_data, 1, 0.0) ≈ 0.33
-#             @test getInduction(FLORIDyn.Induction_Constant(), con_induction_data, 1, 100.0) ≈ 0.33
-#             @test getInduction(FLORIDyn.Induction_Constant(), con_induction_data, 1, 1000.0) ≈ 0.33
-            
-#             # Test multiple turbines
-#             result = getInduction(FLORIDyn.Induction_Constant(), con_induction_data, [1, 2, 3], 50.0)
-#             @test result == [0.33, 0.33, 0.33]
-            
-#             # Test with different matrix sizes (should ignore extra elements)
-#             con_induction_data_large = [0.33 0.25 0.40; 
-#                                        0.35 0.30 0.45]
-#             @test getInduction(FLORIDyn.Induction_Constant(), con_induction_data_large, 1, 25.0) ≈ 0.33
-#             @test getInduction(FLORIDyn.Induction_Constant(), con_induction_data_large, [1, 2], 75.0) == [0.33, 0.33]
-#         end
+            # Test single turbine
+            @test getInduction(FLORIDyn.Induction_Constant(), con, 1, 0.0) ≈ 0.33
+            @test getInduction(FLORIDyn.Induction_Constant(), con, 1, 100.0) ≈ 0.33
+            @test getInduction(FLORIDyn.Induction_Constant(), con, 1, 1000.0) ≈ 0.33
+
+            # Test multiple turbines
+            result = getInduction(FLORIDyn.Induction_Constant(), con, [1, 2, 3], 50.0)
+            @test result == [0.33, 0.33, 0.33]
+        end
         
 #         @testset "Error handling for Induction_Constant" begin
 #             # Test empty matrix error handling
@@ -383,7 +378,7 @@ import FLORIDyn: getYaw
 #             @test_throws ErrorException getInduction(FLORIDyn.Induction_Constant(), con_induction_data, 1.5, 0.0)
 #             @test_throws ErrorException getInduction(FLORIDyn.Induction_Constant(), con_induction_data, [1.5, 2.5], 0.0)
 #         end
-#     end
+    end
     
 #     @testset "Induction_MPC tests" begin
 #         @testset "Basic interpolation with single turbine" begin
