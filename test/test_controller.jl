@@ -299,47 +299,49 @@ import FLORIDyn: getYaw
             @test isa(result_single, Vector{Float64})
         end
         
-#         @testset "Real-world scenarios" begin
-#             # Test with typical wind farm yaw angles
-#             ConYawData = [0.0;;]  # Aligned with wind
-#             result_aligned = getYaw(FLORIDyn.Yaw_Constant(), ConYawData, 1:54, 0.0)  # 54 turbines
-#             @test length(result_aligned) == 54
-#             @test all(result_aligned .≈ 0.0)
+        @testset "Real-world scenarios" begin
+            # Test with typical wind farm yaw angles
+            con = Con(yaw="Constant")
+            con.yaw_fixed = 0.0 # Aligned with wind
+
+            result_aligned = getYaw(FLORIDyn.Yaw_Constant(), con, 1:54, 0.0)  # 54 turbines
+            @test length(result_aligned) == 54
+            @test all(result_aligned .≈ 0.0)
             
-#             # Test with wake steering angle
-#             ConYawData = [25.0;;]  # 25 degree wake steering
-#             result_steering = getYaw(FLORIDyn.Yaw_Constant(), ConYawData, [1, 5, 10, 20], 1000.0)
-#             @test result_steering ≈ [25.0, 25.0, 25.0, 25.0]
+            # Test with wake steering angle
+            con.yaw_fixed = 25.0 # Set fixed yaw to 25.0 for wake steering
+            result_steering = getYaw(FLORIDyn.Yaw_Constant(), con, [1, 5, 10, 20], 1000.0)
+            @test result_steering ≈ [25.0, 25.0, 25.0, 25.0]
             
-#             # Test with negative yaw angle
-#             ConYawData = [-15.0;;]
-#             result_negative = getYaw(FLORIDyn.Yaw_Constant(), ConYawData, 1, 0.0)
-#             @test result_negative ≈ -15.0
+            # Test with negative yaw angle
+            con.yaw_fixed = -15.0
+            result_negative = getYaw(FLORIDyn.Yaw_Constant(), con, 1, 0.0)
+            @test result_negative ≈ -15.0
             
-#             # Test with large yaw angle
-#             ConYawData = [359.9;;]
-#             result_large_angle = getYaw(FLORIDyn.Yaw_Constant(), ConYawData, [1, 2, 3], 0.0)
-#             @test result_large_angle ≈ [359.9, 359.9, 359.9]
-#         end
+            # Test with large yaw angle
+            con.yaw_fixed = 359.9
+            result_large_angle = getYaw(FLORIDyn.Yaw_Constant(), con, [1, 2, 3], 0.0)
+            @test result_large_angle ≈ [359.9, 359.9, 359.9]
+        end
         
-#         @testset "Performance and consistency" begin
-#             # Test that time parameter is truly ignored
-#             ConYawData = [180.0;;]
+        @testset "Performance and consistency" begin
+            # Test that time parameter is truly ignored
+            con = Con(yaw="Constant")
+            con.yaw_fixed = 180.0
             
-#             times_to_test = [-1000.0, -1.0, 0.0, 1.0, 100.0, 1e6]
-#             for t in times_to_test
-#                 @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData, 1, t) ≈ 180.0
-#                 @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData, [1, 2, 3], t) ≈ [180.0, 180.0, 180.0]
-#             end
+            times_to_test = [-1000.0, -1.0, 0.0, 1.0, 100.0, 1e6]
+            for t in times_to_test
+                @test getYaw(FLORIDyn.Yaw_Constant(), con, 1, t) ≈ 180.0
+                @test getYaw(FLORIDyn.Yaw_Constant(), con, [1, 2, 3], t) ≈ [180.0, 180.0, 180.0]
+            end
             
-#             # Test with large number of turbines for performance
-#             large_turbine_indices = 1:1000
-#             @time result_perf = getYaw(FLORIDyn.Yaw_Constant(), ConYawData, large_turbine_indices, 0.0)
-#             @test length(result_perf) == 1000
-#             @test all(result_perf .≈ 180.0)
-#         end
+            # Test with large number of turbines for performance
+            large_turbine_indices = 1:1000
+            @time result_perf = getYaw(FLORIDyn.Yaw_Constant(), con, large_turbine_indices, 0.0)
+            @test length(result_perf) == 1000
+            @test all(result_perf .≈ 180.0)
+        end
     end
-# end
 
 # # Import the getInduction function directly
 # import FLORIDyn: getInduction
