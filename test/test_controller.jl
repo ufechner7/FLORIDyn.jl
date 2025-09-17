@@ -379,16 +379,14 @@ end
     @testset "Induction_MPC tests" begin
         @testset "Basic interpolation with single turbine" begin
             # Test data: time column + one turbine induction column
-            con_induction_data = [
+            con = Con(yaw="Constant", induction="MPC")
+            con.induction_data = [
                 0.0  0.30;
                 1.0  0.32;
                 2.0  0.34;
                 3.0  0.36;
                 4.0  0.38
             ]
-
-            con = Con(yaw="Constant", induction="MPC")
-            con.induction_data = con_induction_data
             
             # Test interpolation at exact time points
             @test getInduction(FLORIDyn.Induction_MPC(), con, 1, 0.0) ≈ 0.30
