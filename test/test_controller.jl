@@ -351,7 +351,7 @@ end
     @testset "Induction_Constant tests" begin
         @testset "Basic constant induction functionality" begin
             # Test data with single constant value
-            con = Con(yaw="Constant")
+            con = Con(yaw="Constant", induction="Constant")
             con.induction_fixed = 0.33
             
             # Test single turbine
@@ -365,7 +365,7 @@ end
         end
         
         @testset "Error handling for Induction_Constant" begin
-            con = Con(yaw="Constant")
+            con = Con(yaw="Constant", induction="Constant")
             con.induction_fixed = 0.33
             
             # Test invalid iT parameter types
@@ -387,7 +387,7 @@ end
                 4.0  0.38
             ]
 
-            con = Con(yaw="MPC")
+            con = Con(yaw="Constant", induction="MPC")
             con.induction_data = con_induction_data
             
             # Test interpolation at exact time points
@@ -413,7 +413,7 @@ end
                 3.0  0.36  0.31  0.26
             ]
 
-            con = Con(yaw="MPC")
+            con = Con(yaw="Constant", induction="MPC")
             con.induction_data = con_induction_data
             
             # Test single turbine access
@@ -436,7 +436,7 @@ end
                 1.0  0.32;
                 2.0  0.34
             ]
-            con = Con(yaw="MPC")
+            con = Con(yaw="Constant", induction="MPC")
             con.induction_data = con_induction_data
             
             # Test time before range (should warn and clamp to first time)
@@ -455,7 +455,7 @@ end
         @testset "Single time point data" begin
             # Test data with only one time point
             con_induction_data = [1.0  0.33  0.28  0.31]
-            con = Con(yaw="MPC")
+            con = Con(yaw="Constant", induction="MPC")
             con.induction_data = con_induction_data
             
             # Test single turbine
@@ -474,7 +474,7 @@ end
                 1.0  0.32  0.27;
                 2.0  0.34  0.29
             ]
-            con = Con(yaw="MPC")
+            con = Con(yaw="Constant", induction="MPC")
             con.induction_data = con_induction_data
             
             # Test invalid iT parameter types
@@ -493,7 +493,7 @@ end
                 30.0  0.32  0.30  0.34  0.31;  # t=30s
                 40.0  0.30  0.28  0.32  0.29   # t=40s
             ]
-            con = Con(yaw="MPC")
+            con = Con(yaw="Constant", induction="MPC")
             con.induction_data = con_induction_data
             
             # Test interpolation at intermediate times
@@ -521,7 +521,7 @@ end
                 base_induction = 0.25 + 0.1 * (i-1) / (n_turbines-1)
                 induction_data[:, i+1] = base_induction .+ 0.05 * sin.(2π * times / 50.0)
             end
-            con = Con(yaw="MPC")
+            con = Con(yaw="MPC", induction="MPC")
             con.induction_data = induction_data
 
             # Test performance with large dataset
@@ -534,21 +534,24 @@ end
         end
     end
     
-#     @testset "Type consistency between getYaw and getInduction" begin
-#         # Ensure both functions have consistent behavior and return types
-#         yaw_data = [0.0 10.0; 1.0 15.0; 2.0 20.0]
-#         induction_data = [0.0 0.30; 1.0 0.32; 2.0 0.34]
+    @testset "Type consistency between getYaw and getInduction" begin
+        # Ensure both functions have consistent behavior and return types
+        yaw_data = [0.0 10.0; 1.0 15.0; 2.0 20.0]
+        induction_data = [0.0 0.30; 1.0 0.32; 2.0 0.34]
+        con = Con(yaw="SOWFA", induction="MPC")
+        con.yaw_data = yaw_data
+        con.induction_data = induction_data
+
+        # Test single turbine returns
+        yaw_result = getYaw(FLORIDyn.Yaw_SOWFA(), con, 1, 1.5)
+        induction_result = getInduction(FLORIDyn.Induction_MPC(), con, 1, 1.5)
+        @test typeof(yaw_result) == typeof(induction_result) == Float64
         
-#         # Test single turbine returns
-#         yaw_result = getYaw(FLORIDyn.Yaw_SOWFA(), yaw_data, 1, 1.5)
-#         induction_result = getInduction(FLORIDyn.Induction_MPC(), induction_data, 1, 1.5)
-#         @test typeof(yaw_result) == typeof(induction_result) == Float64
-        
-#         # Test multiple turbines returns
-#         yaw_multi = getYaw(FLORIDyn.Yaw_SOWFA(), yaw_data, [1], 1.5)
-#         induction_multi = getInduction(FLORIDyn.Induction_MPC(), induction_data, [1], 1.5)
-#         @test typeof(yaw_multi) == typeof(induction_multi) == Vector{Float64}
-#     end
+        # Test multiple turbines returns
+        yaw_multi = getYaw(FLORIDyn.Yaw_SOWFA(), con, [1], 1.5)
+        induction_multi = getInduction(FLORIDyn.Induction_MPC(), con, [1], 1.5)
+        @test typeof(yaw_multi) == typeof(induction_multi) == Vector{Float64}
+    end
 end
 
 nothing
