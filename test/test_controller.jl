@@ -166,82 +166,90 @@ import FLORIDyn: getYaw
         @test getYaw(FLORIDyn.Yaw_SOWFA(), con, [1, 2], 2.5) ≈ [25.0, 12.5]
     end
     
-#     @testset "Realistic wind farm scenario" begin
-#         # Simulate a realistic scenario with multiple turbines and time-varying yaw
-#         # Time from 0 to 600 seconds (10 minutes), 9 turbines
-#         time_points = [0.0, 100.0, 200.0, 300.0, 400.0, 500.0, 600.0]
-#         ConYawData = [
-#             0.0   0.0   0.0   0.0   5.0   5.0   5.0   10.0  10.0  10.0;
-#             100.0 0.0   5.0   10.0  5.0   10.0  15.0  10.0  15.0  20.0;
-#             200.0 5.0   10.0  15.0  10.0  15.0  20.0  15.0  20.0  25.0;
-#             300.0 10.0  15.0  20.0  15.0  20.0  25.0  20.0  25.0  30.0;
-#             400.0 5.0   10.0  15.0  10.0  15.0  20.0  15.0  20.0  25.0;
-#             500.0 0.0   5.0   10.0  5.0   10.0  15.0  10.0  15.0  20.0;
-#             600.0 0.0   0.0   0.0   0.0   0.0   0.0   0.0   0.0   0.0
-#         ]
+    @testset "Realistic wind farm scenario" begin
+        # Simulate a realistic scenario with multiple turbines and time-varying yaw
+        # Time from 0 to 600 seconds (10 minutes), 9 turbines
+        time_points = [0.0, 100.0, 200.0, 300.0, 400.0, 500.0, 600.0]
+        ConYawData = [
+            0.0   0.0   0.0   0.0   5.0   5.0   5.0   10.0  10.0  10.0;
+            100.0 0.0   5.0   10.0  5.0   10.0  15.0  10.0  15.0  20.0;
+            200.0 5.0   10.0  15.0  10.0  15.0  20.0  15.0  20.0  25.0;
+            300.0 10.0  15.0  20.0  15.0  20.0  25.0  20.0  25.0  30.0;
+            400.0 5.0   10.0  15.0  10.0  15.0  20.0  15.0  20.0  25.0;
+            500.0 0.0   5.0   10.0  5.0   10.0  15.0  10.0  15.0  20.0;
+            600.0 0.0   0.0   0.0   0.0   0.0   0.0   0.0   0.0   0.0
+        ]
+
+        con = Con(yaw="SOWFA")
+        con.yaw_data=ConYawData
         
-#         # Test at specific time points
-#         result_t150 = getYaw(FLORIDyn.Yaw_SOWFA(), ConYawData, 1:9, 150.0)
-#         expected_t150 = [2.5, 7.5, 12.5, 7.5, 12.5, 17.5, 12.5, 17.5, 22.5]
-#         @test result_t150 ≈ expected_t150
+        # Test at specific time points
+        result_t150 = getYaw(FLORIDyn.Yaw_SOWFA(), con, 1:9, 150.0)
+        expected_t150 = [2.5, 7.5, 12.5, 7.5, 12.5, 17.5, 12.5, 17.5, 22.5]
+        @test result_t150 ≈ expected_t150
         
-#         # Test subset of turbines at different time
-#         result_subset = getYaw(FLORIDyn.Yaw_SOWFA(), ConYawData, [1, 5, 9], 250.0)
-#         expected_subset = [7.5, 17.5, 27.5]
-#         @test result_subset ≈ expected_subset
+        # Test subset of turbines at different time
+        result_subset = getYaw(FLORIDyn.Yaw_SOWFA(), con, [1, 5, 9], 250.0)
+        expected_subset = [7.5, 17.5, 27.5]
+        @test result_subset ≈ expected_subset
         
-#         # Test single turbine across different times
-#         @test getYaw(FLORIDyn.Yaw_SOWFA(), ConYawData, 5, 0.0) ≈ 5.0
-#         @test getYaw(FLORIDyn.Yaw_SOWFA(), ConYawData, 5, 300.0) ≈ 20.0
-#         @test getYaw(FLORIDyn.Yaw_SOWFA(), ConYawData, 5, 600.0) ≈ 0.0
-#     end
+        # Test single turbine across different times
+        @test getYaw(FLORIDyn.Yaw_SOWFA(), con, 5, 0.0) ≈ 5.0
+        @test getYaw(FLORIDyn.Yaw_SOWFA(), con, 5, 300.0) ≈ 20.0
+        @test getYaw(FLORIDyn.Yaw_SOWFA(), con, 5, 600.0) ≈ 0.0
+    end
     
-#     @testset "Extrapolation behavior (Flat boundary condition)" begin
-#         # The function uses Flat() extrapolation, so values beyond bounds should be constant
-#         ConYawData = [
-#             1.0  10.0;
-#             2.0  20.0;
-#             3.0  30.0
-#         ]
+    @testset "Extrapolation behavior (Flat boundary condition)" begin
+        # The function uses Flat() extrapolation, so values beyond bounds should be constant
+        ConYawData = [
+            1.0  10.0;
+            2.0  20.0;
+            3.0  30.0
+        ]
+
+        con = Con(yaw="SOWFA")
+        con.yaw_data=ConYawData
         
-#         # Note: The function clamps time to bounds and issues warnings,
-#         # but the underlying interpolation would use flat extrapolation
-#         # We test this by checking the clamping behavior
+        # Note: The function clamps time to bounds and issues warnings,
+        # but the underlying interpolation would use flat extrapolation
+        # We test this by checking the clamping behavior
         
-#         @test_logs (:warn, "The time 0.5 is out of bounds, will use 1.0 instead.") begin
-#             result = getYaw(FLORIDyn.Yaw_SOWFA(), ConYawData, 1, 0.5)
-#             @test result ≈ 10.0  # Should be the first value
-#         end
+        @test_logs (:warn, "The time 0.5 is out of bounds, will use 1.0 instead.") begin
+            result = getYaw(FLORIDyn.Yaw_SOWFA(), con, 1, 0.5)
+            @test result ≈ 10.0  # Should be the first value
+        end
         
-#         @test_logs (:warn, "The time 4.0 is out of bounds, will use 3.0 instead.") begin
-#             result = getYaw(FLORIDyn.Yaw_SOWFA(), ConYawData, 1, 4.0)
-#             @test result ≈ 30.0  # Should be the last value
-#         end
-#     end
+        @test_logs (:warn, "The time 4.0 is out of bounds, will use 3.0 instead.") begin
+            result = getYaw(FLORIDyn.Yaw_SOWFA(), con, 1, 4.0)
+            @test result ≈ 30.0  # Should be the last value
+        end
+    end
     
-#     @testset "Performance with large datasets" begin
-#         # Test with a larger dataset to ensure reasonable performance
-#         n_times = 1000
-#         n_turbines = 50
+    @testset "Performance with large datasets" begin
+        # Test with a larger dataset to ensure reasonable performance
+        n_times = 1000
+        n_turbines = 50
         
-#         times = collect(0.0:1.0:(n_times-1))
-#         yaw_angles = rand(n_times, n_turbines) * 360  # Random yaw angles 0-360 degrees
+        times = collect(0.0:1.0:(n_times-1))
+        yaw_angles = rand(n_times, n_turbines) * 360  # Random yaw angles 0-360 degrees
         
-#         ConYawData = hcat(times, yaw_angles)
+        ConYawData = hcat(times, yaw_angles)
+        con = Con(yaw="SOWFA")
+        con.yaw_data=ConYawData
         
-#         # Test single turbine access
-#         @time result1 = getYaw(FLORIDyn.Yaw_SOWFA(), ConYawData, 25, 500.5)
-#         @test isa(result1, Float64)
+        # Test single turbine access
+        @time result1 = getYaw(FLORIDyn.Yaw_SOWFA(), con, 25, 500.5)
+        @test isa(result1, Float64)
         
-#         # Test multiple turbine access
-#         @time result_all = getYaw(FLORIDyn.Yaw_SOWFA(), ConYawData, 1:n_turbines, 500.5)
-#         @test length(result_all) == n_turbines
-#         @test all(isa.(result_all, Float64))
+        # Test multiple turbine access
+        @time result_all = getYaw(FLORIDyn.Yaw_SOWFA(), con, 1:n_turbines, 500.5)
+        @test length(result_all) == n_turbines
+        @test all(isa.(result_all, Float64))
         
-#         # Test subset access
-#         @time result_subset = getYaw(FLORIDyn.Yaw_SOWFA(), ConYawData, [1, 10, 25, 40, 50], 750.3)
-#         @test length(result_subset) == 5
-#     end
+        # Test subset access
+        @time result_subset = getYaw(FLORIDyn.Yaw_SOWFA(), con, [1, 10, 25, 40, 50], 750.3)
+        @test length(result_subset) == 5
+    end
     
 #     @testset "Yaw_Constant tests" begin
 #         @testset "Basic functionality" begin
