@@ -280,23 +280,24 @@ import FLORIDyn: getYaw
             @test_throws ErrorException getYaw(FLORIDyn.Yaw_Constant(), con, [1.5, 2.0], 0.0)
         end
         
-#         @testset "Edge cases and type variations" begin
-#             ConYawData = [270.5;;]
+        @testset "Edge cases and type variations" begin
+            con = Con(yaw="Constant")
+            con.yaw_fixed = 270.5
             
-#             # Test different integer types for turbine indices
-#             @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData, Int32(1), 0.0) ≈ 270.5
-#             @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData, Int64(1), 0.0) ≈ 270.5
-#             @test getYaw(FLORIDyn.Yaw_Constant(), ConYawData, UInt8(1), 0.0) ≈ 270.5
+            # Test different integer types for turbine indices
+            @test getYaw(FLORIDyn.Yaw_Constant(), con, Int32(1), 0.0) ≈ 270.5
+            @test getYaw(FLORIDyn.Yaw_Constant(), con, Int64(1), 0.0) ≈ 270.5
+            @test getYaw(FLORIDyn.Yaw_Constant(), con, UInt8(1), 0.0) ≈ 270.5
             
-#             # Test mixed integer types in vector
-#             result = getYaw(FLORIDyn.Yaw_Constant(), ConYawData, [Int32(1), Int64(2), UInt8(3)], 0.0)
-#             @test result ≈ [270.5, 270.5, 270.5]
+            # Test mixed integer types in vector
+            result = getYaw(FLORIDyn.Yaw_Constant(), con, [Int32(1), Int64(2), UInt8(3)], 0.0)
+            @test result ≈ [270.5, 270.5, 270.5]
             
-#             # Test with single element vector
-#             result_single = getYaw(FLORIDyn.Yaw_Constant(), ConYawData, [1], 0.0)
-#             @test result_single ≈ [270.5]
-#             @test isa(result_single, Vector{Float64})
-#         end
+            # Test with single element vector
+            result_single = getYaw(FLORIDyn.Yaw_Constant(), con, [1], 0.0)
+            @test result_single ≈ [270.5]
+            @test isa(result_single, Vector{Float64})
+        end
         
 #         @testset "Real-world scenarios" begin
 #             # Test with typical wind farm yaw angles
