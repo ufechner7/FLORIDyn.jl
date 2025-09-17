@@ -179,19 +179,49 @@ end
 """
     Con
 
-A mutable struct for configuration settings.
+A mutable struct for wind turbine controller configuration settings. This struct defines
+the control strategies and parameters for yaw and induction factor control.
 
 # Fields
-- `yaw::String`: The yaw control strategy, e.g., "Constant", "Interpolation".
-- `yaw_data::Union{Nothing, Matrix{Float64}}`: Optional yaw data matrix.
-- `tanh_yaw::Bool`: Whether to use hyperbolic tangent yaw control.
-- `induction::String`: The induction control strategy, e.g., "Constant", "Interpolate".
+
+## Yaw Control
+- `yaw::String`: The yaw control strategy. Supported values:
+  - `"Constant"`: Fixed yaw angle for all turbines
+  - `"Interpolation"`: Time-based interpolation from data matrix
+  - `"SOWFA"`: Compatible with SOWFA simulation data format
+- `yaw_fixed::Float64`: Constant yaw angle in degrees (default: 270.0°)
+- `yaw_data::Union{Nothing, Matrix{Float64}}`: Optional yaw control data matrix where:
+  - First column contains time values (seconds)
+  - Subsequent columns contain yaw angles for each turbine (degrees)
+- `tanh_yaw::Bool`: Whether to apply hyperbolic tangent smoothing to yaw control (default: false)
+
+## Induction Control  
+- `induction::String`: The induction factor control strategy. Supported values:
+  - `"Constant"`: Fixed induction factor for all turbines
+  - `"Interpolate"`: Time-based interpolation from data matrix
+- `induction_fixed::Float64`: Constant induction factor (dimensionless, default: 0.33)
+- `induction_data::Union{Nothing, Matrix{Float64}}`: Induction control data matrix where:
+  - First column contains time values (seconds) for time-varying control
+  - Subsequent columns contain induction factors for each turbine (dimensionless)
+  - For constant control, contains a single value (default: [0.33;;])
+
+# Usage
+The controller settings are typically loaded from a YAML configuration file and used
+throughout the simulation to determine turbine control actions.
+
+# See Also
+- [`getYaw`](@ref): Function for retrieving yaw angles based on controller type
+- [`getInduction`](@ref): Function for retrieving induction factors based on controller type
+- [`Yaw_Constant`](@ref), [`Yaw_SOWFA`](@ref): Yaw controller types
+- [`Induction_Constant`](@ref), [`Induction_MPC`](@ref): Induction controller types
 """
 @with_kw mutable struct Con
     yaw::String
+    yaw_fixed::Float64 = 270.0
     yaw_data::Union{Nothing, Matrix{Float64}} = nothing
     tanh_yaw::Bool = false
     induction::String = "Constant"
+    induction_fixed::Float64 = 0.33
     induction_data::Union{Nothing, Matrix{Float64}} = [0.33;;]
 end
 
