@@ -7,7 +7,8 @@ using FLORIDyn, ControlPlots, YAML
 
 include("calc_induction_matrix.jl")
 
-const cp_max = 16/27  # Betz limit
+USE_MPC = true
+USE_FEED_FORWARD = true
 
 settings_file = get_default_project()[2]
 
