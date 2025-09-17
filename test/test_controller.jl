@@ -452,78 +452,86 @@ end
             end
         end
         
-#         @testset "Single time point data" begin
-#             # Test data with only one time point
-#             con_induction_data = [1.0  0.33  0.28  0.31]
+        @testset "Single time point data" begin
+            # Test data with only one time point
+            con_induction_data = [1.0  0.33  0.28  0.31]
+            con = Con(yaw="MPC")
+            con.induction_data = con_induction_data
             
-#             # Test single turbine
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, 0.0) ≈ 0.33
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 2, 5.0) ≈ 0.28
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 3, 1.0) ≈ 0.31
-            
-#             # Test multiple turbines
-#             result = getInduction(FLORIDyn.Induction_MPC(), con_induction_data, [1, 2, 3], 2.0)
-#             @test result ≈ [0.33, 0.28, 0.31]
-#         end
+            # Test single turbine
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 1, 0.0) ≈ 0.33
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 2, 5.0) ≈ 0.28
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 3, 1.0) ≈ 0.31
+
+            # Test multiple turbines
+            result = getInduction(FLORIDyn.Induction_MPC(), con, [1, 2, 3], 2.0)
+            @test result ≈ [0.33, 0.28, 0.31]
+        end
         
-#         @testset "Edge cases and error handling" begin
-#             con_induction_data = [
-#                 0.0  0.30  0.25;
-#                 1.0  0.32  0.27;
-#                 2.0  0.34  0.29
-#             ]
+        @testset "Edge cases and error handling" begin
+            con_induction_data = [
+                0.0  0.30  0.25;
+                1.0  0.32  0.27;
+                2.0  0.34  0.29
+            ]
+            con = Con(yaw="MPC")
+            con.induction_data = con_induction_data
             
-#             # Test invalid iT parameter types
-#             @test_throws ErrorException getInduction(FLORIDyn.Induction_MPC(), con_induction_data, "invalid", 1.0)
-#             @test_throws ErrorException getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1.5, 1.0)
-#             @test_throws ErrorException getInduction(FLORIDyn.Induction_MPC(), con_induction_data, [1.5, 2.5], 1.0)
-#         end
+            # Test invalid iT parameter types
+            @test_throws ErrorException getInduction(FLORIDyn.Induction_MPC(), con, "invalid", 1.0)
+            @test_throws ErrorException getInduction(FLORIDyn.Induction_MPC(), con, 1.5, 1.0)
+            @test_throws ErrorException getInduction(FLORIDyn.Induction_MPC(), con, [1.5, 2.5], 1.0)
+        end
         
-#         @testset "Realistic wind farm scenario" begin
-#             # Simulate a more realistic wind farm control scenario
-#             # 5 time steps, 4 turbines with varying induction factors
-#             con_induction_data = [
-#                 0.0   0.30  0.28  0.32  0.29;  # t=0s
-#                 10.0  0.31  0.29  0.33  0.30;  # t=10s  
-#                 20.0  0.33  0.31  0.35  0.32;  # t=20s
-#                 30.0  0.32  0.30  0.34  0.31;  # t=30s
-#                 40.0  0.30  0.28  0.32  0.29   # t=40s
-#             ]
+        @testset "Realistic wind farm scenario" begin
+            # Simulate a more realistic wind farm control scenario
+            # 5 time steps, 4 turbines with varying induction factors
+            con_induction_data = [
+                0.0   0.30  0.28  0.32  0.29;  # t=0s
+                10.0  0.31  0.29  0.33  0.30;  # t=10s  
+                20.0  0.33  0.31  0.35  0.32;  # t=20s
+                30.0  0.32  0.30  0.34  0.31;  # t=30s
+                40.0  0.30  0.28  0.32  0.29   # t=40s
+            ]
+            con = Con(yaw="MPC")
+            con.induction_data = con_induction_data
             
-#             # Test interpolation at intermediate times
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 1, 5.0) ≈ 0.305
-#             @test getInduction(FLORIDyn.Induction_MPC(), con_induction_data, 2, 15.0) ≈ 0.30
+            # Test interpolation at intermediate times
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 1, 5.0) ≈ 0.305
+            @test getInduction(FLORIDyn.Induction_MPC(), con, 2, 15.0) ≈ 0.30
             
-#             # Test multiple turbines at once
-#             result = getInduction(FLORIDyn.Induction_MPC(), con_induction_data, [1, 2, 3, 4], 25.0)
-#             expected = [0.325, 0.305, 0.345, 0.315]
-#             @test result ≈ expected
-#         end
+            # Test multiple turbines at once
+            result = getInduction(FLORIDyn.Induction_MPC(), con, [1, 2, 3, 4], 25.0)
+            expected = [0.325, 0.305, 0.345, 0.315]
+            @test result ≈ expected
+        end
         
-#         @testset "Performance and numerical stability" begin
-#             # Test with larger dataset to ensure performance
-#             n_times = 100
-#             n_turbines = 10
+        @testset "Performance and numerical stability" begin
+            # Test with larger dataset to ensure performance
+            n_times = 100
+            n_turbines = 10
             
-#             # Generate test data
-#             times = collect(0.0:1.0:(n_times-1))
-#             induction_data = zeros(n_times, n_turbines + 1)
-#             induction_data[:, 1] = times
+            # Generate test data
+            times = collect(0.0:1.0:(n_times-1))
+            induction_data = zeros(n_times, n_turbines + 1)
+            induction_data[:, 1] = times
             
-#             for i in 1:n_turbines
-#                 # Create varying induction factors for each turbine
-#                 base_induction = 0.25 + 0.1 * (i-1) / (n_turbines-1)
-#                 induction_data[:, i+1] = base_induction .+ 0.05 * sin.(2π * times / 50.0)
-#             end
+            for i in 1:n_turbines
+                # Create varying induction factors for each turbine
+                base_induction = 0.25 + 0.1 * (i-1) / (n_turbines-1)
+                induction_data[:, i+1] = base_induction .+ 0.05 * sin.(2π * times / 50.0)
+            end
+            con = Con(yaw="MPC")
+            con.induction_data = induction_data
+
+            # Test performance with large dataset
+            @test typeof(getInduction(FLORIDyn.Induction_MPC(), con, 1, 25.5)) == Float64
+            @test typeof(getInduction(FLORIDyn.Induction_MPC(), con, 1:5, 25.5)) == Vector{Float64}
             
-#             # Test performance with large dataset
-#             @test typeof(getInduction(FLORIDyn.Induction_MPC(), induction_data, 1, 25.5)) == Float64
-#             @test typeof(getInduction(FLORIDyn.Induction_MPC(), induction_data, 1:5, 25.5)) == Vector{Float64}
-            
-#             # Test numerical stability near boundaries
-#             @test isfinite(getInduction(FLORIDyn.Induction_MPC(), induction_data, 1, 0.0))
-#             @test isfinite(getInduction(FLORIDyn.Induction_MPC(), induction_data, 1, n_times-1))
-#         end
+            # Test numerical stability near boundaries
+            @test isfinite(getInduction(FLORIDyn.Induction_MPC(), con, 1, 0.0))
+            @test isfinite(getInduction(FLORIDyn.Induction_MPC(), con, 1, n_times-1))
+        end
     end
     
 #     @testset "Type consistency between getYaw and getInduction" begin
