@@ -828,8 +828,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
 
         # ========== Get Control settings ==========
         wf.States_T[wf.StartI, 2] = (
-            wf.States_WF[wf.StartI, 2] .-
-            getYaw(set.control_mode, con.yaw_data, (1:nT), sim_time)'
+            wf.States_WF[wf.StartI, 2] .- getYaw(set.control_mode, con, (1:nT), sim_time)'
         )
         if it == 0
             @info "wf.States_T[wf.StartI, 1]: ", wf.States_T[wf.StartI, 1]
