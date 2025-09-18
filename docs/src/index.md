@@ -14,8 +14,6 @@ The code uses the Gaussian wake model derived in [\[3\]](#ref3).
 - Estimate the power generated, added turbulence, and wake-induced losses
 - Apply heterogeneous and time-varying wind speeds and directions
 - Induction factor and yaw of the wind turbines can be controlled
-- The 3D wind field can be calculated/ estimated if the (time dependant) free-flow wind speed, wind turbulence, wind shear and wind direction are known
-- Test different modeling approaches
 
 ```@raw html
 <style> .video-container {
@@ -27,13 +25,20 @@ The code uses the Gaussian wake model derived in [\[3\]](#ref3).
   margin: 0 auto;
 } .responsive-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; clip-path: inset(1px 1px 1px 1px);} </style> <div class="video-container"> <iframe src="https://www.dropbox.com/scl/fi/85ujwjfcjtg6hcanhkhso/ff_wind_speed_animation.mp4?rlkey=97srxqybootd5f0exkdbmnv4s&st=boe1fhtk&raw=1" class="responsive-iframe" allowfullscreen frameborder="0"></iframe> </div>
 ```
+- The 3D wind field can be calculated/ estimated if the (time dependant) free-flow wind speed, wind turbulence, wind shear and wind direction are known
+- The model can be configured very much for testing different modeling approaches. For example, it can be configured for high accuracy or high speed.
+
+## Future development
+- modelling of wind farm clusters is planned
+- integration with a mesoscale meteorological model is under consideration
+- there are ideas to extend the model to take wind veer into account (change of wind direction with the height)
 
 ## Status
 All examples work, most key examples are selectable via a menu:
 ```julia
 include("examples/menu.jl")
 ```
-The other examples can be executed directly using the `include` statement. Often, more than 30x the performance of the Matlab version can be achieved. Currently, only `IterateOPs_basic` is implemented.
+The other examples can be executed directly using the `include` statement. Often, more than 30x the performance of the Matlab version can be achieved. Not all features of the Matlab version are integrated yet, for example only `IterateOPs_basic` is implemented.
 
 A Python version of FLORIDyn is available at [https://github.com/TUDelft-DataDrivenControl/OFF](https://github.com/TUDelft-DataDrivenControl/OFF) .
 
