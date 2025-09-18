@@ -62,18 +62,24 @@ FLORIDyn.set_rng(MersenneTwister(1234))
         @test phi ≈ 11.0
     end
 
-    # @testset "getWindDirT_EnKF(Direction_Interpolation(), ...)" begin
-    #     dir_mode = Direction_Interpolation()
-    #     phi = getWindDirT(dir_mode, WindDir, 1, 0.5)
-    #     @test phi[1] ≈ 11.0
-    # end
+    @testset "getWindDirT_EnKF(Direction_Interpolation(), ...)" begin
+        wind = Wind()
+        dir_mode = Direction_Interpolation()
+        wind.dir = [
+            0.0  10.0  20.0
+            1.0  12.0  22.0
+            2.0  14.0  24.0
+        ]
+        phi = getWindDirT(dir_mode, wind, 1, 0.5)
+        @test phi[1] ≈ 11.0
+    end
 
-    # # Example wind direction data: times in first column, turbines in next columns
-    # WindDir = [
-    #     0.0  10.0  20.0;
-    #     1.0  15.0  25.0;
-    #     2.0  20.0  30.0
-    # ]
+    # Example wind direction data: times in first column, turbines in next columns
+    WindDir = [
+        0.0  10.0  20.0;
+        1.0  15.0  25.0;
+        2.0  20.0  30.0
+    ]
 
     # @testset "getWindDirT(Direction_InterpTurbine(), ...)" begin
     #     dir_mode = Direction_InterpTurbine()
