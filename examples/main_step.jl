@@ -16,6 +16,7 @@ vis_file      = "data/vis_54T.yaml"
 
 USE_STEP = true
 USE_FEED_FORWARD = true
+USE_MPC = false  # If false, use simple step control
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -90,7 +91,7 @@ time_vector = 0:time_step:t_end
 # Calculate demand for each time point
 demand_values = [calc_demand(t) for t in time_vector]
 
-plot_rmt(times, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
+plot_rmt(times, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(dt, 1200+dt),
          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
 
 # Calculate Mean Square Error between rel_power and demand_values

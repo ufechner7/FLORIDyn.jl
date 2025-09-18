@@ -76,10 +76,10 @@ end
 function calc_demand(time)
     if USE_STEP
         # Example: step demand profile
-        if time < 1360
-            return 0.2
+        if time < 200+dt
+            return 0.001
         else
-            return 0.8
+            return 0.999
         end
     else
         # Example: linearly increasing demand from 0.5 to 1.0 over the simulation time
@@ -113,6 +113,9 @@ Assumes no wake effects for simplicity.
 function calc_induction_per_group(turbine_group, time; scaling = 1.22)
     if USE_MPC
         scaling = 1.247
+    elseif USE_STEP
+        scaling = 1.0
+    else
     end
     # simple example: assume no wakes
     demand = calc_demand(time)
