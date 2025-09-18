@@ -17,6 +17,7 @@ vis_file      = "data/vis_54T.yaml"
 USE_STEP = true
 USE_FEED_FORWARD = true
 USE_MPC = false  # If false, use simple step control
+ONLINE = false
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -41,6 +42,9 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 sim.end_time += 420
 con.yaw="Constant"
 wind.input_dir="Constant"
+wind.dir_fixed = 270.0
+induction = calc_induction_per_group(1, 0)
+set_induction!(ta, induction)
 
 time_step = sim.time_step  # seconds
 t_end = sim.end_time - sim.start_time  # relative end time in seconds
@@ -58,7 +62,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 wind.dir=[270.0;;]
 toc()
 
-vis.online = false
+vis.online = ONLINE
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 # @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
 # @time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
