@@ -74,17 +74,26 @@ function calc_induction(cp)
 end
 
 function calc_demand(time)
-    # Example: linearly increasing demand from 0.5 to 1.0 over the simulation time
-    initial_demand = 0.4
-    final_demand = 0.8
-    t1 = 240.0 + dt  # Time to start increasing demand
-    t2 = 960.0 + dt  # Time to reach final demand
-    if time < t1
-        return initial_demand
-    elseif time < t2
-        return initial_demand + (final_demand - initial_demand) * (time - t1) / (t2 - t1)
+    if USE_STEP
+        # Example: step demand profile
+        if time < 1360
+            return 0.2
+        else
+            return 0.8
+        end
     else
-        return final_demand
+        # Example: linearly increasing demand from 0.5 to 1.0 over the simulation time
+        initial_demand = 0.4
+        final_demand = 0.8
+        t1 = 240.0 + dt  # Time to start increasing demand
+        t2 = 960.0 + dt  # Time to reach final demand
+        if time < t1
+            return initial_demand
+        elseif time < t2
+            return initial_demand + (final_demand - initial_demand) * (time - t1) / (t2 - t1)
+        else
+            return final_demand
+        end
     end
 end
 
