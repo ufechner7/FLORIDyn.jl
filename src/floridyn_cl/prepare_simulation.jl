@@ -225,15 +225,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
             wind.dir = readdlm(path, ',', Float64)
         end
     elseif wind.input_dir == "Constant"
-        try
-            path = joinpath(data_path, "WindDirConstant.csv")
-            if !isfile(path)
-                path = joinpath(pkg_path, path)
-            end
-            wind.dir = readdlm(path, ',', Float64)
-        catch
-            push!(loadDataWarnings, "WindDirConstant.csv not found.")
-        end
+        # use fixed direction from settings if provided, wind.dir_fixed
     elseif wind.input_dir == "Interpolation_wErrorCov"
         data = readdlm(joinpath(data_path, "WindDir.csv"), ',', Float64)
         DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
@@ -386,7 +378,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     end
 
     # # ========== Init State ===========
-   wf.States_OP, wf.States_T, wf.States_WF = init_states(set, wf, wind, turbProp.init_States, floris, sim)
+    wf.States_OP, wf.States_T, wf.States_WF = init_states(set, wf, wind, turbProp.init_States, floris, sim)
 
     # # ========== Simulation Setup ==========
     sim.n_sim_steps = length(sim.start_time:sim.time_step:sim.end_time)
