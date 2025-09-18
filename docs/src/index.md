@@ -26,7 +26,7 @@ The code uses the Gaussian wake model derived in [\[3\]](#ref3).
 } .responsive-iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; clip-path: inset(1px 1px 1px 1px);} </style> <div class="video-container"> <iframe src="https://www.dropbox.com/scl/fi/85ujwjfcjtg6hcanhkhso/ff_wind_speed_animation.mp4?rlkey=97srxqybootd5f0exkdbmnv4s&st=boe1fhtk&raw=1" class="responsive-iframe" allowfullscreen frameborder="0"></iframe> </div>
 ```
 - The 3D wind field can be calculated/ estimated if the (time dependant) free-flow wind speed, wind turbulence, wind shear and wind direction are known
-- The model can be configured very much for testing different modeling approaches. For example, it can be configured for high accuracy or high speed.
+- The model is highly configurable, allowing users to test different modeling approaches and optimize the trade-off between computational accuracy and simulation speed.
 
 ## Future development
 - modelling of wind farm clusters is planned
