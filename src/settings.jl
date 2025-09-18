@@ -99,12 +99,12 @@ A mutable struct representing wind settings.
 - `shear::Union{Nothing, WindShear}`: Optional wind shear profile.
 """
 @with_kw mutable struct Wind
-    input_vel::String
-    input_dir::String
-    input_ti::String
-    input_shear::String
-    correction::WindCorrection
-    perturbation::WindPerturbation
+    input_vel::String = "Constant"
+    input_dir::String = "Constant"
+    input_ti::String = "Constant"
+    input_shear::String = "PowerLaw"
+    correction::WindCorrection = WindCorrection(vel="None", dir="All", ti="None")
+    perturbation::WindPerturbation = WindPerturbation(vel=false, vel_sigma=0.2, dir=false, dir_sigma=0.5, ti=false, ti_sigma=0.005)
     # Wind velocity data container.
     # Supported:
     #   Float64          -> constant wind speed
@@ -115,6 +115,7 @@ A mutable struct representing wind settings.
     # introduce a dedicated type later rather than relying on Any.)
     vel::Union{Nothing, Float64, AbstractMatrix, WindVelType, WindVelMatrix} = nothing
     dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType, WindDirTriple} = nothing
+    dir_fixed::Float64 = 270.0
     ti::Union{Nothing, Float64, Matrix{Float64}} = nothing
     shear::Union{Nothing, WindShear, Matrix{Float64}} = nothing
 end
@@ -1547,4 +1548,124 @@ function turbine_group(ta::TurbineArray, turbine::Int)
     
     # If we reach here, the turbine wasn't found in any group
     throw(ArgumentError("Turbine $turbine not found in any group"))
+end
+
+"""
+    set_yaw!(ta::TurbineArray, yaw)
+
+Set the yaw angle for all turbines in the turbine array.
+
+This function modifies the initial yaw angles (column 2) in the `init_States` matrix 
+of the turbine array. The yaw angle represents the nacelle orientation relative to 
+the wind direction.
+
+# Arguments
+- `ta::TurbineArray`: The turbine array to modify
+- `yaw`: The yaw angle(s) to set. Can be:
+  - `Real`: Single value applied to all turbines
+  - `AbstractVector`: Vector of values (one per turbine)
+
+# Behavior
+- For scalar input: Sets all turbines to the same yaw angle
+- For vector input: Sets each turbine to its corresponding value
+- Modifies the turbine array in-place (mutating function)
+
+# Throws
+- `ArgumentError`: If vector length doesn't match number of turbines
+
+# Examples
+```julia
+# Set all turbines to 15° yaw
+set_yaw!(ta, 15.0)
+
+# Set individual yaw angles
+yaw_angles = [0.0, 15.0, -10.0, 5.0]  # For 4 turbines
+set_yaw!(ta, yaw_angles)
+
+# Verify the change
+println("Yaw angles: ", ta.init_States[:, 2])
+```
+
+# See Also
+- [`set_induction!`](@ref): Set induction factors for turbines
+- [`TurbineArray`](@ref): Container struct for turbine configuration
+"""
+function set_yaw!(ta::TurbineArray, yaw)
+    num_turbines = size(ta.pos, 1)
+    
+    if yaw isa Real
+        # Set all turbines to the same yaw angle
+        ta.init_States[:, 2] .= yaw
+    elseif yaw isa AbstractVector
+        # Set individual yaw angles
+        if length(yaw) != num_turbines
+            throw(ArgumentError("Yaw vector length ($(length(yaw))) must match number of turbines ($num_turbines)"))
+        end
+        ta.init_States[:, 2] .= yaw
+    else
+        throw(ArgumentError("Yaw must be a Real number or AbstractVector"))
+    end
+end
+
+"""
+    set_induction!(ta::TurbineArray, induction)
+
+Set the axial induction factor for all turbines in the turbine array.
+
+This function modifies the initial induction factors (column 1) in the `init_States` 
+matrix of the turbine array. The axial induction factor represents the reduction in 
+wind speed through the rotor disk due to momentum extraction.
+
+# Arguments
+- `ta::TurbineArray`: The turbine array to modify
+- `induction`: The induction factor(s) to set. Can be:
+  - `Real`: Single value applied to all turbines  
+  - `AbstractVector`: Vector of values (one per turbine)
+
+# Behavior
+- For scalar input: Sets all turbines to the same induction factor
+- For vector input: Sets each turbine to its corresponding value
+- Modifies the turbine array in-place (mutating function)
+
+# Physical Context
+- Typical values: 0.2-0.4 (dimensionless)
+- Higher values: More aggressive power extraction, stronger wakes
+- Lower values: Reduced power extraction, weaker wakes
+- Optimal value: ~0.33 for maximum power extraction (Betz limit)
+
+# Throws
+- `ArgumentError`: If vector length doesn't match number of turbines
+
+# Examples
+```julia
+# Set all turbines to optimal induction factor
+set_induction!(ta, 0.33)
+
+# Set individual induction factors for wake control
+induction_factors = [0.33, 0.25, 0.30, 0.33]  # For 4 turbines
+set_induction!(ta, induction_factors)
+
+# Verify the change
+println("Induction factors: ", ta.init_States[:, 1])
+```
+
+# See Also
+- [`set_yaw!`](@ref): Set yaw angles for turbines
+- [`TurbineArray`](@ref): Container struct for turbine configuration
+"""
+function set_induction!(ta::TurbineArray, induction)
+    num_turbines = size(ta.pos, 1)
+    
+    if induction isa Real
+        # Set all turbines to the same induction factor
+        ta.init_States[:, 1] .= induction
+    elseif induction isa AbstractVector
+        # Set individual induction factors
+        if length(induction) != num_turbines
+            throw(ArgumentError("Induction vector length ($(length(induction))) must match number of turbines ($num_turbines)"))
+        end
+        ta.init_States[:, 1] .= induction
+    else
+        throw(ArgumentError("Induction must be a Real number or AbstractVector"))
+    end
 end

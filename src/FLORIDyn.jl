@@ -17,6 +17,7 @@ using REPL.TerminalMenus
 
 export MSR, toMSR, VelReduction, AddedTurbulence, EffWind
 export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray, TurbineData, turbine_group
+export set_yaw!, set_induction!
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov

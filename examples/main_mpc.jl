@@ -14,8 +14,9 @@ if Threads.nthreads() == 1; using ControlPlots; end
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 
-USE_MPC = false
+USE_MPC = true
 USE_FEED_FORWARD = true
+ONLINE = false
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -39,7 +40,11 @@ include("calc_induction_matrix.jl")
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 sim.end_time += 420
 con.yaw="Constant"
+con.yaw_fixed = 270.0
 wind.input_dir="Constant"
+wind.dir_fixed = 270.0
+induction = calc_induction_per_group(1, 0)
+set_induction!(ta, induction)
 
 time_step = sim.time_step  # seconds
 t_end = sim.end_time - sim.start_time  # relative end time in seconds
@@ -52,12 +57,10 @@ if USE_FEED_FORWARD
 else
     set.induction_mode = Induction_Constant()
 end
-
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-wind.dir=[270.0;;]
 toc()
 
-vis.online = false
+vis.online = ONLINE
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 # @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
 # @time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
