@@ -39,7 +39,8 @@ end
 
 # Build minimal Settings with adjustable velocity mode
 function _settings(vel_mode)
-    Settings(vel_mode, Direction_Constant(), TI_Constant(), Shear_PowerLaw(), Direction_Constant(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_Constant(), false, false)
+    return Settings(vel_mode, Direction_Constant(), TI_Constant(), Shear_PowerLaw(), 
+                    Direction_Constant(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_Constant(), Induction_Constant(), false, false)
 end
 
 @testset "getDataVel branches" begin
@@ -51,12 +52,16 @@ end
     # 1. Default branch (Interpolation) -> else branch
     begin
         wind = Wind(
-            "Interpolation",  # input_vel triggers else path because not matched above and vel_mode will be Velocity_Interpolation
-            "Constant", "Constant", "PowerLaw",
-            FLORIDyn.WindCorrection("None","None","None"),
-            FLORIDyn.WindPerturbation(false,0.0,false,0.0,false,0.0),
-            [0.0 8.0; 10.0 10.0], # placeholder, will be replaced below
-            nothing, 0.05, nothing
+            input_vel="Interpolation",  # input_vel triggers else path because not matched above and vel_mode will be Velocity_Interpolation
+            input_dir="Constant", 
+            input_ti="Constant", 
+            input_shear="PowerLaw",
+            correction=FLORIDyn.WindCorrection(vel="None", dir="None", ti="None"),
+            perturbation=FLORIDyn.WindPerturbation(vel=false, vel_sigma=0.0, dir=false, dir_sigma=0.0, ti=false, ti_sigma=0.0),
+            vel=[0.0 8.0; 10.0 10.0], # placeholder, will be replaced below
+            dir=nothing, 
+            ti=0.05, 
+            shear=nothing
         )
         # Provide simple time-speed matrix for Velocity_Interpolation
         wind.vel = [0.0 8.0; 10.0 10.0]
@@ -72,10 +77,16 @@ end
     # Provide a minimal placeholder and mark expectation as broken.
     @testset "I_and_I branch (broken)" begin
         wind = Wind(
-            "I_and_I", "Constant", "Constant", "PowerLaw",
-            FLORIDyn.WindCorrection("None","None","None"),
-            FLORIDyn.WindPerturbation(false,0.0,false,0.0,false,0.0),
-            nothing, nothing, 0.05, nothing
+            input_vel="I_and_I", 
+            input_dir="Constant", 
+            input_ti="Constant", 
+            input_shear="PowerLaw",
+            correction=FLORIDyn.WindCorrection(vel="None", dir="None", ti="None"),
+            perturbation=FLORIDyn.WindPerturbation(vel=false, vel_sigma=0.0, dir=false, dir_sigma=0.0, ti=false, ti_sigma=0.0),
+            vel=nothing, 
+            dir=nothing, 
+            ti=0.05, 
+            shear=nothing
         )
         set = _settings(Velocity_I_and_I())
         # Expect a failure until implementation is completed
@@ -86,10 +97,16 @@ end
     # Document current behavior: expect a MethodError until implementation added.
     begin
         wind = Wind(
-            "RW_with_Mean", "Constant", "Constant", "PowerLaw",
-            FLORIDyn.WindCorrection("None","None","None"),
-            FLORIDyn.WindPerturbation(false,0.0,false,0.0,false,0.0),
-            0.0, nothing, 0.05, nothing
+            input_vel="RW_with_Mean", 
+            input_dir="Constant", 
+            input_ti="Constant", 
+            input_shear="PowerLaw",
+            correction=FLORIDyn.WindCorrection(vel="None", dir="None", ti="None"),
+            perturbation=FLORIDyn.WindPerturbation(vel=false, vel_sigma=0.0, dir=false, dir_sigma=0.0, ti=false, ti_sigma=0.0),
+            vel=0.0, 
+            dir=nothing, 
+            ti=0.05, 
+            shear=nothing
         )
         set = _settings(Velocity_Constant())
         wf.States_WF[:,1] .= [7.0, 8.0, 9.0]
@@ -99,10 +116,16 @@ end
     # 4. EnKF_InterpTurbine branch
     @testset "EnKF branch" begin
         wind = Wind(
-            "EnKF_InterpTurbine", "Constant", "Constant", "PowerLaw",
-            FLORIDyn.WindCorrection("None","None","None"),
-            FLORIDyn.WindPerturbation(false,0.0,false,0.0,false,0.0),
-            [0.0 6.0 7.0 8.0; 10.0 8.0 9.0 10.0], nothing, 0.05, nothing
+            input_vel="EnKF_InterpTurbine", 
+            input_dir="Constant", 
+            input_ti="Constant", 
+            input_shear="PowerLaw",
+            correction=FLORIDyn.WindCorrection(vel="None", dir="None", ti="None"),
+            perturbation=FLORIDyn.WindPerturbation(vel=false, vel_sigma=0.0, dir=false, dir_sigma=0.0, ti=false, ti_sigma=0.0),
+            vel=[0.0 6.0 7.0 8.0; 10.0 8.0 9.0 10.0], 
+            dir=nothing, 
+            ti=0.05, 
+            shear=nothing
         )
         set = _settings(Velocity_EnKF_InterpTurbine())
         # Mid-point interpolation (t = 5.0) => linear between rows

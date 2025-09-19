@@ -7,19 +7,20 @@
 issquare(A) = size(A, 1) == size(A, 2)
 
 """
-    getWindDirT(::Direction_Constant, wind_dir, iT, _)
+    getWindDirT(::Direction_Constant, wind::Wind, iT, _)
 
 Return wind direction in SOWFA-degrees for the requested turbine(s).
 
 # Arguments
-- `wind_dir`: The wind direction (scalar).
+- `wind`: The wind direction (scalar).
 - `iT`: Index or indices of the turbines (can be an integer or vector).
 - `_`: Placeholder for unused argument.
 
 # Returns
 - `phi`: Array of wind direction values, same size as `iT`.
 """
-function getWindDirT(::Direction_Constant, wind_dir, iT, _)
+function getWindDirT(::Direction_Constant, wind::Wind, iT, _)
+    wind_dir = wind.dir_fixed
     if isa(iT, AbstractArray)
         return fill(wind_dir, size(iT))
     else
@@ -28,19 +29,20 @@ function getWindDirT(::Direction_Constant, wind_dir, iT, _)
 end
 
 """
-    getWindDirT(::Direction_Constant_wErrorCov, wind_dir::WindDirType, iT, t)
+    getWindDirT(::Direction_Constant_wErrorCov, wind::Wind, iT, t)
 
 Return wind direction in SOWFA-deg for the requested turbine(s).
 
 # Arguments
-- `wind_dir::WindDirType`: [WindDirType](@ref)
+- `wind::Wind`: [Wind](@ref)
 - `iT`: Vector of turbine indices (can be any indexable collection)
 - `t`: Time step
 
 # Returns
 - `phi`: Vector of wind directions for the selected turbines, including random perturbation
 """
-function getWindDirT(::Direction_Constant_wErrorCov, wind_dir::WindDirType, iT, t)
+function getWindDirT(::Direction_Constant_wErrorCov, wind::Wind, iT, t)
+    wind_dir = wind.dir
     if isa(iT, AbstractArray)
         n = length(iT)
         indices = iT
@@ -71,7 +73,7 @@ end
 # end
 
 """
-    getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind_dir::AbstractMatrix, iT, t)
+    getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind, iT, t)
 
 # Direction_EnKF_InterpTurbine 
 
@@ -85,7 +87,8 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 # Returns
 - `phi`: Wind direction(s) at time `t` for turbine(s) `iT` [°]
 """
-function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind_dir::AbstractMatrix, iT, t)
+function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind::Wind, iT, t)
+    wind_dir = wind.dir
     times = wind_dir[:, 1]
     n_turbines = size(wind_dir, 2) - 1
 
@@ -109,7 +112,7 @@ function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind_dir::AbstractMatr
 end
 
 """
-    getWindDirT(::Direction_Interpolation, wind_dir::AbstractMatrix, iT, t)
+    getWindDirT(::Direction_Interpolation, wind::Wind, iT, t)
 
 # Direction_Interpolation 
 
@@ -124,7 +127,8 @@ Arguments:
 Returns:
 - phi: Vector of wind directions for each turbine in iT [°]
 """
-function getWindDirT(::Direction_Interpolation, wind_dir::AbstractMatrix, iT, t)
+function getWindDirT(::Direction_Interpolation, wind::Wind, iT, t)
+    wind_dir = wind.dir
     times = wind_dir[:, 1]
     phis = wind_dir[:, 2]
 
@@ -146,20 +150,22 @@ function getWindDirT(::Direction_Interpolation, wind_dir::AbstractMatrix, iT, t)
 end
 
 """
-    getWindDirT(::Direction_Interpolation_wErrorCov, wind_dir::WindDirMatrix, iT, t)
+    getWindDirT(::Direction_Interpolation_wErrorCov, wind::Wind, iT, t)
 
 Returns the wind direction at the respective turbine(s).
 Uniform interpolation version - all turbines experience the same changes.
 
 Arguments:
-- wind_dir::WindDirMatrix: [WindDirMatrix](@ref)
+- wind::Wind: [Wind](@ref)
 - iT: single value or vector with turbine index/indices
 - t: time of request
 
 Returns:
 - phi: Vector of wind directions for each turbine in iT [°]
 """
-function getWindDirT(::Direction_Interpolation_wErrorCov, wind_dir::WindDirMatrix, iT, t)
+function getWindDirT(::Direction_Interpolation_wErrorCov, wind::Wind, iT, t)
+    wind_dir = wind.dir
+
     # Ensure t is within bounds
     if t < wind_dir.Data[1, 1]
         @warn "The time $t is out of bounds, will use $(wind_dir.Data[1,1]) instead."
@@ -201,7 +207,7 @@ function interp(x, y, t)
 end
 
 """
-    getWindDirT(::Direction_InterpTurbine, wind_dir, iT, t)
+    getWindDirT(::Direction_InterpTurbine, wind::Wind, iT, t)
 
 Return wind direction in SOWFA-degrees for the requested turbine(s).
 
@@ -213,7 +219,9 @@ Return wind direction in SOWFA-degrees for the requested turbine(s).
 # Returns
 - `phi::Vector{Float64}`: Wind direction(s) for the selected turbine(s) at time `t`. [°]
 """
-function getWindDirT(::Direction_InterpTurbine, wind_dir, iT, t)
+function getWindDirT(::Direction_InterpTurbine, wind::Wind, iT, t)
+    wind_dir = wind.dir
+
     # Handle case where wind_dir is Nothing
     if wind_dir === nothing
         error("wind_dir data is missing for Direction_InterpTurbine mode. Please provide wind direction data or use a different mode.")
@@ -240,19 +248,20 @@ function getWindDirT(::Direction_InterpTurbine, wind_dir, iT, t)
 end
 
 """
-    getWindDirT(::Direction_InterpTurbine_wErrorCov, wind_dir::WindDirMatrix, iT, t)
+    getWindDirT(::Direction_InterpTurbine_wErrorCov, wind::Wind, iT, t)
 
 Return wind direction in SOWFA-deg for the requested turbine(s).
 
 # Arguments
-- `wind_dir::WindDirMatrix`: See: [`WindDirMatrix`](@ref)
+- `wind::Wind`: See: [`Wind`](@ref)
 - `iT`: Index or indices of the turbines (can be integer or vector)
 - `t`: Time of request (Float64) [s]
 
 # Returns
 - `phi`: Wind direction(s) for requested turbine(s), perturbed with noise. [°]
 """
-function getWindDirT(::Direction_InterpTurbine_wErrorCov, wind_dir, iT, t)
+function getWindDirT(::Direction_InterpTurbine_wErrorCov, wind::Wind, iT, t)
+    wind_dir = wind.dir
     times = wind_dir.Data[:, 1]
     nTurbines = size(wind_dir.Data, 2) - 1
 
@@ -281,42 +290,77 @@ function getWindDirT(::Direction_InterpTurbine_wErrorCov, wind_dir, iT, t)
 end
 
 """
-    getWindDirT(::Direction_RW_with_Mean, wind_dir_now, wind_dir::WindDirTriple)
+    getWindDirT(::Direction_RW_with_Mean, wind_dir_now, wind::Wind)
 
 Returns the wind direction at the respective turbine(s).
 
 # Arguments
 - `wind_dir_now`: Current value (vector)
-- `wind_dir::WindDirTriple`: [`WindDirTriple`](@ref)
+- `wind_dir::Wind`: [`Wind`](@ref)
 
 # Returns
 - `phi`: Updated wind direction(s) (vector) [°]
 """
-function getWindDirT(::Direction_RW_with_Mean, wind_dir_now, wind_dir::WindDirTriple)
+function getWindDirT(::Direction_RW_with_Mean, wind_dir_now, wind_dir::Wind)
+    wind_dir_triple = wind_dir.dir    
     # Random walk model with mean implementation
     # Generate random normal vector
     weightedRandN = randn(RNG,1, length(wind_dir_now))
     # Compute new wind direction
-    phi = wind_dir_now .+ (weightedRandN * wind_dir.CholSig)' .+
-          wind_dir.MeanPull .* (wind_dir.Init .- wind_dir_now)
+    phi = wind_dir_now .+ (weightedRandN * wind_dir_triple.CholSig)' .+
+          wind_dir_triple.MeanPull .* (wind_dir_triple.Init .- wind_dir_now)
     return phi
 end
 
 """
-    getWindDirT(::Direction_RW_with_Mean, wind_dir::WindDirTriple, iT, t)
+    getWindDirT(::Direction_RW_with_Mean, wind::Wind, iT, t)
 
-Random walk with mean reversion model for wind direction.
+Calculate wind direction using a random walk with mean reversion model.
+
+This model combines stochastic variability with a tendency to return to a long-term 
+average direction, making it suitable for modeling realistic wind direction behavior 
+that exhibits both short-term fluctuations and long-term meteorological patterns.
+
+# Model Description
+The wind direction is updated according to:
+```
+φ(t+1) = φ(t) + random_perturbation + mean_pull × (φ_target - φ(t))
+```
+
+Where:
+- `random_perturbation`: Gaussian noise with covariance structure
+- `mean_pull`: Strength of reversion toward the target direction (0 = no reversion, 1 = strong reversion)
+- `φ_target`: Long-term average or equilibrium wind direction
 
 # Arguments
 - `::Direction_RW_with_Mean`: Direction mode indicator
-- `wind_dir::WindDirTriple`: Wind direction data containing Init, CholSig, and MeanPull
-- `iT`: Turbine index or indices
-- `t`: Time value (unused in this implementation) [s]
+- `wind::Wind`: Wind configuration containing direction data as [`WindDirTriple`](@ref)
+  - `wind.dir.Init`: Target/equilibrium wind direction(s) [°]
+  - `wind.dir.CholSig`: Cholesky factor of covariance matrix for random perturbations
+  - `wind.dir.MeanPull`: Mean reversion strength parameter (0-1)
+- `iT`: Turbine index or indices (Integer or AbstractArray)
+- `t`: Time value [s]. Note: Not used in this memoryless implementation.
 
 # Returns
 - `phi`: Wind direction(s) for the requested turbine(s) [°]
+
+# Physical Interpretation
+- **Mean reversion**: Models the tendency of wind to return to prevailing directions
+- **Stochastic component**: Captures short-term meteorological variability
+- **Spatial correlation**: Through the covariance matrix, accounts for spatial dependencies between turbines
+
+# Example
+```julia
+# Wind tends to revert to westerly (270°) with moderate strength
+wind_dir_triple = WindDirTriple(
+    Init=[270.0, 270.0, 270.0],     # Target directions for 3 turbines
+    MeanPull=0.1,                   # 10% reversion strength per time step
+    CholSig=0.5*I(3)                # Independent 0.5° standard deviation
+)
+```
 """
-function getWindDirT(::Direction_RW_with_Mean, wind_dir::WindDirTriple, iT, t)
+function getWindDirT(::Direction_RW_with_Mean, wind::Wind, iT, t)
+    wind_dir_triple = wind.dir
     if isa(iT, AbstractArray)
         n = length(iT)
         indices = iT
@@ -326,17 +370,17 @@ function getWindDirT(::Direction_RW_with_Mean, wind_dir::WindDirTriple, iT, t)
     end
     
     # Get initial values for selected turbines
-    wind_dir_now = wind_dir.Init[indices]
-    
+    wind_dir_now = wind_dir_triple.Init[indices]
+
     # Generate random normal vector
     weightedRandN = randn(RNG, 1, n)
     
     # Extract relevant submatrix for selected turbines
-    chol_sub = wind_dir.CholSig[indices, indices]
+    chol_sub = wind_dir_triple.CholSig[indices, indices]
     
     # Compute new wind direction with mean reversion
     phi = wind_dir_now .+ (weightedRandN * chol_sub)' .+
-          wind_dir.MeanPull .* (wind_dir.Init[indices] .- wind_dir_now)
+          wind_dir_triple.MeanPull .* (wind_dir_triple.Init[indices] .- wind_dir_now)
     
     return isa(iT, AbstractArray) ? phi : phi[1]
 end

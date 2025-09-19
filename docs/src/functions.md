@@ -32,6 +32,7 @@ correctTI!
 # Controller functions
 ```@docs
 getYaw
+getInduction
 ```
 # Helper functions
 ```@docs

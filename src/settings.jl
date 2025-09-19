@@ -26,6 +26,7 @@ Functions defined in this file:
 - setup: Main configuration loader that parses YAML files into simulation components
 - Settings: Constructor function that creates Settings struct from Wind, Sim, Con parameters
 - getTurbineData: Retrieve nacelle positions and rotor diameters for turbine types (loads from turbine_specs.yaml)
+- turbine_group: Find the group ID for a specific turbine in the turbine array
 - importSOWFAFile: Import and parse SOWFA simulation data files
 - condenseSOWFAYaw: Process and condense SOWFA yaw angle data arrays
 - isdelftblue: Detect if running on Delft Blue HPC environment
@@ -74,6 +75,44 @@ model uncertainty in wind measurements or to perform sensitivity analysis.
     ti_sigma::Float64
 end
 
+"""
+    WindCorrection
+
+A struct defining wind field correction options for wind farm simulations.
+
+Wind corrections modify how wind conditions are applied across the wind farm, allowing for 
+different strategies to handle spatial and temporal variations in wind fields.
+
+# Fields
+- `vel::String`: Velocity correction method. Options:
+  - `"None"`: No velocity correction applied (default)
+  - `"Influence"`: Apply velocity corrections based on wake influence
+- `dir::String`: Wind direction correction method. Options:
+  - `"None"`: No direction correction applied
+  - `"All"`: All operating points (OPs) assigned the same wind direction (default)
+    The value is based on the first returned value of the wind direction input
+  - `"Influence"`: Apply direction corrections based on wake influence
+- `ti::String`: Turbulence intensity correction method. Options:
+  - `"None"`: No turbulence intensity correction applied (default)
+  - `"Influence"`: Apply turbulence intensity corrections based on wake influence
+
+# Constructor
+The struct uses `@with_kw` macro, allowing keyword-only construction.
+
+# Notes
+- The `"All"` option for direction correction ensures spatial consistency across the wind farm
+- The `"Influence"` option allows for more sophisticated wake-based corrections
+- Corrections are applied during the simulation to modify local wind conditions
+
+# Example
+```julia
+# Default configuration
+correction = WindCorrection(vel="None", dir="All", ti="None")
+
+# With influence-based corrections
+correction = WindCorrection(vel="Influence", dir="Influence", ti="Influence")
+```
+"""
 @with_kw struct WindCorrection
     vel::String
     dir::String
@@ -83,30 +122,67 @@ end
 """
     Wind
 
-A mutable struct representing wind settings.
+A mutable struct representing comprehensive wind field settings for wind farm simulations.
+
+This struct configures all aspects of the wind field including velocity, direction, turbulence 
+intensity, and wind shear profiles. It supports various input types from constant values to 
+complex time-series data with error covariance for uncertainty quantification.
 
 # Fields
-- `input_vel::String`: The type of wind velocity input, e.g., "Constant", "Interpolation".
-- `input_dir::String`: The type of wind direction input, e.g., "Constant", "Interpolation".
-- `input_ti::String`: The type of turbulence intensity input, e.g., "Constant", "Interpolation".
-- `input_shear::String`: The type of wind shear input, e.g., "PowerLaw", "Interpolation".
-- `correction::WindCorrection`: Settings for wind corrections.
-- `perturbation::WindPerturbation`: Settings for wind perturbations.
-- `vel::Union{Nothing, Float64}`: Optional wind velocity value.
-- `dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType, WindDirTriple}`: Optional wind direction matrix or covariance data.
-- `ti::Union{Nothing, Float64}`: Optional turbulence intensity value.
-- `shear::Union{Nothing, WindShear}`: Optional wind shear profile.
+- `input_vel::String`: Wind velocity input type. Default: "Constant". Options: "Constant", "Interpolation".
+- `input_dir::String`: Wind direction input type. Default: "Constant". Options: "Constant", "Interpolation".
+- `input_ti::String`: Turbulence intensity input type. Default: "Constant". Options: "Constant", "Interpolation".
+- `input_shear::String`: Wind shear input type. Default: "PowerLaw". Options: "PowerLaw", "Interpolation".
+- `correction::WindCorrection`: Wind field correction settings. See [`WindCorrection`](@ref).
+- `perturbation::WindPerturbation`: Wind field perturbation settings for uncertainty analysis. See [`WindPerturbation`](@ref).
+- `vel::Union{Nothing, Float64, AbstractMatrix, WindVelType, WindVelMatrix}`: Wind velocity data container.
+  - `Nothing`: No velocity data specified
+  - `Float64`: Constant velocity value [m/s]
+  - `AbstractMatrix`: Time series for interpolation or per-turbine data (including EnKF)
+  - `WindVelType`: Constant velocity with error covariance
+  - `WindVelMatrix`: Interpolation with error covariance variants
+- `dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType, WindDirTriple}`: Wind direction data container.
+  - `Nothing`: Use `dir_fixed` value
+  - `Matrix{Float64}`: Direction time series [degrees]
+  - `WindDirMatrix`: Direction data with error covariance
+  - `WindDirType`: Constant direction with uncertainty
+  - `WindDirTriple`: Three-component direction specification
+- `dir_fixed::Float64`: Fixed wind direction when `dir` is `Nothing`. Default: 270.0 [degrees].
+- `ti::Union{Nothing, Float64, Matrix{Float64}}`: Turbulence intensity data.
+  - `Nothing`: No turbulence intensity specified
+  - `Float64`: Constant turbulence intensity [-]
+  - `Matrix{Float64}`: Time-varying turbulence intensity data
+- `shear::Union{Nothing, WindShear, Matrix{Float64}}`: Wind shear profile data.
+  - `Nothing`: No wind shear applied
+  - `WindShear`: Wind shear profile specification. See [`WindShear`](@ref).
+  - `Matrix{Float64}`: Time-varying shear profile data
+
+# Constructor
+The struct uses `@with_kw` macro, allowing keyword-only construction with default values.
+
+# Example
+```julia
+# Basic constant wind
+wind = Wind(vel=10.0, dir_fixed=270.0, ti=0.1)
+
+# Wind with time series data
+wind_ts = Wind(
+    input_vel="Interpolation",
+    vel=velocity_matrix,
+    input_dir="Interpolation", 
+    dir=direction_matrix
+)
+```
 """
 @with_kw mutable struct Wind
-    input_vel::String
-    input_dir::String
-    input_ti::String
-    input_shear::String
-    correction::WindCorrection
-    perturbation::WindPerturbation
+    input_vel::String = "Constant"
+    input_dir::String = "Constant"
+    input_ti::String = "Constant"
+    input_shear::String = "PowerLaw"
+    correction::WindCorrection = WindCorrection(vel="None", dir="All", ti="None")
+    perturbation::WindPerturbation = WindPerturbation(vel=false, vel_sigma=0.2, dir=false, dir_sigma=0.5, ti=false, ti_sigma=0.005)
     # Wind velocity data container.
     # Supported:
-    #   Float64          -> constant wind speed
     #   AbstractMatrix   -> interpolation / per-turbine time series (incl. EnKF)
     #   WindVelType      -> constant w/ error covariance
     #   WindVelMatrix    -> interpolation w/ error covariance variants
@@ -114,6 +190,7 @@ A mutable struct representing wind settings.
     # introduce a dedicated type later rather than relying on Any.)
     vel::Union{Nothing, Float64, AbstractMatrix, WindVelType, WindVelMatrix} = nothing
     dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType, WindDirTriple} = nothing
+    dir_fixed::Float64 = 270.0
     ti::Union{Nothing, Float64, Matrix{Float64}} = nothing
     shear::Union{Nothing, WindShear, Matrix{Float64}} = nothing
 end
@@ -178,17 +255,50 @@ end
 """
     Con
 
-A mutable struct for configuration settings.
+A mutable struct for wind turbine controller configuration settings. This struct defines
+the control strategies and parameters for yaw and induction factor control.
 
 # Fields
-- `yaw::String`: The yaw control strategy, e.g., "Constant", "Interpolation".
-- `yaw_data::Union{Nothing, Matrix{Float64}}`: Optional yaw data matrix.
-- `tanh_yaw::Bool`: Whether to use hyperbolic tangent yaw control.
+
+## Yaw Control
+- `yaw::String`: The yaw control strategy. Supported values:
+  - `"Constant"`: Fixed yaw angle for all turbines
+  - `"Interpolation"`: Time-based interpolation from data matrix
+  - `"SOWFA"`: Compatible with SOWFA simulation data format
+- `yaw_fixed::Float64`: Constant yaw angle in degrees (default: 270.0°)
+- `yaw_data::Union{Nothing, Matrix{Float64}}`: Optional yaw control data matrix where:
+  - First column contains time values (seconds)
+  - Subsequent columns contain yaw angles for each turbine (degrees)
+- `tanh_yaw::Bool`: Whether to apply hyperbolic tangent smoothing to yaw control (default: false)
+
+## Induction Control  
+- `induction::String`: The induction factor control strategy. Supported values:
+  - `"Constant"`: Fixed induction factor for all turbines
+  - `"Interpolate"`: Time-based interpolation from data matrix
+- `induction_fixed::Float64`: Constant induction factor (dimensionless, default: 0.33)
+- `induction_data::Union{Nothing, Matrix{Float64}}`: Induction control data matrix where:
+  - First column contains time values (seconds) for time-varying control
+  - Subsequent columns contain induction factors for each turbine (dimensionless)
+  - For constant control, contains a single value (default: [0.33;;])
+
+# Usage
+The controller settings are typically loaded from a YAML configuration file and used
+throughout the simulation to determine turbine control actions.
+
+# See Also
+- [`getYaw`](@ref): Function for retrieving yaw angles based on controller type
+- [`getInduction`](@ref): Function for retrieving induction factors based on controller type
+- [`Yaw_Constant`](@ref), [`Yaw_SOWFA`](@ref): Yaw controller types
+- [`Induction_Constant`](@ref), [`Induction_MPC`](@ref): Induction controller types
 """
 @with_kw mutable struct Con
     yaw::String
+    yaw_fixed::Float64 = 270.0
     yaw_data::Union{Nothing, Matrix{Float64}} = nothing
     tanh_yaw::Bool = false
+    induction::String = "Constant"
+    induction_fixed::Float64 = 0.33
+    induction_data::Union{Nothing, Matrix{Float64}} = [0.33;;]
 end
 
 """
@@ -249,6 +359,13 @@ A structure representing the settings for the FLORIDyn simulation environment.
     twf_model::String
 end
 
+# TurbineGroup represents a grouping of turbines for analysis
+struct TurbineGroup
+    name::String
+    id::Int
+    turbines::Vector{Int}
+end
+
 """
     TurbineArray
 
@@ -270,13 +387,16 @@ A structure representing the configuration and properties of a wind turbine arra
 pos = [0.0 0.0 0.0; 500.0 0.0 0.0]  # Two turbines 500m apart
 type = ["NREL_5MW", "NREL_5MW"]
 init_states = [0.33 0.0 0.1; 0.33 0.0 0.1]  # Both start with same initial conditions
-turbines = TurbineArray(pos, type, init_states)
+groups = [TurbineGroup("all", 0, [1, 2])]  # Default group containing all turbines
+turbines = TurbineArray(pos, type, init_states, groups)
 ```
+
 """
 struct TurbineArray
     pos::Matrix{Float64}
     type::Vector{String}
     init_States::Matrix{Float64}
+    groups::Vector{TurbineGroup}
 end
 
 """
@@ -883,7 +1003,25 @@ function setup(filename)
     init_states = [Float64[t["a"], t["yaw"], t["ti"]] for t in turbines]
     init_states = reduce(vcat, [s' for s in init_states])  # transpose and concatenate
 
-    ta = TurbineArray(pos, type, init_states)
+    # Extract Turbine Groups
+    groups = TurbineGroup[]
+    if haskey(data, "turbine_groups")
+        turbine_groups_data = data["turbine_groups"]
+        for group_data in turbine_groups_data
+            group = TurbineGroup(
+                String(group_data["name"]),
+                Int(group_data["id"]),
+                Vector{Int}(group_data["turbines"])
+            )
+            push!(groups, group)
+        end
+    else
+        # Default: create an "all" group containing all turbines
+        all_turbine_ids = [i for i in 1:length(turbines)]
+        push!(groups, TurbineGroup("all", 0, all_turbine_ids))
+    end
+
+    ta = TurbineArray(pos, type, init_states, groups)
     
     # Validate that all turbines have the same type
     unique_types = unique(ta.type)
@@ -931,8 +1069,9 @@ function Settings(wind::Wind, sim::Sim, con::Con, parallel=false, threading=fals
     cor_turb_mode = str2type("TI_" * wind.correction.ti)
     iterate_mode = str2type(sim.dyn.op_iteration)
     control_mode = str2type("Yaw_" * con.yaw)
+    induction_mode = str2type("Induction_" * con.induction)
     Settings(vel_mode, dir_mode, turb_mode, shear_mode, cor_dir_mode, cor_vel_mode, cor_turb_mode, 
-             iterate_mode, control_mode, parallel, threading)
+             iterate_mode, control_mode, induction_mode, parallel, threading)
 end
 
 """
@@ -1418,4 +1557,190 @@ function select_measurement()
     
     println("✓ Selected measurement type: $selected_name")
     return selected_msr
+end
+
+"""
+    turbine_group(ta::TurbineArray, turbine::Int) -> Int
+
+Find the group ID for a specific turbine in the turbine array.
+
+This function searches through all turbine groups in the array to find which group 
+contains the specified turbine and returns the group's ID. If a turbine belongs to 
+multiple groups, it returns the ID of the first non-"all" group found, or the "all" 
+group if no specific group is found.
+
+# Arguments
+- `ta::TurbineArray`: The turbine array containing the groups
+- `turbine::Int`: The turbine number (1-based index) to find the group for
+
+# Returns
+- `Int`: The ID of the group that contains the specified turbine
+
+# Throws
+- `ArgumentError`: If the turbine number is not found in any group or is out of bounds
+
+# Examples
+```julia
+# Load turbine array from configuration
+wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+
+# Find which group turbine 15 belongs to
+group_id = turbine_group(ta, 15)
+println("Turbine 15 belongs to group with ID: ", group_id)
+
+# Get the group name
+for group in ta.groups
+    if group.id == group_id
+        println("Group name: ", group.name)
+        break
+    end
+end
+```
+
+# Performance
+- Time complexity: O(n*m) where n is the number of groups and m is the average group size
+- For typical wind farm layouts, this is very fast since group counts are small
+"""
+function turbine_group(ta::TurbineArray, turbine::Int)
+    # Validate input
+    if turbine < 1 || turbine > size(ta.pos, 1)
+        throw(ArgumentError("Turbine number $turbine is out of bounds. Valid range: 1-$(size(ta.pos, 1))"))
+    end
+    
+    # First, search for specific groups (non-"all" groups)
+    for group in ta.groups
+        if group.name != "all" && turbine in group.turbines
+            return group.id
+        end
+    end
+    
+    # If not found in specific groups, search all groups (including "all")
+    for group in ta.groups
+        if turbine in group.turbines
+            return group.id
+        end
+    end
+    
+    # If we reach here, the turbine wasn't found in any group
+    throw(ArgumentError("Turbine $turbine not found in any group"))
+end
+
+"""
+    set_yaw!(ta::TurbineArray, yaw)
+
+Set the yaw angle for all turbines in the turbine array.
+
+This function modifies the initial yaw angles (column 2) in the `init_States` matrix 
+of the turbine array. The yaw angle represents the nacelle orientation relative to 
+the wind direction.
+
+# Arguments
+- `ta::TurbineArray`: The turbine array to modify
+- `yaw`: The yaw angle(s) to set. Can be:
+  - `Real`: Single value applied to all turbines
+  - `AbstractVector`: Vector of values (one per turbine)
+
+# Behavior
+- For scalar input: Sets all turbines to the same yaw angle
+- For vector input: Sets each turbine to its corresponding value
+- Modifies the turbine array in-place (mutating function)
+
+# Throws
+- `ArgumentError`: If vector length doesn't match number of turbines
+
+# Examples
+```julia
+# Set all turbines to 15° yaw
+set_yaw!(ta, 15.0)
+
+# Set individual yaw angles
+yaw_angles = [0.0, 15.0, -10.0, 5.0]  # For 4 turbines
+set_yaw!(ta, yaw_angles)
+
+# Verify the change
+println("Yaw angles: ", ta.init_States[:, 2])
+```
+
+# See Also
+- [`set_induction!`](@ref): Set induction factors for turbines
+- [`TurbineArray`](@ref): Container struct for turbine configuration
+"""
+function set_yaw!(ta::TurbineArray, yaw)
+    num_turbines = size(ta.pos, 1)
+    
+    if yaw isa Real
+        # Set all turbines to the same yaw angle
+        ta.init_States[:, 2] .= yaw
+    elseif yaw isa AbstractVector
+        # Set individual yaw angles
+        if length(yaw) != num_turbines
+            throw(ArgumentError("Yaw vector length ($(length(yaw))) must match number of turbines ($num_turbines)"))
+        end
+        ta.init_States[:, 2] .= yaw
+    else
+        throw(ArgumentError("Yaw must be a Real number or AbstractVector"))
+    end
+end
+
+"""
+    set_induction!(ta::TurbineArray, induction)
+
+Set the axial induction factor for all turbines in the turbine array.
+
+This function modifies the initial induction factors (column 1) in the `init_States` 
+matrix of the turbine array. The axial induction factor represents the reduction in 
+wind speed through the rotor disk due to momentum extraction.
+
+# Arguments
+- `ta::TurbineArray`: The turbine array to modify
+- `induction`: The induction factor(s) to set. Can be:
+  - `Real`: Single value applied to all turbines  
+  - `AbstractVector`: Vector of values (one per turbine)
+
+# Behavior
+- For scalar input: Sets all turbines to the same induction factor
+- For vector input: Sets each turbine to its corresponding value
+- Modifies the turbine array in-place (mutating function)
+
+# Physical Context
+- Typical values: 0.2-0.4 (dimensionless)
+- Higher values: More aggressive power extraction, stronger wakes
+- Lower values: Reduced power extraction, weaker wakes
+- Optimal value: ~0.33 for maximum power extraction (Betz limit)
+
+# Throws
+- `ArgumentError`: If vector length doesn't match number of turbines
+
+# Examples
+```julia
+# Set all turbines to optimal induction factor
+set_induction!(ta, 0.33)
+
+# Set individual induction factors for wake control
+induction_factors = [0.33, 0.25, 0.30, 0.33]  # For 4 turbines
+set_induction!(ta, induction_factors)
+
+# Verify the change
+println("Induction factors: ", ta.init_States[:, 1])
+```
+
+# See Also
+- [`set_yaw!`](@ref): Set yaw angles for turbines
+- [`TurbineArray`](@ref): Container struct for turbine configuration
+"""
+function set_induction!(ta::TurbineArray, induction)
+    num_turbines = size(ta.pos, 1)
+    
+    if induction isa Real
+        # Set all turbines to the same induction factor
+        ta.init_States[:, 1] .= induction
+    elseif induction isa AbstractVector
+        # Set individual induction factors
+        if length(induction) != num_turbines
+            throw(ArgumentError("Induction vector length ($(length(induction))) must match number of turbines ($num_turbines)"))
+        end
+        ta.init_States[:, 1] .= induction
+    else
+        throw(ArgumentError("Induction must be a Real number or AbstractVector"))
+    end
 end

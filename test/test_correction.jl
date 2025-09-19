@@ -4,8 +4,8 @@
 using FLORIDyn
 using Test
 
-correction = FLORIDyn.WindCorrection("None", "All", "None")
-perturbation = FLORIDyn.WindPerturbation(0.0, 0.2, 0.0, 0.5, 0.0, 0.005)
+correction = FLORIDyn.WindCorrection(vel="None", dir="All", ti="None")
+perturbation = FLORIDyn.WindPerturbation(vel=false, vel_sigma=0.2, dir=false, dir_sigma=0.5, ti=false, ti_sigma=0.005)
 shear = FLORIDyn.WindShear(0.08, 1.0)
 
 dir_array = [
@@ -16,22 +16,22 @@ dir_array = [
 ]
 
 wind = FLORIDyn.Wind(
-    "Constant",
-    "Interpolation",
-    "Constant",
-    "PowerLaw",
-    correction,
-    perturbation,
-    8.2,
-    dir_array,
-    0.062,
-    shear
+    input_vel="Constant",
+    input_dir="Interpolation",
+    input_ti="Constant",
+    input_shear="PowerLaw",
+    correction=correction,
+    perturbation=perturbation,
+    vel=8.2,
+    dir=dir_array,
+    ti=0.062,
+    shear=shear
 )
 @testset verbose=true "correction" begin
     @testset "correctDir!" begin
         # Setup
         set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_All(), 
-                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
         wf = WindFarm(
             States_WF = zeros(3, 4),
             StartI = [2 2; 3 3],

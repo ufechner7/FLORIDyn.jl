@@ -397,7 +397,7 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
         if wind.input_dir == "RW_with_Mean"
             phi_s = wind.dir.Init[iT]
         else
-            phi_s = getWindDirT(set.dir_mode, wind.dir, iT, startTime)
+            phi_s = getWindDirT(set.dir_mode, wind, iT, startTime)
         end
 
         ti = getWindTiT(set.turb_mode, wind.ti, iT, startTime)
@@ -420,9 +420,9 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
         # Init turbine states
         states_t[rangeOPs, :] .= init_turb[iT, :]'
 
-    # Crosswind position (in-place)
-    centerline!(@view(states_op[rangeOPs, 5:6]), states_op[rangeOPs, :], states_t[rangeOPs, :],
-            states_wf[rangeOPs, :], floris, wf.D[iT])
+        # Crosswind position (in-place)
+        centerline!(@view(states_op[rangeOPs, 5:6]), states_op[rangeOPs, :], states_t[rangeOPs, :],
+                          states_wf[rangeOPs, :], floris, wf.D[iT])
 
         # Convert wind dir in fitting radians
         phi_w = angSOWFA2world.(states_wf[rangeOPs, 2])

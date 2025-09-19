@@ -828,9 +828,9 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
 
         # ========== Get Control settings ==========
         wf.States_T[wf.StartI, 2] = (
-            wf.States_WF[wf.StartI, 2] .-
-            getYaw(set.control_mode, con.yaw_data, (1:nT), sim_time)'
+            wf.States_WF[wf.StartI, 2] .- getYaw(set.control_mode, con, (1:nT), sim_time)'
         )
+        wf.States_T[wf.StartI, 1] = getInduction(set.induction_mode, con, (1:nT), sim_time-sim.start_time)'
 
         # ========== Calculate Power ==========
         P = getPower(wf, @view(tmpM[1:nT, :]), floris, con)
