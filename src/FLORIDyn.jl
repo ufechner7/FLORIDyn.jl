@@ -278,12 +278,56 @@ end
 """
     WindDirTriple
 
-A structure representing a wind direction triple. 
+A structure containing the three key parameters for wind direction modeling with mean reversion.
+
+This struct is specifically designed for the `Direction_RW_with_Mean` wind direction mode, 
+which implements a random walk with mean reversion model. The model captures both 
+stochastic wind direction variability and the tendency for wind to return to prevailing 
+climatological directions over time.
 
 # Fields
-- Init::Vector{Float64}:    Mean direction (vector or scalar)
-- CholSig::Matrix{Float64}: Cholesky factor of covariance matrix (nT x nT)
-- MeanPull::Float64:        Scalar mean reversion factor
+- `Init::Vector{Float64}`: Target/equilibrium wind directions for each turbine [°].
+  These represent the long-term average or expected wind directions 
+  that the system tends to revert toward. Each element corresponds to one turbine.
+  
+- `CholSig::Matrix{Float64}`: Cholesky decomposition of the covariance matrix (nT × nT).
+  This matrix encodes both the magnitude of random fluctuations and the spatial 
+  correlations between turbines. It allows for:
+  - Different noise levels for different turbines (diagonal elements)
+  - Cross-correlations between nearby turbines (off-diagonal elements)
+  
+- `MeanPull::Float64`: Mean reversion strength parameter [0, 1].
+  Controls how strongly wind directions are pulled back toward their target values:
+  - `0.0`: No mean reversion (pure random walk)
+  - `1.0`: Maximum reversion (immediate return to target)
+  - Typical values: `0.1` to `0.3` for realistic wind behavior
+
+# Mathematical Model
+The wind direction evolves according to:
+    φ(t+1) = φ(t) + CholSig × ε + MeanPull × (Init - φ(t))
+where `ε` is a vector of independent standard normal random variables.
+
+# Physical Interpretation
+- **Meteorological realism**: `Init` represents seasonal/geographic wind patterns
+- **Spatial correlation**: `CholSig` models how wind direction changes are correlated across the wind farm
+- **Temporal persistence**: `MeanPull` controls how quickly wind returns to prevailing patterns
+
+# Constructor Example
+    # Three turbines with westerly prevailing winds
+    wind_triple = WindDirTriple(
+        Init=[270.0, 275.0, 270.0],           # Slightly different targets per turbine
+        CholSig=0.5 * I(3) + 0.2 * ones(3,3), # 0.5° individual + 0.2° shared noise
+        MeanPull=0.15                         # 15% reversion per time step
+    )
+
+# Usage
+This struct is used with the `Direction_RW_with_Mean` mode in wind field configurations:
+    wind = Wind(
+        input\\_dir="RW\\_with\\_Mean",
+        dir=wind\\_triple
+    )
+
+See also: [`Direction_RW_with_Mean`](@ref), [`Wind`](@ref)
 """
 struct WindDirTriple
     Init::Vector{Float64}      # Mean direction (vector or scalar)

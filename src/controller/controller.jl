@@ -280,6 +280,7 @@ function getInduction(::Induction_MPC, con::Con, iT, t)
     end
 
     # Create interpolation object for each turbine column
+    # TODO optimize by storing these in con.induction_interp_funcs after first call
     interp_funcs = [linear_interpolation(time, induction_data[:, j], extrapolation_bc=Flat()) for j in 1:size(induction_data, 2)]
 
     # Get interpolated induction(s)

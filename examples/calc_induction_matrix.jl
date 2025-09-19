@@ -6,6 +6,7 @@
 using FLORIDyn
 
 const cp_max = 16/27  # Betz limit
+const BETZ_INDUCTION = 1/3
 const dt = 400
 
 # Forward declarations - these functions are expected to be defined elsewhere
@@ -28,23 +29,23 @@ function calc_induction(cp)
     if cp ≈ 0
         return 0.0
     elseif cp ≈ cp_max
-        return 1/3
+        return BETZ_INDUCTION
     end
     
     # Use a simple bisection method which is more robust
     f(a) = 4*a*(1-a)^2 - cp
     
     # Find the interval containing the root
-    # We know the function has roots in [0, 1/3] and [1/3, 1] for most cp values
+    # We know the function has roots in [0, BETZ_INDUCTION] and [BETZ_INDUCTION, 1] for most cp values
     a_low, a_high = 0.0, 1.0
     
     # Check if we need to search in the lower or upper interval
-    if f(1/3) >= 0
-        # Root is in [0, 1/3]
-        a_high = 1/3
+    if f(BETZ_INDUCTION) >= 0
+        # Root is in [0, BETZ_INDUCTION]
+        a_high = BETZ_INDUCTION
     else
-        # Root is in [1/3, 1]
-        a_low = 1/3
+        # Root is in [BETZ_INDUCTION, 1]
+        a_low = BETZ_INDUCTION
     end
     
     # Bisection method
@@ -207,7 +208,7 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8) # m
 
     rel_power = calc_cp(base_induction) / cp_max + correction
     corrected_induction = calc_induction(rel_power * cp_max)
-    return max(0.0, min(1/3, corrected_induction))
+    return max(0.0, min(BETZ_INDUCTION, corrected_induction))
 end
 
 """

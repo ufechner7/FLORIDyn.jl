@@ -75,6 +75,44 @@ model uncertainty in wind measurements or to perform sensitivity analysis.
     ti_sigma::Float64
 end
 
+"""
+    WindCorrection
+
+A struct defining wind field correction options for wind farm simulations.
+
+Wind corrections modify how wind conditions are applied across the wind farm, allowing for 
+different strategies to handle spatial and temporal variations in wind fields.
+
+# Fields
+- `vel::String`: Velocity correction method. Options:
+  - `"None"`: No velocity correction applied (default)
+  - `"Influence"`: Apply velocity corrections based on wake influence
+- `dir::String`: Wind direction correction method. Options:
+  - `"None"`: No direction correction applied
+  - `"All"`: All operating points (OPs) assigned the same wind direction (default)
+    The value is based on the first returned value of the wind direction input
+  - `"Influence"`: Apply direction corrections based on wake influence
+- `ti::String`: Turbulence intensity correction method. Options:
+  - `"None"`: No turbulence intensity correction applied (default)
+  - `"Influence"`: Apply turbulence intensity corrections based on wake influence
+
+# Constructor
+The struct uses `@with_kw` macro, allowing keyword-only construction.
+
+# Notes
+- The `"All"` option for direction correction ensures spatial consistency across the wind farm
+- The `"Influence"` option allows for more sophisticated wake-based corrections
+- Corrections are applied during the simulation to modify local wind conditions
+
+# Example
+```julia
+# Default configuration
+correction = WindCorrection(vel="None", dir="All", ti="None")
+
+# With influence-based corrections
+correction = WindCorrection(vel="Influence", dir="Influence", ti="Influence")
+```
+"""
 @with_kw struct WindCorrection
     vel::String
     dir::String
@@ -84,19 +122,57 @@ end
 """
     Wind
 
-A mutable struct representing wind settings.
+A mutable struct representing comprehensive wind field settings for wind farm simulations.
+
+This struct configures all aspects of the wind field including velocity, direction, turbulence 
+intensity, and wind shear profiles. It supports various input types from constant values to 
+complex time-series data with error covariance for uncertainty quantification.
 
 # Fields
-- `input_vel::String`: The type of wind velocity input, e.g., "Constant", "Interpolation".
-- `input_dir::String`: The type of wind direction input, e.g., "Constant", "Interpolation".
-- `input_ti::String`: The type of turbulence intensity input, e.g., "Constant", "Interpolation".
-- `input_shear::String`: The type of wind shear input, e.g., "PowerLaw", "Interpolation".
-- `correction::WindCorrection`: Settings for wind corrections.
-- `perturbation::WindPerturbation`: Settings for wind perturbations.
-- `vel::Union{Nothing, Float64}`: Optional wind velocity value.
-- `dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType, WindDirTriple}`: Optional wind direction matrix or covariance data.
-- `ti::Union{Nothing, Float64}`: Optional turbulence intensity value.
-- `shear::Union{Nothing, WindShear}`: Optional wind shear profile.
+- `input_vel::String`: Wind velocity input type. Default: "Constant". Options: "Constant", "Interpolation".
+- `input_dir::String`: Wind direction input type. Default: "Constant". Options: "Constant", "Interpolation".
+- `input_ti::String`: Turbulence intensity input type. Default: "Constant". Options: "Constant", "Interpolation".
+- `input_shear::String`: Wind shear input type. Default: "PowerLaw". Options: "PowerLaw", "Interpolation".
+- `correction::WindCorrection`: Wind field correction settings. See [`WindCorrection`](@ref).
+- `perturbation::WindPerturbation`: Wind field perturbation settings for uncertainty analysis. See [`WindPerturbation`](@ref).
+- `vel::Union{Nothing, Float64, AbstractMatrix, WindVelType, WindVelMatrix}`: Wind velocity data container.
+  - `Nothing`: No velocity data specified
+  - `Float64`: Constant velocity value [m/s]
+  - `AbstractMatrix`: Time series for interpolation or per-turbine data (including EnKF)
+  - `WindVelType`: Constant velocity with error covariance
+  - `WindVelMatrix`: Interpolation with error covariance variants
+- `dir::Union{Nothing, Matrix{Float64}, WindDirMatrix, WindDirType, WindDirTriple}`: Wind direction data container.
+  - `Nothing`: Use `dir_fixed` value
+  - `Matrix{Float64}`: Direction time series [degrees]
+  - `WindDirMatrix`: Direction data with error covariance
+  - `WindDirType`: Constant direction with uncertainty
+  - `WindDirTriple`: Three-component direction specification
+- `dir_fixed::Float64`: Fixed wind direction when `dir` is `Nothing`. Default: 270.0 [degrees].
+- `ti::Union{Nothing, Float64, Matrix{Float64}}`: Turbulence intensity data.
+  - `Nothing`: No turbulence intensity specified
+  - `Float64`: Constant turbulence intensity [-]
+  - `Matrix{Float64}`: Time-varying turbulence intensity data
+- `shear::Union{Nothing, WindShear, Matrix{Float64}}`: Wind shear profile data.
+  - `Nothing`: No wind shear applied
+  - `WindShear`: Wind shear profile specification. See [`WindShear`](@ref).
+  - `Matrix{Float64}`: Time-varying shear profile data
+
+# Constructor
+The struct uses `@with_kw` macro, allowing keyword-only construction with default values.
+
+# Example
+```julia
+# Basic constant wind
+wind = Wind(vel=10.0, dir_fixed=270.0, ti=0.1)
+
+# Wind with time series data
+wind_ts = Wind(
+    input_vel="Interpolation",
+    vel=velocity_matrix,
+    input_dir="Interpolation", 
+    dir=direction_matrix
+)
+```
 """
 @with_kw mutable struct Wind
     input_vel::String = "Constant"
@@ -107,7 +183,6 @@ A mutable struct representing wind settings.
     perturbation::WindPerturbation = WindPerturbation(vel=false, vel_sigma=0.2, dir=false, dir_sigma=0.5, ti=false, ti_sigma=0.005)
     # Wind velocity data container.
     # Supported:
-    #   Float64          -> constant wind speed
     #   AbstractMatrix   -> interpolation / per-turbine time series (incl. EnKF)
     #   WindVelType      -> constant w/ error covariance
     #   WindVelMatrix    -> interpolation w/ error covariance variants

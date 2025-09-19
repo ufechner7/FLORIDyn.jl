@@ -38,9 +38,9 @@ function plot_turbines(ta::TurbineArray, turbine_groups)
         group_y = [y_coords[t] for t in group_turbines]
         
         # Select color and marker for this group
-        color = colors[min(group_id, length(colors))]
-        marker = markers[min(group_id, length(markers))]
-        
+        color = colors[mod1(group_id, length(colors))]
+        marker = markers[mod1(group_id, length(markers))]
+
         # Plot this group
         plt.scatter(group_x, group_y, s=120, c=color, marker=marker, 
                    label="$group_name ($(length(group_turbines)) turbines)", 

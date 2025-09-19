@@ -315,16 +315,49 @@ end
 """
     getWindDirT(::Direction_RW_with_Mean, wind::Wind, iT, t)
 
-Random walk with mean reversion model for wind direction.
+Calculate wind direction using a random walk with mean reversion model.
+
+This model combines stochastic variability with a tendency to return to a long-term 
+average direction, making it suitable for modeling realistic wind direction behavior 
+that exhibits both short-term fluctuations and long-term meteorological patterns.
+
+# Model Description
+The wind direction is updated according to:
+```
+φ(t+1) = φ(t) + random_perturbation + mean_pull × (φ_target - φ(t))
+```
+
+Where:
+- `random_perturbation`: Gaussian noise with covariance structure
+- `mean_pull`: Strength of reversion toward the target direction (0 = no reversion, 1 = strong reversion)
+- `φ_target`: Long-term average or equilibrium wind direction
 
 # Arguments
 - `::Direction_RW_with_Mean`: Direction mode indicator
-- `wind_dir::WindDirTriple`: Wind direction data containing Init, CholSig, and MeanPull
-- `iT`: Turbine index or indices
-- `t`: Time value (unused in this implementation) [s]
+- `wind::Wind`: Wind configuration containing direction data as [`WindDirTriple`](@ref)
+  - `wind.dir.Init`: Target/equilibrium wind direction(s) [°]
+  - `wind.dir.CholSig`: Cholesky factor of covariance matrix for random perturbations
+  - `wind.dir.MeanPull`: Mean reversion strength parameter (0-1)
+- `iT`: Turbine index or indices (Integer or AbstractArray)
+- `t`: Time value [s]. Note: Not used in this memoryless implementation.
 
 # Returns
 - `phi`: Wind direction(s) for the requested turbine(s) [°]
+
+# Physical Interpretation
+- **Mean reversion**: Models the tendency of wind to return to prevailing directions
+- **Stochastic component**: Captures short-term meteorological variability
+- **Spatial correlation**: Through the covariance matrix, accounts for spatial dependencies between turbines
+
+# Example
+```julia
+# Wind tends to revert to westerly (270°) with moderate strength
+wind_dir_triple = WindDirTriple(
+    Init=[270.0, 270.0, 270.0],     # Target directions for 3 turbines
+    MeanPull=0.1,                   # 10% reversion strength per time step
+    CholSig=0.5*I(3)                # Independent 0.5° standard deviation
+)
+```
 """
 function getWindDirT(::Direction_RW_with_Mean, wind::Wind, iT, t)
     wind_dir_triple = wind.dir
