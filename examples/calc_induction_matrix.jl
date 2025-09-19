@@ -75,17 +75,26 @@ function calc_induction(cp)
 end
 
 function calc_demand(time)
-    # Example: linearly increasing demand from 0.5 to 1.0 over the simulation time
-    initial_demand = 0.4
-    final_demand = 0.8
-    t1 = 240.0 + dt  # Time to start increasing demand
-    t2 = 960.0 + dt  # Time to reach final demand
-    if time < t1
-        return initial_demand
-    elseif time < t2
-        return initial_demand + (final_demand - initial_demand) * (time - t1) / (t2 - t1)
+    if USE_STEP
+        # Example: step demand profile
+        if time < 200+dt
+            return 0.001
+        else
+            return 0.999
+        end
     else
-        return final_demand
+        # Example: linearly increasing demand from 0.5 to 1.0 over the simulation time
+        initial_demand = 0.4
+        final_demand = 0.8
+        t1 = 240.0 + dt  # Time to start increasing demand
+        t2 = 960.0 + dt  # Time to reach final demand
+        if time < t1
+            return initial_demand
+        elseif time < t2
+            return initial_demand + (final_demand - initial_demand) * (time - t1) / (t2 - t1)
+        else
+            return final_demand
+        end
     end
 end
 
@@ -105,6 +114,9 @@ Assumes no wake effects for simplicity.
 function calc_induction_per_group(turbine_group, time; scaling = 1.22)
     if USE_MPC
         scaling = 1.247
+    elseif USE_STEP
+        scaling = 1.0
+    else
     end
     # simple example: assume no wakes
     demand = calc_demand(time)
