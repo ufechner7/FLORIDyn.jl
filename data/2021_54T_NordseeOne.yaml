@@ -25,6 +25,7 @@ wind:
   # - InterpTurbine_wErrorCov
   # - RW_with_mean             random walk with mean
   input_dir: Interpolation
+  dir_fixed: 270.0 # fixed wind direction for 'Constant' method [°]
   # Ambient Turbulence Intensity Input
   # - Interpolation
   # - InterpTurbine (Interpolation per turbine)
