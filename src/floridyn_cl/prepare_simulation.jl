@@ -237,15 +237,13 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
         wind.dir = WindDirMatrix(data, cholsig)
     elseif wind.input_dir == "Constant_wErrorCov"
-        data = readdlm(joinpath(data_path, "WindDirConstant.csv"), ',', Float64)
         DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
         _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
-        wind.dir = WindDirType(data[1], cholsig)
+        wind.dir = WindDirType(wind.dir_fixed, cholsig)
     elseif wind.input_dir == "RW_with_Mean"
-        data = readdlm(joinpath(data_path, "WindDirConstant.csv"), ',', Float64)
         DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
         _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
-        init_values = fill(data[1], nT)  # Create vector of initial values for all turbines
+        init_values = fill(wind.dir_fixed, nT)  # Create vector of initial values for all turbines
         wind.dir = WindDirTriple(init_values, cholsig, 1.0)  # MeanPull = 1.0
     else
         error("Method for wind direction $(wind.input_dir) unknown.")
