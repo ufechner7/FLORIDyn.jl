@@ -4,8 +4,8 @@
 using FLORIDyn
 using Test
 
-correction = FLORIDyn.WindCorrection("None", "All", "None")
-perturbation = FLORIDyn.WindPerturbation(0.0, 0.2, 0.0, 0.5, 0.0, 0.005)
+correction = FLORIDyn.WindCorrection(vel="None", dir="All", ti="None")
+perturbation = FLORIDyn.WindPerturbation(vel=false, vel_sigma=0.2, dir=false, dir_sigma=0.5, ti=false, ti_sigma=0.005)
 shear = FLORIDyn.WindShear(0.08, 1.0)
 
 dir_array = [
@@ -16,16 +16,16 @@ dir_array = [
 ]
 
 wind = FLORIDyn.Wind(
-    "Constant",
-    "Interpolation",
-    "Constant",
-    "PowerLaw",
-    correction,
-    perturbation,
-    8.2,
-    dir_array,
-    0.062,
-    shear
+    input_vel="Constant",
+    input_dir="Interpolation",
+    input_ti="Constant",
+    input_shear="PowerLaw",
+    correction=correction,
+    perturbation=perturbation,
+    vel=8.2,
+    dir=dir_array,
+    ti=0.062,
+    shear=shear
 )
 @testset verbose=true "correction" begin
     @testset "correctDir!" begin

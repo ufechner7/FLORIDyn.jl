@@ -307,8 +307,8 @@ function getWindDirT(::Direction_RW_with_Mean, wind_dir_now, wind_dir::Wind)
     # Generate random normal vector
     weightedRandN = randn(RNG,1, length(wind_dir_now))
     # Compute new wind direction
-    phi = wind_dir_now .+ (weightedRandN * wind_dir.CholSig)' .+
-          wind_dir.MeanPull .* (wind_dir.Init .- wind_dir_now)
+    phi = wind_dir_now .+ (weightedRandN * wind_dir_triple.CholSig)' .+
+          wind_dir_triple.MeanPull .* (wind_dir_triple.Init .- wind_dir_now)
     return phi
 end
 
@@ -347,7 +347,7 @@ function getWindDirT(::Direction_RW_with_Mean, wind::Wind, iT, t)
     
     # Compute new wind direction with mean reversion
     phi = wind_dir_now .+ (weightedRandN * chol_sub)' .+
-          wind_dir.MeanPull .* (wind_dir.Init[indices] .- wind_dir_now)
+          wind_dir_triple.MeanPull .* (wind_dir_triple.Init[indices] .- wind_dir_now)
     
     return isa(iT, AbstractArray) ? phi : phi[1]
 end
