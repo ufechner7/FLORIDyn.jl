@@ -8,7 +8,7 @@
 # for benchmarking the 54 turbine layout.
 using Timers
 tic()
-using FLORIDyn, TerminalPager, DistributedNext 
+using FLORIDyn, TerminalPager, DistributedNext, Statistics 
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
@@ -98,6 +98,24 @@ demand_values = [calc_demand(t) for t in time_vector]
 plot_rmt(times, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(dt, 1200+dt),
          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
 
+function analyse_results(rel_power, demand_values; dt=sim.time_step)
+    t1 = 600
+    t2 = 700
+    t3 = 1200
+    t4 = 1600
+    mean_peak = mean(rel_power[1+t1÷dt:1+t2÷dt])
+    mean_final = mean(rel_power[1+t3÷dt:1+t4÷dt])
+    extra_power = mean_peak - mean_final
+    println("\n--- Analysis of Power Output ---")
+    println("Relative peak power:  $(round(mean_peak * 100, digits=2))%")
+    println("Relative final power: $(round(mean_final * 100, digits=2))%")
+    println("Extra power:          $(round(extra_power * 100, digits=2))%")
+    # TODO: integrate rel_power - mean_final from t=600s to t=1600s
+    integral_extra_power = sum((rel_power[1+t1÷dt:1+t4÷dt] .- mean_final) .* dt)
+    println("Storage time at full power: $(round(integral_extra_power, digits=2))s")
+
+end
+
 # Calculate Mean Square Error between rel_power and demand_values
 mse = sum((rel_power[101:end] .- demand_values[101:end]).^2) / length(rel_power[101:end])
 println("Root Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
@@ -130,3 +148,5 @@ if hasfield(typeof(wind), :ti) && !isnothing(wind.ti)
 else
     println("Turbulence intensity: Not available")
 end
+
+analyse_results(rel_power, demand_values)
