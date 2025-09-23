@@ -64,8 +64,6 @@ toc()
 
 vis.online = ONLINE
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-# @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
-# @time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
 
 data_column = "ForeignReduction"
 ylabel      = "Rel. Wind Speed [%]"
@@ -83,10 +81,6 @@ for iT in 1:nT
     induction_vec = induction_factors[iT, :]
     cp_vec = 4 * induction_vec .* (1 .- induction_vec).^2
     rel_power .+= rel_speed .^3 .* cp_vec ./ cp_max
-    # if iT % 10 == 0
-    #     @info "Induction factors (turbine $iT): ", length(induction_factors[iT, :])
-    #     @info "Rel. speed (turbine $iT): ", length(rel_speed)
-    # end
 end
 rel_power ./= nT
 
@@ -110,10 +104,8 @@ function analyse_results(rel_power, demand_values; dt=sim.time_step)
     println("Relative peak power:  $(round(mean_peak * 100, digits=2))%")
     println("Relative final power: $(round(mean_final * 100, digits=2))%")
     println("Extra power:          $(round(extra_power * 100, digits=2))%")
-    # TODO: integrate rel_power - mean_final from t=600s to t=1600s
     integral_extra_power = sum((rel_power[1+t1÷dt:1+t4÷dt] .- mean_final) .* dt)
     println("Storage time at full power: $(round(integral_extra_power, digits=2))s")
-
 end
 
 # Calculate Mean Square Error between rel_power and demand_values
