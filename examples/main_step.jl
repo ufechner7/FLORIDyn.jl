@@ -60,10 +60,9 @@ function calc_demand_and_power(settings_file, wind_dir=270.0)
     end
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-    toc()
 
     vis.online = ONLINE
-    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
 
     data_column = "ForeignReduction"
     ylabel      = "Rel. Wind Speed [%]"
@@ -103,8 +102,8 @@ function analyse_results(rel_power, demand_values; dt=sim.time_step)
     println("Relative peak power:  $(round(mean_peak * 100, digits=2))%")
     println("Relative final power: $(round(mean_final * 100, digits=2))%")
     println("Extra power:          $(round(extra_power * 100, digits=2))%")
-    integral_extra_power = sum((rel_power[1+t1÷dt:1+t4÷dt] .- mean_final) .* dt)
-    println("Storage time at full power: $(round(integral_extra_power, digits=2))s")
+    storage_time = sum((rel_power[1+t1÷dt:1+t4÷dt] .- mean_final) .* dt)
+    println("Storage time at full power: $(round(storage_time, digits=2))s")
 end
 
 function step_response()
@@ -149,5 +148,33 @@ function step_response()
     analyse_results(rel_power, demand_values; dt=sim.time_step)
 end
 
+function storage_vs_winddir(settings_file)
+    wind, sim, con, floris, floridyn, ta = setup(settings_file)
+    dt = sim.time_step  # seconds
+    wind_dirs = 200:2:340
+    extra_powers = Float64[]
+    storage_times = Float64[]
+    for wd in wind_dirs
+        println("\n--- Wind Direction: $(wd) ° ---")
+        rel_power, demand_values, times, wind, sim = calc_demand_and_power(settings_file, wd)
+        t1 = 600
+        t2 = 700
+        t3 = 1200
+        t4 = 1600
+        mean_peak = mean(rel_power[1+t1÷sim.time_step:1+t2÷sim.time_step])
+        mean_final = mean(rel_power[1+t3÷sim.time_step:1+t4÷sim.time_step])
+        extra_power = mean_peak - mean_final
+        storage_time = sum((rel_power[1+t1÷dt:1+t4÷dt] .- mean_final) .* dt)
+        push!(extra_powers, extra_power)
+        push!(storage_times, storage_time)
+        println("Extra power: $(round(extra_power * 100, digits=2))%")
+        println("Storage time at full power: $(round(storage_time, digits=2))s")
+    end
+    plot_rmt(wind_dirs, extra_powers .* 100; xlabel="Wind Direction [°]", ylabel="Extra Power [%]", fig="Extra Power", pltctrl)
+    plot_rmt(wind_dirs, storage_times; xlabel="Wind Direction [°]", ylabel="Storage Time at Full Power [s]", fig="Storage Time", pltctrl)
+end
+
 # Run the step response simulation
-step_response()
+# step_response()
+# Run the storage vs wind direction simulation
+storage_vs_winddir(settings_file)
