@@ -80,7 +80,6 @@ function calc_induction(cp)
 end
 
 function calc_demand(time)
-    # Example: linearly increasing demand from 0.5 to 1.0 over the simulation time
     initial_demand = 0.4
     final_demand = 0.8
     t1 = 240.0 + dt  # Time to start increasing demand
