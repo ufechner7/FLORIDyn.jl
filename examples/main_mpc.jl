@@ -1,11 +1,8 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# MainFLORIDyn Center-Line model
-# Improved FLORIDyn approach over the gaussian FLORIDyn model
-
-# Minimal example of how to run a simulation using FLORIDyn.jl 
-# for benchmarking the 54 turbine layout.
+# Main script to run a model predictive control (MPC) simulation with FLORIDyn.jl
+# using a precomputed induction matrix for feed-forward control.
 using Timers
 tic()
 using FLORIDyn, TerminalPager, DistributedNext 
@@ -81,10 +78,6 @@ for iT in 1:nT
     induction_vec = induction_factors[iT, :]
     cp_vec = 4 * induction_vec .* (1 .- induction_vec).^2
     rel_power .+= rel_speed .^3 .* cp_vec ./ cp_max
-    # if iT % 10 == 0
-    #     @info "Induction factors (turbine $iT): ", length(induction_factors[iT, :])
-    #     @info "Rel. speed (turbine $iT): ", length(rel_speed)
-    # end
 end
 rel_power ./= nT
 
