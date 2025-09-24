@@ -3,21 +3,20 @@
 
 # Calculate induction matrix for all turbines over time
 
+# This file is included by calc_induction.jl and main_mpc.jl
+# It provides the functions:
+# - calc_cp(induction)
+# - calc_induction(cp)
+# - calc_demand(time)
+# - calc_induction_per_group(turbine_group, time)
+# - calc_induction_matrix(ta, con, time_step, t_end)
+# - calc_axial_induction(ta, con, turbine, time)
+
 using FLORIDyn
 
 const cp_max = 16/27  # Betz limit
 const BETZ_INDUCTION = 1/3
 const dt = 400
-
-# Forward declarations - these functions are expected to be defined elsewhere
-# t_end - simulation end time (global variable)
-
-# Simplified calc_induction function:
-# - Reduced search space from [0,1] to [0,1/3] using BETZ_INDUCTION constraint
-# - Eliminated interval selection logic (always use [0, BETZ_INDUCTION])
-# - Reduced max iterations from 100 to 50 due to smaller search space
-# - Removed error handling for convergence since smaller space converges faster
-# - Simplified bisection logic since function is monotonic in [0, BETZ_INDUCTION]
 
 function calc_cp(induction)
     return 4 * induction * (1 - induction)^2
