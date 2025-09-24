@@ -93,17 +93,37 @@ function calc_demand(time)
 end
 
 """
-    calc_induction_per_group(turbine_group, time)
+    calc_induction_per_group(turbine_group, time; scaling = 1.22)
 
 Calculate base induction factor for a turbine group at a given time.
-Assumes no wake effects for simplicity.
+
+This function computes the baseline axial induction factor for a turbine group
+based on time-varying power demand. The calculation assumes no wake effects
+and provides the foundation for group-based wind farm control.
 
 # Arguments
-- `turbine_group`: Group ID of the turbine
+- `turbine_group`: Group ID of the turbine (typically 1-4)
 - `time`: Current simulation time [s]
+- `scaling=1.22`: Power demand scaling factor (1.247 if `USE_MPC` is enabled)
 
 # Returns
-- Base induction factor for the group
+- `Float64`: Base axial induction factor in range [0, 1/3]
+
+# Implementation Details
+The function:
+1. Calculates time-varying power demand using [`calc_demand`](@ref)
+2. Applies MPC-specific corrections if `USE_MPC` is enabled
+3. Converts demand to induction factor via power coefficient relationship
+4. Assumes uniform behavior across all turbines in the same group
+
+# Notes
+This baseline induction can be further modified by [`calc_axial_induction`](@ref)
+to include group-specific corrections and wake interactions.
+
+# See Also
+- [`calc_demand`](@ref): Time-varying power demand calculation
+- [`calc_induction`](@ref): Power coefficient to induction conversion
+- [`calc_axial_induction`](@ref): Turbine-specific induction with corrections
 """
 function calc_induction_per_group(turbine_group, time; scaling = 1.22)
     if USE_MPC
