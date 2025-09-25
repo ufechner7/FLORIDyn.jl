@@ -54,7 +54,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
     @testset "correctDir! Direction_None with 4 columns" begin
         # Setup
         set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_None(), 
-                        Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+                        Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
         wf = WindFarm(
             nT = 2,
             nOP = 2,
@@ -80,7 +80,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
     @testset "correctDir! Direction_None with 3 columns" begin
         # Setup wind farm without 4th column (no OP orientation)
         set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_None(), 
-                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
   
         wf = WindFarm(
             States_WF = [10.0 180.0 0.05; 8.5 190.0 0.06; 9.2 185.0 0.055],  # Only 3 columns
@@ -108,7 +108,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
     @testset "correctDir! Direction_None vs Direction_All comparison" begin
         # Setup for Direction_None
         set_none = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_None(), 
-                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
         wf_none = WindFarm(
             States_WF = [10.0 180.0 0.05 90.0; 8.5 190.0 0.06 100.0; 9.2 185.0 0.055 95.0],
             StartI = [2 2; 3 3],
@@ -120,7 +120,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
 
         # Setup for Direction_All (identical initial state)
         set_all = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_All(), 
-                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
         wf_all = WindFarm(
             States_WF = [10.0 180.0 0.05 90.0; 8.5 190.0 0.06 100.0; 9.2 185.0 0.055 95.0],
             StartI = [2 2; 3 3],
@@ -161,7 +161,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
         # Test with standard interpolation mode (already covered by other tests)
         # This test focuses on the function's robustness with different simulation times
         set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_None(), 
-                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
         wf = WindFarm(
             States_WF = [10.0 180.0 0.05 90.0; 8.5 190.0 0.06 100.0; 9.2 185.0 0.055 95.0],
             StartI = [2 2; 3 3],
@@ -187,7 +187,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
 
     @testset "correctDir! Direction_None return value and side effects" begin
         set = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_None(), 
-                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+                    Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
         wf = WindFarm(
             States_WF = [10.0 180.0 0.05 90.0; 8.5 190.0 0.06 100.0; 9.2 185.0 0.055 95.0],
             StartI = [2 2; 3 3],
@@ -220,7 +220,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
     @testset "correctDir! Direction_Influence basic cases" begin
         # Reuse global wind (dir_array) so phi at chosen times is 255.0
         set_infl = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_Influence(), 
-                        Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+                        Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
         sim_time = 50.0  # Within first plateau => phi = 255
 
         # Case 1: No dependencies -> raw phi applied
@@ -334,7 +334,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
     @testset "correctDir! Direction_All variants" begin
         # 4-column case
         set_all = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Constant(), Shear_PowerLaw(), Direction_All(), 
-                        Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+                        Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
         wf_a = WindFarm(
             States_WF = [10.0 180.0 0.05 90.0; 8.5 200.0 0.06 100.0; 9.2 220.0 0.055 95.0],
             StartI = [1 1; 2 2; 3 3],
@@ -413,7 +413,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
             ti = TI_array,
             shear = shear,
         )
-        set_ti_none = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Interpolation(), Shear_PowerLaw(), Direction_None(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+        set_ti_none = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Interpolation(), Shear_PowerLaw(), Direction_None(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
         t = 50.0
 
         # Case 1: 4-column States_WF, TI column initially zero
@@ -466,7 +466,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
             ti = TI_array,
             shear = shear,
         )
-        set_infl_ti = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Interpolation(), Shear_PowerLaw(), Direction_None(), Velocity_None(), TI_Influence(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+        set_infl_ti = Settings(Velocity_Constant(), Direction_Interpolation(), TI_Interpolation(), Shear_PowerLaw(), Direction_None(), Velocity_None(), TI_Influence(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
         t = 50.0
 
         # Case 1: No dependencies
@@ -533,7 +533,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
     @testset "correctVel Velocity_Influence basic cases" begin
         correction_vi = FLORIDyn.WindCorrection("Constant","Constant","Constant")
         perturbation_vi = FLORIDyn.WindPerturbation(false,0.0,false,0.0,false,0.0)
-        set_vi = Settings(Velocity_Constant(), Direction_Constant(), TI_Constant(), Shear_PowerLaw(), Direction_None(), Velocity_Influence(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+        set_vi = Settings(Velocity_Constant(), Direction_Constant(), TI_Constant(), Shear_PowerLaw(), Direction_None(), Velocity_Influence(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
         floris_dummy = FLORIDyn.Floris(
             alpha = 1.88,
             beta = 0.0,
@@ -630,7 +630,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
 
     @testset "correctVel Velocity_None basic cases" begin
         # Settings and inputs (constant velocity 9.5 m/s)
-        set_vn = Settings(Velocity_Constant(), Direction_Constant(), TI_Constant(), Shear_PowerLaw(), Direction_None(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), false, false)
+        set_vn = Settings(Velocity_Constant(), Direction_Constant(), TI_Constant(), Shear_PowerLaw(), Direction_None(), Velocity_None(), TI_None(), IterateOPs_basic(), Yaw_SOWFA(), Induction_Constant(), false, false)
         correction_vn = FLORIDyn.WindCorrection("Constant","Constant","Constant")
         perturbation_vn = FLORIDyn.WindPerturbation(false,0.0,false,0.0,false,0.0)
         wind_vn = FLORIDyn.Wind(

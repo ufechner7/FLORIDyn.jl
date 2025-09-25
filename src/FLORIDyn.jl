@@ -46,7 +46,7 @@ export getWindTiT
 export getWindSpeedT, getWindSpeedT_EnKF
 export getDataDir, getDataTI, getDataVel
 export correctDir!, correctTI!, correctVel!
-export getYaw
+export getYaw, getInduction
 
 export discretizeRotor, calcCt, States
 export prepareSimulation, importSOWFAFile, centerline!, angSOWFA2world, initSimulation
