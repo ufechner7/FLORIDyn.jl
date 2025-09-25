@@ -225,15 +225,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
             wind.dir = readdlm(path, ',', Float64)
         end
     elseif wind.input_dir == "Constant"
-        try
-            path = joinpath(data_path, "WindDirConstant.csv")
-            if !isfile(path)
-                path = joinpath(pkg_path, path)
-            end
-            wind.dir = readdlm(path, ',', Float64)
-        catch
-            push!(loadDataWarnings, "WindDirConstant.csv not found.")
-        end
+        # use fixed direction from settings if provided, wind.dir_fixed
     elseif wind.input_dir == "Interpolation_wErrorCov"
         data = readdlm(joinpath(data_path, "WindDir.csv"), ',', Float64)
         DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
@@ -245,15 +237,13 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
         wind.dir = WindDirMatrix(data, cholsig)
     elseif wind.input_dir == "Constant_wErrorCov"
-        data = readdlm(joinpath(data_path, "WindDirConstant.csv"), ',', Float64)
         DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
         _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
-        wind.dir = WindDirType(data[1], cholsig)
+        wind.dir = WindDirType(wind.dir_fixed, cholsig)
     elseif wind.input_dir == "RW_with_Mean"
-        data = readdlm(joinpath(data_path, "WindDirConstant.csv"), ',', Float64)
         DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
         _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
-        init_values = fill(data[1], nT)  # Create vector of initial values for all turbines
+        init_values = fill(wind.dir_fixed, nT)  # Create vector of initial values for all turbines
         wind.dir = WindDirTriple(init_values, cholsig, 1.0)  # MeanPull = 1.0
     else
         error("Method for wind direction $(wind.input_dir) unknown.")
@@ -370,12 +360,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     # ========== Control Setup ==========
     yaw_method = con.yaw
     if yaw_method == "Constant"
-        try
-            df = CSV.read(joinpath(data_path, "Control_YawConstant.csv"), DataFrame; header=false)
-            con.yaw_data = Matrix{Float64}(df)
-        catch
-            push!(loadDataWarnings, "Control_YawConstant.csv not found.")
-        end
+        # use constant yaw angle from settings.yaw_fixed
     elseif yaw_method == "InterpTurbine"
         try
             df = CSV.read(joinpath(data_path, "Control_YawInterpolation.csv"), DataFrame; header=false)
@@ -390,12 +375,8 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         error("Unknown yaw method: $yaw_method")
     end
 
-    # if !haskey(con, :tanhYaw)
-    #     con.tanhYaw = false
-    # end
-
     # # ========== Init State ===========
-   wf.States_OP, wf.States_T, wf.States_WF = init_states(set, wf, wind, turbProp.init_States, floris, sim)
+    wf.States_OP, wf.States_T, wf.States_WF = init_states(set, wf, wind, turbProp.init_States, floris, sim)
 
     # # ========== Simulation Setup ==========
     sim.n_sim_steps = length(sim.start_time:sim.time_step:sim.end_time)

@@ -89,19 +89,14 @@ function calc_rel_power(settings_file; dt=350, wind_dir=nothing, ti=0.062)
     # create settings struct with automatic parallel/threading detection
     set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
     if fixed_wind_dir
-        set.dir_mode = Direction_Constant()
+        set.dir_mode     = Direction_Constant()
         set.control_mode = Yaw_Constant()
     end
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     if fixed_wind_dir
-        # Ensure yaw_data exists and set the wind direction
-        if con.yaw_data === nothing || size(con.yaw_data) == (0, 0)
-            con.yaw_data = [wind_dir;;]
-        else
-            con.yaw_data[1,1] = wind_dir
-        end
-        wind.dir[1,1] = wind_dir
+        wind.dir_fixed = wind_dir
+        con.yaw_fixed  = wind_dir
     end
     if !isnothing(ti)
         wind.ti = ti

@@ -102,6 +102,8 @@ An instance of these structs needs to be passed to the functions that control tu
 Yaw_Constant
 Yaw_InterpTurbine
 Yaw_SOWFA
+Induction_Constant
+Induction_MPC
 ```
 
 ## Defining the OP iteration model
@@ -123,6 +125,7 @@ WindDirTriple
 WindVelType
 WindVelMatrix
 WindShear
+WindCorrection
 WindPerturbation
 ```
 

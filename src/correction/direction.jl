@@ -52,10 +52,9 @@ function getDataDir(set::Settings, wind::Wind, wf::WindFarm, t)
     # Reads wind data and returns the current phi for all turbines
 
     if wind.input_dir == "RW_with_Mean"
-        phi = getWindDirT(set.dir_mode,wf.States_WF[wf.StartI, 2], wind.dir)
+        phi = getWindDirT(set.dir_mode,wf.States_WF[wf.StartI, 2], wind)
     else
-        # Use a range (1:wf.nT) to avoid allocating an index vector
-        phi = getWindDirT(set.dir_mode, wind.dir, 1:wf.nT, t)
+        phi = getWindDirT(set.dir_mode, wind, 1:wf.nT, t)
     end
 
     return phi
