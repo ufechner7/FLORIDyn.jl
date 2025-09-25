@@ -3,54 +3,61 @@
 
 # Calculate induction matrix for all turbines over time
 
+# This file is included by calc_induction.jl and main_mpc.jl
+# It provides the functions:
+# - calc_cp(induction)
+# - calc_induction(cp)
+# - calc_demand(time)
+# - calc_induction_per_group(turbine_group, time)
+# - calc_induction_matrix(ta, con, time_step, t_end)
+# - calc_axial_induction(ta, con, turbine, time)
+
 using FLORIDyn
 
 const cp_max = 16/27  # Betz limit
 const BETZ_INDUCTION = 1/3
 const dt = 400
 
-# Forward declarations - these functions are expected to be defined elsewhere
-# calc_induction(cp) - calculates induction factor from power coefficient
-# t_end - simulation end time (global variable)
-
 function calc_cp(induction)
     return 4 * induction * (1 - induction)^2
 end
 
+"""
+    calc_induction(cp)
+
+Calculates the axial induction factor from the power coefficient.
+
+Since we know the induction is always in [0, BETZ_INDUCTION], we can use
+a simplified approach that only searches in the physical range.
+
+# Arguments
+- `cp::Float64`: Power coefficient (typically in range [0, 16/27])
+
+# Returns
+- `Float64`: Axial induction factor in range [0, 1/3]
+
+# Notes
+The function solves cp = 4*a*(1-a)^2 for the induction factor 'a'.
+"""
 function calc_induction(cp)
-    # Solve the equation: cp = 4*a*(1-a)^2 for induction factor 'a'
-    
-    # Check if cp is within valid range
-    if cp < 0 || cp > cp_max
-        error("cp value $cp is outside valid range [0, $(cp_max)]")
-    end
-    
-    # Special cases
-    if cp ≈ 0
+    # Handle edge cases
+    if cp <= 0
         return 0.0
-    elseif cp ≈ cp_max
+    elseif cp >= cp_max
         return BETZ_INDUCTION
     end
     
-    # Use a simple bisection method which is more robust
-    f(a) = 4*a*(1-a)^2 - cp
+    # Since we know a ∈ [0, BETZ_INDUCTION], use simplified bisection
+    # Define the function f(a) = 4*a*(1-a)² - cp
+    f(a) = 4 * a * (1 - a)^2 - cp
     
-    # Find the interval containing the root
-    # We know the function has roots in [0, BETZ_INDUCTION] and [BETZ_INDUCTION, 1] for most cp values
-    a_low, a_high = 0.0, 1.0
+    # Only search in the physical range [0, BETZ_INDUCTION]
+    a_low = 0.0
+    a_high = BETZ_INDUCTION
     
-    # Check if we need to search in the lower or upper interval
-    if f(BETZ_INDUCTION) >= 0
-        # Root is in [0, BETZ_INDUCTION]
-        a_high = BETZ_INDUCTION
-    else
-        # Root is in [BETZ_INDUCTION, 1]
-        a_low = BETZ_INDUCTION
-    end
-    
-    # Bisection method
+    # Simplified bisection method
     tolerance = 1e-12
-    max_iterations = 100
+    max_iterations = 50  # Reduced since smaller search space
     
     for i in 1:max_iterations
         a_mid = (a_low + a_high) / 2
@@ -60,14 +67,11 @@ function calc_induction(cp)
             return a_mid
         end
         
-        if f(a_low) * f_mid < 0
+        # Since f is monotonic in [0, BETZ_INDUCTION], use simple comparison
+        if f_mid > 0
             a_high = a_mid
         else
             a_low = a_mid
-        end
-        
-        if i == max_iterations
-            error("Bisection method did not converge for cp=$cp")
         end
     end
     
@@ -83,7 +87,6 @@ function calc_demand(time)
             return 0.999
         end
     else
-        # Example: linearly increasing demand from 0.5 to 1.0 over the simulation time
         initial_demand = 0.4
         final_demand = 0.8
         t1 = 240.0 + dt  # Time to start increasing demand
@@ -99,17 +102,37 @@ function calc_demand(time)
 end
 
 """
-    calc_induction_per_group(turbine_group, time)
+    calc_induction_per_group(turbine_group, time; scaling = 1.22)
 
 Calculate base induction factor for a turbine group at a given time.
-Assumes no wake effects for simplicity.
+
+This function computes the baseline axial induction factor for a turbine group
+based on time-varying power demand. The calculation assumes no wake effects
+and provides the foundation for group-based wind farm control.
 
 # Arguments
-- `turbine_group`: Group ID of the turbine
+- `turbine_group`: Group ID of the turbine (typically 1-4)
 - `time`: Current simulation time [s]
+- `scaling=1.22`: Power demand scaling factor (1.247 if `USE_MPC` is enabled)
 
 # Returns
-- Base induction factor for the group
+- `Float64`: Base axial induction factor in range [0, 1/3]
+
+# Implementation Details
+The function:
+1. Calculates time-varying power demand using [`calc_demand`](@ref)
+2. Applies MPC-specific corrections if `USE_MPC` is enabled
+3. Converts demand to induction factor via power coefficient relationship
+4. Assumes uniform behavior across all turbines in the same group
+
+# Notes
+This baseline induction can be further modified by [`calc_axial_induction`](@ref)
+to include group-specific corrections and wake interactions.
+
+# See Also
+- [`calc_demand`](@ref): Time-varying power demand calculation
+- [`calc_induction`](@ref): Power coefficient to induction conversion
+- [`calc_axial_induction`](@ref): Turbine-specific induction with corrections
 """
 function calc_induction_per_group(turbine_group, time; scaling = 1.22)
     if USE_MPC

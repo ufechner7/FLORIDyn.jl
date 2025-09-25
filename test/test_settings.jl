@@ -871,7 +871,7 @@ vis:
                 
                 # No call should be extremely slow
                 max_time = maximum(times)
-                @test max_time < 100.0  # No call should take more than 100ms
+                @test max_time < 10.0  # No call should take more than 10ms
             end
         end
     end
