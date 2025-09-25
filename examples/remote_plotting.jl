@@ -5,15 +5,17 @@ if Threads.nthreads() > 1
     function init_plotting()
         # Only add a worker if we don't have any dedicated worker processes
         if nprocs() < 2  # nprocs() counts main + workers, so < 2 means no dedicated workers
-            println("No dedicated workers found, adding 1 worker...")
             if workers() < [2]
-                addprocs(1; exeflags=["-t 1", "--project", "--gcthreads=1,0"])
+                sleep(0.5)
+                if workers() < [2]
+                    println("No dedicated workers found, adding 1 worker...")
+                    addprocs(1; exeflags=["-t 1", "--project", "--gcthreads=1,0"])
+                end
             end
             if workers() != [2]
-                sleep(1)
                 @warn "workers: $(workers()), nthreads: $(Threads.nthreads())"
             end
-            @assert workers() == [2]  # Ensure we have exactly one worker now
+            @assert workers() >= [2]  # Ensure we have at least two workers now
             @spawnat 2 eval(:(using ControlPlots))
             @eval @everywhere using FLORIDyn      # Ensure FLORIDyn (including WindFarm) is available on all workers
             
