@@ -45,7 +45,7 @@ export getWindShearT
 export getWindTiT
 export getWindSpeedT, getWindSpeedT_EnKF
 export getDataDir, getDataTI, getDataVel
-export correctDir!
+export correctDir!, correctTI!, correctVel!
 export getYaw, getInduction
 
 export discretizeRotor, calcCt, States
