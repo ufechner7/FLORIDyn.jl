@@ -18,6 +18,9 @@ USE_STEP = true
 USE_FEED_FORWARD = true
 USE_MPC = false  # If false, use simple step control
 ONLINE = false
+PLOT_STEP_RESPONSE = true
+PLOT_STORAGE_VS_WINDDIR = false
+
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -175,6 +178,10 @@ function storage_vs_winddir(settings_file)
 end
 
 # Run the step response simulation
-# step_response()
+if PLOT_STEP_RESPONSE
+    step_response()
+end
 # Run the storage vs wind direction simulation
-storage_vs_winddir(settings_file)
+if PLOT_STORAGE_VS_WINDDIR
+    storage_vs_winddir(settings_file)
+end
