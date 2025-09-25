@@ -17,7 +17,7 @@ abstract type VelCorrection end
     Velocity_Influence <: VelCorrection
 
 Marker struct selecting the influence-based free-stream velocity correction implemented in
-`correctVel(::Velocity_Influence, ...)`. See that function's docstring for algorithm details.
+`correctVel!(::Velocity_Influence, ...)`. See that function's docstring for algorithm details.
 
 # WARNING:
 This correction method is not properly tested. Use at your own risk!

@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-    correctVel(::Velocity_None, set, wf, wind, t, floris, tmpM)
+    correctVel!(::Velocity_None, set, wf, wind, t, floris, tmpM)
 
 No-op velocity correction: simply overwrites the free-stream wind speed state (first column
 of `wf.States_WF`) with the base velocities returned by `getDataVel` for each turbine.
@@ -10,7 +10,7 @@ of `wf.States_WF`) with the base velocities returned by `getDataVel` for each tu
 Returns the mutated `wf` and (potentially updated) `wind` for API symmetry with influence
 correction. Used when `set.cor_vel_mode isa Velocity_None`.
 """
-function correctVel(::Velocity_None, set, wf, Wind, SimTime, paramFLORIS, tmpM)
+function correctVel!(::Velocity_None, set, wf, Wind, SimTime, paramFLORIS, tmpM)
     # Get data
     U, Wind = getDataVel(set, Wind, wf, SimTime, tmpM, paramFLORIS)
 
@@ -21,7 +21,7 @@ function correctVel(::Velocity_None, set, wf, Wind, SimTime, paramFLORIS, tmpM)
 end
 
 """
-    correctVel(::Velocity_Influence, set::Settings, wf::WindFarm, wind::Wind, t, floris, tmpM)
+    correctVel!(::Velocity_Influence, set::Settings, wf::WindFarm, wind::Wind, t, floris, tmpM)
 
 Apply influence-based wind velocity correction where each turbine's wind speed depends on
 upstream operational points through dependency relationships and interpolation weights.
@@ -67,7 +67,7 @@ wind farm state matrix (`wf.States_WF[:, 1]`).
 # Single influence case - turbine 1 influenced by OPs at indices 2 and 4
 wf.dep[1] = [2, 4]
 wf.intOPs[1] = [2 0.4 4 0.6]  # 40% from OP 2, 60% from OP 4
-wf_updated, wind_updated = correctVel(Velocity_Influence(), settings, wf, wind, 100.0, floris, tmpM)
+wf_updated, wind_updated = correctVel!(Velocity_Influence(), settings, wf, wind, 100.0, floris, tmpM)
 
 # Multiple influence case with weighted combination
 wf.dep[2] = [1, 3, 5]
@@ -96,7 +96,7 @@ wf_updated, wind_updated = correctVel(Velocity_Influence(), settings, wf, wind, 
 
 # See also
 - [`getDataVel`](@ref): Function for retrieving ambient wind velocity data
-- [`correctVel(::Velocity_None, ...)`](@ref): Simpler velocity correction without influence
+- [`correctVel!(::Velocity_None, ...)`](@ref): Simpler velocity correction without influence
 - [`Settings`](@ref): Simulation settings structure containing velocity mode
 - [`WindFarm`](@ref): Wind farm configuration structure with dependency data
 - [`Wind`](@ref): Wind field data structure
@@ -105,7 +105,7 @@ wf_updated, wind_updated = correctVel(Velocity_Influence(), settings, wf, wind, 
 # WARNING:
 This correction method is not properly tested. Use at your own risk!
 """
-function correctVel(::Velocity_Influence, set::Settings, wf::WindFarm, wind::Wind, t, floris, tmpM)
+function correctVel!(::Velocity_Influence, set::Settings, wf::WindFarm, wind::Wind, t, floris, tmpM)
     # Base free wind speeds (may update wind state depending on mode)
     u, wind = getDataVel(set, wind, wf, t, tmpM, floris)
 

@@ -573,7 +573,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
             dep = [Int[], Int[]],
             Weight = Vector{Float64}[],
         )
-    FLORIDyn.correctVel(Velocity_Influence(), set_vi, wf_v1, wind_vi, 10.0, floris_dummy, tmpM)
+    FLORIDyn.correctVel!(Velocity_Influence(), set_vi, wf_v1, wind_vi, 10.0, floris_dummy, tmpM)
         @test all(isapprox.(wf_v1.States_WF[:,1], 8.0; atol=1e-8))
 
         # Case 2: Single-row interpolation for turbine 1
@@ -590,7 +590,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
         # Expected uses pre-correction states
         pre2 = copy(wf_v2.States_WF[:,1])
         exp2 = pre2[1]*0.25 + pre2[2]*0.75
-        FLORIDyn.correctVel(Velocity_Influence(), set_vi, wf_v2, wind_vi, 10.0, floris_dummy, tmpM)
+        FLORIDyn.correctVel!(Velocity_Influence(), set_vi, wf_v2, wind_vi, 10.0, floris_dummy, tmpM)
         @test isapprox(wf_v2.States_WF[1,1], exp2; atol=1e-8)
 
         # Case 3: Multi-row with weights
@@ -609,7 +609,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
     row1 = 8.0*0.4 + pre3[2]*0.6            # indices 1 (after correction) and 2 (pre-correction)
     row2 = pre3[2]*0.3 + pre3[3]*0.7        # indices 2 and 3 pre-correction
     exp3 = (0.2*row1 + 0.8*row2)/(0.2+0.8)
-    FLORIDyn.correctVel(Velocity_Influence(), set_vi, wf_v3, wind_vi, 10.0, floris_dummy, tmpM)
+    FLORIDyn.correctVel!(Velocity_Influence(), set_vi, wf_v3, wind_vi, 10.0, floris_dummy, tmpM)
     @test isapprox(wf_v3.States_WF[2,1], exp3; atol=1e-8)
 
         # Case 4: Zero weights fallback
@@ -623,7 +623,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
             dep = [ Int[], [1,2] ],
             Weight = [ Float64[], [0.0] ],
         )
-        FLORIDyn.correctVel(Velocity_Influence(), set_vi, wf_v4, wind_vi, 10.0, floris_dummy, tmpM)
+        FLORIDyn.correctVel!(Velocity_Influence(), set_vi, wf_v4, wind_vi, 10.0, floris_dummy, tmpM)
         @test isapprox(wf_v4.States_WF[2,1], 8.0; atol=1e-8)
     end
 
@@ -660,7 +660,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
             D = [120.0,120.0],
             intOPs = Matrix{Float64}[],
         )
-        ret_wf4, ret_wind4 = FLORIDyn.correctVel(Velocity_None(), set_vn, wf4, wind_vn, 100.0, floris_dummy, tmpM)
+        ret_wf4, ret_wind4 = FLORIDyn.correctVel!(Velocity_None(), set_vn, wf4, wind_vn, 100.0, floris_dummy, tmpM)
         @test ret_wf4 === wf4
         @test ret_wind4 === wind_vn
         @test all(isapprox.(wf4.States_WF[:,1], 9.5; atol=1e-8))
@@ -678,7 +678,7 @@ sim_time = 20600.0  # default simulation time for initial direction tests
             D = [120.0,120.0,120.0],
             intOPs = Matrix{Float64}[],
         )
-        FLORIDyn.correctVel(Velocity_None(), set_vn, wf3, wind_vn, 250.0, floris_dummy, ones(3,1))
+        FLORIDyn.correctVel!(Velocity_None(), set_vn, wf3, wind_vn, 250.0, floris_dummy, ones(3,1))
         @test all(isapprox.(wf3.States_WF[:,1], 9.5; atol=1e-8))
         @test size(wf3.States_WF,2) == 3  # still 3 columns
         @test wf3.States_WF[:,2] == [180.0,190.0,185.0]
