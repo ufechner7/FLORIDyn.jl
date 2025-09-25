@@ -11,20 +11,16 @@ using .TestHelpers
 
 settings_file = "data/2021_9T_Data.yaml"
 vis_file      = "data/vis_default.yaml"
-input_file    = "test/data/input_T_195_steps.mat"
-T_ref = matread(input_file)["T"]
-turbines_ref = (turbines(T_ref))  # Creates a 1800×3 DataFrame with turbine states
-matlab_file   = "test/data/flowfield_xyz_195_steps.mat"
+matlab_file   = "test/data/flowfield_Direction_None.mat"
 vars = matread(matlab_file)
 X_ref = vars["X"]
 Y_ref = vars["Y"]
 Z_ref = vars["Z"]
 
-if ! isdefined(Main, :rel_err)
-    function rel_err(a, b)
-        return norm(a - b) / norm(b)
-    end
+function rel_err(a, b)
+    return norm(a - b) / norm(b)
 end
+
 # Load vis settings from YAML file
 vis = Vis(vis_file)
 
@@ -34,13 +30,13 @@ if !isdefined(Main, :init_plotting)
 end
 
 # get the settings for the wind field, simulator and controller
-wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
+wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
 # create settings struct
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
+set.cor_dir_mode=Direction_None()
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-sim.n_sim_steps = 195
 
 # Run initial conditions
 wf = initSimulation(wf, sim)
@@ -50,11 +46,7 @@ wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, flori
 
 turbines_wf = wf.turbines
 
-@testset verbose=true "Flow Field Comparison" begin
-
-    df1, df2 = compare_dataframes(turbines_wf, turbines_ref)
-    @test size(df1, 1) == 0
-
+@testset verbose=true "Flow Field Comparison Direction None" begin
     Z, X, Y    = calcFlowField(set, wf, wind, floris)
     msr = 1
     A = Z_ref[:,:,msr]

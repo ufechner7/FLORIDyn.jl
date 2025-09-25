@@ -819,7 +819,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         vm_int[it] = wf.red_arr
 
         # ========== wind field corrections ==========
-        wf, wind = correctVel(set.cor_vel_mode, set, wf, wind, sim_time, floris, @view(tmpM[1:nT, :]))
+        wf, wind = correctVel!(set.cor_vel_mode, set, wf, wind, sim_time, floris, @view(tmpM[1:nT, :]))
         correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
         correctTI!(set.cor_turb_mode, set, wf, wind, sim_time)
 
