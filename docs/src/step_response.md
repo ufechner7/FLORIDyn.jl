@@ -17,3 +17,5 @@ Storage time at full power: 50.96s
 ```
 
 ## TODO
+- plot the step response for different wind directions
+- double check that peak power and final power are always calculated correctly
