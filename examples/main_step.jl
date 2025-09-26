@@ -21,7 +21,7 @@ ONLINE = false
 PLOT_STEP_RESPONSE = true
 PLOT_STORAGE_VS_WINDDIR = false
 WIND_DIR = 270.0-45  # Wind direction for step response simulation
-WIND_DIRS = 200:5:340
+WIND_DIRS = 200:20:340
 
 
 # Load vis settings from YAML file
@@ -112,9 +112,10 @@ function analyse_results(rel_power, demand_values; dt=sim.time_step)
 end
 
 function step_response(wind_dirs=WIND_DIRS)
+    # First, calculate for the single WIND_DIR for detailed analysis
     rel_power, demand_values, times, wind, sim = calc_demand_and_power(settings_file; wind_dir=WIND_DIR)
 
-    plot_rmt(times, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(dt, 1200+dt),
+    plot_rmt(times, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(sim.time_step, 1200+sim.time_step),
             ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
 
     # Calculate Mean Square Error between rel_power and demand_values
@@ -151,6 +152,36 @@ function step_response(wind_dirs=WIND_DIRS)
     end
 
     analyse_results(rel_power, demand_values; dt=sim.time_step)
+
+    # Now calculate and plot relative power for all wind directions
+    println("\n--- Calculating relative power for all wind directions ---")
+    
+    # Storage for results  
+    all_rel_powers = Vector{Float64}[]  # Properly typed as Vector of Vector{Float64}
+    labels = String[]
+    
+    # Add demand curve for reference
+    push!(all_rel_powers, demand_values .* 100)
+    push!(labels, "demand")
+    
+    # Calculate for each wind direction
+    for wd in wind_dirs
+        println("Processing wind direction: $(wd)°")
+        rel_power_wd, _, _, _, _ = calc_demand_and_power(settings_file; wind_dir=wd)
+        push!(all_rel_powers, rel_power_wd .* 100)
+        push!(labels, "$(wd)°")
+    end
+    
+    # Plot all relative power curves
+    plot_rmt(times, all_rel_powers; 
+             xlabel="Time [s]", 
+             xlims=(sim.time_step, 1200+sim.time_step),
+             ylabel="Rel. Power Output [%]", 
+             labels=labels, 
+             fig="Step Response - All Wind Directions",
+             pltctrl=pltctrl)
+             
+    println("Completed step response analysis for all wind directions: $(collect(wind_dirs))°")
 end
 
 function storage_vs_winddir(settings_file; wind_dirs= WIND_DIRS)
