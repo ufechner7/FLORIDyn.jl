@@ -2,6 +2,9 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Calculate axial induction factor, and calculate the demand
+# TODO: make plotting thread safe
+# TODO: fix naming of turbine groups
+# TODO: rename MPC to TGC
 
 using FLORIDyn, ControlPlots, YAML
 
@@ -9,6 +12,7 @@ include("calc_induction_matrix.jl")
 
 USE_MPC = true
 USE_FEED_FORWARD = true
+USE_STEP = false
 
 settings_file = get_default_project()[2]
 
