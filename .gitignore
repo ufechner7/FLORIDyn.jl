@@ -14,3 +14,4 @@ out/
 data/default.yaml
 .zenodo_minimal.json
 docs/src/step_response.pdf
+data/step_response.jld2
