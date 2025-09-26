@@ -18,11 +18,14 @@ USE_STEP = true
 USE_FEED_FORWARD = true
 USE_MPC = false  # If false, use simple step control
 ONLINE = false
-PLOT_STEP_RESPONSE = true
-PLOT_STORAGE_VS_WINDDIR = false
+PLOT_STEP_RESPONSE = false
+PLOT_STORAGE_VS_WINDDIR = true
 WIND_DIR = 270.0  # Wind direction for step response simulation
-WIND_DIRS = 200:10:340
-
+if PLOT_STEP_RESPONSE
+    WIND_DIRS = 200:10:340  # Wind directions for step response simulation
+else
+    WIND_DIRS = 200:1:340  # Wind directions for storage vs wind direction simulation
+end
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -232,8 +235,8 @@ function storage_vs_winddir(settings_file; wind_dirs= WIND_DIRS)
     extra_powers = Float64[]
     storage_times = Float64[]
     for wd in wind_dirs
-        println("\n--- Wind Direction: $(wd) ° ---")
-        rel_power, demand_values, times, wind, sim = calc_demand_and_power(settings_file, wd)
+            println("\n--- Wind Direction: $(wd) ° ---")
+            rel_power, demand_values, times, wind, sim = calc_demand_and_power(settings_file; wind_dir=wd)
         t1 = 600
         t2 = 700
         t3 = 1200
