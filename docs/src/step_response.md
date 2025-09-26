@@ -19,3 +19,4 @@ Storage time at full power: 50.96s
 ## TODO
 - plot the step response for different wind directions
 - double check that peak power and final power are always calculated correctly
+- make sure the script document_examples creates the required png files by running the examples
