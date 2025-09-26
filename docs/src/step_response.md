@@ -24,3 +24,13 @@ Storage time at full power: 50.96s
 
 ![Step Response](step_response_all_wind_directions.png){ width=80% }
 
+\newpage
+
+### Extra Power vs Wind Direction
+
+![Extra Power vs Wind Direction](extra_power_vs_wind_dir.png){ width=69% }
+
+### Storage Time vs Wind Direction
+
+![Storage Time vs Wind Direction](storage_time_vs_wind_dir.png){ width=69% }
+
