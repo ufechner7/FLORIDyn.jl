@@ -20,7 +20,7 @@ USE_MPC = false  # If false, use simple step control
 ONLINE = false
 PLOT_STEP_RESPONSE = true
 PLOT_STORAGE_VS_WINDDIR = false
-WIND_DIR = 270.0-45  # Wind direction for step response simulation
+WIND_DIR = 270.0  # Wind direction for step response simulation
 WIND_DIRS = 200:10:340
 
 
@@ -115,8 +115,9 @@ function step_response(wind_dirs=WIND_DIRS)
     # First, calculate for the single WIND_DIR for detailed analysis
     rel_power, demand_values, times, wind, sim = calc_demand_and_power(settings_file; wind_dir=WIND_DIR)
 
-    plot_rmt(times, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(sim.time_step, 1200+sim.time_step),
-            ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
+    plot_rmt(times, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", 
+             xlims=(sim.time_step, 1200+sim.time_step), ylabel="Rel. Power Output [%]", 
+             labels=["rel_power", "rel_demand"], fig="Step Response - Wind Dir $(WIND_DIR)°", pltctrl)
 
     # Calculate Mean Square Error between rel_power and demand_values
     mse = sum((rel_power[101:end] .- demand_values[101:end]).^2) / length(rel_power[101:end])
