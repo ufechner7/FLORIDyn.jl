@@ -9,6 +9,7 @@ include("calc_induction_matrix.jl")
 
 USE_MPC = true
 USE_FEED_FORWARD = true
+USE_STEP = false
 
 settings_file = get_default_project()[2]
 
