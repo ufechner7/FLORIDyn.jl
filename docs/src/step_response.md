@@ -2,6 +2,8 @@
 
 This test case can be used to estimate the peak power and integrated energy that a wind field can store to better meet the demand of the grid.
 
+## Test case for wind_dir = 270 degrees
+
 ![Step Response](step_response_wind_dir_270.0.png){ width=80% }
 
 ```
@@ -16,7 +18,9 @@ Extra power:          22.42%
 Storage time at full power: 50.96s
 ```
 
-## TODO
-- plot the step response for different wind directions
-- double check that peak power and final power are always calculated correctly
-- make sure the script document_examples creates the required png files by running the examples
+\newpage
+
+## Test with wind_dir = 200 .. 340 degrees
+
+![Step Response](step_response_all_wind_directions.png){ width=80% }
+

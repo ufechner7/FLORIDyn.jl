@@ -190,7 +190,7 @@ function step_response(wind_dirs=WIND_DIRS)
     # Plot all relative power curves
     plot_rmt(times, all_rel_powers; 
              xlabel="Time [s]", 
-             xlims=(sim.time_step, 1200+sim.time_step),
+             xlims=(400+sim.time_step, 1200+sim.time_step),
              ylabel="Rel. Power Output [%]", 
              labels=labels, 
              fig="Step Response - All Wind Directions",
