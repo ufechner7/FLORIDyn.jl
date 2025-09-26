@@ -251,8 +251,35 @@ function storage_vs_winddir(settings_file; wind_dirs= WIND_DIRS)
         println("Extra power: $(round(extra_power * 100, digits=2))%")
         println("Storage time at full power: $(round(storage_time, digits=2))s")
     end
-    plot_rmt(wind_dirs, extra_powers .* 100; xlabel="Wind Direction [°]", ylabel="Extra Power [%]", fig="Extra Power", pltctrl)
-    plot_rmt(wind_dirs, storage_times; xlabel="Wind Direction [°]", ylabel="Storage Time at Full Power [s]", fig="Storage Time", pltctrl)
+    plot_rmt(wind_dirs, extra_powers .* 100; xlabel="Wind Direction [°]", ylabel="Extra Power [%]", fig="Extra Power", pltctrl=pltctrl)
+    
+    # Save the extra power plot
+    if pltctrl !== nothing
+        filename_extra = "docs/src/extra_power_vs_wind_dir.png"
+        mkpath(dirname(filename_extra))
+        try
+            pltctrl.plt.savefig(filename_extra, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
+            println("Saved plot: $filename_extra")
+        catch e
+            @warn "Failed to save extra power plot: $e"
+        end
+    end
+    
+    plot_rmt(wind_dirs, storage_times; xlabel="Wind Direction [°]", ylabel="Storage Time at Full Power [s]", fig="Storage Time", pltctrl=pltctrl)
+    
+    # Save the storage time plot
+    if pltctrl !== nothing
+        filename_storage = "docs/src/storage_time_vs_wind_dir.png"
+        mkpath(dirname(filename_storage))
+        try
+            pltctrl.plt.savefig(filename_storage, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
+            println("Saved plot: $filename_storage")
+        catch e
+            @warn "Failed to save storage time plot: $e"
+        end
+    else
+        @warn "Saving the plot only works in single-threaded mode, launch Julia with jl2!"
+    end
 end
 
 # Run the step response simulation
