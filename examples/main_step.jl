@@ -116,8 +116,22 @@ function step_response(wind_dirs=WIND_DIRS)
     rel_power, demand_values, times, wind, sim = calc_demand_and_power(settings_file; wind_dir=WIND_DIR)
 
     plot_rmt(times, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", 
-             xlims=(sim.time_step, 1200+sim.time_step), ylabel="Rel. Power Output [%]", 
-             labels=["rel_power", "rel_demand"], fig="Step Response - Wind Dir $(WIND_DIR)°", pltctrl)
+             xlims=(400+sim.time_step, 1200+sim.time_step), ylabel="Rel. Power Output [%]", 
+             labels=["rel_power", "rel_demand"], fig="Step Response - Wind Dir $(WIND_DIR)°", pltctrl=pltctrl)
+
+    # Save the first plot
+    if pltctrl !== nothing
+        filename1 = "docs/src/step_response_wind_dir_$(WIND_DIR).png"
+        mkpath(dirname(filename1))
+        try
+            pltctrl.plt.savefig(filename1, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
+            println("Saved plot: $filename1")
+        catch e
+            @warn "Failed to save plot: $e"
+        end
+    else
+        @warn "Saving the plot only works in single-threaded mode, launch Julia with jl2!"
+    end
 
     # Calculate Mean Square Error between rel_power and demand_values
     mse = sum((rel_power[101:end] .- demand_values[101:end]).^2) / length(rel_power[101:end])
@@ -181,8 +195,35 @@ function step_response(wind_dirs=WIND_DIRS)
              labels=labels, 
              fig="Step Response - All Wind Directions",
              pltctrl=pltctrl)
+
+    # Save the second plot
+    if pltctrl !== nothing
+        filename2 = "docs/src/step_response_all_wind_directions.png"
+        mkpath(dirname(filename2))
+        try
+            pltctrl.plt.savefig(filename2, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
+            println("Saved plot: $filename2")
+        catch e
+            @warn "Failed to save plot: $e"
+        end
+    end
              
     println("Completed step response analysis for all wind directions: $(collect(wind_dirs))°")
+    
+    # Execute the documentation script
+    println("\n--- Generating documentation ---")
+    try
+        # Change to the project root directory and execute the documentation script
+        script_path = joinpath(pwd(), "bin", "document_examples")
+        if isfile(script_path)
+            run(`bash $script_path`)
+            println("Documentation generated successfully")
+        else
+            @warn "Documentation script not found at: $script_path"
+        end
+    catch e
+        @warn "Failed to execute documentation script: $e"
+    end
 end
 
 function storage_vs_winddir(settings_file; wind_dirs= WIND_DIRS)

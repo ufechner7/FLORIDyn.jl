@@ -2,7 +2,7 @@
 
 This test case can be used to estimate the peak power and integrated energy that a wind field can store to better meet the demand of the grid.
 
-![Step Response](step_response.png){ width=80% }
+![Step Response](step_response_wind_dir_270.0.png){ width=80% }
 
 ```
 --- Wind Conditions ---
