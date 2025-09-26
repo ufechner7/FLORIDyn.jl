@@ -21,7 +21,7 @@ ONLINE = false
 PLOT_STEP_RESPONSE = true
 PLOT_STORAGE_VS_WINDDIR = false
 WIND_DIR = 270.0-45  # Wind direction for step response simulation
-WIND_DIRS = 200:20:340
+WIND_DIRS = 200:10:340
 
 
 # Load vis settings from YAML file
