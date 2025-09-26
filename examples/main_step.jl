@@ -8,7 +8,8 @@
 # for benchmarking the 54 turbine layout.
 using Timers
 tic()
-using FLORIDyn, TerminalPager, DistributedNext, Statistics 
+using FLORIDyn, TerminalPager, DistributedNext, Statistics
+using JLD2: jldsave, load
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
@@ -26,6 +27,7 @@ if PLOT_STEP_RESPONSE
 else
     WIND_DIRS = 200:1:340  # Wind directions for storage vs wind direction simulation
 end
+SAVE_PLOTS = false  # Save plots to docs/src/
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -123,7 +125,7 @@ function step_response(wind_dirs=WIND_DIRS)
              labels=["rel_power", "rel_demand"], fig="Step Response - Wind Dir $(WIND_DIR)°", pltctrl=pltctrl)
 
     # Save the first plot
-    if pltctrl !== nothing
+    if SAVE_PLOTS && pltctrl !== nothing
         filename1 = "docs/src/step_response_wind_dir_$(WIND_DIR).png"
         mkpath(dirname(filename1))
         try
@@ -132,7 +134,7 @@ function step_response(wind_dirs=WIND_DIRS)
         catch e
             @warn "Failed to save plot: $e"
         end
-    else
+    elseif SAVE_PLOTS
         @warn "Saving the plot only works in single-threaded mode, launch Julia with jl2!"
     end
 
@@ -200,7 +202,7 @@ function step_response(wind_dirs=WIND_DIRS)
              pltctrl=pltctrl)
 
     # Save the second plot
-    if pltctrl !== nothing
+    if SAVE_PLOTS && pltctrl !== nothing
         filename2 = "docs/src/step_response_all_wind_directions.png"
         mkpath(dirname(filename2))
         try
@@ -209,6 +211,8 @@ function step_response(wind_dirs=WIND_DIRS)
         catch e
             @warn "Failed to save plot: $e"
         end
+    elseif SAVE_PLOTS
+        @warn "Saving the plot only works in single-threaded mode, launch Julia with jl2!"
     end
              
     println("Completed step response analysis for all wind directions: $(collect(wind_dirs))°")
@@ -230,31 +234,80 @@ function step_response(wind_dirs=WIND_DIRS)
 end
 
 function storage_vs_winddir(settings_file; wind_dirs= WIND_DIRS)
-    wind, sim, con, floris, floridyn, ta = setup(settings_file)
-    dt = sim.time_step  # seconds
-    extra_powers = Float64[]
-    storage_times = Float64[]
-    for wd in wind_dirs
+    # Check if saved data exists
+    data_file = "data/step_response.jld2"
+    
+    if isfile(data_file)
+        println("Loading existing data from $data_file...")
+        try
+            results = load(data_file, "results")
+            wind_dirs_saved = results["wind_dirs"]
+            extra_powers = results["extra_powers"]
+            storage_times = results["storage_times"]
+            
+            # Check if the saved wind directions match the requested ones
+            if wind_dirs_saved == collect(wind_dirs)
+                println("Using cached results for wind directions: $(wind_dirs_saved[1])° to $(wind_dirs_saved[end])°")
+            else
+                println("Wind directions mismatch. Recalculating...")
+                throw(ArgumentError("Wind directions don't match"))
+            end
+        catch e
+            println("Failed to load data ($e). Recalculating...")
+            wind_dirs_saved = nothing
+            extra_powers = Float64[]
+            storage_times = Float64[]
+        end
+    else
+        println("No existing data found. Calculating...")
+        wind_dirs_saved = nothing
+        extra_powers = Float64[]
+        storage_times = Float64[]
+    end
+    
+    # Calculate data if not loaded from file
+    if isnothing(wind_dirs_saved)
+        wind, sim, con, floris, floridyn, ta = setup(settings_file)
+        dt = sim.time_step  # seconds
+        
+        for wd in wind_dirs
             println("\n--- Wind Direction: $(wd) ° ---")
             rel_power, demand_values, times, wind, sim = calc_demand_and_power(settings_file; wind_dir=wd)
-        t1 = 600
-        t2 = 700
-        t3 = 1200
-        t4 = 1600
-        mean_peak = mean(rel_power[1+t1÷sim.time_step:1+t2÷sim.time_step])
-        @assert mean_peak > 0.98 "Mean peak power < 98%"
-        mean_final = mean(rel_power[1+t3÷sim.time_step:1+t4÷sim.time_step])
-        extra_power = mean_peak - mean_final
-        storage_time = sum((rel_power[1+t1÷dt:1+t4÷dt] .- mean_final) .* dt)
-        push!(extra_powers, extra_power)
-        push!(storage_times, storage_time)
-        println("Extra power: $(round(extra_power * 100, digits=2))%")
-        println("Storage time at full power: $(round(storage_time, digits=2))s")
+            t1 = 600
+            t2 = 700
+            t3 = 1200
+            t4 = 1600
+            mean_peak = mean(rel_power[1+t1÷sim.time_step:1+t2÷sim.time_step])
+            @assert mean_peak > 0.98 "Mean peak power < 98%"
+            mean_final = mean(rel_power[1+t3÷sim.time_step:1+t4÷sim.time_step])
+            extra_power = mean_peak - mean_final
+            storage_time = sum((rel_power[1+t1÷dt:1+t4÷dt] .- mean_final) .* dt)
+            push!(extra_powers, extra_power)
+            push!(storage_times, storage_time)
+            println("Extra power: $(round(extra_power * 100, digits=2))%")
+            println("Storage time at full power: $(round(storage_time, digits=2))s")
+        end
+        
+        # Save the calculated data
+        println("Saving results to $data_file...")
+        try
+            mkpath(dirname(data_file))
+            results = Dict(
+                "wind_dirs" => collect(wind_dirs),
+                "extra_powers" => extra_powers,
+                "storage_times" => storage_times
+            )
+            jldsave(data_file; results)
+            println("Data saved successfully")
+        catch e
+            @warn "Failed to save data: $e"
+        end
     end
-    plot_rmt(wind_dirs, extra_powers .* 100; xlabel="Wind Direction [°]", ylabel="Extra Power [%]", fig="Extra Power", pltctrl=pltctrl)
+    plot_rmt(wind_dirs, extra_powers .* 100; xlabel="Wind Direction [°]", ylabel="Extra Power [%]", fig="Extra Power", 
+             pltctrl)
     
     # Save the extra power plot
-    if pltctrl !== nothing
+    if SAVE_PLOTS && pltctrl !== nothing
         filename_extra = "docs/src/extra_power_vs_wind_dir.png"
         mkpath(dirname(filename_extra))
         try
@@ -263,12 +316,15 @@ function storage_vs_winddir(settings_file; wind_dirs= WIND_DIRS)
         catch e
             @warn "Failed to save extra power plot: $e"
         end
+    elseif SAVE_PLOTS
+        @warn "Saving the plot only works in single-threaded mode, launch Julia with jl2!"
     end
     
-    plot_rmt(wind_dirs, storage_times; xlabel="Wind Direction [°]", ylabel="Storage Time at Full Power [s]", fig="Storage Time", pltctrl=pltctrl)
+    plot_rmt(wind_dirs, storage_times; xlabel="Wind Direction [°]", ylabel="Storage Time at Full Power [s]", 
+             fig="Storage Time", pltctrl=pltctrl)
     
     # Save the storage time plot
-    if pltctrl !== nothing
+    if SAVE_PLOTS && pltctrl !== nothing
         filename_storage = "docs/src/storage_time_vs_wind_dir.png"
         mkpath(dirname(filename_storage))
         try
@@ -277,7 +333,7 @@ function storage_vs_winddir(settings_file; wind_dirs= WIND_DIRS)
         catch e
             @warn "Failed to save storage time plot: $e"
         end
-    else
+    elseif SAVE_PLOTS
         @warn "Saving the plot only works in single-threaded mode, launch Julia with jl2!"
     end
 end
