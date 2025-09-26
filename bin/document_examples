@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
+# script to create a pdf documentation of the examples in the docs folder
+# that are not yet ready to be integrated into the main documentation
+# requires pandoc to be installed
+# run from the root folder of the repository 
+
+cd docs/src && pandoc step_response.md -o step_response.pdf

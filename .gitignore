@@ -13,3 +13,4 @@ out/
 *.mem
 data/default.yaml
 .zenodo_minimal.json
+docs/src/step_response.pdf
