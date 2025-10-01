@@ -27,7 +27,7 @@ if PLOT_STEP_RESPONSE
 else
     WIND_DIRS = 200:1:340  # Wind directions for storage vs wind direction simulation
 end
-SAVE_PLOTS = false  # Save plots to docs/src/
+SAVE_PLOTS = true  # Save plots to docs/src/
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -322,11 +322,6 @@ function storage_vs_winddir(settings_file; wind_dirs= WIND_DIRS)
     
     plot_rmt(wind_dirs, storage_times; xlabel="Wind Direction [°]", ylabel="Storage Time at Full Power [s]", 
              fig="Storage Time", pltctrl=pltctrl)
-
-    plot_rmt(wind_dirs, extra_powers .* 100, storage_times; xlabel="Wind Direction [°]", 
-             ylabels=["Extra Power [%]", "Storage Time [s]"], labels=["Extra Power", "Storage Time"], 
-             fig="Extra Power and Storage Time",
-             pltctrl)
     
     # Save the storage time plot
     if SAVE_PLOTS && pltctrl !== nothing
@@ -337,6 +332,25 @@ function storage_vs_winddir(settings_file; wind_dirs= WIND_DIRS)
             println("Saved plot: $filename_storage")
         catch e
             @warn "Failed to save storage time plot: $e"
+        end
+    elseif SAVE_PLOTS
+        @warn "Saving the plot only works in single-threaded mode, launch Julia with jl2!"
+    end
+
+    plot_rmt(wind_dirs, extra_powers .* 100, storage_times; xlabel="Wind Direction [°]", 
+            ylabels=["Extra Power [%]", "Storage Time [s]"], labels=["Extra Power", "Storage Time"], 
+            fig="Extra Power and Storage Time",
+            pltctrl)
+
+    # Save the combined extra power and storage time plot
+    if SAVE_PLOTS && pltctrl !== nothing
+        filename_combined = "docs/src/extra_power_and_storage_time_vs_wind_dir.png"
+        mkpath(dirname(filename_combined))
+        try
+            pltctrl.plt.savefig(filename_combined, dpi=150, bbox_inches="tight", pad_inches=0.1, facecolor="white")
+            println("Saved plot: $filename_combined")
+        catch e
+            @warn "Failed to save combined extra power and storage time plot: $e"
         end
     elseif SAVE_PLOTS
         @warn "Saving the plot only works in single-threaded mode, launch Julia with jl2!"
