@@ -50,11 +50,18 @@ if Threads.nthreads() > 1
                 display(p)  # Ensure the plot is displayed
                 nothing
             end
-            @everywhere function rmt_plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+            @everywhere function rmt_plot(X, Ys...; xlabel, ylabel, ylabels=nothing, labels, xlims, ylims, ann, scatter, title, fig, ysize)
                 if isnothing(labels)
                     p = ControlPlots.plot(X, Ys; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
-                else
+                elseif isnothing(ylabels)
                     p = ControlPlots.plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+                else
+                    try
+                        p = ControlPlots.plot(X, Ys...; xlabel, ylabels, labels, title, fig, ysize)
+                    catch e
+                        @error "Error in rmt_plot: $e"
+                        rethrow(e)
+                    end
                 end
                 display(p)  # Ensure the plot is displayed
                 nothing
