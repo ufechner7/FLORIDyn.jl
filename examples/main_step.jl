@@ -322,6 +322,10 @@ function storage_vs_winddir(settings_file; wind_dirs= WIND_DIRS)
     
     plot_rmt(wind_dirs, storage_times; xlabel="Wind Direction [°]", ylabel="Storage Time at Full Power [s]", 
              fig="Storage Time", pltctrl=pltctrl)
+
+    plot_rmt(wind_dirs, [extra_powers .* 100, storage_times]; xlabel="Wind Direction [°]", 
+             ylabel="Extra Power [%], Storage Time", labels=["Extra Power", "Storage Time"], fig="Extra Power and Storage Time",
+             pltctrl)
     
     # Save the storage time plot
     if SAVE_PLOTS && pltctrl !== nothing
