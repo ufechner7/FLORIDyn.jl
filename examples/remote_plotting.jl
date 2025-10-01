@@ -52,9 +52,9 @@ if Threads.nthreads() > 1
             end
             @everywhere function rmt_plot(X, Ys...; xlabel, ylabel, ylabels=nothing, labels, xlims, ylims, ann, scatter, title, fig, ysize)
                 if isnothing(labels)
-                    p = ControlPlots.plot(X, Ys; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+                    p = ControlPlots.plot(X, Ys[1]; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
                 elseif isnothing(ylabels)
-                    p = ControlPlots.plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+                    p = ControlPlots.plot(X, Ys[1]; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
                 else
                     try
                         p = ControlPlots.plot(X, Ys...; xlabel, ylabels, labels, title, fig, ysize)
