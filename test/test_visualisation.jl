@@ -1299,8 +1299,8 @@ if ! isinteractive()
                 
                 # Test documenting known limitation: mixed ylabel + multiple Y
                 # This currently fails due to ControlPlots parameter conflict
-                @test_throws MethodError plot_rmt(X, Y1, Y2; xlabel="Wind Direction [°]", 
-                                                  ylabel="Mixed Label", pltctrl=pltctrl)
+                @test_throws ArgumentError plot_rmt(X, Y1, Y2; xlabel="Wind Direction [°]", 
+                                                    ylabel="Mixed Label", pltctrl=pltctrl)
             end
             
             @testset "parameter validation" begin
