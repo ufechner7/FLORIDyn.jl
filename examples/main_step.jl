@@ -27,7 +27,7 @@ if PLOT_STEP_RESPONSE
 else
     WIND_DIRS = 200:1:340  # Wind directions for storage vs wind direction simulation
 end
-SAVE_PLOTS = true  # Save plots to docs/src/
+SAVE_PLOTS = false  # Save plots to docs/src/
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -303,6 +303,18 @@ function storage_vs_winddir(settings_file; wind_dirs= WIND_DIRS)
             @warn "Failed to save data: $e"
         end
     end
+    
+    # Calculate statistics for extra power and storage time
+    println("\n--- Statistics Summary ---")
+    println("Extra Power Statistics:")
+    println("  Max:  $(round(maximum(extra_powers) * 100, digits=2))%")
+    println("  Min:  $(round(minimum(extra_powers) * 100, digits=2))%")
+    println("  Mean: $(round(mean(extra_powers) * 100, digits=2))%")
+    println("Storage Time Statistics:")
+    println("  Max:  $(round(maximum(storage_times), digits=2))s")
+    println("  Min:  $(round(minimum(storage_times), digits=2))s")
+    println("  Mean: $(round(mean(storage_times), digits=2))s")
+    
     plot_rmt(wind_dirs, extra_powers .* 100; xlabel="Wind Direction [°]", ylabel="Extra Power [%]", fig="Extra Power", 
              pltctrl)
     

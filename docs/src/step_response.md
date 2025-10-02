@@ -30,6 +30,7 @@ Storage time at full power: 50.96s
 
 ![Extra Power vs Wind Direction](extra_power_vs_wind_dir.png){ width=69% }
 
+
 ### Storage Time vs Wind Direction
 
 ![Storage Time vs Wind Direction](storage_time_vs_wind_dir.png){ width=69% }
@@ -39,3 +40,16 @@ Storage time at full power: 50.96s
 The combined plot overlays extra power percentage and storage time to make it easy to identify wind directions that maximize both short-term peak exploitation and sustained energy delivery.
 
 ![Extra Power and Storage Time vs Wind Direction](extra_power_and_storage_time_vs_wind_dir.png){ width=80% }
+
+**Extra Power Statistics:**
+
+-  Max:  27.27%
+-  Min:  3.1%
+-  Mean: 14.49%
+
+**Storage Time Statistics:**
+
+- Max:  58.39s
+- Min:  5.8s
+- Mean: 31.88s
+
