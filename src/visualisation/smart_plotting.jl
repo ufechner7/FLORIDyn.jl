@@ -202,6 +202,10 @@ function plot_rmt(X, Ys...; xlabel="", ylabel="", ylabels=nothing, labels=nothin
 
     if Threads.nthreads() > 1 && nprocs() > 1 && pltctrl === nothing
         # Use parallel plotting with remote worker
+        if ylabel != "" && length(Ys) > 1
+            throw(MethodError(plot_rmt, (X, Ys...), 
+                  "Cannot use ylabel with multiple Y series, use ylabels instead"))
+        end 
         @spawnat 2 Main.rmt_plot(X, Ys...; xlabel, ylabel, ylabels, labels, xlims, ylims, ann, scatter, title, fig, ysize)
     else
         # Use sequential plotting
