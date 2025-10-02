@@ -16,7 +16,7 @@ using FLORIDyn
 
 const cp_max = 16/27  # Betz limit
 const BETZ_INDUCTION = 1/3
-const dt = 400
+const DT = 400
 
 function calc_cp(induction)
     return 4 * induction * (1 - induction)^2
@@ -78,7 +78,7 @@ function calc_induction(cp)
     return (a_low + a_high) / 2
 end
 
-function calc_demand(time)
+function calc_demand(time; dt=DT)
     if USE_STEP
         # Example: step demand profile
         if time < 200+dt
@@ -166,7 +166,7 @@ Includes group-based corrections and time interpolation.
 # Returns
 - Axial induction factor for the specified turbine
 """
-function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8) # max 1.8
+function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8, dt=DT) # max 1.8
     if ! USE_MPC
         correction_factor = 0.0
     end
