@@ -201,7 +201,7 @@ function plot_rmt(X, Ys...; xlabel="", ylabel="", ylabels=nothing, labels=nothin
     scatter=false, title="", fig="", ysize=14, pltctrl=nothing)
     
     # Parameter validation: Ensure X and each Y in Ys have compatible dimensions
-    for (i, Y) in enumerate(Ys)
+    for (i, Y) in pairs(Ys...)
         if length(X) != length(Y)
             throw(ArgumentError("Length of X ($(length(X))) does not match length of Ys[$i] ($(length(Y)))."))
         end
