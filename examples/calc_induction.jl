@@ -2,12 +2,19 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Calculate axial induction factor, and calculate the demand
-# TODO: make plotting thread safe
 # TODO: fix naming of turbine groups
 # TODO: rename MPC to TGC
 
-using FLORIDyn, ControlPlots, YAML
+using FLORIDyn, ControlPlots, YAML, DistributedNext
 
+# Select plotting backend: use ControlPlots only in single-threaded mode; otherwise let plot_rmt handle remote plotting
+pltctrl = nothing
+if Threads.nthreads() == 1
+    pltctrl = ControlPlots
+end
+
+# Initialize remote plotting when multithreaded so plot_rmt can dispatch to a worker process
+include("remote_plotting.jl")
 include("calc_induction_matrix.jl")
 
 USE_MPC = true
@@ -51,12 +58,13 @@ function plot_demand()
     all_data = [demand_values, induction_group1, induction_group2, induction_group3, induction_group4]
     labels = ["Demand", "Group 1 (-0.2)", "Group 2 (-0.1)", "Group 3 (+0.1)", "Group 4 (+0.2)"]
     
-    # Create the plot
-    ControlPlots.plot(time_vector, all_data, 
-                     xlabel="Time [s]", 
-                     ylabel="Demand and Induction [-]", 
-                     title="Demand and Induction vs Time for All Groups",
-                     labels=labels)
+    # Create the plot (thread-safe via plot_rmt)
+    plot_rmt(time_vector, all_data;
+             xlabel="Time [s]",
+             ylabel="Demand and Induction [-]",
+             title="Demand and Induction vs Time for All Groups",
+             labels=labels,
+             pltctrl=pltctrl)
 end
 
 function plot_induction_matrix()
@@ -96,11 +104,12 @@ function plot_induction_matrix()
     # Create labels with group information
     group_labels = ["Group 1 (-0.2)", "Group 2 (-0.1)", "Group 3 (+0.1)", "Group 4 (+0.2)"]
     
-    ControlPlots.plot(time_vector, group_data,
-                     xlabel="Time [s]", 
-                     ylabel="Axial Induction Factor [-]", 
-                     title="Average Axial Induction Factor vs Time by Turbine Group",
-                     labels=group_labels)
+    plot_rmt(time_vector, group_data;
+             xlabel="Time [s]",
+             ylabel="Axial Induction Factor [-]",
+             title="Average Axial Induction Factor vs Time by Turbine Group",
+             labels=group_labels,
+             pltctrl=pltctrl)
 end
 
 con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
