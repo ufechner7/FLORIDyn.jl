@@ -1,11 +1,10 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# MainFLORIDyn Center-Line model
-# Improved FLORIDyn approach over the gaussian FLORIDyn model
-
-# Minimal example of how to run a simulation using FLORIDyn.jl 
-# for benchmarking the 54 turbine layout.
+# Example script to demonstrate step response of wind farm with FLORIDyn.
+# The demand profile is making a step from 0% to 100% at t=600s.
+# It allows to analyze the storage capability of the wind farm with FLORIDyn.
+# The step response and the storage capacity a function of the wind direction can be plotted.
 using Timers
 tic()
 using FLORIDyn, TerminalPager, DistributedNext, Statistics
@@ -19,8 +18,8 @@ USE_STEP = true
 USE_FEED_FORWARD = true
 USE_MPC = false  # If false, use simple step control
 ONLINE = false
-PLOT_STEP_RESPONSE = false
-PLOT_STORAGE_VS_WINDDIR = true
+PLOT_STEP_RESPONSE = true
+PLOT_STORAGE_VS_WINDDIR = false
 WIND_DIR = 270.0  # Wind direction for step response simulation
 if PLOT_STEP_RESPONSE
     WIND_DIRS = 200:10:340  # Wind directions for step response simulation
