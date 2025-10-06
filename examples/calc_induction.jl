@@ -2,8 +2,6 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Calculate axial induction factor, and calculate the demand
-# TODO: fix naming of turbine groups
-# TODO: rename MPC to TGC
 
 using FLORIDyn, ControlPlots, YAML, DistributedNext
 
@@ -17,9 +15,9 @@ end
 include("remote_plotting.jl")
 include("calc_induction_matrix.jl")
 
-USE_MPC = true
+USE_TGC = true
 USE_FEED_FORWARD = true
-USE_STEP = false
+USE_STEP = true
 
 settings_file = get_default_project()[2]
 
@@ -43,10 +41,10 @@ function plot_demand()
     # (This includes the time-dependent corrections implemented in calc_axial_induction)
     
     # Find representative turbines for each group
-    turbine_group1 = 1   # Turbine 1 is in group 1 (gets -0.2 reduction)
-    turbine_group2 = 2   # Turbine 2 is in group 2 (gets -0.1 reduction)
-    turbine_group3 = 3   # Turbine 3 is in group 3 (gets +0.1 increase)
-    turbine_group4 = 7   # Turbine 7 is in group 4 (gets +0.2 increase)
+    turbine_group1 = 1   # Turbine 1 is in group 1
+    turbine_group2 = 2   # Turbine 2 is in group 2
+    turbine_group3 = 3   # Turbine 3 is in group 3
+    turbine_group4 = 7   # Turbine 7 is in group 4
     
     # Calculate induction values using actual calc_axial_induction (with corrections)
     induction_group1 = [calc_axial_induction(ta, con, turbine_group1, t) for t in time_vector]
@@ -56,7 +54,7 @@ function plot_demand()
     
     # Combine all data series
     all_data = [demand_values, induction_group1, induction_group2, induction_group3, induction_group4]
-    labels = ["Demand", "Group 1 (-0.2)", "Group 2 (-0.1)", "Group 3 (+0.1)", "Group 4 (+0.2)"]
+    labels = ["Demand", "Group 1", "Group 2", "Group 3", "Group 4"]
     
     # Create the plot (thread-safe via plot_rmt)
     plot_rmt(time_vector, all_data;
@@ -102,7 +100,7 @@ function plot_induction_matrix()
     end
     
     # Create labels with group information
-    group_labels = ["Group 1 (-0.2)", "Group 2 (-0.1)", "Group 3 (+0.1)", "Group 4 (+0.2)"]
+    group_labels = ["Group 1", "Group 2", "Group 3", "Group 4"]
     
     plot_rmt(time_vector, group_data;
              xlabel="Time [s]",

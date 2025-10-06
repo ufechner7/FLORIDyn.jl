@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Main script to run a model predictive control (MPC) simulation with FLORIDyn.jl
+# Main script to run a model predictive control (TGC) simulation with FLORIDyn.jl
 # using a precomputed induction matrix for feed-forward control.
 using Timers
 tic()
@@ -11,7 +11,7 @@ if Threads.nthreads() == 1; using ControlPlots; end
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 
-USE_MPC = true
+USE_TGC = true
 USE_FEED_FORWARD = true
 ONLINE = false
 
@@ -50,7 +50,7 @@ con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 if USE_FEED_FORWARD
-    set.induction_mode = Induction_MPC()
+    set.induction_mode = Induction_TGC()
 else
     set.induction_mode = Induction_Constant()
 end

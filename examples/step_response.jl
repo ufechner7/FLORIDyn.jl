@@ -16,7 +16,7 @@ vis_file      = "data/vis_54T.yaml"
 
 USE_STEP = true
 USE_FEED_FORWARD = true
-USE_MPC = false  # If false, use simple step control
+USE_TGC = false  # If false, use simple step control
 ONLINE = false
 PLOT_STEP_RESPONSE = true
 PLOT_STORAGE_VS_WINDDIR = false
@@ -63,7 +63,7 @@ function calc_demand_and_power(settings_file; wind_dir=WIND_DIR)
     # create settings struct with automatic parallel/threading detection
     set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
     if USE_FEED_FORWARD
-        set.induction_mode = Induction_MPC()
+        set.induction_mode = Induction_TGC()
     else
         set.induction_mode = Induction_Constant()
     end

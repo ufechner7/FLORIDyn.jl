@@ -113,7 +113,7 @@ and provides the foundation for group-based wind farm control.
 # Arguments
 - `turbine_group`: Group ID of the turbine (typically 1-4)
 - `time`: Current simulation time [s]
-- `scaling=1.22`: Power demand scaling factor (1.247 if `USE_MPC` is enabled)
+- `scaling=1.22`: Power demand scaling factor (1.247 if `USE_TGC` is enabled)
 
 # Returns
 - `Float64`: Base axial induction factor in range [0, 1/3]
@@ -121,7 +121,7 @@ and provides the foundation for group-based wind farm control.
 # Implementation Details
 The function:
 1. Calculates time-varying power demand using [`calc_demand`](@ref)
-2. Applies MPC-specific corrections if `USE_MPC` is enabled
+2. Applies TGC-specific corrections if `USE_TGC` is enabled
 3. Converts demand to induction factor via power coefficient relationship
 4. Assumes uniform behavior across all turbines in the same group
 
@@ -135,7 +135,7 @@ to include group-specific corrections and wake interactions.
 - [`calc_axial_induction`](@ref): Turbine-specific induction with corrections
 """
 function calc_induction_per_group(turbine_group, time; scaling = 1.22)
-    if USE_MPC
+    if USE_TGC
         scaling = 1.247
     elseif USE_STEP
         scaling = 1.0
@@ -143,7 +143,7 @@ function calc_induction_per_group(turbine_group, time; scaling = 1.22)
     end
     # simple example: assume no wakes
     demand = calc_demand(time)
-    if USE_MPC
+    if USE_TGC
         correction = 1-min(((time - 950)/270)^2, 1)
         demand -= correction*0.016
     end
@@ -167,7 +167,7 @@ Includes group-based corrections and time interpolation.
 - Axial induction factor for the specified turbine
 """
 function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8, dt=DT) # max 1.8
-    if ! USE_MPC
+    if ! USE_TGC
         correction_factor = 0.0
     end
     # Check if pre-calculated induction data is available

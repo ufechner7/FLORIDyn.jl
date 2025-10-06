@@ -38,7 +38,7 @@ export Velocity_Influence, Velocity_None
 export TI_Influence, TI_None
 export IterateOPs_average, IterateOPs_basic, IterateOPs_buffer, IterateOPs_maximum, IterateOPs_weighted
 export Yaw_Constant, Yaw_InterpTurbine, Yaw_SOWFA
-export Induction_Constant, Induction_MPC
+export Induction_Constant, Induction_TGC
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
