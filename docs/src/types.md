@@ -103,7 +103,7 @@ Yaw_Constant
 Yaw_InterpTurbine
 Yaw_SOWFA
 Induction_Constant
-Induction_MPC
+Induction_TGC
 ```
 
 ## Defining the OP iteration model

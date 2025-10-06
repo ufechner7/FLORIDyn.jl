@@ -197,12 +197,12 @@ function getInduction(::Induction_Constant, con::Con, iT, t)
 end
 
 """
-    getInduction(::Induction_MPC, con::Con, iT, t) -> Float64 or Vector{Float64}
+    getInduction(::Induction_TGC, con::Con, iT, t) -> Float64 or Vector{Float64}
 
 Return the induction factor at time `t` for the specified turbine(s) using linear interpolation from controller data.
 
 # Arguments
-- `::Induction_MPC`: Controller type dispatch parameter for MPC-style induction control
+- `::Induction_TGC`: Controller type dispatch parameter for TGC-style induction control
 - `con::Con`: Controller configuration struct containing induction control data
 - `iT`: Turbine index or indices to query:
   - `Integer`: Single turbine index (1-based)
@@ -235,27 +235,27 @@ where `m` is the number of time steps and `n` is the number of turbines.
 # Examples
 ```julia
 # Create controller configuration with induction data
-con = Con(induction="MPC", 
+con = Con(induction="TGC", 
           induction_data=[0.0  0.30  0.25;   # t=0s: T1=0.30, T2=0.25
                          1.0  0.35  0.30;   # t=1s: T1=0.35, T2=0.30
                          2.0  0.40  0.35])  # t=2s: T1=0.40, T2=0.35
 
 # Get induction for turbine 1 at t=0.5s (interpolated)
-induction1 = getInduction(Induction_MPC(), con, 1, 0.5)  # Returns 0.325
+induction1 = getInduction(Induction_TGC(), con, 1, 0.5)  # Returns 0.325
 
 # Get induction for multiple turbines at t=1.5s
-inductions = getInduction(Induction_MPC(), con, [1, 2], 1.5)  # Returns [0.375, 0.325]
+inductions = getInduction(Induction_TGC(), con, [1, 2], 1.5)  # Returns [0.375, 0.325]
 
 # Out-of-bounds time (will issue warning)
-induction_oob = getInduction(Induction_MPC(), con, 1, 5.0)  # Returns 0.40 with warning
+induction_oob = getInduction(Induction_TGC(), con, 1, 5.0)  # Returns 0.40 with warning
 ```
 
 # See Also
-- [`Induction_MPC`](@ref): Controller type for MPC-style induction control
+- [`Induction_TGC`](@ref): Controller type for TGC-style induction control
 - [`Con`](@ref): Controller configuration struct
 - `Interpolations.linear_interpolation`: Underlying interpolation method used
 """
-function getInduction(::Induction_MPC, con::Con, iT, t) 
+function getInduction(::Induction_TGC, con::Con, iT, t) 
     con_induction_data = con.induction_data
     if t < con_induction_data[1, 1]
         @warn "The time $t is out of bounds, will use $(con_induction_data[1, 1]) instead."

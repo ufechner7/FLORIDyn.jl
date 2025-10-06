@@ -3,12 +3,21 @@
 
 # Calculate axial induction factor, and calculate the demand
 
-using FLORIDyn, ControlPlots, YAML
+using FLORIDyn, ControlPlots, YAML, DistributedNext
 
+# Select plotting backend: use ControlPlots only in single-threaded mode; otherwise let plot_rmt handle remote plotting
+pltctrl = nothing
+if Threads.nthreads() == 1
+    pltctrl = ControlPlots
+end
+
+# Initialize remote plotting when multithreaded so plot_rmt can dispatch to a worker process
+include("remote_plotting.jl")
 include("calc_induction_matrix.jl")
 
-USE_MPC = true
+USE_TGC = true
 USE_FEED_FORWARD = true
+USE_STEP = true
 
 settings_file = get_default_project()[2]
 
@@ -32,10 +41,10 @@ function plot_demand()
     # (This includes the time-dependent corrections implemented in calc_axial_induction)
     
     # Find representative turbines for each group
-    turbine_group1 = 1   # Turbine 1 is in group 1 (gets -0.2 reduction)
-    turbine_group2 = 2   # Turbine 2 is in group 2 (gets -0.1 reduction)
-    turbine_group3 = 3   # Turbine 3 is in group 3 (gets +0.1 increase)
-    turbine_group4 = 7   # Turbine 7 is in group 4 (gets +0.2 increase)
+    turbine_group1 = 1   # Turbine 1 is in group 1
+    turbine_group2 = 2   # Turbine 2 is in group 2
+    turbine_group3 = 3   # Turbine 3 is in group 3
+    turbine_group4 = 7   # Turbine 7 is in group 4
     
     # Calculate induction values using actual calc_axial_induction (with corrections)
     induction_group1 = [calc_axial_induction(ta, con, turbine_group1, t) for t in time_vector]
@@ -45,14 +54,15 @@ function plot_demand()
     
     # Combine all data series
     all_data = [demand_values, induction_group1, induction_group2, induction_group3, induction_group4]
-    labels = ["Demand", "Group 1 (-0.2)", "Group 2 (-0.1)", "Group 3 (+0.1)", "Group 4 (+0.2)"]
+    labels = ["Demand", "Group 1", "Group 2", "Group 3", "Group 4"]
     
-    # Create the plot
-    ControlPlots.plot(time_vector, all_data, 
-                     xlabel="Time [s]", 
-                     ylabel="Demand and Induction [-]", 
-                     title="Demand and Induction vs Time for All Groups",
-                     labels=labels)
+    # Create the plot (thread-safe via plot_rmt)
+    plot_rmt(time_vector, all_data;
+             xlabel="Time [s]",
+             ylabel="Demand and Induction [-]",
+             title="Demand and Induction vs Time for All Groups",
+             labels=labels,
+             pltctrl=pltctrl)
 end
 
 function plot_induction_matrix()
@@ -90,13 +100,14 @@ function plot_induction_matrix()
     end
     
     # Create labels with group information
-    group_labels = ["Group 1 (-0.2)", "Group 2 (-0.1)", "Group 3 (+0.1)", "Group 4 (+0.2)"]
+    group_labels = ["Group 1", "Group 2", "Group 3", "Group 4"]
     
-    ControlPlots.plot(time_vector, group_data,
-                     xlabel="Time [s]", 
-                     ylabel="Axial Induction Factor [-]", 
-                     title="Average Axial Induction Factor vs Time by Turbine Group",
-                     labels=group_labels)
+    plot_rmt(time_vector, group_data;
+             xlabel="Time [s]",
+             ylabel="Axial Induction Factor [-]",
+             title="Average Axial Induction Factor vs Time by Turbine Group",
+             labels=group_labels,
+             pltctrl=pltctrl)
 end
 
 con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)

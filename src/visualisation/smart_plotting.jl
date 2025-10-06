@@ -197,21 +197,35 @@ plot_rmt(wind_dirs, powers; xlabel="Wind Direction (deg)", ylabel="Relative Powe
 # See Also
 [`plot_x`](@ref), [`plot_flow_field`](@ref), [`plot_measurements`](@ref)
 """
-function plot_rmt(X, Ys; xlabel="", ylabel="", labels=nothing, xlims=nothing, ylims=nothing, ann=nothing, 
+function plot_rmt(X, Ys...; xlabel="", ylabel="", ylabels=nothing, labels=nothing, xlims=nothing, ylims=nothing, ann=nothing, 
     scatter=false, title="", fig="", ysize=14, pltctrl=nothing)
+    
+    # Parameter validation: Ensure X and each Y in Ys have compatible dimensions
+    for (i, Y) in enumerate(Ys)
+        if length(X) != length(Y)
+            throw(ArgumentError("Length of X ($(length(X))) does not match length of Ys[$i] ($(length(Y)))."))
+        end
+    end
+    # Validate ylabel vs multiple Y series
+    if ylabel != "" && length(Ys) > 1
+        throw(ArgumentError("Cannot use ylabel with multiple Y series (detected $(length(Ys))). Use ylabels instead, e.g. ylabels=[\"Series 1\", \"Series 2\"]."))
+    end
 
     if Threads.nthreads() > 1 && nprocs() > 1 && pltctrl === nothing
         # Use parallel plotting with remote worker
-        @spawnat 2 Main.rmt_plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+
+        @spawnat 2 Main.rmt_plot(X, Ys...; xlabel, ylabel, ylabels, labels, xlims, ylims, ann, scatter, title, fig, ysize)
     else
         # Use sequential plotting
         if pltctrl === nothing
             error("pltctrl argument is required for sequential plotting (threads=$(Threads.nthreads()), procs=$(nprocs())). Pass the ControlPlots module as pltctrl keyword.")
         end
-        if isnothing(labels)
-            p = pltctrl.plot(X, Ys; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+        if isnothing(labels) && length(Ys) == 1
+            p = pltctrl.plot(X, Ys...; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+        elseif isnothing(ylabels)
+            p = pltctrl.plot(X, Ys...; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
         else
-            p = pltctrl.plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+            p = pltctrl.plot(X, Ys...; xlabel, ylabels, labels, title, fig, ysize)
         end
         
         display(p)  # Ensure the plot is displayed

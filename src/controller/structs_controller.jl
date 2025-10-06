@@ -53,15 +53,15 @@ induction factors for wind farm control strategies.
 
 # See Also
 - [`getInduction`](@ref): Function for retrieving induction factors
-- [`Induction_MPC`](@ref): Alternative controller for time-varying induction control
+- [`Induction_TGC`](@ref): Alternative controller for time-varying induction control
 """
 struct Induction_Constant <: InductionModel end
 
 """
-    Induction_MPC <: InductionModel
+    Induction_TGC <: InductionModel
 
 A marker struct used to represent a time-varying induction factor control strategy compatible with 
-Model Predictive Control (MPC) approaches. In this mode, turbines can have different induction 
+Model Predictive Control (TGC) approaches. In this mode, turbines can have different induction 
 factors that vary over time according to a predefined control schedule.
 
 The induction factors are provided via a control data matrix where:
@@ -90,4 +90,4 @@ where `m` is the number of time steps and `n` is the number of turbines.
 - [`getInduction`](@ref): Function for retrieving induction factors with interpolation
 - [`Induction_Constant`](@ref): Alternative controller for constant induction control
 """
-struct Induction_MPC <: InductionModel end
+struct Induction_TGC <: InductionModel end

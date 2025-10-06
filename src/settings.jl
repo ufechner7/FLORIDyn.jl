@@ -289,7 +289,7 @@ throughout the simulation to determine turbine control actions.
 - [`getYaw`](@ref): Function for retrieving yaw angles based on controller type
 - [`getInduction`](@ref): Function for retrieving induction factors based on controller type
 - [`Yaw_Constant`](@ref), [`Yaw_SOWFA`](@ref): Yaw controller types
-- [`Induction_Constant`](@ref), [`Induction_MPC`](@ref): Induction controller types
+- [`Induction_Constant`](@ref), [`Induction_TGC`](@ref): Induction controller types
 """
 @with_kw mutable struct Con
     yaw::String
