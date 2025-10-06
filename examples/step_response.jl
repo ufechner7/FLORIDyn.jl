@@ -138,7 +138,9 @@ function step_response(wind_dirs=WIND_DIRS)
     end
 
     # Calculate Mean Square Error between rel_power and demand_values
-    mse = sum((rel_power[101:end] .- demand_values[101:end]).^2) / length(rel_power[101:end])
+    t_ignore = 100  # Ignore first 100s to avoid initial transient effects
+    start_index = t_ignore * sim.time_step + sim.time_step
+    mse = sum((rel_power[start_index:end] .- demand_values[start_index:end]).^2) / length(rel_power[start_index:end])
     println("Root Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
     println("Max Absolute Error:            $(round(maximum(abs.(rel_power[101:end] .- demand_values[101:end])) * 100, digits=2))%")
 
