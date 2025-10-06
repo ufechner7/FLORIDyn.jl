@@ -200,7 +200,7 @@ plot_rmt(wind_dirs, powers; xlabel="Wind Direction (deg)", ylabel="Relative Powe
 function plot_rmt(X, Ys...; xlabel="", ylabel="", ylabels=nothing, labels=nothing, xlims=nothing, ylims=nothing, ann=nothing, 
     scatter=false, title="", fig="", ysize=14, pltctrl=nothing)
     if ylabel != "" && length(Ys) > 1
-        throw(ArgumentError("Cannot use ylabel with multiple Y series, use ylabels instead"))
+        throw(ArgumentError("Cannot use ylabel with multiple Y series (detected $(length(Ys))). Use ylabels instead, e.g. ylabels=[\"Series 1\", \"Series 2\"]."))
     end 
 
     if Threads.nthreads() > 1 && nprocs() > 1 && pltctrl === nothing
