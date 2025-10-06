@@ -1,8 +1,10 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Main script to run a model predictive control (TGC) simulation with FLORIDyn.jl
+# Main script to run a turbine group control (TGC) simulation with FLORIDyn.jl
 # using a precomputed induction matrix for feed-forward control.
+# TGC shall be extended to full model predictive control (MPC) in a future example
+
 using Timers
 tic()
 using FLORIDyn, TerminalPager, DistributedNext 
