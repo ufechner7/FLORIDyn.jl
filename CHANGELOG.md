@@ -1,3 +1,16 @@
+# FLORIDyn v0.5.6 - 2025-07-10
+# Added
+- example calc_induction.jl
+- example step_response.jl
+- example_dev mwe_06.jl (developer example)
+- example_dev mwe_07.jl (developer example)
+- add turbine groups to the yaml file and functions and structs to work with them
+- a new control mode can process time depended induction factors for turbine groups
+- all correction functions from the Matlab code have been implemented
+- the function `cp_fun` has been added that calculates the power coefficient as function of angle of attack and tip speed ratio
+- example_dev cp_
+- function plot_rmt supports now all plot variants of `ControlPlots.plot`
+
 # FLORIDyn v0.5.5 - 2025-25-09
 ## Fixed
 - Fix .zenodo.json
