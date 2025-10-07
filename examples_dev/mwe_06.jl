@@ -1,3 +1,6 @@
+# Copyright (c) 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
 # Example how to plot two time series in one plot with one y axis using plot_rmt().
 using FLORIDyn, DistributedNext
 using ControlPlots
