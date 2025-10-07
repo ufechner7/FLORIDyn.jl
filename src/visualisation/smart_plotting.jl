@@ -150,10 +150,13 @@ multiple data series with comprehensive labeling and styling options.
 
 # Arguments
 - `X`: X-axis data vector (e.g., time points, wind directions, positions)
-- `Ys...`: Variable number of Y-axis data vectors. Each should have the same length as `X`
+- `Ys...`: Variable number of Y-axis data vectors. Each should have the same length as `X`.
+  Can be passed in two ways:
+  - **Splatted vectors** (for multiple Y-axes): `plot_rmt(X, Y1, Y2, ...; ylabels=[...], ...)`
+  - **Vector of vectors** (for single shared Y-axis): `plot_rmt(X, [Y1, Y2]; ylabel="...", ...)`
 - `xlabel::String=""`: Label for the X-axis
-- `ylabel::String=""`: Label for the Y-axis (only valid for single Y axis)
-- `ylabels::Union{Nothing,Vector{String}}=nothing`: Y-axis labels for two Y axis
+- `ylabel::String=""`: Label for the Y-axis (only valid for single Y-axis shared by all series)
+- `ylabels::Union{Nothing,Vector{String}}=nothing`: Y-axis labels for multiple Y-axes (one per series)
 - `labels::Union{Nothing,Vector{String}}=nothing`: Legend labels for each data series
 - `xlims::Union{Nothing,Tuple{Real,Real}}=nothing`: X-axis limits as `(xmin, xmax)`
 - `ylims::Union{Nothing,Tuple{Real,Real}}=nothing`: Y-axis limits as `(ymin, ymax)`
@@ -182,8 +185,43 @@ multiple data series with comprehensive labeling and styling options.
 
 # Parameter Validation
 - **Length consistency**: All `Ys` vectors must match `X` length
-- **Label compatibility**: `ylabel` cannot be used with multiple data series (use `ylabels`)
+- **Label compatibility**: 
+  - `ylabel` (single Y-axis) is used when passing a vector of vectors: `plot_rmt(X, [Y1, Y2]; ylabel="...")`
+  - `ylabels` (multiple Y-axes) is used when splatting vectors: `plot_rmt(X, Y1, Y2; ylabels=["...", "..."])`
+  - Cannot use `ylabel` with multiple splatted series
 - **Required arguments**: `pltctrl` is mandatory for sequential mode
+
+# Multiple Y Series: Two Approaches
+
+## Approach 1: Vector of Vectors (Single Shared Y-axis)
+Use when all series share the same Y-axis label and scale:
+```julia
+time = 1:10
+series1 = rand(10)
+series2 = rand(10)
+
+# Pass as a vector of vectors - all series share one Y-axis
+plot_rmt(time, [series1, series2]; 
+         xlabel="Time", 
+         ylabel="Values",  # Single ylabel for shared axis
+         labels=["Series 1", "Series 2"], 
+         pltctrl=ControlPlots)
+```
+
+## Approach 2: Splatted Vectors (Two Y-axes)
+Use when each series needs its own Y-axis label:
+```julia
+wind_dirs = [180, 200, 220, 240, 260, 280]
+power = [0.85, 0.92, 0.88, 0.76, 0.65, 0.58]
+thrust = [120, 135, 142, 138, 125, 110]
+
+# Pass as separate arguments with splatting - each gets its own Y-axis
+plot_rmt(wind_dirs, power, thrust;
+         xlabel="Wind Direction (°)", 
+         ylabels=["Power (MW)", "Thrust (kN)"],  # Separate label per Y-axis
+         labels=["Power", "Thrust"], 
+         pltctrl=ControlPlots)
+```
 
 # Examples
 
@@ -197,14 +235,31 @@ plot_rmt(time, power;
          title="Turbine Power Output", pltctrl=ControlPlots)
 ```
 
-## Multiple Data Series with Legend
+## Multiple Series on Shared Y-axis (Vector of Vectors)
 ```julia
+using ControlPlots
+time = 1:10
+series1 = rand(10)
+series2 = rand(10)
+
+plot_rmt(time, [series1, series2]; 
+         xlabel="Time", 
+         ylabel="Values",
+         labels=["Series 1", "Series 2"], 
+         title="Two Time Series",
+         pltctrl=ControlPlots)
+```
+
+## Multiple Series with Separate Y-axes (Splatted)
+```julia
+using ControlPlots
 wind_dirs = [180, 200, 220, 240, 260, 280]
 power_t1 = [0.85, 0.92, 0.88, 0.76, 0.65, 0.58]
 power_t2 = [0.80, 0.89, 0.85, 0.72, 0.61, 0.55]
 
 plot_rmt(wind_dirs, power_t1, power_t2;
-         xlabel="Wind Direction (°)", ylabels=["Power T1", "Power T2"],
+         xlabel="Wind Direction (°)", 
+         ylabels=["Power T1 (MW)", "Power T2 (MW)"],
          labels=["Turbine 1", "Turbine 2"], 
          title="Power vs Wind Direction",
          xlims=(175, 285), pltctrl=ControlPlots)
@@ -231,7 +286,7 @@ plot_rmt(wind_speeds, power_curve;
 
 # Error Handling
 - `ArgumentError`: Length mismatch between `X` and any `Ys` vector
-- `ArgumentError`: Using `ylabel` with multiple data series  
+- `ArgumentError`: Using `ylabel` with multiple splatted series (use `ylabels` instead)
 - `ErrorException`: Missing `pltctrl` in sequential mode
 
 # Implementation Details
@@ -239,11 +294,6 @@ The function uses conditional dispatch based on Julia's threading and multiproce
 1. Checks `Threads.nthreads() > 1 && nprocs() > 1 && pltctrl === nothing`
 2. **If true**: Parallel execution via `@spawnat 2 Main.rmt_plot(...)`
 3. **If false**: Sequential execution via `pltctrl.plot(...)` with parameter branching
-
-Parameter branching in sequential mode:
-- Single series: Uses `ylabel` parameter
-- Multiple series without `ylabels`: Uses `ylabel` and `labels`  
-- Multiple series with `ylabels`: Uses `ylabels`, `labels`, omits `ylabel`
 
 # See Also
 - [`plot_x`](@ref): Time series plotting with automatic subplot generation
