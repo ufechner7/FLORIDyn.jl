@@ -1,5 +1,5 @@
 # FLORIDyn v0.5.6 - 2025-07-10
-# Added
+## Added
 - example calc_induction.jl
 - example step_response.jl
 - example_dev mwe_06.jl (developer example)
@@ -8,8 +8,8 @@
 - a new control mode can process time depended induction factors for turbine groups
 - all correction functions from the Matlab code have been implemented
 - the function `cp_fun` has been added that calculates the power coefficient as function of angle of attack and tip speed ratio
-- example_dev cp_
-- function plot_rmt supports now all plot variants of `ControlPlots.plot`
+- example_dev `cpfun.jl` (developer example that shows how to use this function)
+- the function `plot_rmt` supports now all plot variants of `ControlPlots.plot`
 
 # FLORIDyn v0.5.5 - 2025-25-09
 ## Fixed
