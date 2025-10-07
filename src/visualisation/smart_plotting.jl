@@ -305,9 +305,26 @@ function plot_rmt(X, Ys...; xlabel="", ylabel="", ylabels=nothing, labels=nothin
     scatter=false, title="", fig="", ysize=14, pltctrl=nothing)
     
     # Parameter validation: Ensure X and each Y in Ys have compatible dimensions
-    for (i, Y) in pairs(Ys...)
-        if length(X) != length(Y)
-            throw(ArgumentError("Length of X ($(length(X))) does not match length of Ys[$i] ($(length(Y)))."))
+    if length(Ys) > 1
+        # Multiple Y series detected
+        for (i, Y) in pairs(Ys)
+            if length(X) != length(Y)
+                throw(ArgumentError("Length of X ($(length(X))) does not match length of Ys[$i] ($(length(Y)))."))
+            end
+        end
+    else
+        # Single Y series detected
+        if length(Ys) == 1 && !isa(Ys[1], AbstractArray{<:AbstractArray})
+            Y = Ys[1]
+            if length(X) != length(Y)
+                throw(ArgumentError("Length of X ($(length(X))) does not match length of Ys[1] ($(length(Y)))."))
+            end
+        else
+            for (i, Y) in pairs(Ys[1])
+                 if length(X) != length(Y)
+                    throw(ArgumentError("Length of X ($(length(X))) does not match length of Ys[1][$i] ($(length(Y)))."))
+                end
+            end
         end
     end
     # Validate ylabel vs multiple Y series
