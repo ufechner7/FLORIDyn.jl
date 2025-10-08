@@ -16,7 +16,7 @@ vis_file      = "data/vis_54T.yaml"
 USE_TGC = true
 USE_STEP = false
 USE_FEED_FORWARD = true
-ONLINE = false
+ONLINE = true
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -65,62 +65,62 @@ vis.online = ONLINE
 # @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
 # @time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
 
-data_column = "ForeignReduction"
-ylabel      = "Rel. Wind Speed [%]"
+# data_column = "ForeignReduction"
+# ylabel      = "Rel. Wind Speed [%]"
 
-times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
-nT = wf.nT
-rel_power = zeros(length(times))
+# times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
+# nT = wf.nT
+# rel_power = zeros(length(times))
 
-induction_factors = zeros(nT, length(times))
-for (i, sim_time) in pairs(times)
-    induction_factors[:, i] = getInduction(set.induction_mode, con, (1:nT), sim_time)
-end
-for iT in 1:nT
-    rel_speed = plot_data[1][iT] ./ 100
-    induction_vec = induction_factors[iT, :]
-    cp_vec = 4 * induction_vec .* (1 .- induction_vec).^2
-    rel_power .+= rel_speed .^3 .* cp_vec ./ cp_max
-end
-rel_power ./= nT
+# induction_factors = zeros(nT, length(times))
+# for (i, sim_time) in pairs(times)
+#     induction_factors[:, i] = getInduction(set.induction_mode, con, (1:nT), sim_time)
+# end
+# for iT in 1:nT
+#     rel_speed = plot_data[1][iT] ./ 100
+#     induction_vec = induction_factors[iT, :]
+#     cp_vec = 4 * induction_vec .* (1 .- induction_vec).^2
+#     rel_power .+= rel_speed .^3 .* cp_vec ./ cp_max
+# end
+# rel_power ./= nT
 
-time_vector = 0:time_step:t_end
+# time_vector = 0:time_step:t_end
 
-# Calculate demand for each time point
-demand_values = [calc_demand(t) for t in time_vector]
+# # Calculate demand for each time point
+# demand_values = [calc_demand(t) for t in time_vector]
 
-plot_rmt(times, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
-         ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
+# plot_rmt(times, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
+#          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
 
-# Calculate Mean Square Error between rel_power and demand_values
-mse = sum((rel_power[101:end] .- demand_values[101:end]).^2) / length(rel_power[101:end])
-println("Root Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
-println("Max Absolute Error:            $(round(maximum(abs.(rel_power[101:end] .- demand_values[101:end])) * 100, digits=2))%")
+# # Calculate Mean Square Error between rel_power and demand_values
+# mse = sum((rel_power[101:end] .- demand_values[101:end]).^2) / length(rel_power[101:end])
+# println("Root Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
+# println("Max Absolute Error:            $(round(maximum(abs.(rel_power[101:end] .- demand_values[101:end])) * 100, digits=2))%")
 
-# Print wind conditions
-println("\n--- Wind Conditions ---")
-if hasfield(typeof(wind), :vel) && !isnothing(wind.vel)
-    if isa(wind.vel, Matrix) && size(wind.vel, 2) > 1
-        wind_speed = wind.vel[1, 2]  # First time point, wind speed column
-    elseif isa(wind.vel, Real)
-        wind_speed = wind.vel
-    else
-        wind_speed = "Variable (see wind.vel)"
-    end
-    println("Free-flow wind speed: $wind_speed m/s")
-else
-    println("Free-flow wind speed: Not available")
-end
+# # Print wind conditions
+# println("\n--- Wind Conditions ---")
+# if hasfield(typeof(wind), :vel) && !isnothing(wind.vel)
+#     if isa(wind.vel, Matrix) && size(wind.vel, 2) > 1
+#         wind_speed = wind.vel[1, 2]  # First time point, wind speed column
+#     elseif isa(wind.vel, Real)
+#         wind_speed = wind.vel
+#     else
+#         wind_speed = "Variable (see wind.vel)"
+#     end
+#     println("Free-flow wind speed: $wind_speed m/s")
+# else
+#     println("Free-flow wind speed: Not available")
+# end
 
-if hasfield(typeof(wind), :ti) && !isnothing(wind.ti)
-    if isa(wind.ti, Matrix) && size(wind.ti, 2) > 1
-        turbulence_intensity = wind.ti[1, 2]  # First time point, TI column
-    elseif isa(wind.ti, Real)
-        turbulence_intensity = wind.ti
-    else
-        turbulence_intensity = "Variable (see wind.ti)"
-    end
-    println("Turbulence intensity: $(round(turbulence_intensity * 100, digits=1))%")
-else
-    println("Turbulence intensity: Not available")
-end
+# if hasfield(typeof(wind), :ti) && !isnothing(wind.ti)
+#     if isa(wind.ti, Matrix) && size(wind.ti, 2) > 1
+#         turbulence_intensity = wind.ti[1, 2]  # First time point, TI column
+#     elseif isa(wind.ti, Real)
+#         turbulence_intensity = wind.ti
+#     else
+#         turbulence_intensity = "Variable (see wind.ti)"
+#     end
+#     println("Turbulence intensity: $(round(turbulence_intensity * 100, digits=1))%")
+# else
+#     println("Turbulence intensity: Not available")
+# end
