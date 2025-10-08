@@ -67,15 +67,11 @@ function run_simulation(set_induction::AbstractMatrix)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     vis.online = ONLINE
     @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    # TODO calculate a power time series
-    return wf, md, mi
+    # Calculate total wind farm power by grouping by time and summing turbine powers
+    total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
 end
 induction_data = calc_induction_matrix(ta, con, time_step, t_end)
-wf, md, mi = run_simulation(induction_data)
+total_power_df = run_simulation(induction_data)
 
-# Calculate total wind farm power by grouping by time and summing turbine powers
-total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
-
-# plot_rmt(md.Time, md.PowerGen)
 plot_rmt(total_power_df.Time, total_power_df.TotalPower; xlabel="Time (s)", ylabel="Total Power (MW)", 
          title="Total Wind Farm Power")
