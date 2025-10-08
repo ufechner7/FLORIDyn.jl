@@ -67,6 +67,7 @@ function run_simulation(set_induction::AbstractMatrix)
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     vis.online = ONLINE
     @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    # TODO calculate a power time series
     return wf, md, mi
 end
 induction_data = calc_induction_matrix(ta, con, time_step, t_end)
