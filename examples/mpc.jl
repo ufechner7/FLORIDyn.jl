@@ -7,7 +7,7 @@
 
 using Timers
 tic()
-using FLORIDyn, TerminalPager, DistributedNext 
+using FLORIDyn, TerminalPager, DistributedNext, DataFrames
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
@@ -73,4 +73,9 @@ end
 induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 wf, md, mi = run_simulation(induction_data)
 
-plot_rmt(md.Time, md.PowerGen)
+# Calculate total wind farm power by grouping by time and summing turbine powers
+total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
+
+# plot_rmt(md.Time, md.PowerGen)
+plot_rmt(total_power_df.Time, total_power_df.TotalPower; xlabel="Time (s)", ylabel="Total Power (MW)", 
+         title="Total Wind Farm Power")
