@@ -104,11 +104,11 @@ function run_simulation(set_induction::AbstractMatrix)
     # Calculate theoretical maximum power based on turbine ratings and wind conditions
     # Assumptions: free flow wind speed from wind.vel, optimal axial induction factor, no yaw
     max_power = calc_max_power(wind.vel, ta, wf, floris)
-    rel_power = (total_power_df.TotalPower ./ max_power) .* 100  # Convert to percentage
+    rel_power = (total_power_df.TotalPower ./ max_power) 
 end
 
 induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 rel_power = run_simulation(induction_data)
 
-plot_rmt(time_vector, [rel_power, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
+plot_rmt(time_vector, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
