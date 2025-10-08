@@ -93,6 +93,7 @@ function calc_max_power(wind_speed, ta, wf, floris)
     max_power = nT * max_power_per_turbine  # total maximum power in MW
 end
 
+# This function implements the "model" in the block diagram.
 function run_simulation(set_induction::AbstractMatrix)
     global set, wind, con, floridyn, floris, sim, ta, vis 
     con.induction_data = set_induction
