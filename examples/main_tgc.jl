@@ -14,6 +14,7 @@ settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 
 USE_TGC = true
+USE_STEP = false
 USE_FEED_FORWARD = true
 ONLINE = false
 
