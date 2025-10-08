@@ -73,10 +73,21 @@ end
 induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 total_power_df = run_simulation(induction_data)
 
-# Convert to relative power (normalize by maximum power)
-# TODO: Calculate max power based on turbine ratings and wind conditions
-max_power = 211.43555154195136 # maximum total power in MW for 54T at 8.2 m/s wind speed
-total_power_df.RelativePower = (total_power_df.TotalPower ./ max_power) .* 78.271  # Convert to percentage
+# Calculate theoretical maximum power based on turbine ratings and wind conditions
+# Assumptions: free flow wind speed = 8.2 m/s, optimal axial induction factor, no yaw
+wind_speed = wind.vel
+a_opt = 1/3  # optimal axial induction factor (Betz limit)
+Cp_opt = 4 * a_opt * (1 - a_opt)^2  # optimal power coefficient
+yaw = 0.0  # no yaw angle
+
+# Calculate maximum power for all turbines using getPower formula
+# P = 0.5 * ρ * A * Cp * U^3 * η * cos(yaw)^p_p
+nT = length(ta.pos[:, 1])  # number of turbines
+rotor_area = π * (wf.D[1] / 2)^2  # assuming all turbines have same diameter
+max_power_per_turbine = 0.5 * floris.airDen * rotor_area * Cp_opt * wind_speed^3 * floris.eta * cos(yaw)^floris.p_p / 1e6  # MW
+max_power = nT * max_power_per_turbine  # total maximum power in MW
+
+total_power_df.RelativePower = (total_power_df.TotalPower ./ max_power) .* 100  # Convert to percentage
 
 plot_rmt(time_vector, [total_power_df.RelativePower, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
