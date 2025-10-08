@@ -61,6 +61,38 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 time_vector = 0:time_step:t_end
 demand_values = [calc_demand(t) for t in time_vector]
 
+"""
+    calc_max_power(wind_speed, ta, wf, floris) -> Float64
+
+Calculate the theoretical maximum power output for the wind farm.
+
+# Arguments
+- `wind_speed::Float64`: Free flow wind speed in m/s
+- `ta::TurbineArray`: Turbine array containing position data
+- `wf::WindFarm`: Wind farm object containing rotor diameter data
+- `floris::Floris`: FLORIS parameters containing air density and efficiency
+
+# Returns
+- `max_power::Float64`: Maximum total power in MW
+
+# Assumptions
+- Optimal axial induction factor (Betz limit: a = 1/3)
+- No yaw misalignment (yaw = 0°)
+- All turbines have the same rotor diameter
+"""
+function calc_max_power(wind_speed, ta, wf, floris)
+    a_opt = 1/3  # optimal axial induction factor (Betz limit)
+    Cp_opt = 4 * a_opt * (1 - a_opt)^2  # optimal power coefficient
+    yaw = 0.0  # no yaw angle
+
+    # Calculate maximum power for all turbines using getPower formula
+    # P = 0.5 * ρ * A * Cp * U^3 * η * cos(yaw)^p_p
+    nT = length(ta.pos[:, 1])  # number of turbines
+    rotor_area = π * (wf.D[1] / 2)^2  # assuming all turbines have same diameter
+    max_power_per_turbine = 0.5 * floris.airDen * rotor_area * Cp_opt * wind_speed^3 * floris.eta * cos(yaw)^floris.p_p / 1e6  # MW
+    max_power = nT * max_power_per_turbine  # total maximum power in MW
+end
+
 function run_simulation(set_induction::AbstractMatrix)
     global set, wind, con, floridyn, floris, sim, ta, vis 
     con.induction_data = set_induction
@@ -69,25 +101,14 @@ function run_simulation(set_induction::AbstractMatrix)
     wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     # Calculate total wind farm power by grouping by time and summing turbine powers
     total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
+    # Calculate theoretical maximum power based on turbine ratings and wind conditions
+    # Assumptions: free flow wind speed from wind.vel, optimal axial induction factor, no yaw
+    max_power = calc_max_power(wind.vel, ta, wf, floris)
+    rel_power = (total_power_df.TotalPower ./ max_power) .* 100  # Convert to percentage
 end
+
 induction_data = calc_induction_matrix(ta, con, time_step, t_end)
-total_power_df = run_simulation(induction_data)
+rel_power = run_simulation(induction_data)
 
-# Calculate theoretical maximum power based on turbine ratings and wind conditions
-# Assumptions: free flow wind speed = 8.2 m/s, optimal axial induction factor, no yaw
-wind_speed = wind.vel
-a_opt = 1/3  # optimal axial induction factor (Betz limit)
-Cp_opt = 4 * a_opt * (1 - a_opt)^2  # optimal power coefficient
-yaw = 0.0  # no yaw angle
-
-# Calculate maximum power for all turbines using getPower formula
-# P = 0.5 * ρ * A * Cp * U^3 * η * cos(yaw)^p_p
-nT = length(ta.pos[:, 1])  # number of turbines
-rotor_area = π * (wf.D[1] / 2)^2  # assuming all turbines have same diameter
-max_power_per_turbine = 0.5 * floris.airDen * rotor_area * Cp_opt * wind_speed^3 * floris.eta * cos(yaw)^floris.p_p / 1e6  # MW
-max_power = nT * max_power_per_turbine  # total maximum power in MW
-
-total_power_df.RelativePower = (total_power_df.TotalPower ./ max_power) .* 100  # Convert to percentage
-
-plot_rmt(time_vector, [total_power_df.RelativePower, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
+plot_rmt(time_vector, [rel_power, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
