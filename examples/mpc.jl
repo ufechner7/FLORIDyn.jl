@@ -73,7 +73,11 @@ end
 induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 total_power_df = run_simulation(induction_data)
 
-plot_rmt(total_power_df.Time, total_power_df.TotalPower; xlabel="Time (s)", ylabel="Total Power (MW)", 
+# Convert to relative power (normalize by maximum power)
+max_power = maximum(total_power_df.TotalPower)
+total_power_df.RelativePower = (total_power_df.TotalPower ./ max_power) .* 78.271  # Convert to percentage
+
+plot_rmt(total_power_df.Time, total_power_df.RelativePower; xlabel="Time (s)", ylabel="Relative Power [%]", 
          fig="Total Wind Farm Power")
 plot_rmt(time_vector, demand_values*100; xlabel="Time (s)", ylabel="Rel. Demand [%]", 
          fig="Power Demand")
