@@ -5,8 +5,6 @@
 # using a precomputed induction matrix for feed-forward control.
 # TGC shall be extended to full model predictive control (MPC) in a future example
 
-using Timers
-tic()
 using FLORIDyn, TerminalPager, DistributedNext, DataFrames
 if Threads.nthreads() == 1; using ControlPlots; end
 
@@ -58,15 +56,17 @@ else
     set.induction_mode = Induction_Constant()
 end
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-toc()
 
+# Calculate demand for each time point
+time_vector = 0:time_step:t_end
+demand_values = [calc_demand(t) for t in time_vector]
 
 function run_simulation(set_induction::AbstractMatrix)
     global set, wind, con, floridyn, floris, sim, ta, vis 
     con.induction_data = set_induction
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     vis.online = ONLINE
-    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     # Calculate total wind farm power by grouping by time and summing turbine powers
     total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
 end
@@ -74,4 +74,6 @@ induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 total_power_df = run_simulation(induction_data)
 
 plot_rmt(total_power_df.Time, total_power_df.TotalPower; xlabel="Time (s)", ylabel="Total Power (MW)", 
-         title="Total Wind Farm Power")
+         fig="Total Wind Farm Power")
+plot_rmt(time_vector, demand_values*100; xlabel="Time (s)", ylabel="Rel. Demand [%]", 
+         fig="Power Demand")
