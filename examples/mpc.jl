@@ -74,7 +74,8 @@ induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 total_power_df = run_simulation(induction_data)
 
 # Convert to relative power (normalize by maximum power)
-max_power = maximum(total_power_df.TotalPower)
+# TODO: Calculate max power based on turbine ratings and wind conditions
+max_power = 211.43555154195136 # maximum total power in MW for 54T at 8.2 m/s wind speed
 total_power_df.RelativePower = (total_power_df.TotalPower ./ max_power) .* 78.271  # Convert to percentage
 
 plot_rmt(time_vector, [total_power_df.RelativePower, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
