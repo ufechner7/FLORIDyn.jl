@@ -108,6 +108,11 @@ function run_simulation(set_induction::AbstractMatrix)
     rel_power = (total_power_df.TotalPower ./ max_power) 
 end
 
+function calc_induction_matrix(demand::Vector, tuning_parameters::Vector)
+    # Placeholder for actual induction matrix calculation
+    return zeros(size(demand, 1), size(tuning_parameters, 1))
+end
+
 induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 rel_power = run_simulation(induction_data)
 
