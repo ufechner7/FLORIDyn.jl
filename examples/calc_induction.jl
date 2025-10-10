@@ -3,7 +3,8 @@
 
 # Calculate axial induction factor, and calculate the demand
 
-using FLORIDyn, ControlPlots, YAML, DistributedNext
+using FLORIDyn, YAML, DistributedNext
+if Threads.nthreads() == 1; using ControlPlots; end
 
 # Select plotting backend: use ControlPlots only in single-threaded mode; otherwise let plot_rmt handle remote plotting
 pltctrl = nothing
