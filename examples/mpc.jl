@@ -141,7 +141,7 @@ function calc_axial_induction2(time, scaling; dt=DT)
     return max(0.0, min(BETZ_INDUCTION, corrected_induction))
 end
 
-function calc_induction_matrix2(ta, time_step, t_end, scaling=1.0)
+function calc_induction_matrix2(ta, time_step, t_end; scaling)
     # Create time vector from 0 to t_end with time_step intervals
     time_vector = 0:time_step:t_end
     n_time_steps = length(time_vector)
@@ -165,15 +165,12 @@ function calc_induction_matrix2(ta, time_step, t_end, scaling=1.0)
 end
 
 
-induction_data = calc_induction_matrix2(ta, time_step, t_end)
+induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=1.2)
 rel_power = run_simulation(induction_data)
 
 plot_rmt(time_vector, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
 
-# # plot induction factor vs time for one turbine using calc_axial_induction2
-# induction_factors = [calc_axial_induction2(t) for t in time_vector]
-# plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", fig="induction", pltctrl)
-
-# # plot the demand vs time
-# plot_rmt(time_vector, demand_values .* 100; xlabel="Time [s]", ylabel="Rel. Demand [%]", fig="demand", pltctrl)
+# plot induction factor vs time for one turbine using calc_axial_induction2
+induction_factors = induction_data[:, 2]
+plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", fig="induction", pltctrl)
