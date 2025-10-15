@@ -15,6 +15,7 @@ USE_TGC = true
 USE_STEP = false
 USE_FEED_FORWARD = true
 ONLINE = false
+T_SKIP = 400 # skip first 400s of simulation for error calculation and plotting
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -164,13 +165,21 @@ function calc_induction_matrix2(ta, time_step, t_end; scaling)
     return induction_matrix
 end
 
+function calc_error(rel_power, demand_values, time_step)
+    error = sum((rel_power[T_SKIP ÷ time_step:end] .- demand_values[T_SKIP ÷ time_step:end]).^2) / 
+                length(demand_values[T_SKIP ÷ time_step:end])
+    return error
+end
 
-induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=1.2)
+
+induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=1.23)
 rel_power = run_simulation(induction_data)
+error = calc_error(rel_power, demand_values, time_step)
+println("Error (MSE) between demand and actual power: $(round(error*100, digits=2)) %")
 
-plot_rmt(time_vector, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
+plot_rmt(time_vector, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, 1600),
          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
 
-# plot induction factor vs time for one turbine using calc_axial_induction2
-induction_factors = induction_data[:, 2]
-plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", fig="induction", pltctrl)
+## plot induction factor vs time for one turbine using calc_axial_induction2
+# induction_factors = induction_data[:, 2]
+# plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", fig="induction", pltctrl)
