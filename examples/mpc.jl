@@ -113,8 +113,49 @@ function calc_induction_matrix(demand::Vector, tuning_parameters::Vector)
     return zeros(size(demand, 1), size(tuning_parameters, 1))
 end
 
+function calc_axial_induction2(ta, con, turbine, time; dt=DT)
+    group_id = FLORIDyn.turbine_group(ta, turbine)   
+    base_induction = calc_induction_per_group(group_id, time)
+    t1 = 240.0 + dt  # Time to start increasing demand
+    t2 = 960.0 + dt  # Time to reach final demand
+
+    # Calculate interpolation factor
+    # 1.0 at t=t1 (full correction), 0.0 at t=t2 (no correction)
+    # Linear interpolation between t1 and t2
+    if time <= t1
+        interp_factor = 1.0  # Full correction before and at t1
+    elseif time >= t2
+        interp_factor = 0.0  # No correction at and after t2
+    else
+        # Linear interpolation between t1 and t2
+        interp_factor = ((t2 - time) / (t2 - t1))
+    end
+    
+    # Apply corrections based on group
+    correction = 0.0
+    # if group_id == 1
+    #     correction = -0.13 * interp_factor  # Large reduction
+    # elseif group_id == 4
+    #     correction = +0.2 * interp_factor  # Large increase (balancing group 1)
+    # elseif group_id == 2
+    #     correction = -0.1 * interp_factor  # Small reduction
+    # elseif group_id == 3
+    #     correction = -0.00 * interp_factor  # Small increase (balancing group 2)
+    # end
+
+    rel_power = calc_cp(base_induction) / cp_max + correction
+    corrected_induction = calc_induction(rel_power * cp_max)
+    return max(0.0, min(BETZ_INDUCTION, corrected_induction))
+end
+
+
 induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 rel_power = run_simulation(induction_data)
 
-plot_rmt(time_vector, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
-         ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
+# plot_rmt(time_vector, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(400, 1600),
+#          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
+
+# plot induction factor vs time for one turbine using calc_axial_induction2
+turbine_id = 1
+induction_factors = [calc_axial_induction2(ta, con, turbine_id, t) for t in time_vector]
+plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", pltctrl)
