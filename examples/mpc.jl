@@ -5,7 +5,7 @@
 # using a precomputed induction matrix for feed-forward control.
 # TGC shall be extended to full model predictive control (MPC) in a future example
 
-using FLORIDyn, TerminalPager, DistributedNext, DataFrames
+using FLORIDyn, TerminalPager, DistributedNext, DataFrames, NOMAD
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
@@ -171,8 +171,68 @@ function calc_error(rel_power, demand_values, time_step)
     return error
 end
 
+"""
+    eval_fct(x::Vector{Float64}) -> Tuple{Bool, Bool, Vector{Float64}}
 
-induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=1.23)
+Evaluation function for NOMAD optimization of the scaling parameter.
+
+This function calculates the mean squared error between the relative power output 
+and demand values for a given scaling parameter. It is designed to be minimized 
+by the NOMAD optimizer.
+
+# Arguments
+- `x::Vector{Float64}`: A vector containing a single element - the scaling parameter (range: 1.0 to 2.0)
+
+# Returns
+- `success::Bool`: Always `true` to indicate successful evaluation
+- `count_eval::Bool`: Always `true` to count this evaluation
+- `bb_outputs::Vector{Float64}`: Vector containing the objective value (MSE)
+
+# Global Variables Used
+- `ta`: Turbine array
+- `time_step`: Simulation time step
+- `t_end`: End time of simulation
+- `demand_values`: Target demand values
+"""
+function eval_fct(x::Vector{Float64})
+    scaling = x[1]  # Extract scaling parameter from input vector
+    
+    # Calculate induction matrix with current scaling
+    induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=scaling)
+    
+    # Run simulation and get relative power
+    rel_power = run_simulation(induction_data)
+    
+    # Calculate error
+    error = calc_error(rel_power, demand_values, time_step)
+    
+    bb_outputs = [error]
+    success = true
+    count_eval = true
+    
+    return (success, count_eval, bb_outputs)
+end
+
+# Set up NOMAD optimization problem
+p = NomadProblem(
+    1,                    # dimension (1 parameter: scaling)
+    1,                    # number of outputs (just the objective)
+    ["OBJ"],             # output types: OBJ = objective to minimize
+    eval_fct;            # evaluation function
+    lower_bound=[1.0],   # minimum scaling value
+    upper_bound=[2.0]    # maximum scaling value
+)
+
+# Set NOMAD options
+p.options.max_bb_eval = 30      # maximum number of function evaluations
+p.options.display_degree = 2    # verbosity level
+
+# Run optimization
+result = solve(p, [1.5])  # Start from initial guess of 1.5
+optimal_scaling = result.x_best_feas[1]
+
+
+induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
 rel_power = run_simulation(induction_data)
 error = calc_error(rel_power, demand_values, time_step)
 println("Error (MSE) between demand and actual power: $(round(error*100, digits=2)) %")
