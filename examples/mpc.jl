@@ -113,9 +113,11 @@ function calc_induction_matrix(demand::Vector, tuning_parameters::Vector)
     return zeros(size(demand, 1), size(tuning_parameters, 1))
 end
 
-function calc_axial_induction2(ta, con, turbine, time; dt=DT)
-    group_id = FLORIDyn.turbine_group(ta, turbine)   
-    base_induction = calc_induction_per_group(group_id, time)
+function calc_axial_induction2(time; scaling=1.0, dt=DT)
+    # group_id = FLORIDyn.turbine_group(ta, turbine)   
+    demand = calc_demand(time)
+    base_induction = calc_induction(demand * scaling * cp_max)
+
     t1 = 240.0 + dt  # Time to start increasing demand
     t2 = 960.0 + dt  # Time to reach final demand
 
@@ -133,15 +135,6 @@ function calc_axial_induction2(ta, con, turbine, time; dt=DT)
     
     # Apply corrections based on group
     correction = 0.0
-    # if group_id == 1
-    #     correction = -0.13 * interp_factor  # Large reduction
-    # elseif group_id == 4
-    #     correction = +0.2 * interp_factor  # Large increase (balancing group 1)
-    # elseif group_id == 2
-    #     correction = -0.1 * interp_factor  # Small reduction
-    # elseif group_id == 3
-    #     correction = -0.00 * interp_factor  # Small increase (balancing group 2)
-    # end
 
     rel_power = calc_cp(base_induction) / cp_max + correction
     corrected_induction = calc_induction(rel_power * cp_max)
@@ -156,6 +149,8 @@ rel_power = run_simulation(induction_data)
 #          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
 
 # plot induction factor vs time for one turbine using calc_axial_induction2
-turbine_id = 1
-induction_factors = [calc_axial_induction2(ta, con, turbine_id, t) for t in time_vector]
-plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", pltctrl)
+induction_factors = [calc_axial_induction2(t) for t in time_vector]
+plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", fig="induction", pltctrl)
+
+# plot the demand vs time
+plot_rmt(time_vector, demand_values .* 100; xlabel="Time [s]", ylabel="Rel. Demand [%]", fig="demand", pltctrl)
