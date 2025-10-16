@@ -137,6 +137,10 @@ function calc_axial_induction2(time, scaling::Vector; dt=DT, group_id=nothing)
     t1 = 240.0 + dt  # Time to start increasing demand
     t2 = 960.0 + dt  # Time to reach final demand
 
+    if time < t1
+        time = t1
+    end
+
     scaling_begin = scaling[1]
     scaling_mid = scaling[2]
     scaling_end = scaling[3]
@@ -215,21 +219,22 @@ and demand values for a given scaling parameter. It is designed to be minimized
 by the NOMAD optimizer.
 
 # Arguments
-- `x::Vector{Float64}`: A vector containing a single element - the scaling parameter (range: 1.0 to 2.0)
+- `x::Vector{Float64}`: A vector containing the scaling parameters
 
 # Returns
 - `success::Bool`: Always `true` to indicate successful evaluation
 - `count_eval::Bool`: Always `true` to count this evaluation
-- `bb_outputs::Vector{Float64}`: Vector containing the objective value (MSE)
+- `bb_outputs::Vector{Float64}`: Vector containing [objective, constraint(s)]
 
 # Global Variables Used
 - `ta`: Turbine array
 - `time_step`: Simulation time step
 - `t_end`: End time of simulation
 - `demand_values`: Target demand values
+- `GROUP_CONTROL`: Boolean flag for group control mode
 """
 function eval_fct(x::Vector{Float64})
-    scaling = x  # scaling is now a vector with two elements
+    scaling = x  # scaling is now a vector with parameters
     
     # Calculate induction matrix with current scaling
     induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=scaling)
@@ -240,7 +245,17 @@ function eval_fct(x::Vector{Float64})
     # Calculate error
     error = calc_error(rel_power, demand_values, time_step)
     
-    bb_outputs = [error]
+    # Add constraint if GROUP_CONTROL is true
+    if GROUP_CONTROL
+        # Constraint: x[4] + x[5] + x[6] <= 4
+        # For NOMAD, constraints should be <= 0, so we formulate as:
+        # x[4] + x[5] + x[6] - 4 <= 0
+        constraint = x[4] + x[5] + x[6] - 4.0
+        bb_outputs = [error, constraint]
+    else
+        bb_outputs = [error]
+    end
+    
     success = true
     count_eval = true
     
@@ -250,15 +265,15 @@ if GROUP_CONTROL
     # Set up NOMAD optimization problem
     p = NomadProblem(
         6,                    # dimension (6 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling)
-        1,                    # number of outputs (just the objective)
-        ["OBJ"],             # output types: OBJ = objective to minimize
+        2,                    # number of outputs (objective + 1 constraint)
+        ["OBJ", "PB"],       # output types: OBJ = objective to minimize, PB = progressive barrier constraint
         eval_fct;            # evaluation function
         lower_bound=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0],   # minimum scaling values
         upper_bound=[2.0, 2.0, 2.0, 2.0, 2.0, 2.0]    # maximum scaling values
     )
 
     # Set NOMAD options
-    p.options.max_bb_eval = 1000      # maximum number of function evaluations
+    p.options.max_bb_eval = 200      # maximum number of function evaluations
     p.options.display_degree = 2    # verbosity level
 else
         # Set up NOMAD optimization problem
