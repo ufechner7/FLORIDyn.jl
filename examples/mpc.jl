@@ -327,6 +327,6 @@ plot_rmt(time_vector, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]
          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
 
 ## plot induction factor vs time for one turbine using calc_axial_induction2
-# induction_factors = induction_data[:, 2]
-# plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", fig="induction", pltctrl)
+induction_factors = induction_data[:, 2]
+plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", fig="induction", pltctrl)
 results = JLD2.load(data_file_group_control, "results")
