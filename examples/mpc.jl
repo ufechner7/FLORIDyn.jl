@@ -224,7 +224,7 @@ p = NomadProblem(
 )
 
 # Set NOMAD options
-p.options.max_bb_eval = 30      # maximum number of function evaluations
+p.options.max_bb_eval = 20      # maximum number of function evaluations
 p.options.display_degree = 2    # verbosity level
 
 # Run optimization
@@ -234,8 +234,8 @@ optimal_scaling = result.x_best_feas[1]
 
 induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
 rel_power = run_simulation(induction_data)
-error = calc_error(rel_power, demand_values, time_step)
-println("Error (MSE) between demand and actual power: $(round(error*100, digits=2)) %")
+mse = calc_error(rel_power, demand_values, time_step)
+println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
 
 plot_rmt(time_vector, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, 1600),
          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
