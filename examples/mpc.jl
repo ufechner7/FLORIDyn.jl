@@ -114,13 +114,19 @@ function calc_induction_matrix(demand::Vector, tuning_parameters::Vector)
     return zeros(size(demand, 1), size(tuning_parameters, 1))
 end
 
-function calc_axial_induction2(time, scaling; dt=DT)
+function calc_axial_induction2(time, scaling::Vector; dt=DT)
     # group_id = FLORIDyn.turbine_group(ta, turbine)   
-    demand = calc_demand(time)
-    base_induction = calc_induction(demand * scaling * cp_max)
-
     t1 = 240.0 + dt  # Time to start increasing demand
     t2 = 960.0 + dt  # Time to reach final demand
+
+    scaling_begin = scaling[1]
+    scaling_end = scaling[2]
+    # TODO calculate scaling using linear interpolation between scaling_begin and scaling_end
+    scaling = scaling_begin + (scaling_end - scaling_begin) * ((time - t1) / (t2 - t1))
+    scaling = max(scaling_begin, min(scaling_end, scaling))  # clamp scaling to [scaling_begin, scaling_end]
+    
+    demand = calc_demand(time)
+    base_induction = calc_induction(demand * scaling * cp_max)
 
     # Calculate interpolation factor
     # 1.0 at t=t1 (full correction), 0.0 at t=t2 (no correction)
@@ -195,7 +201,7 @@ by the NOMAD optimizer.
 - `demand_values`: Target demand values
 """
 function eval_fct(x::Vector{Float64})
-    scaling = x[1]  # Extract scaling parameter from input vector
+    scaling = x  # scaling is now a vector with two elements
     
     # Calculate induction matrix with current scaling
     induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=scaling)
@@ -215,21 +221,21 @@ end
 
 # Set up NOMAD optimization problem
 p = NomadProblem(
-    1,                    # dimension (1 parameter: scaling)
+    2,                    # dimension (2 parameters: scaling_begin, scaling_end)
     1,                    # number of outputs (just the objective)
     ["OBJ"],             # output types: OBJ = objective to minimize
     eval_fct;            # evaluation function
-    lower_bound=[1.0],   # minimum scaling value
-    upper_bound=[2.0]    # maximum scaling value
+    lower_bound=[1.0, 1.0],   # minimum scaling values
+    upper_bound=[2.0, 2.0]    # maximum scaling values
 )
 
 # Set NOMAD options
-p.options.max_bb_eval = 20      # maximum number of function evaluations
+p.options.max_bb_eval = 50      # maximum number of function evaluations
 p.options.display_degree = 2    # verbosity level
 
 # Run optimization
-result = solve(p, [1.5])  # Start from initial guess of 1.5
-optimal_scaling = result.x_best_feas[1]
+result = solve(p, [1.5, 1.5])  # Start from initial guess of [1.5, 1.5] 
+optimal_scaling = result.x_best_feas[1:2]
 
 
 induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
