@@ -5,11 +5,12 @@
 # using a precomputed induction matrix for feed-forward control.
 # TGC shall be extended to full model predictive control (MPC) in a future example
 
-using FLORIDyn, TerminalPager, DistributedNext, DataFrames, NOMAD
+using FLORIDyn, TerminalPager, DistributedNext, DataFrames, NOMAD, JLD2
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
+data_file = "data/mpc_result.jld2"
 
 USE_TGC = false
 USE_STEP = false
@@ -235,14 +236,37 @@ p = NomadProblem(
 p.options.max_bb_eval = 50      # maximum number of function evaluations
 p.options.display_degree = 2    # verbosity level
 
-# Run optimization
-result = solve(p, [1.5, 1.5])  # Start from initial guess of [1.5, 1.5] 
-optimal_scaling = result.x_best_feas[1:2]
+results = nothing
+if isfile(data_file)
+    println("Loading cached MPC results from $(data_file)…")
+    results = JLD2.load(data_file, "results")
+    # Unpack
+    time_vector   = results["time_vector"]
+    demand_values = results["demand_values"]
+    rel_power     = results["rel_power"]
+    induction_data = results["induction_data"]
+    optimal_scaling = results["optimal_scaling"]
+    mse = results["mse"]
+else
+    # Run optimization and simulation
+    result = solve(p, [1.5, 1.5])  # Start from initial guess of [1.5, 1.5]
+    optimal_scaling = result.x_best_feas[1:2]
 
+    induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
+    rel_power = run_simulation(induction_data)
+    mse = calc_error(rel_power, demand_values, time_step)
 
-induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
-rel_power = run_simulation(induction_data)
-mse = calc_error(rel_power, demand_values, time_step)
+    # Persist
+    JLD2.jldsave(data_file; results=Dict(
+        "time_vector" => collect(time_vector),
+        "demand_values" => demand_values,
+        "rel_power" => rel_power,
+        "induction_data" => induction_data,
+        "optimal_scaling" => optimal_scaling,
+        "mse" => mse,
+    ))
+end
+
 println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
 
 plot_rmt(time_vector, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, 1600),
