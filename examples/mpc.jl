@@ -11,7 +11,10 @@ if Threads.nthreads() == 1; using ControlPlots; end
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 data_file = "data/mpc_result.jld2"
+data_file_group_control = "data/mpc_result_group_control.jld2"
 
+
+GROUP_CONTROL = false  # if false, use individual turbine control (not recommended for MPC)
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -117,8 +120,20 @@ function calc_induction_matrix(demand::Vector, tuning_parameters::Vector)
     return zeros(size(demand, 1), size(tuning_parameters, 1))
 end
 
-function calc_axial_induction2(time, scaling::Vector; dt=DT)
-    # group_id = FLORIDyn.turbine_group(ta, turbine)   
+function calc_axial_induction2(time, scaling::Vector; dt=DT, group_id=nothing)
+    id_scaling = 1.0
+    if length(scaling) > 3
+        if group_id == 1
+            id_scaling = scaling[4]
+        elseif group_id == 2
+            id_scaling = scaling[5]
+        elseif group_id == 3
+            id_scaling = scaling[6]
+        else
+            id_scaling = 4.0 - (scaling[4] + scaling[5] + scaling[6])
+        end
+        id_scaling = clamp(id_scaling, 0.0, 2.0)
+    end
     t1 = 240.0 + dt  # Time to start increasing demand
     t2 = 960.0 + dt  # Time to reach final demand
 
@@ -130,7 +145,7 @@ function calc_axial_induction2(time, scaling::Vector; dt=DT)
     scaling = max(scaling_begin, min(scaling_end, scaling))  # clamp scaling to [scaling_begin, scaling_end]
     
     demand = calc_demand(time)
-    base_induction = calc_induction(demand * scaling * cp_max)
+    base_induction = calc_induction(demand * scaling * id_scaling * cp_max)
 
     # Calculate interpolation factor
     # 1.0 at t=t1 (full correction), 0.0 at t=t2 (no correction)
@@ -168,7 +183,8 @@ function calc_induction_matrix2(ta, time_step, t_end; scaling)
     # Calculate induction for each turbine at each time step (columns 2 onwards)
     for (t_idx, time) in enumerate(time_vector)
         for i in 1:n_turbines
-            induction_matrix[t_idx, i + 1] = calc_axial_induction2(time, scaling)
+            group_id = FLORIDyn.turbine_group(ta, i)
+            induction_matrix[t_idx, i + 1] = calc_axial_induction2(time, scaling; group_id=group_id)
         end
     end
     
@@ -176,9 +192,17 @@ function calc_induction_matrix2(ta, time_step, t_end; scaling)
 end
 
 function calc_error(rel_power, demand_values, time_step)
-    error = sum((rel_power[T_SKIP ÷ time_step:end] .- demand_values[T_SKIP ÷ time_step:end]).^2) / 
-                length(demand_values[T_SKIP ÷ time_step:end])
-    return error
+    # Start index after skipping initial transient; +1 because Julia is 1-based
+    i0 = Int(floor(T_SKIP / time_step)) + 1
+    # Clamp to valid range
+    i0 = max(1, i0)
+    n = min(length(rel_power), length(demand_values)) - i0 + 1
+    if n <= 0
+        error("calc_error: empty overlap after skip; check T_SKIP and lengths (rel_power=$(length(rel_power)), demand=$(length(demand_values)), i0=$(i0))")
+    end
+    r = @view rel_power[i0:i0 + n - 1]
+    d = @view demand_values[i0:i0 + n - 1]
+    return sum((r .- d) .^ 2) / length(d)
 end
 
 """
@@ -225,22 +249,26 @@ end
 
 # Set up NOMAD optimization problem
 p = NomadProblem(
-    3,                    # dimension (3 parameters: scaling_begin, scaling_mid, scaling_end)
+    6,                    # dimension (6 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling)
     1,                    # number of outputs (just the objective)
     ["OBJ"],             # output types: OBJ = objective to minimize
     eval_fct;            # evaluation function
-    lower_bound=[1.0, 1.0, 1.0],   # minimum scaling values
-    upper_bound=[2.0, 2.0, 2.0]    # maximum scaling values
+    lower_bound=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0],   # minimum scaling values
+    upper_bound=[2.0, 2.0, 2.0, 2.0, 2.0, 2.0]    # maximum scaling values
 )
 
 # Set NOMAD options
-p.options.max_bb_eval = 100      # maximum number of function evaluations
+p.options.max_bb_eval = 300      # maximum number of function evaluations
 p.options.display_degree = 2    # verbosity level
 
 results = nothing
 if isfile(data_file)
     println("Loading cached MPC results from $(data_file)…")
-    results = JLD2.load(data_file, "results")
+    if GROUP_CONTROL
+        results = JLD2.load(data_file_group_control, "results")
+    else
+        results = JLD2.load(data_file, "results")   
+    end
     # Unpack
     time_vector   = results["time_vector"]
     demand_values = results["demand_values"]
@@ -250,8 +278,8 @@ if isfile(data_file)
     mse = results["mse"]
 else
     # Run optimization and simulation
-    result = solve(p, [1.5, 1.5, 1.5])  # Start from initial guess of [1.5, 1.5, 1.5]
-    optimal_scaling = result.x_best_feas[1:3]
+    result = solve(p, [1.5, 1.5, 1.5, 1.0, 1.0, 1.0])  # Start from initial guess of [1.5, 1.5, 1.5, 1.0, 1.0, 1.0]
+    optimal_scaling = result.x_best_feas[1:6]
 
     induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
     rel_power = run_simulation(induction_data)
