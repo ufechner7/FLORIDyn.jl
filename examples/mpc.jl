@@ -14,7 +14,7 @@ data_file = "data/mpc_result.jld2"
 data_file_group_control = "data/mpc_result_group_control.jld2"
 
 
-GROUP_CONTROL = false  # if false, use individual turbine control (not recommended for MPC)
+GROUP_CONTROL = true  # if false, use individual turbine control (not recommended for MPC)
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -246,23 +246,38 @@ function eval_fct(x::Vector{Float64})
     
     return (success, count_eval, bb_outputs)
 end
+if GROUP_CONTROL
+    # Set up NOMAD optimization problem
+    p = NomadProblem(
+        6,                    # dimension (6 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling)
+        1,                    # number of outputs (just the objective)
+        ["OBJ"],             # output types: OBJ = objective to minimize
+        eval_fct;            # evaluation function
+        lower_bound=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0],   # minimum scaling values
+        upper_bound=[2.0, 2.0, 2.0, 2.0, 2.0, 2.0]    # maximum scaling values
+    )
 
-# Set up NOMAD optimization problem
-p = NomadProblem(
-    6,                    # dimension (6 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling)
-    1,                    # number of outputs (just the objective)
-    ["OBJ"],             # output types: OBJ = objective to minimize
-    eval_fct;            # evaluation function
-    lower_bound=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0],   # minimum scaling values
-    upper_bound=[2.0, 2.0, 2.0, 2.0, 2.0, 2.0]    # maximum scaling values
-)
+    # Set NOMAD options
+    p.options.max_bb_eval = 1000      # maximum number of function evaluations
+    p.options.display_degree = 2    # verbosity level
+else
+        # Set up NOMAD optimization problem
+    p = NomadProblem(
+        6,                    # dimension (6 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling)
+        1,                    # number of outputs (just the objective)
+        ["OBJ"],             # output types: OBJ = objective to minimize
+        eval_fct;            # evaluation function
+        lower_bound=[1.0, 1.0, 1.0],   # minimum scaling values
+        upper_bound=[2.0, 3.0, 3.0]    # maximum scaling values
+    )
 
-# Set NOMAD options
-p.options.max_bb_eval = 300      # maximum number of function evaluations
-p.options.display_degree = 2    # verbosity level
+    # Set NOMAD options
+    p.options.max_bb_eval = 50      # maximum number of function evaluations
+    p.options.display_degree = 2    # verbosity level
+end
 
 results = nothing
-if isfile(data_file)
+if (isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_group_control) && GROUP_CONTROL)
     println("Loading cached MPC results from $(data_file)…")
     if GROUP_CONTROL
         results = JLD2.load(data_file_group_control, "results")
@@ -278,15 +293,25 @@ if isfile(data_file)
     mse = results["mse"]
 else
     # Run optimization and simulation
-    result = solve(p, [1.5, 1.5, 1.5, 1.0, 1.0, 1.0])  # Start from initial guess of [1.5, 1.5, 1.5, 1.0, 1.0, 1.0]
-    optimal_scaling = result.x_best_feas[1:6]
+    if GROUP_CONTROL
+        result = solve(p, [1.25, 2.0, 2.0, 0.63, 0.71, 1.54]) 
+        optimal_scaling = result.x_best_feas[1:6]
+    else
+        result = solve(p, [1.5, 1.5, 1.5])  # Start from initial guess of [1.5, 1.5, 1.5]
+        optimal_scaling = result.x_best_feas[1:3]
+    end
 
     induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
     rel_power = run_simulation(induction_data)
     mse = calc_error(rel_power, demand_values, time_step)
 
     # Persist
-    JLD2.jldsave(data_file; results=Dict(
+    if GROUP_CONTROL
+        data_file1 = data_file_group_control
+    else
+        data_file1 = data_file
+    end
+    JLD2.jldsave(data_file1; results=Dict(
         "time_vector" => collect(time_vector),
         "demand_values" => demand_values,
         "rel_power" => rel_power,
@@ -304,3 +329,4 @@ plot_rmt(time_vector, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]
 ## plot induction factor vs time for one turbine using calc_axial_induction2
 # induction_factors = induction_data[:, 2]
 # plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", fig="induction", pltctrl)
+results = JLD2.load(data_file_group_control, "results")
