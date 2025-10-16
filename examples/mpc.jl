@@ -123,9 +123,10 @@ function calc_axial_induction2(time, scaling::Vector; dt=DT)
     t2 = 960.0 + dt  # Time to reach final demand
 
     scaling_begin = scaling[1]
-    scaling_end = scaling[2]
-    # TODO calculate scaling using linear interpolation between scaling_begin and scaling_end
-    scaling = scaling_begin + (scaling_end - scaling_begin) * ((time - t1) / (t2 - t1))
+    scaling_mid = scaling[2]
+    scaling_end = scaling[3]
+    # calculate scaling using a quadratic interpolation between scaling_begin, scaling_mid, and scaling_end
+    scaling = scaling_begin + (scaling_mid - scaling_begin) * ((time - t1) / (t2 - t1))^2
     scaling = max(scaling_begin, min(scaling_end, scaling))  # clamp scaling to [scaling_begin, scaling_end]
     
     demand = calc_demand(time)
@@ -224,16 +225,16 @@ end
 
 # Set up NOMAD optimization problem
 p = NomadProblem(
-    2,                    # dimension (2 parameters: scaling_begin, scaling_end)
+    3,                    # dimension (3 parameters: scaling_begin, scaling_mid, scaling_end)
     1,                    # number of outputs (just the objective)
     ["OBJ"],             # output types: OBJ = objective to minimize
     eval_fct;            # evaluation function
-    lower_bound=[1.0, 1.0],   # minimum scaling values
-    upper_bound=[2.0, 2.0]    # maximum scaling values
+    lower_bound=[1.0, 1.0, 1.0],   # minimum scaling values
+    upper_bound=[2.0, 2.0, 2.0]    # maximum scaling values
 )
 
 # Set NOMAD options
-p.options.max_bb_eval = 50      # maximum number of function evaluations
+p.options.max_bb_eval = 100      # maximum number of function evaluations
 p.options.display_degree = 2    # verbosity level
 
 results = nothing
@@ -249,8 +250,8 @@ if isfile(data_file)
     mse = results["mse"]
 else
     # Run optimization and simulation
-    result = solve(p, [1.5, 1.5])  # Start from initial guess of [1.5, 1.5]
-    optimal_scaling = result.x_best_feas[1:2]
+    result = solve(p, [1.5, 1.5, 1.5])  # Start from initial guess of [1.5, 1.5, 1.5]
+    optimal_scaling = result.x_best_feas[1:3]
 
     induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
     rel_power = run_simulation(induction_data)
