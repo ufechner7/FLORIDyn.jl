@@ -89,8 +89,8 @@ function calc_demand(time; dt=DT)
     else
         initial_demand = 0.4
         final_demand = 0.8
-        t1 = 240.0 + dt  # Time to start increasing demand
-        t2 = 960.0 + dt  # Time to reach final demand
+        t1 = T_START + dt  # Time to start increasing demand
+        t2 = T_END + dt  # Time to reach final demand
         if time < t1
             return initial_demand
         elseif time < t2
@@ -181,8 +181,8 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8, dt=
     # - interpolate linearly between t=0 and t=t_end with no correction at t=t2
     
     base_induction = calc_induction_per_group(group_id, time)
-    t1 = 240.0 + dt  # Time to start increasing demand
-    t2 = 960.0 + dt  # Time to reach final demand
+    t1 = T_START + dt  # Time to start increasing demand
+    t2 = T_END   + dt  # Time to reach final demand
 
     # Calculate interpolation factor
     # 1.0 at t=t1 (full correction), 0.0 at t=t2 (no correction)

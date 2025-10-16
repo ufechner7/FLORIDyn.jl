@@ -14,8 +14,11 @@ settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 
 USE_TGC = true
+USE_STEP = false
 USE_FEED_FORWARD = true
 ONLINE = false
+T_START = 240   # time to start increasing demand
+T_END   = 960   # time to reach final demand
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
