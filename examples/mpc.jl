@@ -14,7 +14,7 @@ data_file = "data/mpc_result.jld2"
 data_file_group_control = "data/mpc_result_group_control.jld2"
 
 
-GROUP_CONTROL = false  # if false, use individual turbine control (not recommended for MPC)
+GROUP_CONTROL = true  # if false, use individual turbine control (not recommended for MPC)
 SIMULATE = false  # if false, load cached results if available
 USE_TGC = false
 USE_STEP = false
@@ -340,11 +340,47 @@ end
 println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
 
 plot_rmt(time_vector, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, 1600),
-         ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], pltctrl)
+         ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], fig="Rel. Power and Demand", pltctrl)
 
-## plot induction factor vs time for one turbine using calc_axial_induction2
-induction_factors = induction_data[:, 2]
-plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", fig="induction", pltctrl)
+# ## plot induction factor vs time for one turbine using calc_axial_induction2
+# induction_factors = induction_data[:, 2]
+# plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", fig="induction", pltctrl)
+
+# Plot average axial induction factor per turbine group over time
+begin
+    # Extract time from first column of induction_data
+    time_vec_ind = induction_data[:, 1]
+    n_time_steps = size(induction_data, 1)
+    n_turbines = size(ta.pos, 1)
+
+    # Prepare containers for four groups
+    group_data = [Float64[] for _ in 1:4]
+
+    # Compute per-group average induction at each time step
+    for t_idx in 1:n_time_steps
+        group_sums = zeros(4)
+        group_counts = zeros(Int, 4)
+        for turbine in 1:n_turbines
+            group_id = FLORIDyn.turbine_group(ta, turbine)
+            if 1 <= group_id <= 4
+                group_sums[group_id] += induction_data[t_idx, turbine + 1]
+                group_counts[group_id] += 1
+            end
+        end
+        for g in 1:4
+            push!(group_data[g], group_counts[g] > 0 ? group_sums[g] / group_counts[g] : 0.0)
+        end
+    end
+
+    group_labels = ["Group 1", "Group 2", "Group 3", "Group 4"]
+    plot_rmt(time_vec_ind, group_data;
+             xlabel="Time [s]",
+             ylabel="Axial Induction Factor [-]",
+             title="Average Axial Induction Factor vs Time by Turbine Group",
+             labels=group_labels,
+             fig="Induction by Group",
+             pltctrl=pltctrl)
+end
 if GROUP_CONTROL
     results = JLD2.load(data_file_group_control, "results")
 else
