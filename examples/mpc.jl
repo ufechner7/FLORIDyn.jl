@@ -14,7 +14,8 @@ data_file = "data/mpc_result.jld2"
 data_file_group_control = "data/mpc_result_group_control.jld2"
 
 
-GROUP_CONTROL = true  # if false, use individual turbine control (not recommended for MPC)
+GROUP_CONTROL = false  # if false, use individual turbine control (not recommended for MPC)
+SIMULATE = true  # if false, load cached results if available
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -278,7 +279,7 @@ if GROUP_CONTROL
 else
         # Set up NOMAD optimization problem
     p = NomadProblem(
-        6,                    # dimension (6 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling)
+        3,                    # dimension (3 parameters: scaling_begin, scaling_mid, scaling_end)
         1,                    # number of outputs (just the objective)
         ["OBJ"],             # output types: OBJ = objective to minimize
         eval_fct;            # evaluation function
@@ -292,7 +293,7 @@ else
 end
 
 results = nothing
-if (isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_group_control) && GROUP_CONTROL)
+if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_group_control) && GROUP_CONTROL))
     println("Loading cached MPC results from $(data_file)…")
     if GROUP_CONTROL
         results = JLD2.load(data_file_group_control, "results")
