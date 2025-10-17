@@ -36,7 +36,7 @@ function interpolate_scaling(time, t1, t2, scaling::Vector{Float64}; group_id=1)
         else
             id_scaling = 4.0 - (scaling[4] + scaling[5] + scaling[6])
         end
-        id_scaling = clamp(id_scaling, 0.0, 1.0)
+        id_scaling = clamp(id_scaling, 0.0, 2.0)
     end
 
     """Monotonic piecewise cubic Hermite spline with C1 continuity"""
@@ -91,8 +91,19 @@ function interpolate_scaling(time, t1, t2, scaling::Vector{Float64}; group_id=1)
 
     demand = calc_demand(time)
     demand_end = calc_demand(t2)
-    scaled_demand = result * (demand_end - (demand_end - demand) * id_scaling)
+    # id_scaling interpolates between demand (1.0) and demand_end (0.0)
+    # result is the time-varying scaling factor
+    interpolated_demand = demand_end - (demand_end - demand) * id_scaling
+    scaled_demand = result * interpolated_demand
     base_induction = calc_induction(scaled_demand * cp_max)
+    
+    # Debug print for a specific time point
+    if abs(time - 800.0) < 2.0
+        println("Time: $time, group_id: $group_id, id_scaling: $id_scaling")
+        println("  demand: $demand, demand_end: $demand_end")
+        println("  interpolated_demand: $interpolated_demand")
+        println("  result: $result, scaled_demand: $scaled_demand")
+    end
 
     return result, demand, scaled_demand, base_induction
 end
@@ -108,7 +119,7 @@ t2 = 960.0 + dt  # Time to reach final demand
 scaling = [1.1, 1.15, 1.25, 0.8, 1.0, 1.2]
 
 # Calculate scaling values over time for both methods
-group_id = 1
+group_id = 4
 results_tuples = [interpolate_scaling(t, t1, t2, scaling; group_id=group_id) for t in time_vector]
 result = [r[1] for r in results_tuples]
 demand = [r[2] for r in results_tuples]
