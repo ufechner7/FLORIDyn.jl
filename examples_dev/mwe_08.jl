@@ -116,7 +116,8 @@ dt = 400
 t1 = 240.0 + dt  # Time to start increasing demand
 t2 = 960.0 + dt  # Time to reach final demand
 
-scaling = [1.1, 1.15, 1.25, 0.5, 0.8, 1.5]
+# scaling = [1.1, 1.15, 1.25, 0.5, 0.8, 1.5]
+scaling = [1.261, 1.285, 1.316, 0.0031, 1.994, 0]
 
 # Calculate scaling values over time for both methods
 group_id = 4

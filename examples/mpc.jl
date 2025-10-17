@@ -133,7 +133,7 @@ function calc_axial_induction2(time, scaling::Vector; dt=DT, group_id=nothing)
         else
             id_scaling = 4.0 - (scaling[4] + scaling[5] + scaling[6])
         end
-        id_scaling = clamp(id_scaling, 0.0, 1.0)
+        id_scaling = clamp(id_scaling, 0.0, 2.0)
     end
     t1 = 240.0 + dt  # Time to start increasing demand
     t2 = 960.0 + dt  # Time to reach final demand
@@ -145,18 +145,57 @@ function calc_axial_induction2(time, scaling::Vector; dt=DT, group_id=nothing)
     scaling_begin = scaling[1]
     scaling_mid = scaling[2]
     scaling_end = scaling[3]
-    # Quadratic interpolation that satisfies:
-    # time=t1 -> scaling_begin, time=(t1+t2)/2 -> scaling_mid, time=t2 -> scaling_end
+    
+    # Monotonic piecewise cubic Hermite spline interpolation with C1 continuity
+    # Normalized time parameter
     s = clamp((time - t1) / (t2 - t1), 0.0, 1.0)
-    L0 = 2 * (s - 0.5) * (s - 1.0)    # basis for value at s=0
-    L1 = 4 * s * (1.0 - s)            # basis for value at s=0.5
-    L2 = 2 * s * (s - 0.5)            # basis for value at s=1
-    scaling = scaling_begin * L0 + scaling_mid * L1 + scaling_end * L2
-    scaling = max(scaling_begin, min(scaling_end, scaling))  # clamp scaling to [scaling_begin, scaling_end]
+    
+    # Split into two segments at s=0.5
+    t_mid = 0.5
+    
+    # Calculate slopes at each point using finite differences
+    slope1 = 2 * (scaling_mid - scaling_begin)  # slope from begin to mid
+    slope2 = 2 * (scaling_end - scaling_mid)    # slope from mid to end
+    
+    # Derivative at beginning (use slope of first segment)
+    slope_begin = slope1
+    
+    # Derivative at midpoint (average of adjacent slopes for C1 continuity)
+    slope_mid = (slope1 + slope2) / 2.0
+    
+    # Derivative at end (use slope of second segment)
+    slope_end = slope2
+    
+    if s <= t_mid
+        # First segment: [0, 0.5]
+        s_local = s / t_mid  # normalize to [0, 1]
+        # Hermite interpolation: f(0)=scaling_begin, f(1)=scaling_mid
+        # f'(0)=slope_begin, f'(1)=slope_mid
+        h00 = 2*s_local^3 - 3*s_local^2 + 1
+        h10 = s_local^3 - 2*s_local^2 + s_local
+        h01 = -2*s_local^3 + 3*s_local^2
+        h11 = s_local^3 - s_local^2
+        
+        scaling_result = h00 * scaling_begin + h10 * slope_begin * t_mid + 
+                        h01 * scaling_mid + h11 * slope_mid * t_mid
+    else
+        # Second segment: [0.5, 1.0]
+        s_local = (s - t_mid) / (1.0 - t_mid)  # normalize to [0, 1]
+        # Hermite interpolation: f(0)=scaling_mid, f(1)=scaling_end
+        # f'(0)=slope_mid, f'(1)=slope_end
+        h00 = 2*s_local^3 - 3*s_local^2 + 1
+        h10 = s_local^3 - 2*s_local^2 + s_local
+        h01 = -2*s_local^3 + 3*s_local^2
+        h11 = s_local^3 - s_local^2
+        
+        scaling_result = h00 * scaling_mid + h10 * slope_mid * (1.0 - t_mid) + 
+                        h01 * scaling_end + h11 * slope_end * (1.0 - t_mid)
+    end
     
     demand = calc_demand(time)
     demand_end = calc_demand(t2)
-    scaled_demand = demand_end - (demand_end - demand) * id_scaling
+    interpolated_demand = demand_end - (demand_end - demand) * id_scaling
+    scaled_demand = scaling_result * interpolated_demand
     base_induction = calc_induction(scaled_demand * cp_max)
 
     # Calculate interpolation factor
@@ -278,7 +317,7 @@ if GROUP_CONTROL
     )
 
     # Set NOMAD options
-    p.options.max_bb_eval = 200      # maximum number of function evaluations
+    p.options.max_bb_eval = 20      # maximum number of function evaluations
     p.options.display_degree = 2    # verbosity level
 else
         # Set up NOMAD optimization problem
@@ -314,7 +353,7 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
 else
     # Run optimization and simulation
     if GROUP_CONTROL
-        result = solve(p,  [1.094, 1.7, 2.0, 0.0, 1.82, 2.0]) 
+        result = solve(p, [1.261, 1.285, 1.316, 0.0031, 1.994, 0])
         optimal_scaling = result.x_best_feas[1:6]
     else
         result = solve(p, [1.5, 1.5, 1.5])  # Start from initial guess of [1.5, 1.5, 1.5]
@@ -343,7 +382,7 @@ end
 
 println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
 
-plot_rmt(time_vector, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, 1600),
+plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, 1600),
          ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], fig="Rel. Power and Demand", pltctrl)
 
 # ## plot induction factor vs time for one turbine using calc_axial_induction2
