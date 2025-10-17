@@ -1,6 +1,6 @@
 using ControlPlots
 
-function interpolate_scaling_lagrange(time::Float64, t1::Float64, t2::Float64, scaling::Vector{Float64})
+function interpolate_scaling_lagrange(time, t1, t2, scaling::Vector{Float64})
     """Original Lagrange interpolation (can have dips)"""
     scaling_begin = scaling[1]
     scaling_mid = scaling[2]
@@ -15,7 +15,7 @@ function interpolate_scaling_lagrange(time::Float64, t1::Float64, t2::Float64, s
     return result
 end
 
-function interpolate_scaling(time::Float64, t1::Float64, t2::Float64, scaling::Vector{Float64})
+function interpolate_scaling(time, t1, t2, scaling::Vector{Float64})
     """Monotonic piecewise cubic Hermite spline with C1 continuity"""
     scaling_begin = scaling[1]
     scaling_mid = scaling[2]
@@ -28,7 +28,7 @@ function interpolate_scaling(time::Float64, t1::Float64, t2::Float64, scaling::V
     t_mid = 0.5
     
     # Calculate slopes at each point using finite differences
-    slope1 = 2 * (scaling_mid - scaling_begin)  # slope from begin to mid
+    slope1 = (scaling_mid - scaling_begin)  # slope from begin to mid
     slope2 = 2 * (scaling_end - scaling_mid)    # slope from mid to end
     
     # Derivative at beginning (use slope of first segment)
@@ -70,12 +70,16 @@ function interpolate_scaling(time::Float64, t1::Float64, t2::Float64, scaling::V
 end
 
 # Example usage
-t1 = 0.0
-t2 = 10.0
+time_step = 4
+t_end = 1620
+time_vector = 0:time_step:t_end
+dt = 400
+t1 = 240.0 + dt  # Time to start increasing demand
+t2 = 960.0 + dt  # Time to reach final demand
+
 scaling = [1.0, 1.2, 2.0]
 
 # Calculate scaling values over time for both methods
-time_vector = 0.0:0.1:10.0
 scaling_values_spline = [interpolate_scaling(t, t1, t2, scaling) for t in time_vector]
 scaling_values_lagrange = [interpolate_scaling_lagrange(t, t1, t2, scaling) for t in time_vector]
 
