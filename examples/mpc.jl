@@ -15,7 +15,7 @@ data_file_group_control = "data/mpc_result_group_control.jld2"
 
 
 GROUP_CONTROL = true  # if false, use individual turbine control (not recommended for MPC)
-SIMULATE = true  # if false, load cached results if available
+SIMULATE = false  # if false, load cached results if available
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -133,7 +133,7 @@ function calc_axial_induction2(time, scaling::Vector; dt=DT, group_id=nothing)
         else
             id_scaling = 4.0 - (scaling[4] + scaling[5] + scaling[6])
         end
-        id_scaling = clamp(id_scaling, 0.0, 2.0)
+        id_scaling = clamp(id_scaling, 0.0, 1.0)
     end
     t1 = 240.0 + dt  # Time to start increasing demand
     t2 = 960.0 + dt  # Time to reach final demand
@@ -145,13 +145,19 @@ function calc_axial_induction2(time, scaling::Vector; dt=DT, group_id=nothing)
     scaling_begin = scaling[1]
     scaling_mid = scaling[2]
     scaling_end = scaling[3]
-    # calculate scaling using a quadratic interpolation between scaling_begin, scaling_mid, and scaling_end
-    scaling = scaling_begin + (scaling_mid - scaling_begin) * ((time - t1) / (t2 - t1))^2
+    # Quadratic interpolation that satisfies:
+    # time=t1 -> scaling_begin, time=(t1+t2)/2 -> scaling_mid, time=t2 -> scaling_end
+    s = clamp((time - t1) / (t2 - t1), 0.0, 1.0)
+    L0 = 2 * (s - 0.5) * (s - 1.0)    # basis for value at s=0
+    L1 = 4 * s * (1.0 - s)            # basis for value at s=0.5
+    L2 = 2 * s * (s - 0.5)            # basis for value at s=1
+    scaling = scaling_begin * L0 + scaling_mid * L1 + scaling_end * L2
     scaling = max(scaling_begin, min(scaling_end, scaling))  # clamp scaling to [scaling_begin, scaling_end]
-    scaling = scaling_end - (scaling_end - scaling)*id_scaling
     
     demand = calc_demand(time)
-    base_induction = calc_induction(demand * scaling * cp_max)
+    demand_end = calc_demand(t2)
+    scaled_demand = demand_end - (demand_end - demand) * id_scaling
+    base_induction = calc_induction(scaled_demand * cp_max)
 
     # Calculate interpolation factor
     # 1.0 at t=t1 (full correction), 0.0 at t=t2 (no correction)
@@ -165,10 +171,7 @@ function calc_axial_induction2(time, scaling::Vector; dt=DT, group_id=nothing)
         interp_factor = ((t2 - time) / (t2 - t1))
     end
     
-    # Apply corrections based on group
-    correction = 0.0
-
-    rel_power = calc_cp(base_induction) / cp_max + correction
+    rel_power = calc_cp(base_induction) / cp_max
     corrected_induction = calc_induction(rel_power * cp_max)
     return max(0.0, min(BETZ_INDUCTION, corrected_induction))
 end
@@ -311,7 +314,7 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
 else
     # Run optimization and simulation
     if GROUP_CONTROL
-        result = solve(p, [1.25, 2.0, 2.0, 0.63, 0.71, 1.54]) 
+        result = solve(p,  [1.094, 1.7, 2.0, 0.0, 1.82, 2.0]) 
         optimal_scaling = result.x_best_feas[1:6]
     else
         result = solve(p, [1.5, 1.5, 1.5])  # Start from initial guess of [1.5, 1.5, 1.5]
