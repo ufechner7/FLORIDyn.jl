@@ -15,7 +15,7 @@ data_file_group_control = "data/mpc_result_group_control.jld2"
 
 
 GROUP_CONTROL = false  # if false, use individual turbine control (not recommended for MPC)
-SIMULATE = true  # if false, load cached results if available
+SIMULATE = false  # if false, load cached results if available
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -345,4 +345,8 @@ plot_rmt(time_vector, [rel_power .* 100, demand_values .* 100]; xlabel="Time [s]
 ## plot induction factor vs time for one turbine using calc_axial_induction2
 induction_factors = induction_data[:, 2]
 plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", fig="induction", pltctrl)
-results = JLD2.load(data_file_group_control, "results")
+if GROUP_CONTROL
+    results = JLD2.load(data_file_group_control, "results")
+else
+    results = JLD2.load(data_file, "results")
+end
