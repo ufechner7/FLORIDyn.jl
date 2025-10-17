@@ -1,5 +1,14 @@
 using ControlPlots
 
+USE_TGC = false
+USE_STEP = false
+USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
+ONLINE = false
+T_START = 240   # time to start increasing demand
+T_END   = 960   # time to reach final demand
+
+include("../examples/calc_induction_matrix.jl")
+
 function interpolate_scaling_lagrange(time, t1, t2, scaling::Vector{Float64})
     """Original Lagrange interpolation (can have dips)"""
     scaling_begin = scaling[1]
@@ -65,8 +74,14 @@ function interpolate_scaling(time, t1, t2, scaling::Vector{Float64})
         result = h00 * scaling_mid + h10 * slope_mid * (1.0 - t_mid) + 
                  h01 * scaling_end + h11 * slope_end * (1.0 - t_mid)
     end
-    
-    return result
+
+    demand = calc_demand(time)
+    demand_end = calc_demand(t2)
+    id_scaling = 1.0
+    scaled_demand = result * (demand_end - (demand_end - demand) * id_scaling)
+    base_induction = calc_induction(scaled_demand * cp_max)
+
+    return result, demand, scaled_demand, base_induction
 end
 
 # Example usage
@@ -77,17 +92,17 @@ dt = 400
 t1 = 240.0 + dt  # Time to start increasing demand
 t2 = 960.0 + dt  # Time to reach final demand
 
-scaling = [1.0, 1.8, 2.0]
+scaling = [1.0, 1.3, 2.0]
 
 # Calculate scaling values over time for both methods
 scaling_values_spline = [interpolate_scaling(t, t1, t2, scaling) for t in time_vector]
 scaling_values_lagrange = [interpolate_scaling_lagrange(t, t1, t2, scaling) for t in time_vector]
 
 # Plot both methods for comparison
-plot_rmt(collect(time_vector), [scaling_values_spline, scaling_values_lagrange];
+plot_rmt(collect(time_vector), [scaling_values_spline];
          xlabel="Time [s]",
          ylabel="Scaling Factor [-]",
          title="Demand Scaling Factor vs Time",
-         labels=["Quadratic Spline", "Lagrange"],
+         labels=["Quadratic Spline"],
          pltctrl=ControlPlots)
 
