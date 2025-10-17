@@ -15,7 +15,7 @@ data_file_group_control = "data/mpc_result_group_control.jld2"
 
 
 GROUP_CONTROL = true  # if false, use individual turbine control (not recommended for MPC)
-SIMULATE = false  # if false, load cached results if available
+SIMULATE = true  # if false, load cached results if available
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -148,9 +148,10 @@ function calc_axial_induction2(time, scaling::Vector; dt=DT, group_id=nothing)
     # calculate scaling using a quadratic interpolation between scaling_begin, scaling_mid, and scaling_end
     scaling = scaling_begin + (scaling_mid - scaling_begin) * ((time - t1) / (t2 - t1))^2
     scaling = max(scaling_begin, min(scaling_end, scaling))  # clamp scaling to [scaling_begin, scaling_end]
+    scaling = scaling_end - (scaling_end - scaling)*id_scaling
     
     demand = calc_demand(time)
-    base_induction = calc_induction(demand * scaling * id_scaling * cp_max)
+    base_induction = calc_induction(demand * scaling * cp_max)
 
     # Calculate interpolation factor
     # 1.0 at t=t1 (full correction), 0.0 at t=t2 (no correction)
