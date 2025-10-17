@@ -135,3 +135,19 @@ plot_rmt(collect(time_vector), [result, demand, scaled_demand, base_induction];
          labels=["scaling_values_spline", "demand", "scaled_demand", "base_induction"],
          pltctrl=ControlPlots)
 
+# Calculate base_induction for all 4 groups
+base_induction_group1 = [interpolate_scaling(t, t1, t2, scaling; group_id=1)[4] for t in time_vector]
+base_induction_group2 = [interpolate_scaling(t, t1, t2, scaling; group_id=2)[4] for t in time_vector]
+base_induction_group3 = [interpolate_scaling(t, t1, t2, scaling; group_id=3)[4] for t in time_vector]
+base_induction_group4 = [interpolate_scaling(t, t1, t2, scaling; group_id=4)[4] for t in time_vector]
+
+# Plot base_induction vs time for all groups
+plot_rmt(collect(time_vector), [base_induction_group1, base_induction_group2, base_induction_group3, base_induction_group4];
+         xlabel="Time [s]",
+         ylabel="Base Induction Factor [-]",
+         title="Base Induction Factor vs Time by Group",
+         labels=["Group 1", "Group 2", "Group 3", "Group 4"],
+         fig="Base Induction by Group",
+         pltctrl=ControlPlots)
+
+
