@@ -92,17 +92,21 @@ dt = 400
 t1 = 240.0 + dt  # Time to start increasing demand
 t2 = 960.0 + dt  # Time to reach final demand
 
-scaling = [1.0, 1.3, 2.0]
+scaling = [1.1, 1.15, 1.25]
 
 # Calculate scaling values over time for both methods
-scaling_values_spline = [interpolate_scaling(t, t1, t2, scaling) for t in time_vector]
+results_tuples = [interpolate_scaling(t, t1, t2, scaling) for t in time_vector]
+result = [r[1] for r in results_tuples]
+demand = [r[2] for r in results_tuples]
+scaled_demand = [r[3] for r in results_tuples]
+base_induction = [r[4] for r in results_tuples]
 scaling_values_lagrange = [interpolate_scaling_lagrange(t, t1, t2, scaling) for t in time_vector]
 
 # Plot both methods for comparison
-plot_rmt(collect(time_vector), [scaling_values_spline];
+plot_rmt(collect(time_vector), [result, demand, scaled_demand, base_induction];
          xlabel="Time [s]",
          ylabel="Scaling Factor [-]",
          title="Demand Scaling Factor vs Time",
-         labels=["Quadratic Spline"],
+         labels=["scaling_values_spline", "demand", "scaled_demand", "base_induction"],
          pltctrl=ControlPlots)
 
