@@ -356,19 +356,14 @@ begin
     # Prepare containers for four groups
     group_data = [Float64[] for _ in 1:4]
 
-    # Compute per-group average induction at each time step
-    for t_idx in 1:n_time_steps
-        group_sums = zeros(4)
-        group_counts = zeros(Int, 4)
-        for turbine in 1:n_turbines
-            group_id = FLORIDyn.turbine_group(ta, turbine)
-            if 1 <= group_id <= 4
-                group_sums[group_id] += induction_data[t_idx, turbine + 1]
-                group_counts[group_id] += 1
-            end
-        end
-        for g in 1:4
-            push!(group_data[g], group_counts[g] > 0 ? group_sums[g] / group_counts[g] : 0.0)
+    # Since all turbines in a group have identical induction, pick one representative turbine per group
+    group_indices = [findfirst(i -> FLORIDyn.turbine_group(ta, i) == g, 1:n_turbines) for g in 1:4]
+    for g in 1:4
+        idx = group_indices[g]
+        if isnothing(idx)
+            group_data[g] = fill(0.0, n_time_steps)
+        else
+            group_data[g] = induction_data[:, idx + 1]
         end
     end
 
