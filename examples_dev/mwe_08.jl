@@ -91,7 +91,6 @@ function interpolate_scaling(time, t1, t2, scaling::Vector{Float64}; group_id=1)
 
     demand = calc_demand(time)
     demand_end = calc_demand(t2)
-    id_scaling = 1.0
     scaled_demand = result * (demand_end - (demand_end - demand) * id_scaling)
     base_induction = calc_induction(scaled_demand * cp_max)
 
@@ -109,7 +108,7 @@ t2 = 960.0 + dt  # Time to reach final demand
 scaling = [1.1, 1.15, 1.25, 0.8, 1.0, 1.2]
 
 # Calculate scaling values over time for both methods
-group_id = 2
+group_id = 1
 results_tuples = [interpolate_scaling(t, t1, t2, scaling; group_id=group_id) for t in time_vector]
 result = [r[1] for r in results_tuples]
 demand = [r[2] for r in results_tuples]
