@@ -28,7 +28,7 @@ function interpolate_scaling(time, t1, t2, scaling::Vector{Float64})
     t_mid = 0.5
     
     # Calculate slopes at each point using finite differences
-    slope1 = (scaling_mid - scaling_begin)  # slope from begin to mid
+    slope1 = 2 * (scaling_mid - scaling_begin)  # slope from begin to mid
     slope2 = 2 * (scaling_end - scaling_mid)    # slope from mid to end
     
     # Derivative at beginning (use slope of first segment)
@@ -77,20 +77,11 @@ dt = 400
 t1 = 240.0 + dt  # Time to start increasing demand
 t2 = 960.0 + dt  # Time to reach final demand
 
-scaling = [1.0, 1.2, 2.0]
+scaling = [1.0, 1.8, 2.0]
 
 # Calculate scaling values over time for both methods
 scaling_values_spline = [interpolate_scaling(t, t1, t2, scaling) for t in time_vector]
 scaling_values_lagrange = [interpolate_scaling_lagrange(t, t1, t2, scaling) for t in time_vector]
-
-# Print some values
-println("\nComparison of interpolation methods:")
-println("Time\tSpline\t\tLagrange")
-for time in 0.0:1.0:10.0
-    s_spline = interpolate_scaling(time, t1, t2, scaling)
-    s_lagrange = interpolate_scaling_lagrange(time, t1, t2, scaling)
-    println("$time\t$(round(s_spline, digits=4))\t\t$(round(s_lagrange, digits=4))")
-end
 
 # Plot both methods for comparison
 plot_rmt(collect(time_vector), [scaling_values_spline, scaling_values_lagrange];
