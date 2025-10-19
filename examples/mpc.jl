@@ -14,8 +14,9 @@ data_file = "data/mpc_result.jld2"
 data_file_group_control = "data/mpc_result_group_control.jld2"
 
 
-GROUP_CONTROL = true  # if false, use individual turbine control (not recommended for MPC)
+GROUP_CONTROL = false  # if false, use individual turbine control (not recommended for MPC)
 SIMULATE = false  # if false, load cached results if available
+MAX_STEPS = 400  # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -317,7 +318,7 @@ if GROUP_CONTROL
     )
 
     # Set NOMAD options
-    p.options.max_bb_eval = 20      # maximum number of function evaluations
+    p.options.max_bb_eval = MAX_STEPS      # maximum number of function evaluations
     p.options.display_degree = 2    # verbosity level
 else
         # Set up NOMAD optimization problem
@@ -331,8 +332,8 @@ else
     )
 
     # Set NOMAD options
-    p.options.max_bb_eval = 50      # maximum number of function evaluations
-    p.options.display_degree = 2    # verbosity level
+    p.options.max_bb_eval = MAX_STEPS      # maximum number of function evaluations
+    p.options.display_degree = 2           # verbosity level
 end
 
 results = nothing
