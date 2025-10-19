@@ -5,6 +5,10 @@
 # using a precomputed induction matrix for feed-forward control.
 # TGC shall be extended to full model predictive control (MPC) in a future example
 
+using Pkg
+if ! ("NOMAD" ∈ keys(Pkg.project().dependencies))
+    using TestEnv; TestEnv.activate()
+end
 using FLORIDyn, TerminalPager, DistributedNext, DataFrames, NOMAD, JLD2
 if Threads.nthreads() == 1; using ControlPlots; end
 
