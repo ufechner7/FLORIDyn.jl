@@ -19,7 +19,7 @@ data_file = "data/mpc_result.jld2"
 data_file_group_control = "data/mpc_result_group_control.jld2"
 
 
-GROUP_CONTROL = false  # if false, use individual turbine control (not recommended for MPC)
+GROUP_CONTROL = true  # if false, use individual turbine control (not recommended for MPC)
 SIMULATE = false  # if false, load cached results if available
 MAX_STEPS = 400  # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
@@ -122,7 +122,7 @@ function run_simulation(set_induction::AbstractMatrix)
     rel_power = (total_power_df.TotalPower ./ max_power) 
 end
 
-function calc_axial_induction2(time, scaling::Vector; dt=DT, group_id=nothing)
+function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothing)
     id_scaling = 1.0
     if length(scaling) > 3
         if group_id == 1
