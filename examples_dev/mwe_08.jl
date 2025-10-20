@@ -1,6 +1,9 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+# Example script to demonstrate the current interpolation method for demand scaling
+# and their effect on base induction factor calculation in mpc.jl.
+
 using ControlPlots
 
 USE_TGC = false
@@ -122,7 +125,7 @@ t2 = 960.0 + dt  # Time to reach final demand
 # scaling = [1.1, 1.15, 1.25, 0.5, 0.8, 1.5]
 scaling = [1.261, 1.285, 1.316, 0.0031, 1.994, 0]
 
-# Calculate scaling values over time for both methods
+# Calculate scaling values over time
 group_id = 4
 results_tuples = [interpolate_scaling(t, t1, t2, scaling; group_id=group_id) for t in time_vector]
 result = [r[1] for r in results_tuples]
@@ -131,7 +134,7 @@ scaled_demand = [r[3] for r in results_tuples]
 base_induction = [r[4] for r in results_tuples]
 scaling_values_lagrange = [interpolate_scaling_lagrange(t, t1, t2, scaling) for t in time_vector]
 
-# Plot both methods for comparison
+# Plot results
 plot_rmt(collect(time_vector), [result, demand, scaled_demand, base_induction];
          xlabel="Time [s]",
          ylabel="Scaling Factor [-]",
@@ -153,5 +156,4 @@ plot_rmt(collect(time_vector), [base_induction_group1, base_induction_group2, ba
          labels=["Group 1", "Group 2", "Group 3", "Group 4"],
          fig="Base Induction by Group",
          pltctrl=ControlPlots)
-
 
