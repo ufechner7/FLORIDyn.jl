@@ -135,11 +135,11 @@ base_induction = [r[4] for r in results_tuples]
 scaling_values_lagrange = [interpolate_scaling_lagrange(t, t1, t2, scaling) for t in time_vector]
 
 # Plot results
-plot_rmt(collect(time_vector), [result, demand, scaled_demand, base_induction];
+plot_rmt(collect(time_vector), [result, demand, scaled_demand, base_induction, scaling_values_lagrange];
          xlabel="Time [s]",
          ylabel="Scaling Factor [-]",
          title="Demand Scaling Factor vs Time",
-         labels=["scaling_values_spline", "demand", "scaled_demand", "base_induction"],
+         labels=["scaling_values_spline", "demand", "scaled_demand", "base_induction", "scaling_values_lagrange"],
          pltctrl=ControlPlots)
 
 # Calculate base_induction for all 4 groups
