@@ -1,9 +1,10 @@
-# Copyright (c) 2025 Marcus Becker, Uwe Fechner
+# Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-# Main script to run a turbine group control (TGC) simulation with FLORIDyn.jl
-# using a precomputed induction matrix for feed-forward control.
-# TGC shall be extended to full model predictive control (MPC) in a future example
+# Main script to run a model predictive control (MPC) simulation with FLORIDyn.jl
+# Currently, two modes are supported: control of all turbines with the same induction factor using 3 parameter
+# and group control with 6 parameters (3 for induction scaling and 3 for individual group scaling).
+# The mean square error between the production and demand is minimized.
 
 using Pkg
 if ! ("NOMAD" ∈ keys(Pkg.project().dependencies))
