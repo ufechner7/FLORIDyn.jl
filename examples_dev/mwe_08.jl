@@ -30,6 +30,7 @@ function interpolate_scaling_lagrange(time, t1, t2, scaling::Vector{Float64})
     return result
 end
 
+"""Monotonic piecewise cubic Hermite spline with C1 continuity"""
 function interpolate_scaling(time, t1, t2, scaling::Vector{Float64}; group_id=1)
     id_scaling = 1.0
     if length(scaling) > 3
@@ -45,7 +46,6 @@ function interpolate_scaling(time, t1, t2, scaling::Vector{Float64}; group_id=1)
         id_scaling = clamp(id_scaling, 0.0, 2.0)
     end
 
-    """Monotonic piecewise cubic Hermite spline with C1 continuity"""
     scaling_begin = scaling[1]
     scaling_mid = scaling[2]
     scaling_end = scaling[3]
