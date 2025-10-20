@@ -341,6 +341,8 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
     println("Loading cached MPC results from $(data_file)…")
     if GROUP_CONTROL
         results = JLD2.load(data_file_group_control, "results")
+        results_ref = JLD2.load(data_file, "results")
+        rel_power_ref = results_ref["rel_power"]
     else
         results = JLD2.load(data_file, "results")   
     end
@@ -355,6 +357,7 @@ else
     # Run optimization and simulation
     if GROUP_CONTROL
         result = solve(p, [1.261, 1.285, 1.316, 0.0031, 1.994, 0])
+        results_ref = JLD2.load(data_file, "results") 
         optimal_scaling = result.x_best_feas[1:6]
     else
         result = solve(p, [1.5, 1.5, 1.5])  # Start from initial guess of [1.5, 1.5, 1.5]
@@ -383,8 +386,8 @@ end
 
 println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
 
-plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, 1600),
-         ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], fig="Rel. Power and Demand", pltctrl)
+plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, rel_power_ref[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, 1600),
+         ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_power_ref", "rel_demand"], fig="Rel. Power and Demand", pltctrl)
 
 # ## plot induction factor vs time for one turbine using calc_axial_induction2
 # induction_factors = induction_data[:, 2]
@@ -420,8 +423,13 @@ begin
              fig="Induction by Group",
              pltctrl=pltctrl)
 end
+# calculate rel_power-rel_power_ref
+rel_power_diff = rel_power[250:end-1] .- rel_power_ref[250:end]
+plot_rmt((1:length(rel_power_diff)).*4, rel_power_diff .* 100; xlabel="Time [s]", ylabel="Rel. Power Gain [%]", fig="rel_power_ref", pltctrl)
+
 if GROUP_CONTROL
     results = JLD2.load(data_file_group_control, "results")
 else
     results = JLD2.load(data_file, "results")
 end
+
