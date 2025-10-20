@@ -424,8 +424,9 @@ begin
              pltctrl=pltctrl)
 end
 # calculate rel_power-rel_power_ref
-rel_power_diff = rel_power[250:end-1] .- rel_power_ref[250:end]
-plot_rmt((1:length(rel_power_diff)).*4, rel_power_diff .* 100; xlabel="Time [s]", ylabel="Rel. Power Gain [%]", fig="rel_power_ref", pltctrl)
+start_index = Int(floor(T_SKIP / time_step)) + 1
+rel_power_gain = rel_power[start_index:end-1] .- rel_power_ref[start_index:end]
+plot_rmt((1:length(rel_power_gain)).*4, rel_power_gain .* 100; xlabel="Time [s]", ylabel="Rel. Power Gain [%]", fig="rel_power_ref", pltctrl)
 
 if GROUP_CONTROL
     results = JLD2.load(data_file_group_control, "results")
