@@ -15,8 +15,8 @@ T_END   = 960   # time to reach final demand
 
 include("../examples/calc_induction_matrix.jl")
 
+"""Original Lagrange interpolation (can have dips)"""
 function interpolate_scaling_lagrange(time, t1, t2, scaling::Vector{Float64})
-    """Original Lagrange interpolation (can have dips)"""
     scaling_begin = scaling[1]
     scaling_mid = scaling[2]
     scaling_end = scaling[3]
