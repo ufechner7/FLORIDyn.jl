@@ -15,12 +15,12 @@ if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
-data_file = "data/mpc_result.jld2"
+data_file               = "data/mpc_result.jld2"
 data_file_group_control = "data/mpc_result_group_control.jld2"
 
-GROUP_CONTROL = true  # if false, use individual turbine control (not recommended for MPC)
-SIMULATE = false   # if false, load cached results if available
-MAX_STEPS = 100  # maximum number black-box evaluations for NOMAD optimizer
+GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 6-parameter group control
+SIMULATE = false      # if false, load cached results if available
+MAX_STEPS = 100       # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -430,7 +430,7 @@ end
 
 if GROUP_CONTROL
     # calculate rel_power-rel_power_ref
-    start_index = Int(floor(T_SKIP / time_step)) + 1
+    start_index = Int(floor((T_SKIP+T_START+(T_END-T_SKIP-T_START)/2) / time_step)) + 1
     rel_power_gain = rel_power[start_index:end-1] .- rel_power_ref[start_index:end]
     plot_rmt((1:length(rel_power_gain)).*4, rel_power_gain .* 100; xlabel="Time [s]", ylabel="Rel. Power Gain [%]", fig="rel_power_ref", pltctrl)
     results = JLD2.load(data_file_group_control, "results")
