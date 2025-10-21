@@ -18,9 +18,9 @@ vis_file      = "data/vis_54T.yaml"
 data_file = "data/mpc_result.jld2"
 data_file_group_control = "data/mpc_result_group_control.jld2"
 
-GROUP_CONTROL = false  # if false, use individual turbine control (not recommended for MPC)
-SIMULATE = true  # if false, load cached results if available
-MAX_STEPS = 400  # maximum number black-box evaluations for NOMAD optimizer
+GROUP_CONTROL = true  # if false, use individual turbine control (not recommended for MPC)
+SIMULATE = false   # if false, load cached results if available
+MAX_STEPS = 100  # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
