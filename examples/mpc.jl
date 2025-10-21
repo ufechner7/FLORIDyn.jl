@@ -18,9 +18,8 @@ vis_file      = "data/vis_54T.yaml"
 data_file = "data/mpc_result.jld2"
 data_file_group_control = "data/mpc_result_group_control.jld2"
 
-
-GROUP_CONTROL = true  # if false, use individual turbine control (not recommended for MPC)
-SIMULATE = false  # if false, load cached results if available
+GROUP_CONTROL = false  # if false, use individual turbine control (not recommended for MPC)
+SIMULATE = true  # if false, load cached results if available
 MAX_STEPS = 400  # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
@@ -29,6 +28,7 @@ ONLINE = false
 T_SKIP = 400    # skip first 400s of simulation for error calculation and plotting
 T_START = 240   # time to start increasing demand
 T_END   = 960   # time to reach final demand
+T_EXTRA = 1520  # extra time in addition to sim.end_time for MPC simulation
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -50,7 +50,7 @@ include("calc_induction_matrix.jl")
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
-sim.end_time += 420
+sim.end_time += T_EXTRA  # extend simulation time for MPC
 con.yaw="Constant"
 con.yaw_fixed = 270.0
 wind.input_dir="Constant"
@@ -280,6 +280,7 @@ by the NOMAD optimizer.
 """
 function eval_fct(x::Vector{Float64})
     scaling = x  # scaling is now a vector with parameters
+    print(".")  # progress indicator
     
     # Calculate induction matrix with current scaling
     induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=scaling)
@@ -385,10 +386,13 @@ else
 end
 
 println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
-
-plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, rel_power_ref[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, 1600),
-         ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_power_ref", "rel_demand"], fig="Rel. Power and Demand", pltctrl)
-
+if GROUP_CONTROL
+    plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, rel_power_ref[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, time_vector[end]),
+            ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_power_ref", "rel_demand"], fig="Rel. Power and Demand", pltctrl)
+else
+    plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, time_vector[end]),
+            ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], fig="Rel. Power and Demand", pltctrl)
+end
 # ## plot induction factor vs time for one turbine using calc_axial_induction2
 # induction_factors = induction_data[:, 2]
 # plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", fig="induction", pltctrl)
@@ -423,12 +427,12 @@ begin
              fig="Induction by Group",
              pltctrl=pltctrl)
 end
-# calculate rel_power-rel_power_ref
-start_index = Int(floor(T_SKIP / time_step)) + 1
-rel_power_gain = rel_power[start_index:end-1] .- rel_power_ref[start_index:end]
-plot_rmt((1:length(rel_power_gain)).*4, rel_power_gain .* 100; xlabel="Time [s]", ylabel="Rel. Power Gain [%]", fig="rel_power_ref", pltctrl)
 
 if GROUP_CONTROL
+    # calculate rel_power-rel_power_ref
+    start_index = Int(floor(T_SKIP / time_step)) + 1
+    rel_power_gain = rel_power[start_index:end-1] .- rel_power_ref[start_index:end]
+    plot_rmt((1:length(rel_power_gain)).*4, rel_power_gain .* 100; xlabel="Time [s]", ylabel="Rel. Power Gain [%]", fig="rel_power_ref", pltctrl)
     results = JLD2.load(data_file_group_control, "results")
 else
     results = JLD2.load(data_file, "results")
