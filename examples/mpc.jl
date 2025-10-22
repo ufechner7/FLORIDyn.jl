@@ -10,7 +10,7 @@ using Pkg
 if ! ("NOMAD" ∈ keys(Pkg.project().dependencies))
     using TestEnv; TestEnv.activate()
 end
-using FLORIDyn, TerminalPager, DistributedNext, DataFrames, NOMAD, JLD2
+using FLORIDyn, TerminalPager, DistributedNext, DataFrames, NOMAD, JLD2, Statistics
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
@@ -254,6 +254,14 @@ function calc_error(rel_power, demand_values, time_step)
     return sum((r .- d) .^ 2) / length(d)
 end
 
+# Calculate storage time at 100% power in seconds
+function calc_storage_time(time_vector, rel_power_gain)
+    dt = time_vector[2]-time_vector[1]
+    mean_gain = mean(rel_power_gain)
+    time = length(rel_power_gain)*dt
+    storage_time = mean_gain * time
+end
+
 """
     eval_fct(x::Vector{Float64}) -> Tuple{Bool, Bool, Vector{Float64}}
 
@@ -430,8 +438,11 @@ end
 
 if GROUP_CONTROL
     # calculate rel_power-rel_power_ref
-    start_index = Int(floor((T_SKIP+T_START+(T_END-T_SKIP-T_START)/2) / time_step)) + 1
+    start_index = Int(floor((T_SKIP+T_START+(T_END-T_START)*0.96) / time_step)) + 1
     rel_power_gain = rel_power[start_index:end-1] .- rel_power_ref[start_index:end]
+    storage_time = calc_storage_time(time_vector, rel_power_gain)
+    println("Estimated storage time at 100% power: $(round(storage_time, digits=2)) s")
+    println()
     plot_rmt((1:length(rel_power_gain)).*4, rel_power_gain .* 100; xlabel="Time [s]", ylabel="Rel. Power Gain [%]", fig="rel_power_ref", pltctrl)
     results = JLD2.load(data_file_group_control, "results")
 else
