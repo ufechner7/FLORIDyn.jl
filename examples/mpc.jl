@@ -19,7 +19,7 @@ data_file               = "data/mpc_result.jld2"
 data_file_group_control = "data/mpc_result_group_control.jld2"
 
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 6-parameter group control
-SIMULATE = false      # if false, load cached results if available
+SIMULATE = true      # if false, load cached results if available
 MAX_STEPS = 100       # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
@@ -29,6 +29,7 @@ T_SKIP = 400    # skip first 400s of simulation for error calculation and plotti
 T_START = 240   # time to start increasing demand
 T_END   = 960   # time to reach final demand
 T_EXTRA = 1520  # extra time in addition to sim.end_time for MPC simulation
+MAX_DISTANCES = Float64[]
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -123,6 +124,7 @@ function run_simulation(set_induction::AbstractMatrix)
 end
 
 function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothing)
+    distance = 0.0
     id_scaling = 1.0
     if length(scaling) > 3
         if group_id == 1
@@ -197,6 +199,10 @@ function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothin
     demand_end = calc_demand(t2)
     interpolated_demand = demand_end - (demand_end - demand) * id_scaling
     scaled_demand = scaling_result * interpolated_demand
+    if scaled_demand > 1.0
+        distance = scaled_demand - 1.0
+        # @warn("Scaled demand exceeds 100% at time=$(time)s: scaled_demand=$(scaled_demand), scaling_result=$(scaling_result), demand=$(demand), id_scaling=$(id_scaling)")
+    end
     base_induction = calc_induction(scaled_demand * cp_max)
 
     # Calculate interpolation factor
@@ -213,7 +219,7 @@ function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothin
     
     rel_power = calc_cp(base_induction) / cp_max
     corrected_induction = calc_induction(rel_power * cp_max)
-    return max(0.0, min(BETZ_INDUCTION, corrected_induction))
+    return max(0.0, min(BETZ_INDUCTION, corrected_induction)), distance
 end
 
 function calc_induction_matrix2(ta, time_step, t_end; scaling)
@@ -230,14 +236,17 @@ function calc_induction_matrix2(ta, time_step, t_end; scaling)
     induction_matrix[:, 1] = collect(time_vector)
     
     # Calculate induction for each turbine at each time step (columns 2 onwards)
+    max_distance = 0.0
     for (t_idx, time) in enumerate(time_vector)
         for i in 1:n_turbines
             group_id = FLORIDyn.turbine_group(ta, i)
-            induction_matrix[t_idx, i + 1] = calc_axial_induction2(time, scaling; group_id=group_id)
+            axial_induction, distance = calc_axial_induction2(time, scaling; group_id=group_id)
+            induction_matrix[t_idx, i + 1] = axial_induction
+            max_distance = max(max_distance, distance)
         end
     end
-    
-    return induction_matrix
+
+    return induction_matrix, max_distance
 end
 
 function calc_error(rel_power, demand_values, time_step)
@@ -291,8 +300,11 @@ function eval_fct(x::Vector{Float64})
     print(".")  # progress indicator
     
     # Calculate induction matrix with current scaling
-    induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=scaling)
-    
+    induction_data, max_distance = calc_induction_matrix2(ta, time_step, t_end; scaling=scaling)
+    if max_distance > 0.0
+        push!(MAX_DISTANCES, max_distance)
+    end
+
     # Run simulation and get relative power
     rel_power = run_simulation(induction_data)
     
@@ -366,14 +378,18 @@ else
     # Run optimization and simulation
     if GROUP_CONTROL
         result = solve(p, [1.261, 1.285, 1.316, 0.0031, 1.994, 0])
-        results_ref = JLD2.load(data_file, "results") 
+        results_ref = JLD2.load(data_file, "results")
+        rel_power_ref = results_ref["rel_power"]
         optimal_scaling = result.x_best_feas[1:6]
     else
         result = solve(p, [1.5, 1.5, 1.5])  # Start from initial guess of [1.5, 1.5, 1.5]
         optimal_scaling = result.x_best_feas[1:3]
     end
 
-    induction_data = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
+    induction_data, max_distance = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
+    if max_distance > 0.0
+        @warn("Maximum scaled demand exceeded 100% by $(round(max_distance * 100, digits=2))% during simulation.")
+    end
     rel_power = run_simulation(induction_data)
     mse = calc_error(rel_power, demand_values, time_step)
 
