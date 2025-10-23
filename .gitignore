@@ -17,3 +17,6 @@ docs/src/step_response.pdf
 data/step_response.jld2
 data/mpc_result.jld2
 data/mpc_result_group_control.jld2
+data/bak/mpc_result_group_control.jld2
+data/bak/mpc_result.jld2
+data/bak/step_response.jld2
