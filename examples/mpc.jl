@@ -316,8 +316,11 @@ function eval_fct(x::Vector{Float64})
         # Constraint: x[4] + x[5] + x[6] <= 4
         # For NOMAD, constraints should be <= 0, so we formulate as:
         # x[4] + x[5] + x[6] - 4 <= 0
-        constraint = x[4] + x[5] + x[6] - 4.0
-        bb_outputs = [error, constraint]
+        constraint_sum = x[4] + x[5] + x[6] - 4.0
+        # Constraint 2: max_distance <= 0.075
+        # Formulate as: max_distance - 0.075 <= 0
+        constraint_maxdist = max_distance - 0.075
+        bb_outputs = [error, constraint_sum, constraint_maxdist]
     else
         bb_outputs = [error]
     end
@@ -331,8 +334,8 @@ if GROUP_CONTROL
     # Set up NOMAD optimization problem
     p = NomadProblem(
         6,                    # dimension (6 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling)
-        2,                    # number of outputs (objective + 1 constraint)
-        ["OBJ", "PB"],       # output types: OBJ = objective to minimize, PB = progressive barrier constraint
+        3,                    # number of outputs (objective + 2 constraints)
+        ["OBJ", "PB", "PB"], # output types: OBJ = objective to minimize, PB = progressive barrier constraints
         eval_fct;            # evaluation function
         lower_bound=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0],   # minimum scaling values
         upper_bound=[2.0, 2.0, 2.0, 2.0, 2.0, 2.0]    # maximum scaling values
@@ -387,9 +390,6 @@ else
     end
 
     induction_data, max_distance = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
-    if max_distance > 0.0
-        @warn("Maximum scaled demand exceeded 100% by $(round(max_distance * 100, digits=2))% during simulation.")
-    end
     rel_power = run_simulation(induction_data)
     mse = calc_error(rel_power, demand_values, time_step)
 
