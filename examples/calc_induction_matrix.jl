@@ -89,8 +89,8 @@ function calc_demand(time; dt=DT)
     else
         initial_demand = 0.4
         final_demand = 0.8
-        t1 = 240.0 + dt  # Time to start increasing demand
-        t2 = 960.0 + dt  # Time to reach final demand
+        t1 = T_START + dt  # Time to start increasing demand
+        t2 = T_END + dt  # Time to reach final demand
         if time < t1
             return initial_demand
         elseif time < t2
@@ -170,26 +170,6 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8, dt=
     if ! USE_TGC
         correction_factor = 0.0
     end
-    # Check if pre-calculated induction data is available
-    if hasfield(typeof(con), :induction_data) && !isnothing(con.induction_data)
-        # Use pre-calculated data from con.induction_data
-        # First column is time, subsequent columns are turbine data
-        time_vector = con.induction_data[:, 1]
-        
-        # Find the time index that corresponds to the requested time
-        time_idx = findfirst(t -> t >= time, time_vector)
-        if isnothing(time_idx)
-            time_idx = length(time_vector)  # Use last time step if time is beyond range
-        end
-        
-        # Return the pre-calculated induction value for this turbine and time
-        # turbine data starts from column 2 (column 1 is time)
-        if turbine + 1 <= size(con.induction_data, 2) && time_idx <= size(con.induction_data, 1)
-            return con.induction_data[time_idx, turbine + 1]
-        end
-    end
-    
-    # Fallback to dynamic calculation if no pre-calculated data is available
     group_id = FLORIDyn.turbine_group(ta, turbine)
     
     # Apply corrections based on turbine group and time with linear interpolation
@@ -201,8 +181,8 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8, dt=
     # - interpolate linearly between t=0 and t=t_end with no correction at t=t2
     
     base_induction = calc_induction_per_group(group_id, time)
-    t1 = 240.0 + dt  # Time to start increasing demand
-    t2 = 960.0 + dt  # Time to reach final demand
+    t1 = T_START + dt  # Time to start increasing demand
+    t2 = T_END   + dt  # Time to reach final demand
 
     # Calculate interpolation factor
     # 1.0 at t=t1 (full correction), 0.0 at t=t2 (no correction)

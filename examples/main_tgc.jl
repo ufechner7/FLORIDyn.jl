@@ -17,6 +17,8 @@ USE_TGC = true
 USE_STEP = false
 USE_FEED_FORWARD = true
 ONLINE = false
+T_START = 240   # time to start increasing demand
+T_END   = 960   # time to reach final demand
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -123,4 +125,36 @@ if hasfield(typeof(wind), :ti) && !isnothing(wind.ti)
     println("Turbulence intensity: $(round(turbulence_intensity * 100, digits=1))%")
 else
     println("Turbulence intensity: Not available")
+end
+
+# Plot average axial induction factor per turbine group over time
+begin
+    induction_data = con.induction_data
+    # Extract time from first column of induction_data
+    time_vec_ind = induction_data[:, 1]
+    n_time_steps = size(induction_data, 1)
+    n_turbines = size(ta.pos, 1)
+
+    # Prepare containers for four groups
+    group_data = [Float64[] for _ in 1:4]
+
+    # Since all turbines in a group have identical induction, pick one representative turbine per group
+    group_indices = [findfirst(i -> FLORIDyn.turbine_group(ta, i) == g, 1:n_turbines) for g in 1:4]
+    for g in 1:4
+        idx = group_indices[g]
+        if isnothing(idx)
+            group_data[g] = fill(0.0, n_time_steps)
+        else
+            group_data[g] = induction_data[:, idx + 1]
+        end
+    end
+
+    group_labels = ["Group 1", "Group 2", "Group 3", "Group 4"]
+    plot_rmt(time_vec_ind, group_data;
+             xlabel="Time [s]",
+             ylabel="Axial Induction Factor [-]",
+             title="Average Axial Induction Factor vs Time by Turbine Group",
+             labels=group_labels,
+             fig="Induction by Group",
+             pltctrl=pltctrl)
 end
