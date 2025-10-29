@@ -7,7 +7,7 @@ using FLORIDyn, ControlPlots, YAML
 
 settings_file = get_default_project()[2]
 
-GROUPS = 4
+GROUPS = 8
 
 function plot_turbines(ta::TurbineArray, turbine_groups)
     # Extract x and y coordinates from the position matrix
@@ -58,7 +58,8 @@ function plot_turbines(ta::TurbineArray, turbine_groups)
     
     plt.xlabel("X Coordinate [m]")
     plt.ylabel("Y Coordinate [m]")
-    plt.title("Wind Farm Layout - Turbine Groups by X Coordinate")
+    n_groups = length([g for g in turbine_groups if g["name"] != "all"])
+    plt.title("Wind Farm Layout - $n_groups Turbine Groups by X Coordinate")
     plt.grid(true, alpha=0.3)
     plt.legend(loc="lower right")
     
@@ -85,6 +86,63 @@ function plot_turbines(ta::TurbineArray, turbine_groups)
     return plt.gcf()
 end
 
+"""
+    create_8_groups(ta::TurbineArray) -> Vector{Dict}
+
+Create 8 turbine groups by dividing turbines based on their X coordinates.
+Returns a turbine_groups structure compatible with the plotting function.
+
+# Arguments
+- `ta::TurbineArray`: The turbine array containing position data
+
+# Returns
+- `Vector{Dict}`: Vector of group dictionaries with keys "name", "id", and "turbines"
+"""
+function create_8_groups(ta::TurbineArray)
+    n_turbines = size(ta.pos, 1)
+    x_coords = ta.pos[:, 1]
+    
+    # Create array of (turbine_id, x_coord) pairs
+    turbines_with_x = [(i, x_coords[i]) for i in 1:n_turbines]
+    
+    # Sort by X coordinate
+    sort!(turbines_with_x, by = x -> x[2])
+    
+    # Split into 8 groups
+    n_groups = 8
+    turbines_per_group = div(n_turbines, n_groups)
+    remainder = n_turbines % n_groups
+    
+    turbine_groups = []
+    start_idx = 1
+    
+    for group_id in 1:n_groups
+        # Distribute remainder turbines to first groups
+        group_size = turbines_per_group + (group_id <= remainder ? 1 : 0)
+        end_idx = start_idx + group_size - 1
+        
+        # Extract turbine IDs for this group
+        group_turbines = [turbines_with_x[i][1] for i in start_idx:end_idx]
+        
+        push!(turbine_groups, Dict(
+            "name" => "group_$group_id",
+            "id" => group_id,
+            "turbines" => group_turbines
+        ))
+        
+        start_idx = end_idx + 1
+    end
+    
+    # Add "all" group
+    push!(turbine_groups, Dict(
+        "name" => "all",
+        "id" => 0,
+        "turbines" => collect(1:n_turbines)
+    ))
+    
+    return turbine_groups
+end
+
 # Load the settings and extract turbine data
 println("Loading turbine data from: $settings_file")
 try
@@ -94,6 +152,12 @@ try
     
     # Use setup function to load all configuration data including turbine array
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
+    
+    # Override with 8 groups if GROUPS == 8
+    if GROUPS == 8
+        println("Creating 8 turbine groups based on X coordinates...")
+        turbine_groups = create_8_groups(ta)
+    end
     
     println("Found $(size(ta.pos, 1)) turbines in the configuration")
     println("Turbine types: $(unique(ta.type))")
