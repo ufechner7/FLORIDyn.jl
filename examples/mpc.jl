@@ -3,7 +3,7 @@
 
 # Main script to run a model predictive control (MPC) simulation with FLORIDyn.jl
 # Currently, two modes are supported: control of all turbines with the same induction factor using 3 parameter
-# and group control with 6 parameters (3 for induction scaling and 3 for individual group scaling).
+# and group control with 10 parameters (3 for induction scaling and 7 for individual group scaling).
 # The mean square error between the production and demand is minimized.
 
 using Pkg
@@ -11,6 +11,7 @@ if ! ("NOMAD" ∈ keys(Pkg.project().dependencies))
     using TestEnv; TestEnv.activate()
 end
 using FLORIDyn, TerminalPager, DistributedNext, DataFrames, NOMAD, JLD2, Statistics
+using FLORIDyn: TurbineGroup, TurbineArray
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
@@ -18,9 +19,10 @@ vis_file      = "data/vis_54T.yaml"
 data_file               = "data/mpc_result.jld2"
 data_file_group_control = "data/mpc_result_group_control.jld2"
 
-GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 6-parameter group control
-SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 100       # maximum number black-box evaluations for NOMAD optimizer
+GROUPS = 8
+GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
+SIMULATE = true       # if false, load cached results if available
+MAX_STEPS = 200       # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -30,6 +32,63 @@ T_START = 240   # time to start increasing demand
 T_END   = 960   # time to reach final demand
 T_EXTRA = 1520  # extra time in addition to sim.end_time for MPC simulation
 MAX_DISTANCES = Float64[]
+
+"""
+    create_8_groups(ta::TurbineArray) -> Vector{Dict}
+
+Create 8 turbine groups by dividing turbines based on their X coordinates.
+Returns a turbine_groups structure compatible with FLORIDyn.
+
+# Arguments
+- `ta::TurbineArray`: The turbine array containing position data
+
+# Returns
+- `Vector{Dict}`: Vector of group dictionaries with keys "name", "id", and "turbines"
+"""
+function create_8_groups(ta::TurbineArray)
+    n_turbines = size(ta.pos, 1)
+    x_coords = ta.pos[:, 1]
+    
+    # Create array of (turbine_id, x_coord) pairs
+    turbines_with_x = [(i, x_coords[i]) for i in 1:n_turbines]
+    
+    # Sort by X coordinate
+    sort!(turbines_with_x, by = x -> x[2])
+    
+    # Split into 8 groups
+    n_groups = 8
+    turbines_per_group = div(n_turbines, n_groups)
+    remainder = n_turbines % n_groups
+    
+    turbine_groups = []
+    start_idx = 1
+    
+    for group_id in 1:n_groups
+        # Distribute remainder turbines to first groups
+        group_size = turbines_per_group + (group_id <= remainder ? 1 : 0)
+        end_idx = start_idx + group_size - 1
+        
+        # Extract turbine IDs for this group
+        group_turbines = [turbines_with_x[i][1] for i in start_idx:end_idx]
+        
+        push!(turbine_groups, Dict(
+            "name" => "group_$group_id",
+            "id" => group_id,
+            "turbines" => group_turbines
+        ))
+        
+        start_idx = end_idx + 1
+    end
+    
+    # Add "all" group
+    push!(turbine_groups, Dict(
+        "name" => "all",
+        "id" => 0,
+        "turbines" => collect(1:n_turbines)
+    ))
+    
+    return turbine_groups
+end
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -51,6 +110,16 @@ include("calc_induction_matrix.jl")
 
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
+
+# Override with 8 groups if GROUPS == 8
+if GROUPS == 8
+    println("Creating 8 turbine groups based on X coordinates...")
+    turbine_groups = create_8_groups(ta)
+    # Convert to TurbineGroup objects
+    new_groups = [TurbineGroup(g["name"], g["id"], g["turbines"]) for g in turbine_groups]
+    ta = TurbineArray(ta.pos, ta.type, ta.init_States, new_groups)
+end
+
 sim.end_time += T_EXTRA  # extend simulation time for MPC
 con.yaw="Constant"
 con.yaw_fixed = 270.0
@@ -126,15 +195,12 @@ end
 function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothing)
     distance = 0.0
     id_scaling = 1.0
-    if length(scaling) > 3
-        if group_id == 1
-            id_scaling = scaling[4]
-        elseif group_id == 2
-            id_scaling = scaling[5]
-        elseif group_id == 3
-            id_scaling = scaling[6]
-        else
-            id_scaling = 4.0 - (scaling[4] + scaling[5] + scaling[6])
+    if length(scaling) > 3 && !isnothing(group_id)
+        if group_id >= 1 && group_id <= 7
+            id_scaling = scaling[3 + group_id]
+        elseif group_id == 8
+            # Group 8: calculate as 8.0 minus sum of groups 1-7
+            id_scaling = 8.0 - sum(scaling[4:10])
         end
         id_scaling = clamp(id_scaling, 0.0, 2.0)
     end
@@ -313,10 +379,10 @@ function eval_fct(x::Vector{Float64})
     
     # Add constraint if GROUP_CONTROL is true
     if GROUP_CONTROL
-        # Constraint: x[4] + x[5] + x[6] <= 4
+        # Constraint: x[4] + x[5] + ... + x[10] <= 8
         # For NOMAD, constraints should be <= 0, so we formulate as:
-        # x[4] + x[5] + x[6] - 4 <= 0
-        constraint_sum = x[4] + x[5] + x[6] - 4.0
+        # x[4] + x[5] + ... + x[10] - 8 <= 0
+        constraint_sum = sum(x[4:10]) - 8.0
         # Constraint 2: max_distance <= 0.075
         # Formulate as: max_distance - 0.075 <= 0
         constraint_maxdist = max_distance - 0.075
@@ -333,12 +399,12 @@ end
 if GROUP_CONTROL
     # Set up NOMAD optimization problem
     p = NomadProblem(
-        6,                    # dimension (6 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling)
+        10,                   # dimension (10 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling for groups 1-7)
         3,                    # number of outputs (objective + 2 constraints)
         ["OBJ", "PB", "PB"], # output types: OBJ = objective to minimize, PB = progressive barrier constraints
         eval_fct;            # evaluation function
-        lower_bound=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0],   # minimum scaling values
-        upper_bound=[2.0, 2.0, 2.0, 2.0, 2.0, 2.0]    # maximum scaling values
+        lower_bound=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],   # minimum scaling values (3 global + 7 groups)
+        upper_bound=[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]    # maximum scaling values
     )
 
     # Set NOMAD options
@@ -380,10 +446,10 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
 else
     # Run optimization and simulation
     if GROUP_CONTROL
-        result = solve(p, [1.261, 1.285, 1.316, 0.0031, 1.994, 0])
+        result = solve(p, [1.272, 1.254, 1.274, 0.0, 0.0, 2.0, 1.91, 1.74, 0.0, 0.61])
         results_ref = JLD2.load(data_file, "results")
         rel_power_ref = results_ref["rel_power"]
-        optimal_scaling = result.x_best_feas[1:6]
+        optimal_scaling = result.x_best_feas[1:10]
     else
         result = solve(p, [1.5, 1.5, 1.5])  # Start from initial guess of [1.5, 1.5, 1.5]
         optimal_scaling = result.x_best_feas[1:3]
@@ -428,12 +494,12 @@ begin
     n_time_steps = size(induction_data, 1)
     n_turbines = size(ta.pos, 1)
 
-    # Prepare containers for four groups
-    group_data = [Float64[] for _ in 1:4]
+    # Prepare containers for eight groups
+    group_data = [Float64[] for _ in 1:8]
 
     # Since all turbines in a group have identical induction, pick one representative turbine per group
-    group_indices = [findfirst(i -> FLORIDyn.turbine_group(ta, i) == g, 1:n_turbines) for g in 1:4]
-    for g in 1:4
+    group_indices = [findfirst(i -> FLORIDyn.turbine_group(ta, i) == g, 1:n_turbines) for g in 1:8]
+    for g in 1:8
         idx = group_indices[g]
         if isnothing(idx)
             group_data[g] = fill(0.0, n_time_steps)
@@ -442,7 +508,7 @@ begin
         end
     end
 
-    group_labels = ["Group 1", "Group 2", "Group 3", "Group 4"]
+    group_labels = ["Group 1", "Group 2", "Group 3", "Group 4", "Group 5", "Group 6", "Group 7", "Group 8"]
     plot_rmt(time_vec_ind, group_data;
              xlabel="Time [s]",
              ylabel="Axial Induction Factor [-]",
