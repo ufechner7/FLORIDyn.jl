@@ -10,7 +10,7 @@ using Pkg
 if ! ("NOMAD" ∈ keys(Pkg.project().dependencies))
     using TestEnv; TestEnv.activate()
 end
-using FLORIDyn, TerminalPager, DistributedNext, DataFrames, NOMAD, JLD2, Statistics
+using FLORIDyn, TerminalPager, DistributedNext, DataFrames, NOMAD, JLD2, Statistics, Printf
 using FLORIDyn: TurbineGroup, TurbineArray
 if Threads.nthreads() == 1; using ControlPlots; end
 
@@ -516,6 +516,25 @@ begin
              labels=group_labels,
              fig="Induction by Group",
              pltctrl=pltctrl)
+    
+    # Create bar plot of average induction factor per group
+    avg_induction = [isempty(group_data[g]) ? 0.0 : mean(group_data[g]) for g in 1:8]
+    
+    if !isnothing(plt)
+        plt.figure(figsize=(10, 6))
+        bars = plt.bar(1:8, avg_induction, color=["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f"])
+        plt.xlabel("Turbine Group", fontsize=12)
+        plt.ylabel("Average Axial Induction Factor [-]", fontsize=12)
+        plt.title("Average Axial Induction Factor by Turbine Group", fontsize=14)
+        plt.xticks(1:8, ["Group $i" for i in 1:8], rotation=45, ha="right")
+        plt.grid(axis="y", alpha=0.3)
+        plt.tight_layout()
+        
+        # Add value labels on top of bars
+        for (i, v) in enumerate(avg_induction)
+            plt.text(i, v, @sprintf("%.3f", v), ha="center", va="bottom", fontsize=10)
+        end
+    end
 end
 
 if GROUP_CONTROL
