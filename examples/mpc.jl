@@ -17,12 +17,13 @@ if Threads.nthreads() == 1; using ControlPlots; end
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 data_file               = "data/mpc_result.jld2"
+error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control.jld2"
 
 GROUPS = 8
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
-SIMULATE = false       # if false, load cached results if available
-MAX_STEPS = 200       # maximum number black-box evaluations for NOMAD optimizer
+SIMULATE = true       # if false, load cached results if available
+MAX_STEPS = 1       # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -32,6 +33,10 @@ T_START = 240   # time to start increasing demand
 T_END   = 960   # time to reach final demand
 T_EXTRA = 1520  # extra time in addition to sim.end_time for MPC simulation
 MAX_DISTANCES = Float64[]
+DELTA_P = Float64[]
+if isfile(error_file)
+    DELTA_P = JLD2.load(error_file)["delta_p"]
+end
 
 """
     create_8_groups(ta::TurbineArray) -> Vector{Dict}
@@ -284,7 +289,16 @@ function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothin
     end
     
     rel_power = calc_cp(base_induction) / cp_max
-    corrected_induction = calc_induction(rel_power * cp_max)
+    if length(DELTA_P) == 0
+        delta_p = 0.0
+    else
+        delta_p = DELTA_P[Int(floor((time) / time_step)) + 1]  # +1 for 1-based indexing
+    end
+    if isnan(delta_p)
+        delta_p = 0.0
+    end
+    corrected_rel_power = rel_power - 0.0000000000001 * delta_p
+    corrected_induction = calc_induction(corrected_rel_power * cp_max)
     return max(0.0, min(BETZ_INDUCTION, corrected_induction)), distance
 end
 
@@ -385,7 +399,7 @@ function eval_fct(x::Vector{Float64})
         constraint_sum = sum(x[4:10]) - 8.0
         # Constraint 2: max_distance <= 0.075
         # Formulate as: max_distance - 0.075 <= 0
-        constraint_maxdist = max_distance - 0.075
+        constraint_maxdist = max_distance - 0.075*3
         bb_outputs = [error, constraint_sum, constraint_maxdist]
     else
         bb_outputs = [error]
@@ -476,6 +490,12 @@ else
 end
 
 println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
+# calculate delta_p
+delta_p = rel_power[1:length(time_vector)].-demand_values
+if length(DELTA_P) == 0
+    JLD2.jldsave(error_file; delta_p=delta_p, time_vector=time_vector)
+end
+
 if GROUP_CONTROL
     plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, rel_power_ref[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, time_vector[end]),
             ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_power_ref", "rel_demand"], fig="Rel. Power and Demand", pltctrl)
@@ -540,7 +560,7 @@ end
 if GROUP_CONTROL
     # calculate rel_power-rel_power_ref
     start_index = Int(floor((T_SKIP+T_START+(T_END-T_START)*0.96) / time_step)) + 1
-    rel_power_gain = rel_power[start_index:end-1] .- rel_power_ref[start_index:end]
+    rel_power_gain = rel_power[start_index:end] .- rel_power_ref[start_index:end]
     storage_time = calc_storage_time(time_vector, rel_power_gain)
     println("Estimated storage time at 100% power: $(round(storage_time, digits=2)) s")
     println()
