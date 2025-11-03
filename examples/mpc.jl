@@ -24,7 +24,7 @@ GROUPS = 8
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 ALWAYS_ON = [] 
 MAX_ID_SCALING = 3.0
-SIMULATE = false       # if false, load cached results if available
+SIMULATE = true       # if false, load cached results if available
 MAX_STEPS = 200      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
@@ -501,7 +501,7 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
 else
     # Run optimization and simulation
     if GROUP_CONTROL       
-        result = solve(p, [1.32716, 1.32262, 1.26231, 0.0061, 0.0124, 1.923, 1.8499, 1.8685, 0.8903, 0.1593])
+        result = solve(p, [1.32216, 1.32219, 1.26221, 0.0025, 0.0171, 1.93, 1.8463, 1.8629, 0.8907, 0.1595])
         results_ref = JLD2.load(data_file, "results")
         rel_power_ref = results_ref["rel_power"]
         optimal_scaling = result.x_best_feas[1:10]
