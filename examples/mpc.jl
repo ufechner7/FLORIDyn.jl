@@ -22,9 +22,8 @@ data_file_group_control = "data/mpc_result_group_control.jld2"
 
 GROUPS = 8
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
-ALWAYS_ON = [] 
 MAX_ID_SCALING = 3.0
-SIMULATE = true       # if false, load cached results if available
+SIMULATE = false       # if false, load cached results if available
 MAX_STEPS = 200      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
@@ -279,9 +278,6 @@ function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothin
     end
     corrected_rel_power = rel_power - 0.0000000000001 * delta_p
     corrected_induction = calc_induction(corrected_rel_power * cp_max)
-    if group_id in ALWAYS_ON
-        corrected_induction = calc_induction(cp_max)
-    end
     return max(0.0, min(BETZ_INDUCTION, corrected_induction)), distance
 end
 
@@ -441,7 +437,7 @@ function eval_fct(x::Vector{Float64})
         constraint_sum = sum(x[4:10]) - 8.0
         # Constraint 2: max_distance <= 0.075
         # Formulate as: max_distance - 0.075 <= 0
-        constraint_maxdist = max_distance - 0.075*3
+        constraint_maxdist = max_distance - 0.075*10
         bb_outputs = [error, constraint_sum, constraint_maxdist]
     else
         bb_outputs = [error]
@@ -501,7 +497,7 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
 else
     # Run optimization and simulation
     if GROUP_CONTROL       
-        result = solve(p, [1.32216, 1.32219, 1.26221, 0.0025, 0.0171, 1.93, 1.8463, 1.8629, 0.8907, 0.1595])
+        result = solve(p, [1.31576, 1.32517, 1.25281, 0.0, 0.0208, 1.93, 1.8703, 1.8802, 0.8807, 0.0595])
         results_ref = JLD2.load(data_file, "results")
         rel_power_ref = results_ref["rel_power"]
         optimal_scaling = result.x_best_feas[1:10]
