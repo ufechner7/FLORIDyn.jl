@@ -492,7 +492,6 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
 else
     # Run optimization and simulation
     if GROUP_CONTROL
-        #  [1.25773, 1.25069, 1.27628, 0.000114, 0.00029, 1.99977, 1.99912, 1.5639, 0.00031, 0.4386]
         result = solve(p, [1.25773, 1.25069, 1.27628, 0.000114, 0.00029, 1.99977, 1.99912, 1.5639, 0.00031, 0.4386])
         results_ref = JLD2.load(data_file, "results")
         rel_power_ref = results_ref["rel_power"]
