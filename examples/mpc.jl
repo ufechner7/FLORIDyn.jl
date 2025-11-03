@@ -22,8 +22,8 @@ data_file_group_control = "data/mpc_result_group_control.jld2"
 
 GROUPS = 8
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
-SIMULATE = false       # if false, load cached results if available
-MAX_STEPS = 100      # maximum number black-box evaluations for NOMAD optimizer
+SIMULATE = true       # if false, load cached results if available
+MAX_STEPS = 1      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -493,7 +493,7 @@ else
     # Run optimization and simulation
     if GROUP_CONTROL
         #  [1.25773, 1.25069, 1.27628, 0.000114, 0.00029, 1.99977, 1.99912, 1.5639, 0.00031, 0.4386]
-        result = solve(p, [1.27016, 1.25057, 1.27153, 0.0, 0.000922, 2.0, 2.0, 1.5799, 0.0, 0.4204])
+        result = solve(p, [1.25773, 1.25069, 1.27628, 0.000114, 0.00029, 1.99977, 1.99912, 1.5639, 0.00031, 0.4386])
         results_ref = JLD2.load(data_file, "results")
         rel_power_ref = results_ref["rel_power"]
         optimal_scaling = result.x_best_feas[1:10]
