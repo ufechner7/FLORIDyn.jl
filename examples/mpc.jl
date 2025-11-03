@@ -22,9 +22,10 @@ data_file_group_control = "data/mpc_result_group_control.jld2"
 
 GROUPS = 8
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
-ALWAYS_ON = [1,2,6]
-SIMULATE = true       # if false, load cached results if available
-MAX_STEPS = 1      # maximum number black-box evaluations for NOMAD optimizer
+ALWAYS_ON = [] 
+MAX_ID_SCALING = 3.0
+SIMULATE = false       # if false, load cached results if available
+MAX_STEPS = 200      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -204,11 +205,11 @@ function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothin
     if length(scaling) > 3 && !isnothing(group_id)
         if group_id >= 1 && group_id <= 7
             id_scaling = scaling[3 + group_id]
-        elseif group_id == 8
+        elseif group_id == GROUPS
             # Group 8: calculate as 8.0 minus sum of groups 1-7
-            id_scaling = 8.0 - sum(scaling[4:10])
+            id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling[4:10])
         end
-        id_scaling = clamp(id_scaling, 0.0, 2.0)
+        id_scaling = clamp(id_scaling, 0.0, MAX_ID_SCALING)
     end
     t1 = 240.0 + dt  # Time to start increasing demand
     t2 = 960.0 + dt  # Time to reach final demand
@@ -426,6 +427,11 @@ function eval_fct(x::Vector{Float64})
     
     # Calculate error
     error = calc_error(rel_power, demand_values, time_step)
+    success = true
+    if isnothing(error) || isnan(error)
+        error = 1e6
+        success = false
+    end
     
     # Add constraint if GROUP_CONTROL is true
     if GROUP_CONTROL
@@ -441,7 +447,6 @@ function eval_fct(x::Vector{Float64})
         bb_outputs = [error]
     end
     
-    success = true
     count_eval = true
     
     return (success, count_eval, bb_outputs)
@@ -454,7 +459,7 @@ if GROUP_CONTROL
         ["OBJ", "PB", "PB"], # output types: OBJ = objective to minimize, PB = progressive barrier constraints
         eval_fct;            # evaluation function
         lower_bound=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],   # minimum scaling values (3 global + 7 groups)
-        upper_bound=[2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0]    # maximum scaling values
+        upper_bound=[2.0, 2.0, 2.0, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING]    # maximum scaling values
     )
 
     # Set NOMAD options
@@ -495,8 +500,8 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
     mse = results["mse"]
 else
     # Run optimization and simulation
-    if GROUP_CONTROL
-        result = solve(p, [1.0, 1.14662, 1.28028, 0.0, 0.0, 2.0, 2.0, 2.0, 0.0, 0.0])
+    if GROUP_CONTROL       
+        result = solve(p, [1.32716, 1.32262, 1.26231, 0.0061, 0.0124, 1.923, 1.8499, 1.8685, 0.8903, 0.1593])
         results_ref = JLD2.load(data_file, "results")
         rel_power_ref = results_ref["rel_power"]
         optimal_scaling = result.x_best_feas[1:10]
