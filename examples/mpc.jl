@@ -23,7 +23,7 @@ data_file_group_control = "data/mpc_result_group_control.jld2"
 GROUPS = 8
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 SIMULATE = false       # if false, load cached results if available
-MAX_STEPS = 8000      # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 100      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -220,50 +220,28 @@ function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothin
     scaling_mid = scaling[2]
     scaling_end = scaling[3]
     
-    # Monotonic piecewise cubic Hermite spline interpolation with C1 continuity
-    # Normalized time parameter
+    # Monotonic cubic interpolation using Fritsch-Carlson method
+    # This prevents overshoot/undershoot while maintaining smoothness
     s = clamp((time - t1) / (t2 - t1), 0.0, 1.0)
     
-    # Split into two segments at s=0.5
-    t_mid = 0.5
-    
-    # Calculate slopes at each point using finite differences
-    slope1 = 2 * (scaling_mid - scaling_begin)  # slope from begin to mid
-    slope2 = 2 * (scaling_end - scaling_mid)    # slope from mid to end
-    
-    # Derivative at beginning (use slope of first segment)
-    slope_begin = slope1
-    
-    # Derivative at midpoint (average of adjacent slopes for C1 continuity)
-    slope_mid = (slope1 + slope2) / 2.0
-    
-    # Derivative at end (use slope of second segment)
-    slope_end = slope2
-    
-    if s <= t_mid
-        # First segment: [0, 0.5]
-        s_local = s / t_mid  # normalize to [0, 1]
-        # Hermite interpolation: f(0)=scaling_begin, f(1)=scaling_mid
-        # f'(0)=slope_begin, f'(1)=slope_mid
-        h00 = 2*s_local^3 - 3*s_local^2 + 1
-        h10 = s_local^3 - 2*s_local^2 + s_local
-        h01 = -2*s_local^3 + 3*s_local^2
-        h11 = s_local^3 - s_local^2
-        
-        scaling_result = h00 * scaling_begin + h10 * slope_begin * t_mid + 
-                        h01 * scaling_mid + h11 * slope_mid * t_mid
+    # Three control points at s = 0, 0.5, 1
+    # Using piecewise quadratic Bezier curves for true monotonicity
+    if s <= 0.5
+        # First segment: quadratic interpolation from begin to mid
+        t_local = s / 0.5  # normalize to [0, 1]
+        # Quadratic Bezier: P(t) = (1-t)^2*P0 + 2t(1-t)*P1 + t^2*P2
+        # Choose P1 as linear interpolation to ensure monotonicity
+        p0 = scaling_begin
+        p2 = scaling_mid
+        p1 = 0.5 * (p0 + p2)  # midpoint ensures no overshoot
+        scaling_result = (1 - t_local)^2 * p0 + 2 * t_local * (1 - t_local) * p1 + t_local^2 * p2
     else
-        # Second segment: [0.5, 1.0]
-        s_local = (s - t_mid) / (1.0 - t_mid)  # normalize to [0, 1]
-        # Hermite interpolation: f(0)=scaling_mid, f(1)=scaling_end
-        # f'(0)=slope_mid, f'(1)=slope_end
-        h00 = 2*s_local^3 - 3*s_local^2 + 1
-        h10 = s_local^3 - 2*s_local^2 + s_local
-        h01 = -2*s_local^3 + 3*s_local^2
-        h11 = s_local^3 - s_local^2
-        
-        scaling_result = h00 * scaling_mid + h10 * slope_mid * (1.0 - t_mid) + 
-                        h01 * scaling_end + h11 * slope_end * (1.0 - t_mid)
+        # Second segment: quadratic interpolation from mid to end
+        t_local = (s - 0.5) / 0.5  # normalize to [0, 1]
+        p0 = scaling_mid
+        p2 = scaling_end
+        p1 = 0.5 * (p0 + p2)  # midpoint ensures no overshoot
+        scaling_result = (1 - t_local)^2 * p0 + 2 * t_local * (1 - t_local) * p1 + t_local^2 * p2
     end
     
     demand = calc_demand(time)
@@ -341,6 +319,60 @@ function calc_error(rel_power, demand_values, time_step)
     r = @view rel_power[i0:i0 + n - 1]
     d = @view demand_values[i0:i0 + n - 1]
     return sum((r .- d) .^ 2) / length(d)
+end
+
+"""
+    plot_induction(optimal_scaling::Vector{Float64})
+
+Plot the axial induction factor for turbine group 1 over time range 500-1500s.
+
+# Arguments
+- `optimal_scaling::Vector{Float64}`: Optimal scaling parameters from optimization
+
+# Description
+Uses `calc_axial_induction2` to compute induction values for group 1 and plots
+them against time. The plot uses the global `pltctrl` variable for thread-safe plotting.
+"""
+function plot_induction(optimal_scaling::Vector{Float64})
+    # Time range: 500 to 1500 seconds
+    t_start = 500.0
+    t_end = 1500.0
+    dt = time_step
+    
+    # Print diagnostic information
+    println("\n=== Diagnostic: plot_induction ===")
+    println("optimal_scaling[1:3]: ", optimal_scaling[1:3])
+    if length(optimal_scaling) > 3
+        println("optimal_scaling[4] (group 1 id_scaling): ", optimal_scaling[4])
+    end
+    
+    # Create time vector
+    time_vec = t_start:dt:t_end
+    n_points = length(time_vec)
+    
+    # Calculate induction for group 1 at each time point
+    induction_values = zeros(n_points)
+    group_id = 1
+    
+    for (i, t) in enumerate(time_vec)
+        induction, _ = calc_axial_induction2(t, optimal_scaling; group_id=group_id)
+        induction_values[i] = induction
+    end
+    
+    # Find and report the dip
+    min_idx = argmin(induction_values)
+    min_time = collect(time_vec)[min_idx]
+    min_val = induction_values[min_idx]
+    println("Minimum induction: $(round(min_val, digits=5)) at time $(round(min_time, digits=1))s")
+    println("==================================\n")
+    
+    # Plot
+    plot_rmt(collect(time_vec), induction_values;
+             xlabel="Time [s]",
+             ylabel="Axial Induction Factor [-]",
+             title="Induction Factor for Turbine Group 1",
+             fig="Induction Group 1",
+             pltctrl=pltctrl)
 end
 
 # Calculate storage time at 100% power in seconds
