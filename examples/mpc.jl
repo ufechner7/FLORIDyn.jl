@@ -23,8 +23,8 @@ data_file_group_control = "data/mpc_result_group_control.jld2"
 GROUPS = 8
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
-SIMULATE = false       # if false, load cached results if available
-MAX_STEPS = 200      # maximum number black-box evaluations for NOMAD optimizer
+SIMULATE = true       # if false, load cached results if available
+MAX_STEPS = 1      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -276,7 +276,7 @@ function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothin
     if isnan(delta_p)
         delta_p = 0.0
     end
-    corrected_rel_power = rel_power - 0.0000000000001 * delta_p
+    corrected_rel_power = rel_power # - 0.0000000000001 * delta_p
     corrected_induction = calc_induction(corrected_rel_power * cp_max)
     return max(0.0, min(BETZ_INDUCTION, corrected_induction)), distance
 end
@@ -597,6 +597,9 @@ end
 if GROUP_CONTROL
     # calculate rel_power-rel_power_ref
     start_index = Int(floor((T_SKIP+T_START+(T_END-T_START)*0.96) / time_step)) + 1
+    common_length = min(length(rel_power), length(rel_power_ref))
+    rel_power = rel_power[1:common_length]
+    rel_power_ref = rel_power_ref[1:common_length]
     rel_power_gain = rel_power[start_index:end] .- rel_power_ref[start_index:end]
     storage_time = calc_storage_time(time_vector, rel_power_gain)
     println("Estimated storage time at 100% power: $(round(storage_time, digits=2)) s")
