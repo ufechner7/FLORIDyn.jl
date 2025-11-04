@@ -527,7 +527,7 @@ else
             x0 = [1.99, 2.0, 1.63, 1.393, 1.298, 0.07, 0.92, 2.06]
         elseif GROUPS == 12
             # 5 global + 11 group parameters (last group calculated from constraint)
-            x0 = [1.3, 1.99, 1.271, 1.27, 1.332, 0.03, 0.0, 0.07, 3.0, 0.04, 1.99, 0.92, 0.67, 1.62, 0.86, 0.98]
+            x0 = [1.394, 1.986, 1.262, 1.276, 1.31, 0.03, 0.05, 0.03, 2.99, 0.0, 1.99, 1.09, 0.68, 1.67, 0.93, 0.95]
         else
             # Generic initial guess for other group counts
             x0 = vcat([1.5, 1.5, 1.5, 1.5, 1.5], fill(1.0, GROUPS - 1))
