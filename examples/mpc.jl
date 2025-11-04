@@ -24,7 +24,7 @@ GROUPS = 4 # must be 4 or 8
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true       # if false, load cached results if available
-MAX_STEPS = 100      # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 1      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -527,7 +527,7 @@ else
         if GROUPS == 8       
             result = solve(p, [1.32, 1.35, 1.33, 1.30, 1.26, 2.1e-5, 0.07, 1.89, 1.84, 1.95, 0.86, 0.08])
         else
-            result = solve(p, [1.99, 1.80, 1.62, 1.40, 1.25, 0.07, 0.90, 2.01])
+            result = solve(p, [1.99, 2.0, 1.63, 1.39, 1.30, 0.07, 0.92, 2.06])
         end
         results_ref = JLD2.load(data_file, "results")
         rel_power_ref = results_ref["rel_power"]
