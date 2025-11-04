@@ -3,7 +3,7 @@
 
 # Main script to run a model predictive control (MPC) simulation with FLORIDyn.jl
 # Currently, two modes are supported: control of all turbines with the same induction factor using 3 parameter
-# and group control with 10 parameters (3 for induction scaling and 7 for individual group scaling).
+# and group control with 6 or 10 parameters (3 for induction scaling and 3 or 7 for individual group scaling).
 # The mean square error between the production and demand is minimized.
 
 using Pkg
@@ -203,11 +203,11 @@ function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothin
     distance = 0.0
     id_scaling = 1.0
     if length(scaling) > 3 && !isnothing(group_id)
-        if group_id >= 1 && group_id <= 7
+        if group_id >= 1 && group_id <= GROUPS - 1
             id_scaling = scaling[3 + group_id]
         elseif group_id == GROUPS
             # Group 8: calculate as 8.0 minus sum of groups 1-7
-            id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling[4:10])
+            id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling[4:end])
         end
         id_scaling = clamp(id_scaling, 0.0, MAX_ID_SCALING)
     end
@@ -449,15 +449,27 @@ function eval_fct(x::Vector{Float64})
     return (success, count_eval, bb_outputs)
 end
 if GROUP_CONTROL
-    # Set up NOMAD optimization problem
-    p = NomadProblem(
-        10,                   # dimension (10 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling for groups 1-7)
-        3,                    # number of outputs (objective + 2 constraints)
-        ["OBJ", "PB", "PB"], # output types: OBJ = objective to minimize, PB = progressive barrier constraints
-        eval_fct;            # evaluation function
-        lower_bound=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],   # minimum scaling values (3 global + 7 groups)
-        upper_bound=[2.0, 2.0, 2.0, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING]    # maximum scaling values
-    )
+    if GROUPS == 8
+        # Set up NOMAD optimization problem
+        p = NomadProblem(
+            10,                   # dimension (10 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling for groups 1-7)
+            3,                    # number of outputs (objective + 2 constraints)
+            ["OBJ", "PB", "PB"], # output types: OBJ = objective to minimize, PB = progressive barrier constraints
+            eval_fct;            # evaluation function
+            lower_bound=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],   # minimum scaling values (3 global + 7 groups)
+            upper_bound=[2.0, 2.0, 2.0, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING]    # maximum scaling values
+        )
+    else
+        # Set up NOMAD optimization problem
+        p = NomadProblem(
+            GROUPS+2,            # dimension (6 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling for groups 1-3)
+            3,                   # number of outputs (objective + 2 constraints)
+            ["OBJ", "PB", "PB"], # output types: OBJ = objective to minimize, PB = progressive barrier constraints
+            eval_fct;            # evaluation function
+            lower_bound=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0],   # minimum scaling values (3 global + 3 groups)
+            upper_bound=[2.0, 2.0, 2.0, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING]    # maximum scaling values
+        )
+    end
 
     # Set NOMAD options
     p.options.max_bb_eval = MAX_STEPS      # maximum number of function evaluations
@@ -497,8 +509,12 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
     mse = results["mse"]
 else
     # Run optimization and simulation
-    if GROUP_CONTROL       
-        result = solve(p, [1.32176, 1.32495, 1.2568, 2.1e-5, 0.071068, 1.8939, 1.8399, 1.9526, 0.8627, 0.076233])
+    if GROUP_CONTROL
+        if GROUPS == 8       
+            result = solve(p, [1.32176, 1.32495, 1.2568, 2.1e-5, 0.071068, 1.8939, 1.8399, 1.9526, 0.8627, 0.076233])
+        else
+            result = solve(p, [1.32176, 1.32495, 1.2568, 2.1e-5, 0.071068, 0.076233])
+        end
         results_ref = JLD2.load(data_file, "results")
         rel_power_ref = results_ref["rel_power"]
         optimal_scaling = result.x_best_feas[1:10]
@@ -552,12 +568,12 @@ begin
     n_time_steps = size(induction_data, 1)
     n_turbines = size(ta.pos, 1)
 
-    # Prepare containers for eight groups
-    group_data = [Float64[] for _ in 1:8]
+    # Prepare containers for the groups
+    group_data = [Float64[] for _ in 1:GROUPS]
 
     # Since all turbines in a group have identical induction, pick one representative turbine per group
-    group_indices = [findfirst(i -> FLORIDyn.turbine_group(ta, i) == g, 1:n_turbines) for g in 1:8]
-    for g in 1:8
+    group_indices = [findfirst(i -> FLORIDyn.turbine_group(ta, i) == g, 1:n_turbines) for g in 1:GROUPS]
+    for g in 1:GROUPS
         idx = group_indices[g]
         if isnothing(idx)
             group_data[g] = fill(0.0, n_time_steps)
@@ -565,8 +581,11 @@ begin
             group_data[g] = induction_data[:, idx + 1]
         end
     end
-
-    group_labels = ["Group 1", "Group 2", "Group 3", "Group 4", "Group 5", "Group 6", "Group 7", "Group 8"]
+    if GROUPS == 8
+        group_labels = ["Group 1", "Group 2", "Group 3", "Group 4", "Group 5", "Group 6", "Group 7", "Group 8"]
+    else
+        group_labels = ["Group 1", "Group 2", "Group 3", "Group 4"]
+    end
     plot_rmt(time_vec_ind, group_data;
              xlabel="Time [s]",
              ylabel="Axial Induction Factor [-]",
@@ -576,15 +595,19 @@ begin
              pltctrl=pltctrl)
     
     # Create bar plot of average induction factor per group
-    avg_induction = [isempty(group_data[g]) ? 0.0 : mean(group_data[g]) for g in 1:8]
+    avg_induction = [isempty(group_data[g]) ? 0.0 : mean(group_data[g]) for g in 1:GROUPS]
     
     if !isnothing(plt)
         plt.figure(figsize=(10, 6))
-        bars = plt.bar(1:8, avg_induction, color=["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f"])
+        if GROUPS == 8
+            bars = plt.bar(1:GROUPS, avg_induction, color=["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f"])
+        else
+            bars = plt.bar(1:GROUPS, avg_induction, color=["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"])
+        end
         plt.xlabel("Turbine Group", fontsize=12)
         plt.ylabel("Average Axial Induction Factor [-]", fontsize=12)
         plt.title("Average Axial Induction Factor by Turbine Group", fontsize=14)
-        plt.xticks(1:8, ["Group $i" for i in 1:8], rotation=45, ha="right")
+        plt.xticks(1:GROUPS, ["Group $i" for i in 1:GROUPS], rotation=45, ha="right")
         plt.grid(axis="y", alpha=0.3)
         plt.tight_layout()
         
@@ -597,7 +620,7 @@ end
 
 function print_gains(optimal_scaling)
     scaling = optimal_scaling[4:end]
-    id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(optimal_scaling[4:10])
+    id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(optimal_scaling[4:end])
     push!(scaling, id_scaling)
     println("\n=== Power Gain per Turbine Group ===")
     for (i, gain) in enumerate(scaling)
