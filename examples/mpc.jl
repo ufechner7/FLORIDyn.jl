@@ -594,6 +594,17 @@ begin
     end
 end
 
+function print_gains(optimal_scaling)
+    scaling = optimal_scaling[4:end]
+    id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(optimal_scaling[4:10])
+    push!(scaling, id_scaling)
+    println("\n=== Power Gain per Turbine Group ===")
+    for (i, gain) in enumerate(scaling)
+        println("Group $i: $(round(gain, digits=2))")
+    end
+    println("mean: $(round(mean(scaling), digits=2))")
+end
+
 if GROUP_CONTROL
     # calculate rel_power-rel_power_ref
     start_index = Int(floor((T_SKIP+T_START+(T_END-T_START)*0.96) / time_step)) + 1
