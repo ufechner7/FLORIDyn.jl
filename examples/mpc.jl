@@ -18,7 +18,7 @@ settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
-data_file_group_control = "data/mpc_result_group_control.jld2"
+data_file_group_control = "data/mpc_result_group_control"
 
 GROUPS = 8
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
@@ -38,6 +38,7 @@ DELTA_P = Float64[]
 if isfile(error_file)
     DELTA_P = JLD2.load(error_file)["delta_p"]
 end
+data_file_group_control = data_file_group_control *  "_" * string(GROUPS)*"TGs.jld2"
 
 """
     create_8_groups(ta::TurbineArray) -> Vector{Dict}
