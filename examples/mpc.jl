@@ -3,7 +3,8 @@
 
 # Main script to run a model predictive control (MPC) simulation with FLORIDyn.jl
 # Currently, two modes are supported: control of all turbines with the same induction factor using 5 parameters
-# and group control with 8 or 12 parameters (5 for induction scaling at different time points and 3 or 7 for individual group scaling).
+# and group control with 8, 12, or 16 parameters (5 for induction scaling at different time points and 3, 7, or 11 for individual group scaling).
+# The number of groups can be 4, 8, or 12.
 # The mean square error between the production and demand is minimized.
 
 using Pkg
@@ -20,11 +21,11 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 8 # must be 4 or 8
+GROUPS = 4 # must be 4, 8 or 12
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = false      # if false, load cached results if available
-MAX_STEPS = 200      # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 100      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -41,18 +42,19 @@ end
 data_file_group_control = data_file_group_control *  "_" * string(GROUPS)*"TGs.jld2"
 
 """
-    create_8_groups(ta::TurbineArray) -> Vector{Dict}
+    create_n_groups(ta::TurbineArray, n_groups::Int) -> Vector{Dict}
 
-Create 8 turbine groups by dividing turbines based on their X coordinates.
+Create n turbine groups by dividing turbines based on their X coordinates.
 Returns a turbine_groups structure compatible with FLORIDyn.
 
 # Arguments
 - `ta::TurbineArray`: The turbine array containing position data
+- `n_groups::Int`: Number of groups to create (e.g., 4, 8, or 12)
 
 # Returns
 - `Vector{Dict}`: Vector of group dictionaries with keys "name", "id", and "turbines"
 """
-function create_8_groups(ta::TurbineArray)
+function create_n_groups(ta::TurbineArray, n_groups::Int)
     n_turbines = size(ta.pos, 1)
     x_coords = ta.pos[:, 1]
     
@@ -62,8 +64,7 @@ function create_8_groups(ta::TurbineArray)
     # Sort by X coordinate
     sort!(turbines_with_x, by = x -> x[2])
     
-    # Split into 8 groups
-    n_groups = 8
+    # Split into n_groups
     turbines_per_group = div(n_turbines, n_groups)
     remainder = n_turbines % n_groups
     
@@ -118,10 +119,10 @@ include("calc_induction_matrix.jl")
 # get the settings for the wind field, simulator and controller
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 
-# Override with 8 groups if GROUPS == 8
-if GROUPS == 8
-    println("Creating 8 turbine groups based on X coordinates...")
-    turbine_groups = create_8_groups(ta)
+# Override with n groups if GROUPS != 4 (default in settings file is 4)
+if GROUPS != 4
+    println("Creating $GROUPS turbine groups based on X coordinates...")
+    turbine_groups = create_n_groups(ta, GROUPS)
     # Convert to TurbineGroup objects
     new_groups = [TurbineGroup(g["name"], g["id"], g["turbines"]) for g in turbine_groups]
     ta = TurbineArray(ta.pos, ta.type, ta.init_States, new_groups)
@@ -463,27 +464,22 @@ function eval_fct(x::Vector{Float64})
     return (success, count_eval, bb_outputs)
 end
 if GROUP_CONTROL
-    if GROUPS == 8
-        # Set up NOMAD optimization problem
-        p = NomadProblem(
-            12,                   # dimension (12 parameters: 5 global scaling + 7 id_scaling for groups 1-7)
-            3,                    # number of outputs (objective + 2 constraints)
-            ["OBJ", "PB", "PB"], # output types: OBJ = objective to minimize, PB = progressive barrier constraints
-            eval_fct;            # evaluation function
-            lower_bound=[1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],   # minimum scaling values (5 global + 7 groups)
-            upper_bound=[2.0, 2.0, 2.0, 2.0, 2.0, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING]    # maximum scaling values
-        )
-    else
-        # Set up NOMAD optimization problem
-        p = NomadProblem(
-            GROUPS+4,            # dimension (8 parameters: 5 global scaling + 3 id_scaling for groups 1-3)
-            3,                   # number of outputs (objective + 2 constraints)
-            ["OBJ", "PB", "PB"], # output types: OBJ = objective to minimize, PB = progressive barrier constraints
-            eval_fct;            # evaluation function
-            lower_bound=[1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0],   # minimum scaling values (5 global + 3 groups)
-            upper_bound=[2.0, 2.0, 2.0, 2.0, 2.0, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING]    # maximum scaling values
-        )
-    end
+    n_group_params = GROUPS - 1  # One less because last group is calculated from constraint
+    n_total_params = 5 + n_group_params  # 5 global scaling + (GROUPS-1) group scaling
+    
+    # Create lower and upper bounds dynamically
+    lower_bound = vcat([1.0, 1.0, 1.0, 1.0, 1.0], fill(0.0, n_group_params))
+    upper_bound = vcat([2.0, 2.0, 2.0, 2.0, 2.0], fill(MAX_ID_SCALING, n_group_params))
+    
+    # Set up NOMAD optimization problem
+    p = NomadProblem(
+        n_total_params,      # dimension (5 global + GROUPS-1 group parameters)
+        3,                   # number of outputs (objective + 2 constraints)
+        ["OBJ", "PB", "PB"], # output types: OBJ = objective to minimize, PB = progressive barrier constraints
+        eval_fct;            # evaluation function
+        lower_bound=lower_bound,
+        upper_bound=upper_bound
+    )
 
     # Set NOMAD options
     p.options.max_bb_eval = MAX_STEPS      # maximum number of function evaluations
@@ -524,14 +520,22 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
 else
     # Run optimization and simulation
     if GROUP_CONTROL
+        # Create initial guess: 5 global parameters + (GROUPS-1) group parameters
         if GROUPS == 8       
-            result = solve(p,  [1.33, 1.398, 1.337, 1.269, 1.291, 0.020021, 0.0, 1.98, 1.89, 1.95, 0.81, 0.01])
+            x0 = [1.32, 1.35, 1.33, 1.30, 1.26, 2.1e-5, 0.07, 1.89, 1.84, 1.95, 0.86, 0.08]
+        elseif GROUPS == 4
+            x0 = [1.99, 2.0, 1.63, 1.393, 1.298, 0.07, 0.92, 2.06]
+        elseif GROUPS == 12
+            # 5 global + 11 group parameters (last group calculated from constraint)
+            x0 = [1.5, 1.5, 1.5, 1.5, 1.5, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         else
-            result = solve(p, [1.99, 2.0, 1.63, 1.39, 1.30, 0.07, 0.92, 2.06])
+            # Generic initial guess for other group counts
+            x0 = vcat([1.5, 1.5, 1.5, 1.5, 1.5], fill(1.0, GROUPS - 1))
         end
+        result = solve(p, x0)
         results_ref = JLD2.load(data_file, "results")
         rel_power_ref = results_ref["rel_power"]
-        optimal_scaling = result.x_best_feas[1:GROUPS+4]
+        optimal_scaling = result.x_best_feas
     else
         result = solve(p, [1.5, 1.5, 1.5, 1.5, 1.5])  # Start from initial guess
         optimal_scaling = result.x_best_feas[1:5]
@@ -590,11 +594,10 @@ begin
             group_data[g] = induction_data[:, idx + 1]
         end
     end
-    if GROUPS == 8
-        group_labels = ["Group 1", "Group 2", "Group 3", "Group 4", "Group 5", "Group 6", "Group 7", "Group 8"]
-    else
-        group_labels = ["Group 1", "Group 2", "Group 3", "Group 4"]
-    end
+    
+    # Create group labels dynamically
+    group_labels = ["Group $i" for i in 1:GROUPS]
+    
     plot_rmt(time_vec_ind, group_data;
              xlabel="Time [s]",
              ylabel="Axial Induction Factor [-]",
@@ -608,11 +611,12 @@ begin
     
     if !isnothing(plt)
         plt.figure(figsize=(10, 6))
-        if GROUPS == 8
-            bars = plt.bar(1:GROUPS, avg_induction, color=["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f"])
-        else
-            bars = plt.bar(1:GROUPS, avg_induction, color=["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"])
-        end
+        
+        # Create color palette - cycle through colors if more than 8 groups
+        base_colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f"]
+        colors = [base_colors[mod1(i, length(base_colors))] for i in 1:GROUPS]
+        
+        bars = plt.bar(1:GROUPS, avg_induction, color=colors)
         plt.xlabel("Turbine Group", fontsize=12)
         plt.ylabel("Average Axial Induction Factor [-]", fontsize=12)
         plt.title("Average Axial Induction Factor by Turbine Group", fontsize=14)
