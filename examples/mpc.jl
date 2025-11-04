@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Main script to run a model predictive control (MPC) simulation with FLORIDyn.jl
-# Currently, two modes are supported: control of all turbines with the same induction factor using 3 parameter
-# and group control with 6 or 10 parameters (3 for induction scaling and 3 or 7 for individual group scaling).
+# Currently, two modes are supported: control of all turbines with the same induction factor using 5 parameters
+# and group control with 8 or 12 parameters (5 for induction scaling at different time points and 3 or 7 for individual group scaling).
 # The mean square error between the production and demand is minimized.
 
 using Pkg
@@ -24,7 +24,7 @@ GROUPS = 4 # must be 4 or 8
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true       # if false, load cached results if available
-MAX_STEPS = 200      # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 100      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -202,12 +202,12 @@ end
 function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothing)
     distance = 0.0
     id_scaling = 1.0
-    if length(scaling) > 3 && !isnothing(group_id)
+    if length(scaling) > 5 && !isnothing(group_id)
         if group_id >= 1 && group_id <= GROUPS - 1
-            id_scaling = scaling[3 + group_id]
+            id_scaling = scaling[5 + group_id]
         elseif group_id == GROUPS
-            # Group 8: calculate as 8.0 minus sum of groups 1-7
-            id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling[4:end])
+            # Last group: calculate as GROUPS * MAX_ID_SCALING / 2.0 minus sum of groups 1 to GROUPS-1
+            id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling[6:end])
         end
         id_scaling = clamp(id_scaling, 0.0, MAX_ID_SCALING)
     end
@@ -218,31 +218,45 @@ function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothin
         time = t1
     end
 
-    scaling_begin = scaling[1]
-    scaling_mid = scaling[2]
-    scaling_end = scaling[3]
+    scaling_1 = scaling[1]  # at s = 0.00
+    scaling_2 = scaling[2]  # at s = 0.25
+    scaling_3 = scaling[3]  # at s = 0.50
+    scaling_4 = scaling[4]  # at s = 0.75
+    scaling_5 = scaling[5]  # at s = 1.00
     
     # Monotonic cubic interpolation using Fritsch-Carlson method
     # This prevents overshoot/undershoot while maintaining smoothness
     s = clamp((time - t1) / (t2 - t1), 0.0, 1.0)
     
-    # Three control points at s = 0, 0.5, 1
+    # Five control points at s = 0, 0.25, 0.5, 0.75, 1
     # Using piecewise quadratic Bezier curves for true monotonicity
-    if s <= 0.5
-        # First segment: quadratic interpolation from begin to mid
-        t_local = s / 0.5  # normalize to [0, 1]
-        # Quadratic Bezier: P(t) = (1-t)^2*P0 + 2t(1-t)*P1 + t^2*P2
-        # Choose P1 as linear interpolation to ensure monotonicity
-        p0 = scaling_begin
-        p2 = scaling_mid
+    if s <= 0.25
+        # First segment: quadratic interpolation from point 1 to point 2
+        t_local = s / 0.25  # normalize to [0, 1]
+        p0 = scaling_1
+        p2 = scaling_2
         p1 = 0.5 * (p0 + p2)  # midpoint ensures no overshoot
         scaling_result = (1 - t_local)^2 * p0 + 2 * t_local * (1 - t_local) * p1 + t_local^2 * p2
+    elseif s <= 0.5
+        # Second segment: quadratic interpolation from point 2 to point 3
+        t_local = (s - 0.25) / 0.25  # normalize to [0, 1]
+        p0 = scaling_2
+        p2 = scaling_3
+        p1 = 0.5 * (p0 + p2)
+        scaling_result = (1 - t_local)^2 * p0 + 2 * t_local * (1 - t_local) * p1 + t_local^2 * p2
+    elseif s <= 0.75
+        # Third segment: quadratic interpolation from point 3 to point 4
+        t_local = (s - 0.5) / 0.25  # normalize to [0, 1]
+        p0 = scaling_3
+        p2 = scaling_4
+        p1 = 0.5 * (p0 + p2)
+        scaling_result = (1 - t_local)^2 * p0 + 2 * t_local * (1 - t_local) * p1 + t_local^2 * p2
     else
-        # Second segment: quadratic interpolation from mid to end
-        t_local = (s - 0.5) / 0.5  # normalize to [0, 1]
-        p0 = scaling_mid
-        p2 = scaling_end
-        p1 = 0.5 * (p0 + p2)  # midpoint ensures no overshoot
+        # Fourth segment: quadratic interpolation from point 4 to point 5
+        t_local = (s - 0.75) / 0.25  # normalize to [0, 1]
+        p0 = scaling_4
+        p2 = scaling_5
+        p1 = 0.5 * (p0 + p2)
         scaling_result = (1 - t_local)^2 * p0 + 2 * t_local * (1 - t_local) * p1 + t_local^2 * p2
     end
     
@@ -343,9 +357,9 @@ function plot_induction(optimal_scaling::Vector{Float64})
     
     # Print diagnostic information
     println("\n=== Diagnostic: plot_induction ===")
-    println("optimal_scaling[1:3]: ", optimal_scaling[1:3])
-    if length(optimal_scaling) > 3
-        println("optimal_scaling[4] (group 1 id_scaling): ", optimal_scaling[4])
+    println("optimal_scaling[1:5]: ", optimal_scaling[1:5])
+    if length(optimal_scaling) > 5
+        println("optimal_scaling[6] (group 1 id_scaling): ", optimal_scaling[6])
     end
     
     # Create time vector
@@ -432,10 +446,10 @@ function eval_fct(x::Vector{Float64})
     
     # Add constraint if GROUP_CONTROL is true
     if GROUP_CONTROL
-        # Constraint: x[4] + x[5] + ... + x[10] <= GROUPS * MAX_ID_SCALING / 2.0
+        # Constraint: x[6] + x[7] + ... <= GROUPS * MAX_ID_SCALING / 2.0
         # For NOMAD, constraints should be <= 0, so we formulate as:
-        # x[4] + x[5] + ... + x[10] - GROUPS * MAX_ID_SCALING / 2.0 <= 0
-        constraint_sum = sum(x[4:end]) - (GROUPS * MAX_ID_SCALING / 2.0)
+        # x[6] + x[7] + ... - GROUPS * MAX_ID_SCALING / 2.0 <= 0
+        constraint_sum = sum(x[6:end]) - (GROUPS * MAX_ID_SCALING / 2.0)
         # Constraint 2: max_distance <= 0.075
         # Formulate as: max_distance - 0.075 <= 0
         constraint_maxdist = max_distance - 0.075*10
@@ -452,22 +466,22 @@ if GROUP_CONTROL
     if GROUPS == 8
         # Set up NOMAD optimization problem
         p = NomadProblem(
-            10,                   # dimension (10 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling for groups 1-7)
+            12,                   # dimension (12 parameters: 5 global scaling + 7 id_scaling for groups 1-7)
             3,                    # number of outputs (objective + 2 constraints)
             ["OBJ", "PB", "PB"], # output types: OBJ = objective to minimize, PB = progressive barrier constraints
             eval_fct;            # evaluation function
-            lower_bound=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],   # minimum scaling values (3 global + 7 groups)
-            upper_bound=[2.0, 2.0, 2.0, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING]    # maximum scaling values
+            lower_bound=[1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],   # minimum scaling values (5 global + 7 groups)
+            upper_bound=[2.0, 2.0, 2.0, 2.0, 2.0, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING]    # maximum scaling values
         )
     else
         # Set up NOMAD optimization problem
         p = NomadProblem(
-            GROUPS+2,            # dimension (6 parameters: scaling_begin, scaling_mid, scaling_end, id_scaling for groups 1-3)
+            GROUPS+4,            # dimension (8 parameters: 5 global scaling + 3 id_scaling for groups 1-3)
             3,                   # number of outputs (objective + 2 constraints)
             ["OBJ", "PB", "PB"], # output types: OBJ = objective to minimize, PB = progressive barrier constraints
             eval_fct;            # evaluation function
-            lower_bound=[1.0, 1.0, 1.0, 0.0, 0.0, 0.0],   # minimum scaling values (3 global + 3 groups)
-            upper_bound=[2.0, 2.0, 2.0, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING]    # maximum scaling values
+            lower_bound=[1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0],   # minimum scaling values (5 global + 3 groups)
+            upper_bound=[2.0, 2.0, 2.0, 2.0, 2.0, MAX_ID_SCALING, MAX_ID_SCALING, MAX_ID_SCALING]    # maximum scaling values
         )
     end
 
@@ -477,12 +491,12 @@ if GROUP_CONTROL
 else
         # Set up NOMAD optimization problem
     p = NomadProblem(
-        3,                    # dimension (3 parameters: scaling_begin, scaling_mid, scaling_end)
+        5,                    # dimension (5 parameters: scaling at 5 time points)
         1,                    # number of outputs (just the objective)
         ["OBJ"],             # output types: OBJ = objective to minimize
         eval_fct;            # evaluation function
-        lower_bound=[1.0, 1.0, 1.0],   # minimum scaling values
-        upper_bound=[2.5, 3.0, 3.0]    # maximum scaling values
+        lower_bound=[1.0, 1.0, 1.0, 1.0, 1.0],   # minimum scaling values
+        upper_bound=[2.5, 3.0, 3.0, 3.0, 3.0]    # maximum scaling values
     )
 
     # Set NOMAD options
@@ -511,16 +525,16 @@ else
     # Run optimization and simulation
     if GROUP_CONTROL
         if GROUPS == 8       
-            result = solve(p, [1.32176, 1.32495, 1.2568, 2.1e-5, 0.071068, 1.8939, 1.8399, 1.9526, 0.8627, 0.076233])
+            result = solve(p, [1.32, 1.35, 1.33, 1.30, 1.26, 2.1e-5, 0.07, 1.89, 1.84, 1.95, 0.86, 0.08])
         else
-            result = solve(p, [1.999, 1.62295, 1.2518, 0.07, 0.90107, 2.01])
+            result = solve(p, [1.99, 1.80, 1.62, 1.40, 1.25, 0.07, 0.90, 2.01])
         end
         results_ref = JLD2.load(data_file, "results")
         rel_power_ref = results_ref["rel_power"]
-        optimal_scaling = result.x_best_feas[1:GROUPS+2]
+        optimal_scaling = result.x_best_feas[1:GROUPS+4]
     else
-        result = solve(p, [1.5, 1.5, 1.5])  # Start from initial guess of [1.5, 1.5, 1.5]
-        optimal_scaling = result.x_best_feas[1:3]
+        result = solve(p, [1.5, 1.5, 1.5, 1.5, 1.5])  # Start from initial guess
+        optimal_scaling = result.x_best_feas[1:5]
     end
 
     induction_data, max_distance = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
@@ -619,8 +633,8 @@ begin
 end
 
 function print_gains(optimal_scaling)
-    scaling = optimal_scaling[4:end]
-    id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(optimal_scaling[4:end])
+    scaling = optimal_scaling[6:end]
+    id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(optimal_scaling[6:end])
     push!(scaling, id_scaling)
     println("\n=== Power Gain per Turbine Group ===")
     for (i, gain) in enumerate(scaling)
