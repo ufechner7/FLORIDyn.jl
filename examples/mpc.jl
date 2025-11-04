@@ -558,11 +558,6 @@ else
 end
 
 println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
-# calculate delta_p
-delta_p = rel_power[1:length(time_vector)].-demand_values
-if length(DELTA_P) == 0
-    JLD2.jldsave(error_file; delta_p=delta_p, time_vector=time_vector)
-end
 
 if GROUP_CONTROL
     plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, rel_power_ref[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, time_vector[end]),
