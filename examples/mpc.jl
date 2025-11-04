@@ -482,7 +482,7 @@ else
         ["OBJ"],             # output types: OBJ = objective to minimize
         eval_fct;            # evaluation function
         lower_bound=[1.0, 1.0, 1.0],   # minimum scaling values
-        upper_bound=[2.0, 3.0, 3.0]    # maximum scaling values
+        upper_bound=[2.5, 3.0, 3.0]    # maximum scaling values
     )
 
     # Set NOMAD options
@@ -513,7 +513,7 @@ else
         if GROUPS == 8       
             result = solve(p, [1.32176, 1.32495, 1.2568, 2.1e-5, 0.071068, 1.8939, 1.8399, 1.9526, 0.8627, 0.076233])
         else
-            result = solve(p, [2.0, 1.62195, 1.2538, 0.0, 0.89107, 2.01])
+            result = solve(p, [1.999, 1.62295, 1.2518, 0.07, 0.90107, 2.01])
         end
         results_ref = JLD2.load(data_file, "results")
         rel_power_ref = results_ref["rel_power"]
