@@ -20,3 +20,9 @@ data/mpc_result_group_control.jld2
 data/bak/mpc_result_group_control.jld2
 data/bak/mpc_result.jld2
 data/bak/step_response.jld2
+data/mpc_error.jld2
+.gitignore
+data/mpc_result_group_control_4TGs.jld2
+data/mpc_result_group_control_8TGs.jld2
+.gitignore
+data/mpc_result_group_control_12TGs.jld2
