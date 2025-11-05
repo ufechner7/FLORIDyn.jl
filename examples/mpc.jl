@@ -24,13 +24,13 @@ data_file_group_control = "data/mpc_result_group_control"
 GROUPS = 12 # must be 4, 8 or 12
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
-SIMULATE = false      # if false, load cached results if available
-MAX_STEPS = 400      # maximum number black-box evaluations for NOMAD optimizer
+SIMULATE = true      # if false, load cached results if available
+MAX_STEPS = 1      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
 ONLINE = false
-T_SKIP = 400    # skip first 400s of simulation for error calculation and plotting
+T_SKIP = 440    # skip first 440s of simulation for error calculation and plotting
 T_START = 240   # time to start increasing demand
 T_END   = 960   # time to reach final demand
 T_EXTRA = 1520  # extra time in addition to sim.end_time for MPC simulation
@@ -653,7 +653,7 @@ else
             x0 = vcat([1.99, 2.0, 1.63, 1.393, 1.298, 1.30, 1.28, 1.26, 1.25], [0.07, 0.92, 2.06])
         elseif GROUPS == 12
             # 9 global + 11 group parameters (last group calculated from constraint)
-            x0 = [1.41672, 1.676, 2.0, 1.33228, 1.3198, 1.278, 1.278, 1.279, 1.264, 0.03, 0.02, 0.0, 2.9, 0.04, 1.975, 1.3772, 0.9352, 1.1378, 0.9861, 1.0073]
+            x0 = [1.36672, 1.9, 1.677, 1.33528, 1.3148, 1.259, 1.282, 1.275, 1.365, 0.0, 0.03, 0.01, 2.9, 0.01, 2.045, 1.3872, 0.8552, 1.1578, 0.9861, 1.0173]
         else
             # Generic initial guess for other group counts
             x0 = vcat([1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5], fill(1.0, GROUPS - 1))
@@ -770,7 +770,7 @@ end
 
 if GROUP_CONTROL
     # calculate rel_power-rel_power_ref
-    start_index = Int(floor((T_SKIP+T_START+(T_END-T_START)*0.96) / time_step)) + 1
+    start_index = Int(floor((T_SKIP-40+T_START+(T_END-T_START)*0.96) / time_step)) + 1
     common_length = min(length(rel_power), length(rel_power_ref))
     rel_power = rel_power[1:common_length]
     rel_power_ref = rel_power_ref[1:common_length]
