@@ -25,7 +25,7 @@ GROUPS = 12 # must be 4, 8 or 12
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 1      # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 100      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -203,11 +203,11 @@ end
 """
     interpolate_bezier_piecewise(s::Float64, scaling::Vector) -> Float64
 
-Perform piecewise quadratic Bezier interpolation across five control points.
+Perform piecewise cubic spline interpolation across five control points.
 
-This function uses monotonic piecewise quadratic Bezier curves to interpolate between
-five control points at s = 0, 0.25, 0.5, 0.75, and 1.0. The method ensures monotonicity
-and prevents overshoot/undershoot.
+This function uses cubic Hermite spline interpolation between five control points 
+at s = 0, 0.25, 0.5, 0.75, and 1.0. The method provides smooth transitions while
+respecting the control point values.
 
 # Arguments
 - `s::Float64`: Normalized parameter in [0, 1] representing position along the curve
@@ -228,36 +228,47 @@ function interpolate_bezier_piecewise(s::Float64, scaling::Vector)
     scaling_4 = scaling[4]  # at s = 0.75
     scaling_5 = scaling[5]  # at s = 1.00
     
-    # Five control points at s = 0, 0.25, 0.5, 0.75, 1
-    # Using piecewise quadratic Bezier curves for true monotonicity
+    # Calculate tangents using finite differences (central differences where possible)
+    # This creates smooth C1-continuous spline
+    m1 = (scaling_2 - scaling_1) / 0.25  # tangent at point 1
+    m2 = (scaling_3 - scaling_1) / 0.5   # tangent at point 2 (central difference)
+    m3 = (scaling_4 - scaling_2) / 0.5   # tangent at point 3 (central difference)
+    m4 = (scaling_5 - scaling_3) / 0.5   # tangent at point 4 (central difference)
+    m5 = (scaling_5 - scaling_4) / 0.25  # tangent at point 5
+    
+    # Piecewise cubic Hermite interpolation
     if s <= 0.25
-        # First segment: quadratic interpolation from point 1 to point 2
-        t_local = s / 0.25  # normalize to [0, 1]
-        p0 = scaling_1
-        p2 = scaling_2
-        p1 = 0.5 * (p0 + p2)  # midpoint ensures no overshoot
-        scaling_result = (1 - t_local)^2 * p0 + 2 * t_local * (1 - t_local) * p1 + t_local^2 * p2
+        # First segment: from point 1 to point 2
+        t = s / 0.25  # normalize to [0, 1]
+        h00 = 2*t^3 - 3*t^2 + 1
+        h10 = t^3 - 2*t^2 + t
+        h01 = -2*t^3 + 3*t^2
+        h11 = t^3 - t^2
+        scaling_result = h00*scaling_1 + h10*0.25*m1 + h01*scaling_2 + h11*0.25*m2
     elseif s <= 0.5
-        # Second segment: quadratic interpolation from point 2 to point 3
-        t_local = (s - 0.25) / 0.25  # normalize to [0, 1]
-        p0 = scaling_2
-        p2 = scaling_3
-        p1 = 0.5 * (p0 + p2)
-        scaling_result = (1 - t_local)^2 * p0 + 2 * t_local * (1 - t_local) * p1 + t_local^2 * p2
+        # Second segment: from point 2 to point 3
+        t = (s - 0.25) / 0.25  # normalize to [0, 1]
+        h00 = 2*t^3 - 3*t^2 + 1
+        h10 = t^3 - 2*t^2 + t
+        h01 = -2*t^3 + 3*t^2
+        h11 = t^3 - t^2
+        scaling_result = h00*scaling_2 + h10*0.25*m2 + h01*scaling_3 + h11*0.25*m3
     elseif s <= 0.75
-        # Third segment: quadratic interpolation from point 3 to point 4
-        t_local = (s - 0.5) / 0.25  # normalize to [0, 1]
-        p0 = scaling_3
-        p2 = scaling_4
-        p1 = 0.5 * (p0 + p2)
-        scaling_result = (1 - t_local)^2 * p0 + 2 * t_local * (1 - t_local) * p1 + t_local^2 * p2
+        # Third segment: from point 3 to point 4
+        t = (s - 0.5) / 0.25  # normalize to [0, 1]
+        h00 = 2*t^3 - 3*t^2 + 1
+        h10 = t^3 - 2*t^2 + t
+        h01 = -2*t^3 + 3*t^2
+        h11 = t^3 - t^2
+        scaling_result = h00*scaling_3 + h10*0.25*m3 + h01*scaling_4 + h11*0.25*m4
     else
-        # Fourth segment: quadratic interpolation from point 4 to point 5
-        t_local = (s - 0.75) / 0.25  # normalize to [0, 1]
-        p0 = scaling_4
-        p2 = scaling_5
-        p1 = 0.5 * (p0 + p2)
-        scaling_result = (1 - t_local)^2 * p0 + 2 * t_local * (1 - t_local) * p1 + t_local^2 * p2
+        # Fourth segment: from point 4 to point 5
+        t = (s - 0.75) / 0.25  # normalize to [0, 1]
+        h00 = 2*t^3 - 3*t^2 + 1
+        h10 = t^3 - 2*t^2 + t
+        h01 = -2*t^3 + 3*t^2
+        h11 = t^3 - t^2
+        scaling_result = h00*scaling_4 + h10*0.25*m4 + h01*scaling_5 + h11*0.25*m5
     end
     
     return scaling_result
@@ -418,6 +429,48 @@ function plot_induction(optimal_scaling::Vector{Float64})
              pltctrl=pltctrl)
 end
 
+"""
+    plot_scaling_curve(optimal_scaling::Vector{Float64})
+
+Plot the scaling curve from the Bezier interpolation over s=0..1.
+
+# Arguments
+- `optimal_scaling::Vector{Float64}`: Optimal scaling parameters from optimization
+
+# Description
+Plots the piecewise quadratic Bezier interpolation curve showing how the scaling
+factor varies across the normalized parameter s from 0 to 1. Uses the first 5
+elements of `optimal_scaling` as control points at s = 0, 0.25, 0.5, 0.75, and 1.0.
+"""
+function plot_scaling_curve(optimal_scaling::Vector{Float64})
+    # Create s vector from 0 to 1
+    s_vec = 0.0:0.01:1.0
+    n_points = length(s_vec)
+    
+    # Calculate scaling_result for each s value
+    scaling_values = zeros(n_points)
+    
+    for (i, s) in enumerate(s_vec)
+        scaling_values[i] = interpolate_bezier_piecewise(s, optimal_scaling)
+    end
+    
+    # Print diagnostic information
+    println("\n=== Diagnostic: plot_scaling_curve ===")
+    println("Control points (scaling[1:5]): ", optimal_scaling[1:5])
+    println("Min scaling: $(round(minimum(scaling_values), digits=4))")
+    println("Max scaling: $(round(maximum(scaling_values), digits=4))")
+    println("======================================\n")
+    
+    # Plot
+    plot_rmt(collect(s_vec), scaling_values;
+             xlabel="Normalized Parameter s [-]",
+             ylabel="Scaling Factor [-]",
+             title="Bezier Interpolation Scaling Curve",
+             fig="Scaling Curve",
+             pltctrl=pltctrl)
+end
+
+
 # Calculate storage time at 100% power in seconds
 function calc_storage_time(time_vector, rel_power_gain)
     dt = time_vector[2]-time_vector[1]
@@ -553,7 +606,7 @@ else
             x0 = [1.99, 2.0, 1.63, 1.393, 1.298, 0.07, 0.92, 2.06]
         elseif GROUPS == 12
             # 5 global + 11 group parameters (last group calculated from constraint)
-            x0 = [1.41872, 1.946, 1.26117, 1.28628, 1.2518, 0.0, 0.0105, 0.0, 3.0, 0.0091, 1.995, 1.3172, 1.0052, 1.1978, 0.9461, 0.9473]
+            x0 = [1.42072, 1.896, 1.36117, 1.28528, 1.2528, 0.0, 0.0, 0.0, 3.0, 0.0091, 1.985, 1.3172, 0.9952, 1.2078, 0.9761, 0.9373]
         else
             # Generic initial guess for other group counts
             x0 = vcat([1.5, 1.5, 1.5, 1.5, 1.5], fill(1.0, GROUPS - 1))
