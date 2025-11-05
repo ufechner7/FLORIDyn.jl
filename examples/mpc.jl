@@ -24,8 +24,8 @@ data_file_group_control = "data/mpc_result_group_control"
 GROUPS = 12 # must be 4, 8 or 12
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
-SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 40      # maximum number black-box evaluations for NOMAD optimizer
+SIMULATE = false      # if false, load cached results if available
+MAX_STEPS = 400      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -653,7 +653,7 @@ else
             x0 = vcat([1.99, 2.0, 1.63, 1.393, 1.298, 1.30, 1.28, 1.26, 1.25], [0.07, 0.92, 2.06])
         elseif GROUPS == 12
             # 9 global + 11 group parameters (last group calculated from constraint)
-            x0 = [1.41172, 1.577, 2.0, 1.38728, 1.2988, 1.252, 1.327, 1.3, 1.28, 0.02, 0.0, 0.0, 2.99, 0.0391, 1.985, 1.3572, 0.9752, 1.2478, 0.9761, 0.9173]
+            x0 = [1.41672, 1.676, 2.0, 1.33228, 1.3198, 1.278, 1.278, 1.279, 1.264, 0.03, 0.02, 0.0, 2.9, 0.04, 1.975, 1.3772, 0.9352, 1.1378, 0.9861, 1.0073]
         else
             # Generic initial guess for other group counts
             x0 = vcat([1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5], fill(1.0, GROUPS - 1))
