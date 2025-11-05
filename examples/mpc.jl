@@ -200,34 +200,33 @@ function run_simulation(set_induction::AbstractMatrix)
     rel_power = (total_power_df.TotalPower ./ max_power) 
 end
 
-function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothing)
-    distance = 0.0
-    id_scaling = 1.0
-    if length(scaling) > 5 && !isnothing(group_id)
-        if group_id >= 1 && group_id <= GROUPS - 1
-            id_scaling = scaling[5 + group_id]
-        elseif group_id == GROUPS
-            # Last group: calculate as GROUPS * MAX_ID_SCALING / 2.0 minus sum of groups 1 to GROUPS-1
-            id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling[6:end])
-        end
-        id_scaling = clamp(id_scaling, 0.0, MAX_ID_SCALING)
-    end
-    t1 = 240.0 + dt  # Time to start increasing demand
-    t2 = 960.0 + dt  # Time to reach final demand
+"""
+    interpolate_bezier_piecewise(s::Float64, scaling::Vector) -> Float64
 
-    if time < t1
-        time = t1
-    end
+Perform piecewise quadratic Bezier interpolation across five control points.
 
+This function uses monotonic piecewise quadratic Bezier curves to interpolate between
+five control points at s = 0, 0.25, 0.5, 0.75, and 1.0. The method ensures monotonicity
+and prevents overshoot/undershoot.
+
+# Arguments
+- `s::Float64`: Normalized parameter in [0, 1] representing position along the curve
+- `scaling::Vector`: Vector containing at least 5 control point values:
+  - `scaling[1]`: Control point value at s = 0.00
+  - `scaling[2]`: Control point value at s = 0.25
+  - `scaling[3]`: Control point value at s = 0.50
+  - `scaling[4]`: Control point value at s = 0.75
+  - `scaling[5]`: Control point value at s = 1.00
+
+# Returns
+- `Float64`: Interpolated value at position s
+"""
+function interpolate_bezier_piecewise(s::Float64, scaling::Vector)
     scaling_1 = scaling[1]  # at s = 0.00
     scaling_2 = scaling[2]  # at s = 0.25
     scaling_3 = scaling[3]  # at s = 0.50
     scaling_4 = scaling[4]  # at s = 0.75
     scaling_5 = scaling[5]  # at s = 1.00
-    
-    # Monotonic cubic interpolation using Fritsch-Carlson method
-    # This prevents overshoot/undershoot while maintaining smoothness
-    s = clamp((time - t1) / (t2 - t1), 0.0, 1.0)
     
     # Five control points at s = 0, 0.25, 0.5, 0.75, 1
     # Using piecewise quadratic Bezier curves for true monotonicity
@@ -260,6 +259,33 @@ function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothin
         p1 = 0.5 * (p0 + p2)
         scaling_result = (1 - t_local)^2 * p0 + 2 * t_local * (1 - t_local) * p1 + t_local^2 * p2
     end
+    
+    return scaling_result
+end
+
+function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothing)
+    distance = 0.0
+    id_scaling = 1.0
+    if length(scaling) > 5 && !isnothing(group_id)
+        if group_id >= 1 && group_id <= GROUPS - 1
+            id_scaling = scaling[5 + group_id]
+        elseif group_id == GROUPS
+            # Last group: calculate as GROUPS * MAX_ID_SCALING / 2.0 minus sum of groups 1 to GROUPS-1
+            id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling[6:end])
+        end
+        id_scaling = clamp(id_scaling, 0.0, MAX_ID_SCALING)
+    end
+    t1 = 240.0 + dt  # Time to start increasing demand
+    t2 = 960.0 + dt  # Time to reach final demand
+
+    if time < t1
+        time = t1
+    end
+    
+    s = clamp((time - t1) / (t2 - t1), 0.0, 1.0)
+    
+    # Perform piecewise quadratic Bezier interpolation
+    scaling_result = interpolate_bezier_piecewise(s, scaling)
     
     demand = calc_demand(time)
     demand_end = calc_demand(t2)
