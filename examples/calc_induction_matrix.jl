@@ -89,8 +89,8 @@ function calc_demand(time; dt=DT)
     else
         initial_demand = 0.4
         final_demand = 0.8
-        t1 = T_START + dt  # Time to start increasing demand
-        t2 = T_END + dt  # Time to reach final demand
+        t1 = T_SKIP-440+T_START + dt  # Time to start increasing demand
+        t2 = T_SKIP-440+T_END + dt  # Time to reach final demand
         if time < t1
             return initial_demand
         elseif time < t2

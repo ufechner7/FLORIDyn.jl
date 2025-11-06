@@ -22,15 +22,15 @@ error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
 GROUPS = 4 # must be 4, 8 or 12
-GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
+GROUP_CONTROL = false  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 10      # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 100      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
 ONLINE  = false
-T_SKIP  = 440    # skip first 440s of simulation for error calculation and plotting
+T_SKIP  = 1000    # skip first 440s of simulation for error calculation and plotting
 T_START = 240   # time to start increasing demand
 T_END   = 960   # time to reach final demand
 T_EXTRA = 1520  # extra time in addition to sim.end_time for MPC simulation
@@ -333,8 +333,8 @@ function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothin
         end
         id_scaling = clamp(id_scaling, 0.0, MAX_ID_SCALING)
     end
-    t1 = 240.0 + dt  # Time to start increasing demand
-    t2 = 960.0 + dt  # Time to reach final demand
+    t1 = 240.0  # Time to start increasing demand (T_START)
+    t2 = 1520.0  # Time to reach final demand (T_SKIP - 440 + T_END = 1000 - 440 + 960)
 
     if time < t1
         time = t1
@@ -436,8 +436,8 @@ them against time. The plot uses the global `pltctrl` variable for thread-safe p
 """
 function plot_induction(optimal_scaling::Vector{Float64})
     # Time range: 500 to 1500 seconds
-    t_start = 500.0
-    t_end = 1500.0
+    t_start = T_START-440+500.0
+    t_end = T_START-440+1500.0
     dt = time_step
     
     # Print diagnostic information
@@ -573,10 +573,10 @@ function eval_fct(x::Vector{Float64})
     
     # Add constraint if GROUP_CONTROL is true
     if GROUP_CONTROL
-        # Constraint: x[6] + x[7] + ... <= GROUPS * MAX_ID_SCALING / 2.0
+        # Constraint: x[10] + x[11] + ... <= GROUPS * MAX_ID_SCALING / 2.0
         # For NOMAD, constraints should be <= 0, so we formulate as:
-        # x[6] + x[7] + ... - GROUPS * MAX_ID_SCALING / 2.0 <= 0
-        constraint_sum = sum(x[6:end]) - (GROUPS * MAX_ID_SCALING / 2.0)
+        # x[10] + x[11] + ... - GROUPS * MAX_ID_SCALING / 2.0 <= 0
+        constraint_sum = sum(x[10:end]) - (GROUPS * MAX_ID_SCALING / 2.0)
         # Constraint 2: max_distance <= 0.075
         # Formulate as: max_distance - 0.075 <= 0
         constraint_maxdist = max_distance - 0.075*10
@@ -650,7 +650,7 @@ else
         if GROUPS == 8       
             x0 = [1.42, 1.35, 1.43, 1.4, 1.26, 1.28, 1.25, 1.24, 1.33, 2.1e-5, 0.07, 1.89, 1.84, 1.95, 0.86, 0.08]
         elseif GROUPS == 4
-            x0 = vcat([1.42, 1.35, 1.43, 1.3, 1.298, 1.30, 1.28, 1.26, 1.25], [0.07, 0.92, 2.06])
+            x0 = [1.52, 2.0, 1.983, 1.8, 1.387, 1.5, 1.269, 1.277, 1.305, 0.0, 0.0, 2.1]
         elseif GROUPS == 12
             # 9 global + 11 group parameters (last group calculated from constraint)
             x0 = [1.36283, 1.89885, 1.67759, 1.31717, 1.31351, 1.27893, 1.28332, 1.27601, 1.36281, 0.010165, 0.029492, 0.019167, 2.88922, 0.0181, 2.115, 1.38954, 0.8827, 1.14561, 1.00147, 0.9951]
@@ -663,7 +663,7 @@ else
         rel_power_ref = results_ref["rel_power"]
         optimal_scaling = result.x_best_feas
     else
-        result = solve(p, [1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5])  # Start from initial guess
+        result = solve(p, [2.37, 1.09, 1.0, 1.08, 1.13, 1.21, 1.18, 1.18, 1.25])  # Start from initial guess
         optimal_scaling = result.x_best_feas[1:9]
     end
 
@@ -784,6 +784,6 @@ else
     results = JLD2.load(data_file, "results")
 end
 
-print_gains(optimal_scaling)
+# print_gains(optimal_scaling)
 results
 
