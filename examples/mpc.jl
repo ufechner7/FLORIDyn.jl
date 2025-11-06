@@ -25,7 +25,7 @@ GROUPS = 12 # must be 4, 8 or 12
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 1      # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 4000      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -653,7 +653,7 @@ else
             x0 = vcat([1.99, 2.0, 1.63, 1.393, 1.298, 1.30, 1.28, 1.26, 1.25], [0.07, 0.92, 2.06])
         elseif GROUPS == 12
             # 9 global + 11 group parameters (last group calculated from constraint)
-            x0 = [1.36672, 1.9, 1.677, 1.33528, 1.3148, 1.259, 1.282, 1.275, 1.365, 0.0, 0.03, 0.01, 2.9, 0.01, 2.045, 1.3872, 0.8552, 1.1578, 0.9861, 1.0173]
+            x0 = [1.36283, 1.89885, 1.67759, 1.31717, 1.31351, 1.27893, 1.28332, 1.27601, 1.36281, 0.010165, 0.029492, 0.019167, 2.88922, 0.0181, 2.115, 1.38954, 0.8827, 1.14561, 1.00147, 0.9951]
         else
             # Generic initial guess for other group counts
             x0 = vcat([1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5], fill(1.0, GROUPS - 1))
