@@ -25,7 +25,7 @@ GROUPS = 4 # must be 4, 8 or 12
 GROUP_CONTROL = false  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 1      # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 200      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -33,7 +33,7 @@ ONLINE  = false
 T_SKIP  = 1000  # skip first 1000s of simulation for error calculation and plotting
 T_START = 240   # relative time to start increasing demand
 T_END   = 960   # relative time to reach final demand
-T_EXTRA = 1080  # extra time in addition to sim.end_time for MPC simulation
+T_EXTRA = 2080  # extra time in addition to sim.end_time for MPC simulation
 MAX_DISTANCES = Float64[]
 DELTA_P = Float64[]
 if isfile(error_file)
@@ -327,7 +327,12 @@ function calc_axial_induction2(time, scaling::Vector; group_id=nothing)
     if length(DELTA_P) == 0
         delta_p = 0.0
     else
-        delta_p = DELTA_P[Int(floor((time) / time_step)) + 1]  # +1 for 1-based indexing
+        idx = Int(floor((time) / time_step)) + 1  # +1 for 1-based indexing
+        if idx > length(DELTA_P)
+            delta_p = 0.0  # Use 0 if index exceeds DELTA_P length
+        else
+            delta_p = DELTA_P[idx]
+        end
     end
     if isnan(delta_p)
         delta_p = 0.0
@@ -619,7 +624,7 @@ else
         rel_power_ref = results_ref["rel_power"]
         optimal_scaling = result.x_best_feas
     else
-        result = solve(p, [1.2, 1.22, 1.22, 1.23, 1.3])  # Start from initial guess
+        result = solve(p, [1.18192, 1.18972, 1.21216, 1.23948, 1.30055])  # Start from initial guess
         optimal_scaling = result.x_best_feas[1:5]
     end
 
