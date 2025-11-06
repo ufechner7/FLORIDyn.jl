@@ -21,16 +21,16 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 12 # must be 4, 8 or 12
+GROUPS = 4 # must be 4, 8 or 12
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 4000      # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 10      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
-ONLINE = false
-T_SKIP = 440    # skip first 440s of simulation for error calculation and plotting
+ONLINE  = false
+T_SKIP  = 440    # skip first 440s of simulation for error calculation and plotting
 T_START = 240   # time to start increasing demand
 T_END   = 960   # time to reach final demand
 T_EXTRA = 1520  # extra time in addition to sim.end_time for MPC simulation
@@ -648,9 +648,9 @@ else
     if GROUP_CONTROL
         # Create initial guess: 9 global parameters + (GROUPS-1) group parameters
         if GROUPS == 8       
-            x0 = vcat([1.32, 1.35, 1.33, 1.30, 1.26, 1.28, 1.25, 1.24, 1.23], [2.1e-5, 0.07, 1.89, 1.84, 1.95, 0.86, 0.08])
+            x0 = [1.42, 1.35, 1.43, 1.4, 1.26, 1.28, 1.25, 1.24, 1.33, 2.1e-5, 0.07, 1.89, 1.84, 1.95, 0.86, 0.08]
         elseif GROUPS == 4
-            x0 = vcat([1.99, 2.0, 1.63, 1.393, 1.298, 1.30, 1.28, 1.26, 1.25], [0.07, 0.92, 2.06])
+            x0 = vcat([1.42, 1.35, 1.43, 1.3, 1.298, 1.30, 1.28, 1.26, 1.25], [0.07, 0.92, 2.06])
         elseif GROUPS == 12
             # 9 global + 11 group parameters (last group calculated from constraint)
             x0 = [1.36283, 1.89885, 1.67759, 1.31717, 1.31351, 1.27893, 1.28332, 1.27601, 1.36281, 0.010165, 0.029492, 0.019167, 2.88922, 0.0181, 2.115, 1.38954, 0.8827, 1.14561, 1.00147, 0.9951]
