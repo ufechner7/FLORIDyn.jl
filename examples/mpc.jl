@@ -22,7 +22,7 @@ error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
 GROUPS = 4 # must be 4, 8 or 12
-GROUP_CONTROL = false  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
+GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
 MAX_STEPS = 1      # maximum number black-box evaluations for NOMAD optimizer
@@ -611,7 +611,7 @@ else
         if GROUPS == 8       
             x0 = [1.4, 1.35, 1.28, 1.25, 1.3, 2.1e-5, 0.07, 1.89, 1.84, 1.95, 0.86, 0.08]
         elseif GROUPS == 4
-            x0 = [1.5, 1.9, 1.5, 1.3, 1.3, 0.0, 0.0, 2.1]
+            x0 =  [1.61, 1.778, 1.533, 1.358, 1.317, 0.15, 0.71, 1.99]
         elseif GROUPS == 12
             # 5 global + 11 group parameters (last group calculated from constraint)
             x0 = [1.4, 1.7, 1.35, 1.28, 1.35, 0.010165, 0.029492, 0.019167, 2.88922, 0.0181, 2.115, 1.38954, 0.8827, 1.14561, 1.00147, 0.9951]
@@ -731,7 +731,7 @@ end
 
 if GROUP_CONTROL
     # calculate rel_power-rel_power_ref
-    start_index = Int(floor((T_SKIP-40+T_START+(T_END-T_START)*0.96) / time_step)) + 1
+    start_index = Int(floor((T_SKIP-40+T_START+(T_END-T_START)) / time_step)) + 1
     common_length = min(length(rel_power), length(rel_power_ref))
     rel_power = rel_power[1:common_length]
     rel_power_ref = rel_power_ref[1:common_length]
@@ -741,10 +741,10 @@ if GROUP_CONTROL
     println()
     plot_rmt((1:length(rel_power_gain)).*4, rel_power_gain .* 100; xlabel="Time [s]", ylabel="Rel. Power Gain [%]", fig="rel_power_ref", pltctrl)
     results = JLD2.load(data_file_group_control, "results")
+    print_gains(optimal_scaling)
 else
     results = JLD2.load(data_file, "results")
 end
 
-# print_gains(optimal_scaling)
 results
 
