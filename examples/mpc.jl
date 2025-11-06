@@ -25,15 +25,15 @@ GROUPS = 4 # must be 4, 8 or 12
 GROUP_CONTROL = false  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 100      # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 1      # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
 ONLINE  = false
-T_SKIP  = 1000    # skip first 440s of simulation for error calculation and plotting
-T_START = 240   # time to start increasing demand
-T_END   = 960   # time to reach final demand
-T_EXTRA = 1520  # extra time in addition to sim.end_time for MPC simulation
+T_SKIP  = 1000  # skip first 1000s of simulation for error calculation and plotting
+T_START = 240   # relative time to start increasing demand
+T_END   = 960   # relative time to reach final demand
+T_EXTRA = 1080  # extra time in addition to sim.end_time for MPC simulation
 MAX_DISTANCES = Float64[]
 DELTA_P = Float64[]
 if isfile(error_file)
@@ -203,41 +203,33 @@ end
 """
     interpolate_bezier_piecewise(s::Float64, scaling::Vector) -> Float64
 
-Perform piecewise cubic spline interpolation across nine control points.
+Perform piecewise cubic spline interpolation across five control points.
 
-This function uses cubic Hermite spline interpolation between nine control points 
-at s = 0, 1/8, 2/8, 3/8, 4/8, 5/8, 6/8, 7/8, and 1.0. The method provides smooth transitions while
+This function uses cubic Hermite spline interpolation between five control points 
+at s = 0, 1/4, 2/4, 3/4, and 1.0. The method provides smooth transitions while
 respecting the control point values.
 
 # Arguments
 - `s::Float64`: Normalized parameter in [0, 1] representing position along the curve
-- `scaling::Vector`: Vector containing at least 9 control point values:
-  - `scaling[1]`: Control point value at s = 0.000 (0/8)
-  - `scaling[2]`: Control point value at s = 0.125 (1/8)
-  - `scaling[3]`: Control point value at s = 0.250 (2/8)
-  - `scaling[4]`: Control point value at s = 0.375 (3/8)
-  - `scaling[5]`: Control point value at s = 0.500 (4/8)
-  - `scaling[6]`: Control point value at s = 0.625 (5/8)
-  - `scaling[7]`: Control point value at s = 0.750 (6/8)
-  - `scaling[8]`: Control point value at s = 0.875 (7/8)
-  - `scaling[9]`: Control point value at s = 1.000 (8/8)
+- `scaling::Vector`: Vector containing at least 5 control point values:
+  - `scaling[1]`: Control point value at s = 0.00 (0/4)
+  - `scaling[2]`: Control point value at s = 0.25 (1/4)
+  - `scaling[3]`: Control point value at s = 0.50 (2/4)
+  - `scaling[4]`: Control point value at s = 0.75 (3/4)
+  - `scaling[5]`: Control point value at s = 1.00 (4/4)
 
 # Returns
 - `Float64`: Interpolated value at position s
 """
 function interpolate_bezier_piecewise(s::Float64, scaling::Vector)
-    # Nine control points evenly spaced
-    segment_width = 1.0 / 8.0  # Distance between control points
+    # Five control points evenly spaced
+    segment_width = 1.0 / 4.0  # Distance between control points
     
-    scaling_1 = scaling[1]  # at s = 0/8
-    scaling_2 = scaling[2]  # at s = 1/8
-    scaling_3 = scaling[3]  # at s = 2/8
-    scaling_4 = scaling[4]  # at s = 3/8
-    scaling_5 = scaling[5]  # at s = 4/8
-    scaling_6 = scaling[6]  # at s = 5/8
-    scaling_7 = scaling[7]  # at s = 6/8
-    scaling_8 = scaling[8]  # at s = 7/8
-    scaling_9 = scaling[9]  # at s = 8/8
+    scaling_1 = scaling[1]  # at s = 0/4
+    scaling_2 = scaling[2]  # at s = 1/4
+    scaling_3 = scaling[3]  # at s = 2/4
+    scaling_4 = scaling[4]  # at s = 3/4
+    scaling_5 = scaling[5]  # at s = 4/4
     
     # Calculate tangents using finite differences (central differences where possible)
     # This creates smooth C1-continuous spline
@@ -245,11 +237,7 @@ function interpolate_bezier_piecewise(s::Float64, scaling::Vector)
     m2 = (scaling_3 - scaling_1) / (2*segment_width)  # tangent at point 2 (central difference)
     m3 = (scaling_4 - scaling_2) / (2*segment_width)  # tangent at point 3 (central difference)
     m4 = (scaling_5 - scaling_3) / (2*segment_width)  # tangent at point 4 (central difference)
-    m5 = (scaling_6 - scaling_4) / (2*segment_width)  # tangent at point 5 (central difference)
-    m6 = (scaling_7 - scaling_5) / (2*segment_width)  # tangent at point 6 (central difference)
-    m7 = (scaling_8 - scaling_6) / (2*segment_width)  # tangent at point 7 (central difference)
-    m8 = (scaling_9 - scaling_7) / (2*segment_width)  # tangent at point 8 (central difference)
-    m9 = (scaling_9 - scaling_8) / segment_width  # tangent at point 9 (backward difference)
+    m5 = (scaling_5 - scaling_4) / segment_width  # tangent at point 5 (backward difference)
     
     # Piecewise cubic Hermite interpolation
     if s <= segment_width
@@ -276,7 +264,7 @@ function interpolate_bezier_piecewise(s::Float64, scaling::Vector)
         h01 = -2*t^3 + 3*t^2
         h11 = t^3 - t^2
         scaling_result = h00*scaling_3 + h10*segment_width*m3 + h01*scaling_4 + h11*segment_width*m4
-    elseif s <= 4*segment_width
+    else
         # Fourth segment: from point 4 to point 5
         t = (s - 3*segment_width) / segment_width
         h00 = 2*t^3 - 3*t^2 + 1
@@ -284,57 +272,25 @@ function interpolate_bezier_piecewise(s::Float64, scaling::Vector)
         h01 = -2*t^3 + 3*t^2
         h11 = t^3 - t^2
         scaling_result = h00*scaling_4 + h10*segment_width*m4 + h01*scaling_5 + h11*segment_width*m5
-    elseif s <= 5*segment_width
-        # Fifth segment: from point 5 to point 6
-        t = (s - 4*segment_width) / segment_width
-        h00 = 2*t^3 - 3*t^2 + 1
-        h10 = t^3 - 2*t^2 + t
-        h01 = -2*t^3 + 3*t^2
-        h11 = t^3 - t^2
-        scaling_result = h00*scaling_5 + h10*segment_width*m5 + h01*scaling_6 + h11*segment_width*m6
-    elseif s <= 6*segment_width
-        # Sixth segment: from point 6 to point 7
-        t = (s - 5*segment_width) / segment_width
-        h00 = 2*t^3 - 3*t^2 + 1
-        h10 = t^3 - 2*t^2 + t
-        h01 = -2*t^3 + 3*t^2
-        h11 = t^3 - t^2
-        scaling_result = h00*scaling_6 + h10*segment_width*m6 + h01*scaling_7 + h11*segment_width*m7
-    elseif s <= 7*segment_width
-        # Seventh segment: from point 7 to point 8
-        t = (s - 6*segment_width) / segment_width
-        h00 = 2*t^3 - 3*t^2 + 1
-        h10 = t^3 - 2*t^2 + t
-        h01 = -2*t^3 + 3*t^2
-        h11 = t^3 - t^2
-        scaling_result = h00*scaling_7 + h10*segment_width*m7 + h01*scaling_8 + h11*segment_width*m8
-    else
-        # Eighth segment: from point 8 to point 9
-        t = (s - 7*segment_width) / segment_width
-        h00 = 2*t^3 - 3*t^2 + 1
-        h10 = t^3 - 2*t^2 + t
-        h01 = -2*t^3 + 3*t^2
-        h11 = t^3 - t^2
-        scaling_result = h00*scaling_8 + h10*segment_width*m8 + h01*scaling_9 + h11*segment_width*m9
     end
     
     return scaling_result
 end
 
-function calc_axial_induction2(time, scaling::Vector; dt=T_SKIP, group_id=nothing)
+function calc_axial_induction2(time, scaling::Vector; group_id=nothing)
     distance = 0.0
     id_scaling = 1.0
-    if length(scaling) > 9 && !isnothing(group_id)
+    if length(scaling) > 5 && !isnothing(group_id)
         if group_id >= 1 && group_id <= GROUPS - 1
-            id_scaling = scaling[9 + group_id]
+            id_scaling = scaling[5 + group_id]
         elseif group_id == GROUPS
             # Last group: calculate as GROUPS * MAX_ID_SCALING / 2.0 minus sum of groups 1 to GROUPS-1
-            id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling[10:end])
+            id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling[6:end])
         end
         id_scaling = clamp(id_scaling, 0.0, MAX_ID_SCALING)
     end
-    t1 = 240.0  # Time to start increasing demand (T_START)
-    t2 = 1520.0  # Time to reach final demand (T_SKIP - 440 + T_END = 1000 - 440 + 960)
+    t1 = T_SKIP + T_START  # Time to start increasing demand
+    t2 = T_SKIP + T_END    # Time to reach final demand
 
     if time < t1
         time = t1
@@ -436,8 +392,8 @@ them against time. The plot uses the global `pltctrl` variable for thread-safe p
 """
 function plot_induction(optimal_scaling::Vector{Float64})
     # Time range: 500 to 1500 seconds
-    t_start = T_START-440+500.0
-    t_end = T_START-440+1500.0
+    t_start = T_SKIP
+    t_end   = T_SKIP + T_END + T_EXTRA
     dt = time_step
     
     # Print diagnostic information
@@ -503,7 +459,7 @@ function plot_scaling_curve(optimal_scaling::Vector{Float64})
     
     # Print diagnostic information
     println("\n=== Diagnostic: plot_scaling_curve ===")
-    println("Control points (scaling[1:9]): ", optimal_scaling[1:9])
+    println("Control points (scaling[1:5]): ", optimal_scaling[1:5])
     println("Min scaling: $(round(minimum(scaling_values), digits=4))")
     println("Max scaling: $(round(maximum(scaling_values), digits=4))")
     println("======================================\n")
@@ -573,10 +529,10 @@ function eval_fct(x::Vector{Float64})
     
     # Add constraint if GROUP_CONTROL is true
     if GROUP_CONTROL
-        # Constraint: x[10] + x[11] + ... <= GROUPS * MAX_ID_SCALING / 2.0
+        # Constraint: x[6] + x[7] + ... <= GROUPS * MAX_ID_SCALING / 2.0
         # For NOMAD, constraints should be <= 0, so we formulate as:
-        # x[10] + x[11] + ... - GROUPS * MAX_ID_SCALING / 2.0 <= 0
-        constraint_sum = sum(x[10:end]) - (GROUPS * MAX_ID_SCALING / 2.0)
+        # x[6] + x[7] + ... - GROUPS * MAX_ID_SCALING / 2.0 <= 0
+        constraint_sum = sum(x[6:end]) - (GROUPS * MAX_ID_SCALING / 2.0)
         # Constraint 2: max_distance <= 0.075
         # Formulate as: max_distance - 0.075 <= 0
         constraint_maxdist = max_distance - 0.075*10
@@ -591,15 +547,15 @@ function eval_fct(x::Vector{Float64})
 end
 if GROUP_CONTROL
     n_group_params = GROUPS - 1  # One less because last group is calculated from constraint
-    n_total_params = 9 + n_group_params  # 9 global scaling + (GROUPS-1) group scaling
+    n_total_params = 5 + n_group_params  # 5 global scaling + (GROUPS-1) group scaling
     
     # Create lower and upper bounds dynamically
-    lower_bound = vcat([1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], fill(0.0, n_group_params))
-    upper_bound = vcat([2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0], fill(MAX_ID_SCALING, n_group_params))
+    lower_bound = vcat([1.0, 1.0, 1.0, 1.0, 1.0], fill(0.0, n_group_params))
+    upper_bound = vcat([2.0, 2.0, 2.0, 2.0, 2.0], fill(MAX_ID_SCALING, n_group_params))
     
     # Set up NOMAD optimization problem
     p = NomadProblem(
-        n_total_params,      # dimension (9 global + GROUPS-1 group parameters)
+        n_total_params,      # dimension (5 global + GROUPS-1 group parameters)
         3,                   # number of outputs (objective + 2 constraints)
         ["OBJ", "PB", "PB"], # output types: OBJ = objective to minimize, PB = progressive barrier constraints
         eval_fct;            # evaluation function
@@ -613,12 +569,12 @@ if GROUP_CONTROL
 else
         # Set up NOMAD optimization problem
     p = NomadProblem(
-        9,                    # dimension (9 parameters: scaling at 9 time points)
+        5,                    # dimension (5 parameters: scaling at 5 time points)
         1,                    # number of outputs (just the objective)
         ["OBJ"],             # output types: OBJ = objective to minimize
         eval_fct;            # evaluation function
-        lower_bound=[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],   # minimum scaling values
-        upper_bound=[2.5, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0]    # maximum scaling values
+        lower_bound=[1.0, 1.0, 1.0, 1.0, 1.0],   # minimum scaling values
+        upper_bound=[2.5, 3.0, 3.0, 3.0, 3.0]    # maximum scaling values
     )
 
     # Set NOMAD options
@@ -646,25 +602,25 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
 else
     # Run optimization and simulation
     if GROUP_CONTROL
-        # Create initial guess: 9 global parameters + (GROUPS-1) group parameters
+        # Create initial guess: 5 global parameters + (GROUPS-1) group parameters
         if GROUPS == 8       
-            x0 = [1.42, 1.35, 1.43, 1.4, 1.26, 1.28, 1.25, 1.24, 1.33, 2.1e-5, 0.07, 1.89, 1.84, 1.95, 0.86, 0.08]
+            x0 = [1.4, 1.35, 1.28, 1.25, 1.3, 2.1e-5, 0.07, 1.89, 1.84, 1.95, 0.86, 0.08]
         elseif GROUPS == 4
-            x0 = [1.52, 2.0, 1.983, 1.8, 1.387, 1.5, 1.269, 1.277, 1.305, 0.0, 0.0, 2.1]
+            x0 = [1.5, 1.9, 1.5, 1.3, 1.3, 0.0, 0.0, 2.1]
         elseif GROUPS == 12
-            # 9 global + 11 group parameters (last group calculated from constraint)
-            x0 = [1.36283, 1.89885, 1.67759, 1.31717, 1.31351, 1.27893, 1.28332, 1.27601, 1.36281, 0.010165, 0.029492, 0.019167, 2.88922, 0.0181, 2.115, 1.38954, 0.8827, 1.14561, 1.00147, 0.9951]
+            # 5 global + 11 group parameters (last group calculated from constraint)
+            x0 = [1.4, 1.7, 1.35, 1.28, 1.35, 0.010165, 0.029492, 0.019167, 2.88922, 0.0181, 2.115, 1.38954, 0.8827, 1.14561, 1.00147, 0.9951]
         else
             # Generic initial guess for other group counts
-            x0 = vcat([1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5, 1.5], fill(1.0, GROUPS - 1))
+            x0 = vcat([1.5, 1.5, 1.5, 1.5, 1.5], fill(1.0, GROUPS - 1))
         end
         result = solve(p, x0)
         results_ref = JLD2.load(data_file, "results")
         rel_power_ref = results_ref["rel_power"]
         optimal_scaling = result.x_best_feas
     else
-        result = solve(p, [2.37, 1.09, 1.0, 1.08, 1.13, 1.21, 1.18, 1.18, 1.25])  # Start from initial guess
-        optimal_scaling = result.x_best_feas[1:9]
+        result = solve(p, [1.2, 1.22, 1.22, 1.23, 1.3])  # Start from initial guess
+        optimal_scaling = result.x_best_feas[1:5]
     end
 
     induction_data, max_distance = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)

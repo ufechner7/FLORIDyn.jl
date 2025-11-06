@@ -16,7 +16,6 @@ using FLORIDyn
 
 const cp_max = 16/27  # Betz limit
 const BETZ_INDUCTION = 1/3
-const DT = 400
 
 function calc_cp(induction)
     return 4 * induction * (1 - induction)^2
@@ -78,10 +77,10 @@ function calc_induction(cp)
     return (a_low + a_high) / 2
 end
 
-function calc_demand(time; dt=DT)
+function calc_demand(time)
     if USE_STEP
         # Example: step demand profile
-        if time < 200+dt
+        if time < 200+T_SKIP
             return 0.001
         else
             return 0.999
@@ -89,8 +88,8 @@ function calc_demand(time; dt=DT)
     else
         initial_demand = 0.4
         final_demand = 0.8
-        t1 = T_SKIP-440+T_START + dt  # Time to start increasing demand
-        t2 = T_SKIP-440+T_END + dt  # Time to reach final demand
+        t1 = T_SKIP + T_START  # Time to start increasing demand
+        t2 = T_SKIP + T_END    # Time to reach final demand
         if time < t1
             return initial_demand
         elseif time < t2
@@ -166,7 +165,7 @@ Includes group-based corrections and time interpolation.
 # Returns
 - Axial induction factor for the specified turbine
 """
-function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8, dt=DT) # max 1.8
+function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8) # max 1.8
     if ! USE_TGC
         correction_factor = 0.0
     end
@@ -181,8 +180,8 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8, dt=
     # - interpolate linearly between t=0 and t=t_end with no correction at t=t2
     
     base_induction = calc_induction_per_group(group_id, time)
-    t1 = T_START + dt  # Time to start increasing demand
-    t2 = T_END   + dt  # Time to reach final demand
+    t1 = T_SKIP + T_START  # Time to start increasing demand
+    t2 = T_SKIP + T_END    # Time to reach final demand
 
     # Calculate interpolation factor
     # 1.0 at t=t1 (full correction), 0.0 at t=t2 (no correction)
