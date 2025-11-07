@@ -22,7 +22,7 @@ error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
 GROUPS = 4 # must be 4, 8 or 12
-GROUP_CONTROL = false  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
+GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
 MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
@@ -98,7 +98,9 @@ end
 # Load vis settings from YAML file
 vis = Vis(vis_file)
 vis.save = ONLINE
-vis.online = ONLINE
+# For GROUP_CONTROL, disable online visualization during initial setup to avoid NaN issues
+# The visualization will be enabled after the first valid induction_data is calculated
+vis.online = ONLINE && !GROUP_CONTROL
 if ONLINE
     cleanup_video_folder()
 end
@@ -140,6 +142,9 @@ set_induction!(ta, induction)
 
 time_step = sim.time_step  # seconds
 t_end = sim.end_time - sim.start_time  # relative end time in seconds
+
+# For initial setup, use calc_induction_matrix (only affects pre-optimization visualization)
+# During optimization, calc_induction_matrix2 will be used with proper group handling
 con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
 
 # create settings struct with automatic parallel/threading detection
@@ -188,11 +193,12 @@ function calc_max_power(wind_speed, ta, wf, floris)
 end
 
 # This function implements the "model" in the block diagram.
-function run_simulation(set_induction::AbstractMatrix)
+function run_simulation(set_induction::AbstractMatrix; enable_online=false)
     global set, wind, con, floridyn, floris, sim, ta, vis 
     con.induction_data = set_induction
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-    vis.online = ONLINE
+    # Only enable online visualization if explicitly requested (to avoid NaN issues during optimization)
+    vis.online = enable_online
     wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     # Calculate total wind farm power by grouping by time and summing turbine powers
     total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
@@ -282,8 +288,8 @@ end
 function calc_axial_induction2(time, scaling::Vector; group_id=nothing)
     distance = 0.0
     id_scaling = 1.0
-    if length(scaling) > 5 && !isnothing(group_id)
-        if group_id >= 1 && group_id <= GROUPS - 1
+    if length(scaling) > 5 && !isnothing(group_id) && group_id >= 1
+        if group_id <= GROUPS - 1
             id_scaling = scaling[5 + group_id]
         elseif group_id == GROUPS
             # Last group: calculate as GROUPS * MAX_ID_SCALING / 2.0 minus sum of groups 1 to GROUPS-1
@@ -341,7 +347,12 @@ function calc_axial_induction2(time, scaling::Vector; group_id=nothing)
     end
     corrected_rel_power = rel_power # - 0.0000000000001 * delta_p
     corrected_induction = calc_induction(corrected_rel_power * cp_max)
-    return max(0.0, min(BETZ_INDUCTION, corrected_induction)), distance
+    
+    # Ensure minimum induction to avoid numerical issues in FLORIS (NaN from zero induction)
+    # Minimum value of 0.01 ensures the wake model has valid inputs
+    corrected_induction = max(0.01, min(BETZ_INDUCTION, corrected_induction))
+    
+    return corrected_induction, distance
 end
 
 function calc_induction_matrix2(ta, time_step, t_end; scaling)
@@ -631,7 +642,11 @@ else
     end
 
     induction_data, max_distance = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
-    rel_power = run_simulation(induction_data)
+    
+    # Enable online visualization for the final simulation with optimized parameters
+    enable_viz = ONLINE && GROUP_CONTROL
+    
+    rel_power = run_simulation(induction_data; enable_online=enable_viz)
     mse = calc_error(rel_power, demand_values, time_step)
 
     # Persist
