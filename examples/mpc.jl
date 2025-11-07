@@ -21,7 +21,7 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 8 # must be 4, 8 or 12
+GROUPS = 4 # must be 4, 8 or 12
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
@@ -29,7 +29,7 @@ MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
-ONLINE  = false  # if true, enable online plotting during simulation and create video
+ONLINE  = true  # if true, enable online plotting during simulation and create video
 T_SKIP  = 1000  # skip first 1000s of simulation for error calculation and plotting
 T_START = 240   # relative time to start increasing demand
 T_END   = 960   # relative time to reach final demand
