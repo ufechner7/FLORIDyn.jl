@@ -21,11 +21,11 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 8 # must be 4, 8 or 12
+GROUPS = 4 # must be 4, 8 or 12
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 200      # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 200        # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -611,7 +611,7 @@ else
         if GROUPS == 8
             x0 = [1.379, 1.458, 1.338, 1.289, 1.275, -0.0, 0.0, 1.92, 1.93, 1.97, 0.9, 0.04]
         elseif GROUPS == 4
-            x0 = [1.60271, 1.977, 1.5607, 1.36922, 1.309, 0.33, 0.6913, 2.0351]
+            x0 = [1.599, 1.99037, 1.54759, 1.36939, 1.31193, 0.331665, 0.682914, 2.07205]
         elseif GROUPS == 12
             # 5 global + 11 group parameters (last group calculated from constraint)
             x0 = [1.518, 1.419, 1.319, 1.297, 1.249, 0.0, 0.0, 0.16, 1.65922, 0.13, 1.935, 1.26954, 1.9427, 1.02561, 2.25, 1.6]
