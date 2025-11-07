@@ -97,6 +97,11 @@ end
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
+vis.save = ONLINE
+vis.online = ONLINE
+if ONLINE
+    cleanup_video_folder()
+end
 if (@isdefined plt) && !isnothing(plt)
     plt.ion()
 else
@@ -741,6 +746,10 @@ if GROUP_CONTROL
     print_gains(optimal_scaling)
 else
     results = JLD2.load(data_file, "results")
+end
+
+if ONLINE
+    createVideo()
 end
 
 results
