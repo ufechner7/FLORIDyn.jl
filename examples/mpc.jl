@@ -25,20 +25,17 @@ GROUPS = 8 # must be 4, 8 or 12
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 300        # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
-ONLINE  = false
+ONLINE  = false  # if true, enable online plotting during simulation
 T_SKIP  = 1000  # skip first 1000s of simulation for error calculation and plotting
 T_START = 240   # relative time to start increasing demand
 T_END   = 960   # relative time to reach final demand
 T_EXTRA = 2080  # extra time in addition to sim.end_time for MPC simulation
 MAX_DISTANCES = Float64[]
 DELTA_P = Float64[]
-# if isfile(error_file)
-#     DELTA_P = JLD2.load(error_file)["delta_p"]
-# end
 data_file_group_control = data_file_group_control *  "_" * string(GROUPS)*"TGs.jld2"
 
 """
