@@ -837,6 +837,16 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         ma[(it-1)*nT+1:it*nT, 6] = P
 
         # ========== Live Plotting ============
+        if sim_time == sim.start_time
+            Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
+            println("DEBUG FlowField:")
+            println("  X size: ", size(X), " range: [", minimum(X), ", ", maximum(X), "]")
+            println("  Y size: ", size(Y), " range: [", minimum(Y), ", ", maximum(Y), "]")
+            println("  Z size: ", size(Z))
+            println("  Z[:,:,1] range: [", minimum(Z[:,:,1]), ", ", maximum(Z[:,:,1]), "]")
+            println("  vis.field_limits_min: ", vis.field_limits_min)
+            println("  vis.field_limits_max: ", vis.field_limits_max)
+        end
         if vis.online
             t_rel = sim_time - sim.start_time
             if mod(t_rel, vis.up_int) == 0
