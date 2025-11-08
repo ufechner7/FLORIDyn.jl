@@ -289,7 +289,7 @@ function interpolate_bezier_piecewise(s::Float64, scaling::Vector)
     return scaling_result
 end
 
-function calc_axial_induction2(time, scaling::Vector; group_id=nothing)
+function calc_axial_induction2(vis, time, scaling::Vector; group_id=nothing)
     distance = 0.0
     id_scaling = 1.0
     if length(scaling) > 5 && !isnothing(group_id) && group_id >= 1
@@ -359,7 +359,7 @@ function calc_axial_induction2(time, scaling::Vector; group_id=nothing)
     return corrected_induction, distance
 end
 
-function calc_induction_matrix2(ta, time_step, t_end; scaling)
+function calc_induction_matrix2(vis, ta, time_step, t_end; scaling)
     # Create time vector from 0 to t_end with time_step intervals
     time_vector = 0:time_step:t_end
     n_time_steps = length(time_vector)
@@ -377,7 +377,7 @@ function calc_induction_matrix2(ta, time_step, t_end; scaling)
     for (t_idx, time) in enumerate(time_vector)
         for i in 1:n_turbines
             group_id = FLORIDyn.turbine_group(ta, i)
-            axial_induction, distance = calc_axial_induction2(time, scaling; group_id=group_id)
+            axial_induction, distance = calc_axial_induction2(vis, time, scaling; group_id=group_id)
             induction_matrix[t_idx, i + 1] = axial_induction
             max_distance = max(max_distance, distance)
         end
@@ -386,7 +386,7 @@ function calc_induction_matrix2(ta, time_step, t_end; scaling)
     return induction_matrix, max_distance
 end
 
-function calc_error(rel_power, demand_values, time_step)
+function calc_error(vis, rel_power, demand_values, time_step)
     # Start index after skipping initial transient; +1 because Julia is 1-based
     i0 = Int(floor(vis.t_skip / time_step)) + 1
     # Clamp to valid range
@@ -401,18 +401,19 @@ function calc_error(rel_power, demand_values, time_step)
 end
 
 """
-    plot_induction(optimal_scaling::Vector{Float64})
+    plot_induction(vis, optimal_scaling::Vector{Float64})
 
 Plot the axial induction factor for turbine group 1 over time range 500-1500s.
 
 # Arguments
+- `vis`: Visualization object containing `t_skip` parameter
 - `optimal_scaling::Vector{Float64}`: Optimal scaling parameters from optimization
 
 # Description
 Uses `calc_axial_induction2` to compute induction values for group 1 and plots
 them against time. The plot uses the global `pltctrl` variable for thread-safe plotting.
 """
-function plot_induction(optimal_scaling::Vector{Float64})
+function plot_induction(vis, optimal_scaling::Vector{Float64})
     # Time range: 500 to 1500 seconds
     t_start = vis.t_skip
     t_end   = vis.t_skip + T_END + T_EXTRA
@@ -434,7 +435,7 @@ function plot_induction(optimal_scaling::Vector{Float64})
     group_id = 1
     
     for (i, t) in enumerate(time_vec)
-        induction, _ = calc_axial_induction2(t, optimal_scaling; group_id=group_id)
+        induction, _ = calc_axial_induction2(vis, t, optimal_scaling; group_id=group_id)
         induction_values[i] = induction
     end
     
@@ -533,7 +534,7 @@ function eval_fct(x::Vector{Float64})
     print(".")  # progress indicator
     
     # Calculate induction matrix with current scaling
-    induction_data, max_distance = calc_induction_matrix2(ta, time_step, t_end; scaling=scaling)
+    induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; scaling=scaling)
     if max_distance > 0.0
         push!(MAX_DISTANCES, max_distance)
     end
@@ -542,7 +543,7 @@ function eval_fct(x::Vector{Float64})
     rel_power = run_simulation(induction_data)
     
     # Calculate error
-    error = calc_error(rel_power, demand_values, time_step)
+    error = calc_error(vis, rel_power, demand_values, time_step)
     success = true
     if isnothing(error) || isnan(error)
         error = 1e6
@@ -645,13 +646,13 @@ else
         optimal_scaling = result.x_best_feas[1:5]
     end
 
-    induction_data, max_distance = calc_induction_matrix2(ta, time_step, t_end; scaling=optimal_scaling)
+    induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; scaling=optimal_scaling)
     
     # Enable online visualization for the final simulation with optimized parameters
     enable_viz = ONLINE && GROUP_CONTROL
     
     rel_power = run_simulation(induction_data; enable_online=enable_viz)
-    mse = calc_error(rel_power, demand_values, time_step)
+    mse = calc_error(vis, rel_power, demand_values, time_step)
 
     # Persist
     if GROUP_CONTROL
