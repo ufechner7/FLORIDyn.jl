@@ -27,7 +27,7 @@ GROUPS = 4 # must be 4, 8 or 12
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 4000        # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -418,9 +418,9 @@ function plot_induction(optimal_scaling::Vector{Float64})
     
     # Print diagnostic information
     println("\n=== Diagnostic: plot_induction ===")
-    println("optimal_scaling[1:9]: ", optimal_scaling[1:9])
-    if length(optimal_scaling) > 9
-        println("optimal_scaling[10] (group 1 id_scaling): ", optimal_scaling[10])
+    println("optimal_scaling[1:5]: ", optimal_scaling[1:5])
+    if length(optimal_scaling) > 5
+        println("optimal_scaling[6] (group 1 id_scaling): ", optimal_scaling[6])
     end
     
     # Create time vector
