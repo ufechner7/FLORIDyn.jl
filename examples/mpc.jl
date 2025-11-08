@@ -31,7 +31,6 @@ USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
 ONLINE  = false  # if true, enable online plotting during simulation and create video
-T_SKIP  = 1500  # skip first 1500s of simulation for error calculation and plotting
 T_START = 240   # relative time to start increasing demand
 T_END   = 960   # relative time to reach final demand
 T_EXTRA = 2580  # extra time in addition to sim.end_time for MPC simulation
@@ -302,8 +301,8 @@ function calc_axial_induction2(time, scaling::Vector; group_id=nothing)
         end
         id_scaling = clamp(id_scaling, 0.0, MAX_ID_SCALING)
     end
-    t1 = T_SKIP + T_START  # Time to start increasing demand
-    t2 = T_SKIP + T_END    # Time to reach final demand
+    t1 = vis.t_skip + T_START  # Time to start increasing demand
+    t2 = vis.t_skip + T_END    # Time to reach final demand
 
     if time < t1
         time = t1
@@ -389,12 +388,12 @@ end
 
 function calc_error(rel_power, demand_values, time_step)
     # Start index after skipping initial transient; +1 because Julia is 1-based
-    i0 = Int(floor(T_SKIP / time_step)) + 1
+    i0 = Int(floor(vis.t_skip / time_step)) + 1
     # Clamp to valid range
     i0 = max(1, i0)
     n = min(length(rel_power), length(demand_values)) - i0 + 1
     if n <= 0
-        error("calc_error: empty overlap after skip; check T_SKIP and lengths (rel_power=$(length(rel_power)), demand=$(length(demand_values)), i0=$(i0))")
+        error("calc_error: empty overlap after skip; check vis.t_skip and lengths (rel_power=$(length(rel_power)), demand=$(length(demand_values)), i0=$(i0))")
     end
     r = @view rel_power[i0:i0 + n - 1]
     d = @view demand_values[i0:i0 + n - 1]
@@ -415,8 +414,8 @@ them against time. The plot uses the global `pltctrl` variable for thread-safe p
 """
 function plot_induction(optimal_scaling::Vector{Float64})
     # Time range: 500 to 1500 seconds
-    t_start = T_SKIP
-    t_end   = T_SKIP + T_END + T_EXTRA
+    t_start = vis.t_skip
+    t_end   = vis.t_skip + T_END + T_EXTRA
     dt = time_step
     
     # Print diagnostic information
@@ -673,10 +672,10 @@ end
 println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
 
 if GROUP_CONTROL
-    plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, rel_power_ref[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, time_vector[end]),
+    plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, rel_power_ref[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
             ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_power_ref", "rel_demand"], fig="Rel. Power and Demand", pltctrl)
 else
-    plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(T_SKIP, time_vector[end]),
+    plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
             ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], fig="Rel. Power and Demand", pltctrl)
 end
 # ## plot induction factor vs time for one turbine using calc_axial_induction2
@@ -753,7 +752,7 @@ end
 
 if GROUP_CONTROL
     # calculate rel_power-rel_power_ref
-    start_index = Int(floor((T_SKIP-40+T_START+(T_END-T_START)) / time_step)) + 1
+    start_index = Int(floor((vis.t_skip-40+T_START+(T_END-T_START)) / time_step)) + 1
     common_length = min(length(rel_power), length(rel_power_ref))
     rel_power = rel_power[1:common_length]
     rel_power_ref = rel_power_ref[1:common_length]

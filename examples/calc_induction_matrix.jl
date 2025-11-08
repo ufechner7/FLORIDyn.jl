@@ -80,7 +80,7 @@ end
 function calc_demand(time)
     if USE_STEP
         # Example: step demand profile
-        if time < 200+T_SKIP
+        if time < 200 + vis.t_skip
             return 0.001
         else
             return 0.999
@@ -88,8 +88,8 @@ function calc_demand(time)
     else
         initial_demand = 0.4
         final_demand = 0.8
-        t1 = T_SKIP + T_START  # Time to start increasing demand
-        t2 = T_SKIP + T_END    # Time to reach final demand
+        t1 = vis.t_skip + T_START  # Time to start increasing demand
+        t2 = vis.t_skip + T_END    # Time to reach final demand
         if time < t1
             return initial_demand
         elseif time < t2
@@ -180,8 +180,8 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8) # m
     # - interpolate linearly between t=0 and t=t_end with no correction at t=t2
     
     base_induction = calc_induction_per_group(group_id, time)
-    t1 = T_SKIP + T_START  # Time to start increasing demand
-    t2 = T_SKIP + T_END    # Time to reach final demand
+    t1 = vis.t_skip + T_START  # Time to start increasing demand
+    t2 = vis.t_skip + T_END    # Time to reach final demand
 
     # Calculate interpolation factor
     # 1.0 at t=t1 (full correction), 0.0 at t=t2 (no correction)
