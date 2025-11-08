@@ -21,10 +21,10 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 4 # must be 1, 4, 8 or 12
+GROUPS = 8 # must be 1, 4, 8 or 12
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 4000        # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -625,7 +625,7 @@ else
     if GROUP_CONTROL
         # Create initial guess: 5 global parameters + (GROUPS-1) group parameters
         if GROUPS == 8
-            x0 = [1.378, 1.4587, 1.33854, 1.29025, 1.27505, 0.0, 0.0099, 1.9195, 1.9357, 1.972, 0.9008, 0.0555]
+            x0 = [1.31, 1.4427, 1.35654, 1.28725, 1.28105, 0.0027, 0.0294, 1.8695, 2.0157, 1.8563, 1.1908, 0.0825]
         elseif GROUPS == 4
             x0 = [1.578, 1.991, 1.54259, 1.33791, 1.27339, 0.017865, 0.886214, 2.87895]
         elseif GROUPS == 12
