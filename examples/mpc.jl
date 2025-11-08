@@ -23,8 +23,7 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 4 # must be 4, 8 or 12
-GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
+GROUPS = 4 # must be 1, 4, 8 or 12
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
 MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
@@ -39,6 +38,9 @@ T_EXTRA = 2580  # extra time in addition to sim.end_time for MPC simulation
 MAX_DISTANCES = Float64[]
 DELTA_P = Float64[]
 data_file_group_control = data_file_group_control *  "_" * string(GROUPS)*"TGs.jld2"
+
+GROUP_CONTROL = (GROUPS == 1)
+@assert(GROUPS in (1, 4, 8, 12), "GROUPS must be 1, 4, 8, or 12")
 
 """
     create_n_groups(ta::TurbineArray, n_groups::Int) -> Vector{Dict}
