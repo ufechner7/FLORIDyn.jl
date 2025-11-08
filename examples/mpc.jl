@@ -7,8 +7,6 @@
 # The number of groups can be 4, 8, or 12.
 # The mean square error between the production and demand is minimized.
 
-# TODO: Skip T_SKIP when creating a video
-
 using Pkg
 if ! ("NOMAD" ∈ keys(Pkg.project().dependencies))
     using TestEnv; TestEnv.activate()
