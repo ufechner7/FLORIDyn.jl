@@ -22,6 +22,7 @@ T_END   = 960   # time to reach final demand
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
+vis.t_skip = 440  # skip initial time for visualization
 if (@isdefined plt) && !isnothing(plt)
     plt.ion()
 else
