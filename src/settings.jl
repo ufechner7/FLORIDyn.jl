@@ -576,6 +576,7 @@ The struct automatically adapts to different computing environments:
     unique_folder::String = ""        # this will be set when starting the simulation
     video_folder::String = "video"    # relative video folder path
     fps::Int = 12                     # frames per second for video output
+    t_skip::Float64 = 0.0             # time in seconds to skip at beginning of simulation for visualization
     output_folder::String = "out"     # relative output folder path
     unique_output_folder::Bool = true # if true, for each simulation run a new folder is created
     skip_flow_fields::Bool = false    # if true, completely skip creation of flow field visualizations (overrides individual entries)
