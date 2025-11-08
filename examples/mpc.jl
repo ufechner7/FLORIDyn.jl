@@ -35,6 +35,7 @@ T_SKIP  = 1500  # skip first 1500s of simulation for error calculation and plott
 T_START = 240   # relative time to start increasing demand
 T_END   = 960   # relative time to reach final demand
 T_EXTRA = 2580  # extra time in addition to sim.end_time for MPC simulation
+MIN_INDUCTION = 0.01
 MAX_DISTANCES = Float64[]
 DELTA_P = Float64[]
 data_file_group_control = data_file_group_control *  "_" * string(GROUPS)*"TGs.jld2"
@@ -353,8 +354,8 @@ function calc_axial_induction2(time, scaling::Vector; group_id=nothing)
     corrected_induction = calc_induction(corrected_rel_power * cp_max)
     
     # Ensure minimum induction to avoid numerical issues in FLORIS (NaN from zero induction)
-    # Minimum value of 0.01 ensures the wake model has valid inputs
-    corrected_induction = max(0.01, min(BETZ_INDUCTION, corrected_induction))
+    # Minimum value of MIN_INDUCTION ensures the wake model has valid inputs
+    corrected_induction = max(MIN_INDUCTION, min(BETZ_INDUCTION, corrected_induction))
     
     return corrected_induction, distance
 end
