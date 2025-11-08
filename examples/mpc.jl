@@ -24,7 +24,7 @@ data_file_group_control = "data/mpc_result_group_control"
 GROUPS = 8 # must be 1, 4, 8 or 12
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 4000        # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -37,7 +37,7 @@ MAX_DISTANCES = Float64[]
 DELTA_P = Float64[]
 data_file_group_control = data_file_group_control *  "_" * string(GROUPS)*"TGs.jld2"
 
-GROUP_CONTROL = (GROUPS == 1)
+GROUP_CONTROL = (GROUPS != 1)
 @assert(GROUPS in (1, 4, 8, 12), "GROUPS must be 1, 4, 8, or 12")
 
 """
