@@ -21,7 +21,7 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 4 # must be 4, 8 or 12
+GROUPS = 8 # must be 4, 8 or 12
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
@@ -764,7 +764,13 @@ else
 end
 
 if ONLINE
-    createVideo()
+    println("Example 1: Creating video from velocity reduction frames")
+    video_path = createVideo("ff_velocity_reduction"; fps=6)
+    if !isempty(video_path)
+        println("✓ Created video: $video_path")
+    else
+        println("No velocity reduction frames found or video creation failed")
+    end
 end
 
 results
