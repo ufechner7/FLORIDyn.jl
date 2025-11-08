@@ -7,6 +7,8 @@
 # The number of groups can be 4, 8, or 12.
 # The mean square error between the production and demand is minimized.
 
+# TODO: Skip T_SKIP when creating a video
+
 using Pkg
 if ! ("NOMAD" ∈ keys(Pkg.project().dependencies))
     using TestEnv; TestEnv.activate()
@@ -21,19 +23,19 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 8 # must be 4, 8 or 12
+GROUPS = 4 # must be 4, 8 or 12
 GROUP_CONTROL = true  # if false, use 3-parameter control for all turbines; if true, use 10-parameter group control
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 4000        # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
-ONLINE  = true  # if true, enable online plotting during simulation and create video
-T_SKIP  = 1000  # skip first 1000s of simulation for error calculation and plotting
+ONLINE  = false  # if true, enable online plotting during simulation and create video
+T_SKIP  = 1500  # skip first 1500s of simulation for error calculation and plotting
 T_START = 240   # relative time to start increasing demand
 T_END   = 960   # relative time to reach final demand
-T_EXTRA = 2080  # extra time in addition to sim.end_time for MPC simulation
+T_EXTRA = 2580  # extra time in addition to sim.end_time for MPC simulation
 MAX_DISTANCES = Float64[]
 DELTA_P = Float64[]
 data_file_group_control = data_file_group_control *  "_" * string(GROUPS)*"TGs.jld2"
@@ -637,7 +639,7 @@ else
         rel_power_ref = results_ref["rel_power"]
         optimal_scaling = result.x_best_feas
     else
-        result = solve(p, [1.18192, 1.18972, 1.21216, 1.23948, 1.30055])  # Start from initial guess
+        result = solve(p,  [1.18291, 1.19575, 1.21248, 1.2409, 1.30345])  # Start from initial guess
         optimal_scaling = result.x_best_feas[1:5]
     end
 
