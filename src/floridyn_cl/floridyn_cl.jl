@@ -839,7 +839,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         # ========== Live Plotting ============
         if vis.online
             t_rel = sim_time - sim.start_time
-            if mod(t_rel, vis.up_int) == 0
+            if mod(t_rel, vis.up_int) == 0 && t_rel >= vis.t_skip
                 Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
                 rel_vel =  Z[:,:,1]
                 if any(isnan, rel_vel)
