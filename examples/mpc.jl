@@ -4,8 +4,19 @@
 # Main script to run a model predictive control (MPC) simulation with FLORIDyn.jl
 # Currently, two modes are supported: control of all turbines with the same induction factor using 5 parameters
 # and group control with 8, 12, or 16 parameters (5 for induction scaling at different time points and 3, 7, or 11 for individual group scaling).
-# The number of groups can be 4, 8, or 12.
+# The number of groups can be 1, 4, 8, or 12.
 # The mean square error between the production and demand is minimized.
+
+# Always run the script with GROUPS = 1 first to get a baseline result without group control. This baseline 
+# is stored in the file data/mpc_result.jld2 and used for comparison when running with group control.
+
+# The constant MAX_STEPS can be one for debugging. With 10 or 100 you already get a rough idea of the optimization 
+# progress. So far, I never needed more than about 1600 steps to converge with GROUPS = 12 and less with fewer groups.
+
+# If you want to create a video, make sure to set ONLINE = true and run Julia with sufficient threads. On a 
+# 7850X with 16 threads, the video creation needs about two hours.
+
+# To create a bar plot, run Julia single threaded.
 
 using Pkg
 if ! ("NOMAD" ∈ keys(Pkg.project().dependencies))
@@ -21,10 +32,10 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 8 # must be 1, 4, 8 or 12
+GROUPS = 12 # must be 1, 4, 8 or 12
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 4000        # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
