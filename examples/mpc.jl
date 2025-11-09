@@ -3,7 +3,10 @@
 
 # Main script to run a model predictive control (MPC) simulation with FLORIDyn.jl
 # Currently, two modes are supported: control of all turbines with the same induction factor using 5 parameters
-# and group control with 8, 12, or 16 parameters (5 for induction scaling at different time points and 3, 7, or 11 for individual group scaling).
+# and group control with 8, 12, or 16 parameters (5 for induction scaling at different time points 
+# and 3, 7, or 11 for individual group scaling).
+
+# The script uses the NOMAD.jl package for black-box optimization of the scaling parameters.
 # The number of groups can be 1, 4, 8, or 12.
 # The mean square error between the production and demand is minimized.
 
