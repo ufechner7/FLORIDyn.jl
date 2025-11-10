@@ -288,21 +288,7 @@ function calc_axial_induction2(vis, time, scaling::Vector; group_id=nothing)
     end
     
     rel_power = calc_cp(base_induction) / cp_max
-    if length(DELTA_P) == 0
-        delta_p = 0.0
-    else
-        idx = Int(floor((time) / time_step)) + 1  # +1 for 1-based indexing
-        if idx > length(DELTA_P)
-            delta_p = 0.0  # Use 0 if index exceeds DELTA_P length
-        else
-            delta_p = DELTA_P[idx]
-        end
-    end
-    if isnan(delta_p)
-        delta_p = 0.0
-    end
-    corrected_rel_power = rel_power # - 0.0000000000001 * delta_p
-    corrected_induction = calc_induction(corrected_rel_power * cp_max)
+    corrected_induction = calc_induction(rel_power * cp_max)
     
     # Ensure minimum induction to avoid numerical issues in FLORIS (NaN from zero induction)
     # Minimum value of MIN_INDUCTION ensures the wake model has valid inputs
