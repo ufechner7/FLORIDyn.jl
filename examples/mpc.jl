@@ -410,13 +410,13 @@ end
 """
     plot_scaling_curve(optimal_scaling::Vector{Float64})
 
-Plot the scaling curve from the Bezier interpolation over s=0..1.
+Plot the scaling curve from the piecewise cubic Hermite spline interpolation over s=0..1.
 
 # Arguments
 - `optimal_scaling::Vector{Float64}`: Optimal scaling parameters from optimization
 
 # Description
-Plots the piecewise quadratic Bezier interpolation curve showing how the scaling
+Plots the piecewise cubic Hermite spline interpolation curve showing how the scaling
 factor varies across the normalized parameter s from 0 to 1. Uses the first 5
 elements of `optimal_scaling` as control points at s = 0, 0.25, 0.5, 0.75, and 1.0.
 """
