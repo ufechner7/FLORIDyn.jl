@@ -1561,6 +1561,84 @@ function select_measurement()
 end
 
 """
+    create_n_groups(ta::TurbineArray, n_groups::Int) -> TurbineArray
+
+Create n turbine groups by dividing turbines based on their X coordinates.
+
+This function creates a new [`TurbineArray`](@ref) with turbines divided into `n_groups` 
+equal-sized groups based on their X-coordinate positions. Turbines are sorted by X 
+position and then distributed evenly across groups. If the number of turbines doesn't 
+divide evenly, the remainder turbines are distributed to the first groups.
+
+# Arguments
+- `ta::TurbineArray`: The turbine array containing position data
+- `n_groups::Int`: Number of groups to create (must be positive)
+
+# Returns
+- `TurbineArray`: A new turbine array with the same positions, types, and initial states,
+  but with updated groups divided by X coordinate
+
+# Algorithm
+1. Sort all turbines by their X coordinate (column 1 of `ta.pos`)
+2. Divide sorted turbines into `n_groups` groups of approximately equal size
+3. Distribute any remainder turbines to the first groups
+4. Create a new turbine array with these groups plus an "all" group containing all turbines
+
+# Examples
+```julia
+# Load turbine array from configuration
+wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+
+# Create 8 groups based on X coordinates
+ta_8groups = create_n_groups(ta, 8)
+println("Created ", length(ta_8groups.groups) - 1, " groups")  # -1 for "all" group
+
+# Create 12 groups
+ta_12groups = create_n_groups(ta, 12)
+```
+
+# See also
+- [`TurbineArray`](@ref)
+- [`TurbineGroup`](@ref)
+- [`turbine_group`](@ref)
+"""
+function create_n_groups(ta::TurbineArray, n_groups::Int)
+    n_turbines = size(ta.pos, 1)
+    x_coords = ta.pos[:, 1]
+    
+    # Create array of (turbine_id, x_coord) pairs
+    turbines_with_x = [(i, x_coords[i]) for i in 1:n_turbines]
+    
+    # Sort by X coordinate
+    sort!(turbines_with_x, by = x -> x[2])
+    
+    # Split into n_groups
+    turbines_per_group = div(n_turbines, n_groups)
+    remainder = n_turbines % n_groups
+    
+    turbine_groups = TurbineGroup[]
+    start_idx = 1
+    
+    for group_id in 1:n_groups
+        # Distribute remainder turbines to first groups
+        group_size = turbines_per_group + (group_id <= remainder ? 1 : 0)
+        end_idx = start_idx + group_size - 1
+        
+        # Extract turbine IDs for this group
+        group_turbines = [turbines_with_x[i][1] for i in start_idx:end_idx]
+        
+        push!(turbine_groups, TurbineGroup("group_$group_id", group_id, group_turbines))
+        
+        start_idx = end_idx + 1
+    end
+    
+    # Add "all" group
+    push!(turbine_groups, TurbineGroup("all", 0, collect(1:n_turbines)))
+    
+    return TurbineArray(ta.pos, ta.type, ta.init_States, turbine_groups)
+end
+
+"""
     turbine_group(ta::TurbineArray, turbine::Int) -> Int
 
 Find the group ID for a specific turbine in the turbine array.

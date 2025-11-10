@@ -35,7 +35,7 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 1 # must be 1, 2, 4, 8 or 12
+GROUPS = 2 # must be 1, 2, 4, 8 or 12
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
 MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
@@ -53,63 +53,6 @@ data_file_group_control = data_file_group_control *  "_" * string(GROUPS)*"TGs.j
 
 GROUP_CONTROL = (GROUPS != 1)
 @assert(GROUPS in (1, 2, 4, 8, 12), "GROUPS must be 1, 2, 4, 8, or 12")
-
-"""
-    create_n_groups(ta::TurbineArray, n_groups::Int) -> Vector{Dict}
-
-Create n turbine groups by dividing turbines based on their X coordinates.
-Returns a turbine_groups structure compatible with FLORIDyn.
-
-# Arguments
-- `ta::TurbineArray`: The turbine array containing position data
-- `n_groups::Int`: Number of groups to create (e.g., 4, 8, or 12)
-
-# Returns
-- `Vector{Dict}`: Vector of group dictionaries with keys "name", "id", and "turbines"
-"""
-function create_n_groups(ta::TurbineArray, n_groups::Int)
-    n_turbines = size(ta.pos, 1)
-    x_coords = ta.pos[:, 1]
-    
-    # Create array of (turbine_id, x_coord) pairs
-    turbines_with_x = [(i, x_coords[i]) for i in 1:n_turbines]
-    
-    # Sort by X coordinate
-    sort!(turbines_with_x, by = x -> x[2])
-    
-    # Split into n_groups
-    turbines_per_group = div(n_turbines, n_groups)
-    remainder = n_turbines % n_groups
-    
-    turbine_groups = []
-    start_idx = 1
-    
-    for group_id in 1:n_groups
-        # Distribute remainder turbines to first groups
-        group_size = turbines_per_group + (group_id <= remainder ? 1 : 0)
-        end_idx = start_idx + group_size - 1
-        
-        # Extract turbine IDs for this group
-        group_turbines = [turbines_with_x[i][1] for i in start_idx:end_idx]
-        
-        push!(turbine_groups, Dict(
-            "name" => "group_$group_id",
-            "id" => group_id,
-            "turbines" => group_turbines
-        ))
-        
-        start_idx = end_idx + 1
-    end
-    
-    # Add "all" group
-    push!(turbine_groups, Dict(
-        "name" => "all",
-        "id" => 0,
-        "turbines" => collect(1:n_turbines)
-    ))
-    
-    return turbine_groups
-end
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -142,10 +85,7 @@ wind, sim, con, floris, floridyn, ta = setup(settings_file)
 # Override with n groups if GROUPS != 4 (default in settings file is 4)
 if GROUPS != 4
     println("Creating $GROUPS turbine groups based on X coordinates...")
-    turbine_groups = create_n_groups(ta, GROUPS)
-    # Convert to TurbineGroup objects
-    new_groups = [TurbineGroup(g["name"], g["id"], g["turbines"]) for g in turbine_groups]
-    ta = TurbineArray(ta.pos, ta.type, ta.init_States, new_groups)
+    ta = create_n_groups(ta, GROUPS)
 end
 
 sim.end_time += T_EXTRA  # extend simulation time for MPC

@@ -86,63 +86,6 @@ function plot_turbines(ta::TurbineArray, turbine_groups)
     return plt.gcf()
 end
 
-"""
-    create_8_groups(ta::TurbineArray) -> Vector{Dict}
-
-Create 8 turbine groups by dividing turbines based on their X coordinates.
-Returns a turbine_groups structure compatible with the plotting function.
-
-# Arguments
-- `ta::TurbineArray`: The turbine array containing position data
-
-# Returns
-- `Vector{Dict}`: Vector of group dictionaries with keys "name", "id", and "turbines"
-"""
-function create_8_groups(ta::TurbineArray)
-    n_turbines = size(ta.pos, 1)
-    x_coords = ta.pos[:, 1]
-    
-    # Create array of (turbine_id, x_coord) pairs
-    turbines_with_x = [(i, x_coords[i]) for i in 1:n_turbines]
-    
-    # Sort by X coordinate
-    sort!(turbines_with_x, by = x -> x[2])
-    
-    # Split into 8 groups
-    n_groups = 8
-    turbines_per_group = div(n_turbines, n_groups)
-    remainder = n_turbines % n_groups
-    
-    turbine_groups = []
-    start_idx = 1
-    
-    for group_id in 1:n_groups
-        # Distribute remainder turbines to first groups
-        group_size = turbines_per_group + (group_id <= remainder ? 1 : 0)
-        end_idx = start_idx + group_size - 1
-        
-        # Extract turbine IDs for this group
-        group_turbines = [turbines_with_x[i][1] for i in start_idx:end_idx]
-        
-        push!(turbine_groups, Dict(
-            "name" => "group_$group_id",
-            "id" => group_id,
-            "turbines" => group_turbines
-        ))
-        
-        start_idx = end_idx + 1
-    end
-    
-    # Add "all" group
-    push!(turbine_groups, Dict(
-        "name" => "all",
-        "id" => 0,
-        "turbines" => collect(1:n_turbines)
-    ))
-    
-    return turbine_groups
-end
-
 # Load the settings and extract turbine data
 println("Loading turbine data from: $settings_file")
 try
@@ -153,10 +96,13 @@ try
     # Use setup function to load all configuration data including turbine array
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
     
-    # Override with 8 groups if GROUPS == 8
-    if GROUPS == 8
-        println("Creating 8 turbine groups based on X coordinates...")
-        turbine_groups = create_8_groups(ta)
+    # Override with n groups if GROUPS is specified
+    if GROUPS != length([g for g in turbine_groups if g["name"] != "all"])
+        println("Creating $GROUPS turbine groups based on X coordinates...")
+        ta_grouped = create_n_groups(ta, GROUPS)
+        # Convert TurbineArray groups to dictionary format for plotting
+        turbine_groups = [Dict("name" => g.name, "id" => g.id, "turbines" => g.turbines) 
+                         for g in ta_grouped.groups]
     end
     
     println("Found $(size(ta.pos, 1)) turbines in the configuration")
