@@ -322,7 +322,7 @@ function calc_axial_induction2(vis, time, scaling::Vector; group_id=nothing)
     
     s = clamp((time - t1) / (t2 - t1), 0.0, 1.0)
     
-    # Perform piecewise quadratic Bezier interpolation
+    # Perform piecewise cubic Hermite spline interpolation
     scaling_result = interpolate_bezier_piecewise(s, scaling)
     
     demand = calc_demand(time)
