@@ -876,6 +876,158 @@ vis:
         end
     end
 
+    @testset "create_n_groups function" begin
+        @testset "Basic functionality" begin
+            @testset "Create 8 groups from 54 turbines" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                ta_grouped = create_n_groups(ta, 8)
+                
+                # Check that result is a TurbineArray
+                @test isa(ta_grouped, TurbineArray)
+                
+                # Check that position data is preserved
+                @test ta_grouped.pos == ta.pos
+                @test ta_grouped.type == ta.type
+                @test ta_grouped.init_States == ta.init_States
+                
+                # Check number of groups (8 specific groups + 1 "all" group)
+                @test length(ta_grouped.groups) == 9
+                
+                # Check that there are exactly 8 specific groups
+                specific_groups = [g for g in ta_grouped.groups if g.name != "all"]
+                @test length(specific_groups) == 8
+                
+                # Check group IDs are correct
+                for (i, group) in enumerate(specific_groups)
+                    @test group.id == i
+                    @test group.name == "group_$i"
+                end
+                
+                # Check that "all" group exists and has correct properties
+                all_group = findfirst(g -> g.name == "all", ta_grouped.groups)
+                @test all_group !== nothing
+                @test ta_grouped.groups[all_group].id == 0
+                @test length(ta_grouped.groups[all_group].turbines) == 54
+                @test ta_grouped.groups[all_group].turbines == collect(1:54)
+                
+                # Check that all turbines are assigned
+                assigned_turbines = Set{Int}()
+                for group in specific_groups
+                    union!(assigned_turbines, group.turbines)
+                end
+                @test length(assigned_turbines) == 54
+                @test assigned_turbines == Set(1:54)
+                
+                # Check that groups don't overlap (each turbine in exactly one specific group)
+                for i in 1:8
+                    for j in i+1:8
+                        overlap = intersect(specific_groups[i].turbines, specific_groups[j].turbines)
+                        @test isempty(overlap)
+                    end
+                end
+            end
+            
+            @testset "Create 4 groups from 54 turbines" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                ta_grouped = create_n_groups(ta, 4)
+                
+                @test length(ta_grouped.groups) == 5  # 4 + "all"
+                specific_groups = [g for g in ta_grouped.groups if g.name != "all"]
+                @test length(specific_groups) == 4
+                
+                # Check distribution (54/4 = 13.5, so some groups have 14, some 13)
+                group_sizes = [length(g.turbines) for g in specific_groups]
+                @test sum(group_sizes) == 54
+                @test all(13 .<= group_sizes .<= 14)
+            end
+            
+            @testset "Create 12 groups from 54 turbines" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                ta_grouped = create_n_groups(ta, 12)
+                
+                @test length(ta_grouped.groups) == 13  # 12 + "all"
+                specific_groups = [g for g in ta_grouped.groups if g.name != "all"]
+                @test length(specific_groups) == 12
+                
+                # Check distribution (54/12 = 4.5, so some groups have 5, some 4)
+                group_sizes = [length(g.turbines) for g in specific_groups]
+                @test sum(group_sizes) == 54
+                @test all(4 .<= group_sizes .<= 5)
+                # First 6 groups should have 5 turbines (54 % 12 = 6)
+                @test count(==(5), group_sizes) == 6
+                @test count(==(4), group_sizes) == 6
+            end
+        end
+        
+        @testset "Sorting by X coordinate" begin
+            @testset "Groups are ordered by X coordinate" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                ta_grouped = create_n_groups(ta, 8)
+                
+                specific_groups = [g for g in ta_grouped.groups if g.name != "all"]
+                
+                # Get average X coordinate for each group
+                avg_x_coords = Float64[]
+                for group in specific_groups
+                    x_coords = [ta_grouped.pos[t, 1] for t in group.turbines]
+                    push!(avg_x_coords, mean(x_coords))
+                end
+                
+                # Check that groups are ordered by increasing X coordinate
+                @test issorted(avg_x_coords)
+                
+                # Check that first group has turbines with smallest X coords
+                first_group_x = [ta_grouped.pos[t, 1] for t in specific_groups[1].turbines]
+                last_group_x = [ta_grouped.pos[t, 1] for t in specific_groups[end].turbines]
+                @test maximum(first_group_x) <= minimum(last_group_x)
+            end
+        end
+        
+        @testset "Works with different configurations" begin
+            @testset "9-turbine configuration" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_9T_Data.yaml")
+                ta_grouped = create_n_groups(ta, 3)
+                
+                @test length(ta_grouped.groups) == 4  # 3 + "all"
+                specific_groups = [g for g in ta_grouped.groups if g.name != "all"]
+                
+                # Each group should have exactly 3 turbines
+                for group in specific_groups
+                    @test length(group.turbines) == 3
+                end
+                
+                # All turbines assigned
+                all_turbines = Set{Int}()
+                for group in specific_groups
+                    union!(all_turbines, group.turbines)
+                end
+                @test all_turbines == Set(1:9)
+            end
+        end
+        
+        @testset "Integration with turbine_group function" begin
+            @testset "turbine_group returns correct IDs for new groups" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                ta_grouped = create_n_groups(ta, 8)
+                
+                # Test that turbine_group returns correct group IDs
+                for turbine_id in 1:54
+                    group_id = turbine_group(ta_grouped, turbine_id)
+                    
+                    # Verify turbine is in the returned group
+                    found = false
+                    for group in ta_grouped.groups
+                        if group.id == group_id && turbine_id in group.turbines
+                            found = true
+                            break
+                        end
+                    end
+                    @test found
+                end
+            end
+        end
+    end
+
     @testset "MSR default functions" begin
         @testset "get_default_msr and set_default_msr" begin
             mktempdir() do tmp
