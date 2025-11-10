@@ -192,16 +192,18 @@ end
         settings_file = "data/2021_9T_Data.yaml"
         wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         set = Settings(wind, sim, con)
-        vis = Vis(online=true, save=false, rel_v_min=20.0, up_int = 4, t_skip=0.0)
+        # Set up_int=4 and ensure we hit a multiple of 4 in timing
+        vis = Vis(online=true, save=false, rel_v_min=20.0, up_int=4, t_skip=0.0)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
         
-        # Override to minimal simulation steps after preparation
-        sim.n_sim_steps = 1
+        # Set simulation to run exactly 2 steps (0 and 4 seconds with time_step=4)
+        sim.time_step = 4.0
+        sim.n_sim_steps = 2
         n_steps = sim.n_sim_steps
         
         # Create minimal induction data to trigger NaN warning
         con.induction_data = zeros(Float64, n_steps, wf.nT + 1)
-        con.induction_data[:, 1] = [0.0]  # Time
+        con.induction_data[:, 1] = [0.0, 4.0]  # Times: 0s and 4s
         con.induction_data[:, 2] .= 0.0  # Zero induction for turbine 1 to trigger NaN
         for i in 3:wf.nT+1
             con.induction_data[:, i] .= 0.33  # Normal induction for other turbines
