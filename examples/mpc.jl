@@ -35,7 +35,7 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 12 # must be 1, 4, 8 or 12
+GROUPS = 1 # must be 1, 2, 4, 8 or 12
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
 MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
@@ -52,7 +52,7 @@ DELTA_P = Float64[]
 data_file_group_control = data_file_group_control *  "_" * string(GROUPS)*"TGs.jld2"
 
 GROUP_CONTROL = (GROUPS != 1)
-@assert(GROUPS in (1, 4, 8, 12), "GROUPS must be 1, 4, 8, or 12")
+@assert(GROUPS in (1, 2, 4, 8, 12), "GROUPS must be 1, 2, 4, 8, or 12")
 
 """
     create_n_groups(ta::TurbineArray, n_groups::Int) -> Vector{Dict}
@@ -642,6 +642,8 @@ else
             x0 = [1.31, 1.4427, 1.35654, 1.28725, 1.28105, 0.0027, 0.0294, 1.8695, 2.0157, 1.8563, 1.1908, 0.0825]
         elseif GROUPS == 4
             x0 = [1.578, 1.991, 1.54259, 1.33791, 1.27339, 0.017865, 0.886214, 2.87895]
+        elseif GROUPS == 2
+            x0 = [1.52628, 1.9693, 1.4923, 1.35422, 1.26623, 0.5599]
         elseif GROUPS == 12
             # 5 global + 11 group parameters (last group calculated from constraint)
             x0 = [1.409, 1.60396, 1.43527, 1.30722, 1.26675, 0.0877, 0.1621, 0.1235, 1.99722, 0.016, 1.9725, 1.34014, 1.8945, 0.85491, 2.8402, 2.0101]
@@ -686,7 +688,7 @@ println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
 
 if GROUP_CONTROL
     plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, rel_power_ref[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
-            ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_power_ref", "rel_demand"], fig="Rel. Power and Demand", pltctrl)
+            ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_power_ref", "rel_demand"], title="Rel. Power and Demand "*string(GROUPS)*" TGs", fig="Rel. Power and Demand", pltctrl)
 else
     plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
             ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], fig="Rel. Power and Demand", pltctrl)
