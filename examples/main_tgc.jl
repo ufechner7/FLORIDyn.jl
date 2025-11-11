@@ -51,7 +51,7 @@ set_induction!(ta, induction)
 
 time_step = sim.time_step  # seconds
 t_end = sim.end_time - sim.start_time  # relative end time in seconds
-con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
+con.induction_data = calc_induction_matrix(vis, ta, time_step, t_end)
 
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)

@@ -39,7 +39,7 @@ GROUPS = 3 # must be 1, 2, 3, 4, 8 or 12
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 1       # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 4000       # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -101,7 +101,7 @@ t_end = sim.end_time - sim.start_time  # relative end time in seconds
 
 # For initial setup, use calc_induction_matrix (only affects pre-optimization visualization)
 # During optimization, calc_induction_matrix2 will be used with proper group handling
-con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
+con.induction_data = calc_induction_matrix(vis, ta, time_step, t_end)
 
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)

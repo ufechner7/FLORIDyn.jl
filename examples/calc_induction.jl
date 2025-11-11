@@ -73,7 +73,7 @@ end
 
 function plot_induction_matrix()
     # Calculate induction matrix for all turbines over time
-    induction_matrix = calc_induction_matrix(ta, con, time_step, t_end)
+    induction_matrix = calc_induction_matrix(vis, ta, time_step, t_end)
     time_vector = induction_matrix[:, 1]  # Extract time from first column
     n_time_steps = size(induction_matrix, 1)
     
@@ -116,6 +116,6 @@ function plot_induction_matrix()
              pltctrl=pltctrl)
 end
 
-con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
+con.induction_data = calc_induction_matrix(vis, ta, time_step, t_end)
 
 plot_induction_matrix()
