@@ -210,7 +210,7 @@ function calc_axial_induction(vis::Vis, ta, turbine, time; correction_factor=1.8
     # - at the same time, increase the power of group 3 by the same amount
     # - interpolate linearly between t=0 and t=t_end with no correction at t=t2
     
-    base_induction = calc_induction_per_group(vis::Vis, group_id, time)
+    base_induction = calc_induction_per_group(vis, group_id, time)
     t1 = vis.t_skip + T_START  # Time to start increasing demand
     t2 = vis.t_skip + T_END    # Time to reach final demand
 
