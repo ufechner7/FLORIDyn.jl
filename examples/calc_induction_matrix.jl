@@ -3,7 +3,7 @@
 
 # Calculate induction matrix for all turbines over time
 
-# This file is included by calc_induction.jl and main_mpc.jl
+# This file is included by calc_induction.jl and mpc.jl
 # It provides the functions:
 # - calc_cp(induction)
 # - calc_induction(cp)
