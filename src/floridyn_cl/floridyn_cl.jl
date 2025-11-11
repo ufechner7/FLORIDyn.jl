@@ -839,19 +839,19 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         # ========== Live Plotting ============
         if vis.online
             t_rel = sim_time - sim.start_time
-            if mod(t_rel, vis.up_int) == 0 && t_rel >= vis.t_skip
+            if mod(t_rel - vis.t_skip, vis.up_int) == 0 && t_rel >= vis.t_skip
                 Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
                 rel_vel = Z[:,:,1]
                 if any(isnan, rel_vel)
-                    println("  Warning: NaN values found in relative velocity field!")
+                    @warn "NaN values found in relative velocity field!"
                     display(sparse(isnan.(rel_vel)))
                 end
                 if isnothing(rmt_plot_fn)
-                    plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel; msr)
+                    plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel - vis.t_skip; msr)
                     plt.pause(0.01)
                 else
                     # @info "time: $t_rel, plotting with rmt_plot_fn"
-                    @spawnat 2 rmt_plot_fn(wf, X, Y, Z, vis, t_rel; msr=msr)
+                    @spawnat 2 rmt_plot_fn(wf, X, Y, Z, vis, t_rel - vis.t_skip; msr=msr)
                 end
             end
         end
