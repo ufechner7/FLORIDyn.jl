@@ -77,7 +77,7 @@ function calc_induction(cp)
     return (a_low + a_high) / 2
 end
 
-function calc_demand(time)
+function calc_demand(vis::Vis, time)
     if USE_STEP
         # Example: step demand profile
         if time < 200 + vis.t_skip
@@ -133,7 +133,7 @@ to include group-specific corrections and wake interactions.
 - [`calc_induction`](@ref): Power coefficient to induction conversion
 - [`calc_axial_induction`](@ref): Turbine-specific induction with corrections
 """
-function calc_induction_per_group(turbine_group, time; scaling = 1.22)
+function calc_induction_per_group(vis::Vis, turbine_group, time; scaling = 1.22)
     if USE_TGC
         scaling = 1.247
     elseif USE_STEP
@@ -141,7 +141,7 @@ function calc_induction_per_group(turbine_group, time; scaling = 1.22)
     else
     end
     # simple example: assume no wakes
-    demand = calc_demand(time)
+    demand = calc_demand(vis, time)
     if USE_TGC
         correction = 1-min(((time - 950)/270)^2, 1)
         demand -= correction*0.016
@@ -179,7 +179,7 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8) # m
     # - at the same time, increase the power of group 3 by the same amount
     # - interpolate linearly between t=0 and t=t_end with no correction at t=t2
     
-    base_induction = calc_induction_per_group(group_id, time)
+    base_induction = calc_induction_per_group(vis, group_id, time)
     t1 = vis.t_skip + T_START  # Time to start increasing demand
     t2 = vis.t_skip + T_END    # Time to reach final demand
 

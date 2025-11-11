@@ -94,7 +94,7 @@ con.yaw="Constant"
 con.yaw_fixed = 270.0
 wind.input_dir="Constant"
 wind.dir_fixed = 270.0
-induction = calc_induction_per_group(1, 0)
+induction = calc_induction_per_group(vis, 1, 0)
 set_induction!(ta, induction)
 
 time_step = sim.time_step  # seconds
@@ -115,7 +115,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 
 # Calculate demand for each time point
 time_vector = 0:time_step:t_end
-demand_values = [calc_demand(t) for t in time_vector]
+demand_values = [calc_demand(vis, t) for t in time_vector]
 
 """
     calc_max_power(wind_speed, ta, wf, floris) -> Float64
@@ -307,8 +307,8 @@ function calc_axial_induction2(vis, time, scaling::Vector; group_id=nothing)
     # Perform piecewise cubic Hermite spline interpolation
     scaling_result = interpolate_hermite_spline(s, scaling[1:CONTROL_POINTS])
     
-    demand = calc_demand(time)
-    demand_end = calc_demand(t2)
+    demand = calc_demand(vis, time)
+    demand_end = calc_demand(vis, t2)
     interpolated_demand = demand_end - (demand_end - demand) * id_scaling
     scaled_demand = scaling_result * interpolated_demand
     if scaled_demand > 1.0

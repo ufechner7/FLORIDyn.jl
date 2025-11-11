@@ -53,7 +53,7 @@ function calc_demand_and_power(settings_file; wind_dir=WIND_DIR)
     con.yaw="Constant"
     wind.input_dir="Constant"
     wind.dir_fixed = wind_dir
-    induction = calc_induction_per_group(1, 0)
+    induction = calc_induction_per_group(vis, 1, 0)
     set_induction!(ta, induction)
 
     time_step = sim.time_step  # seconds
@@ -95,7 +95,7 @@ function calc_demand_and_power(settings_file; wind_dir=WIND_DIR)
     time_vector = 0:time_step:t_end
 
     # Calculate demand for each time point
-    demand_values = [calc_demand(t) for t in time_vector]
+    demand_values = [calc_demand(vis, t) for t in time_vector]
     return rel_power, demand_values, times, wind, sim
 end
 

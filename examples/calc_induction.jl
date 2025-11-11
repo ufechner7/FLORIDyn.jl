@@ -20,10 +20,11 @@ USE_TGC = true
 USE_FEED_FORWARD = true
 USE_STEP = true
 
-settings_file = get_default_project()[2]
+settings_file, vis_file = get_default_project()[2:3]
 
 # get the settings for the wind field, simulator, controller and turbine array
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
+vis = Vis(vis_file)
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
@@ -36,7 +37,7 @@ function plot_demand()
     time_vector = 0:time_step:t_end
 
     # Calculate demand for each time point
-    demand_values = [calc_demand(t) for t in time_vector]
+    demand_values = [calc_demand(vis, t) for t in time_vector]
     
     # Calculate actual induction values for representative turbines from each group
     # (This includes the time-dependent corrections implemented in calc_axial_induction)
