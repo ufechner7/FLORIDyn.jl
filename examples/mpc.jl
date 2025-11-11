@@ -39,7 +39,7 @@ GROUPS = 3 # must be 1, 2, 3, 4, 8 or 12
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 4000       # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 1       # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -612,7 +612,7 @@ else
         elseif GROUPS == 2
             x0 = [1.52628, 1.9693, 1.4923, 1.35422, 1.26623, 0.5599]
         elseif GROUPS == 3
-            x0 = [1.9, 2.0, 1.7, 1.399, 1.3, 0.05, 1.48]
+            x0 = [1.35, 1.985, 1.7041, 1.396, 1.275, 0.1022, 1.3581]
         elseif GROUPS == 12
             # CONTROL_POINTS global + 11 group parameters (last group calculated from constraint)
             x0 = [1.409, 1.60396, 1.43527, 1.30722, 1.26675, 0.0877, 0.1621, 0.1235, 1.99722, 0.016, 1.9725, 1.34014, 1.8945, 0.85491, 2.8402, 2.0101]
@@ -758,7 +758,8 @@ end
 
 if ONLINE
     println("Creating video from velocity reduction frames")
-    video_path = createVideo("ff_velocity_reduction"; fps=6)
+    postfix = string(GROUPS)*"T"
+    video_path = createVideo("ff_velocity_reduction"; fps=6, postfix=postfix)
     if !isempty(video_path)
         println("✓ Created video: $video_path")
     else
