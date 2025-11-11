@@ -1604,6 +1604,12 @@ ta_12groups = create_n_groups(ta, 12)
 """
 function create_n_groups(ta::TurbineArray, n_groups::Int)
     n_turbines = size(ta.pos, 1)
+    if n_groups <= 0
+        throw(ArgumentError("n_groups must be positive, got $(n_groups)"))
+    end
+    if n_groups > n_turbines
+        throw(ArgumentError("n_groups ($(n_groups)) cannot be greater than the number of turbines ($(n_turbines))"))
+    end
     x_coords = ta.pos[:, 1]
     
     # Create array of (turbine_id, x_coord) pairs
