@@ -752,7 +752,7 @@ else
 end
 
 if ONLINE
-    println("Example 1: Creating video from velocity reduction frames")
+    println("Creating video from velocity reduction frames")
     video_path = createVideo("ff_velocity_reduction"; fps=6)
     if !isempty(video_path)
         println("✓ Created video: $video_path")
