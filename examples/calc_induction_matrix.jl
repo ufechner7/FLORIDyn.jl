@@ -162,7 +162,7 @@ The corrections implement a group-based control strategy that redistributes powe
 demand across turbine groups during the transition period between T_START and T_END.
 
 # Arguments
-- `vis::Vis`: [Visualization object](@ref Vis) containing simulation settings (e.g., `t_skip`)
+- `vis::Vis`: [`Vis`](@ref) object containing simulation settings (e.g., `t_skip`)
 - `ta`: TurbineArray containing turbine positions and configuration
 - `turbine`: Turbine index (1-based)
 - `time`: Current simulation time [s]
