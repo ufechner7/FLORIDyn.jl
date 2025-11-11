@@ -724,8 +724,13 @@ begin
 end
 
 function print_gains(optimal_scaling)
+    if !GROUP_CONTROL || GROUPS == 1
+        println("\n=== Power Gain per Turbine Group ===")
+        println("Group gains not applicable (GROUP_CONTROL is false or only one group).")
+        return
+    end
     scaling = optimal_scaling[(CONTROL_POINTS+1):end]
-    id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(optimal_scaling[(CONTROL_POINTS+1):end])
+    id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling)
     push!(scaling, id_scaling)
     println("\n=== Power Gain per Turbine Group ===")
     for (i, gain) in enumerate(scaling)
