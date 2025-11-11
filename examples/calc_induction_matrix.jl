@@ -250,7 +250,7 @@ end
 Calculate a matrix of axial induction factors for all turbines over time.
 
 # Arguments
-- `vis::Vis`: [Visualization object](@ref Vis) containing simulation settings (e.g., `t_skip`)
+- `vis::Vis`: [`Vis`](@ref) containing simulation settings (e.g., `t_skip`)
 - `ta`: TurbineArray containing turbine positions and configuration
 - `time_step`: Time step for the simulation [s]
 - `t_end`: End time of the simulation [s]
