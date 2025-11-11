@@ -623,7 +623,7 @@ else
         rel_power_ref = results_ref["rel_power"]
         optimal_scaling = result.x_best_feas
     else
-        result = solve(p,  [1.18291, 1.19575, 1.21248, 1.2409, 1.30345])  # Start from initial guess
+        result = solve(p, [1.18291, 1.19575, 1.21248, 1.2409, 1.30345])  # Start from initial guess
         optimal_scaling = result.x_best_feas[1:CONTROL_POINTS]
     end
 
