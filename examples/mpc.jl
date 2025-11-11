@@ -53,7 +53,7 @@ DELTA_P = Float64[]
 data_file_group_control = data_file_group_control *  "_" * string(GROUPS)*"TGs.jld2"
 
 GROUP_CONTROL = (GROUPS != 1)
-@assert(GROUPS in (1, 2, 3, 4, 8, 12), "GROUPS must be 1, 2, 4, 8, or 12")
+@assert(GROUPS in (1, 2, 3, 4, 8, 12), "GROUPS must be 1, 2, 3, 4, 8, or 12")
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
