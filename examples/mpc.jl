@@ -264,6 +264,9 @@ This function computes the axial induction factor based on:
 # Details
 The function operates in several stages:
 1. Extracts group-specific scaling factor `id_scaling` from the scaling vector (if applicable)
+   - For groups 1 to GROUPS-1: directly from `scaling[CONTROL_POINTS + group_id]`
+   - For the last group (GROUPS): calculated as `GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling[(CONTROL_POINTS+1):end])`
+     to reduce the number of optimization variables by one
 2. Computes normalized time parameter `s` ∈ [0,1] between T_START and T_END
 3. Interpolates time-dependent scaling using [`interpolate_hermite_spline`](@ref)
 4. Adjusts demand by group-specific scaling and applies time-dependent scaling
