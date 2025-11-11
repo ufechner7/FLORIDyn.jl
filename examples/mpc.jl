@@ -166,12 +166,12 @@ function run_simulation(set_induction::AbstractMatrix; enable_online=false)
 end
 
 """
-    interpolate_bezier_piecewise(s::Float64, scaling::Vector) -> Float64
+    interpolate_hermite_spline(s::Float64, scaling::Vector) -> Float64
 
-Perform piecewise cubic spline interpolation across control points.
+Perform piecewise cubic Hermite spline interpolation across control points.
 
 This function uses cubic Hermite spline interpolation between control points 
-evenly spaced along s ∈ [0, 1]. The method provides smooth transitions while
+evenly spaced along s ∈ [0, 1]. The method provides smooth C1-continuous transitions while
 respecting the control point values. The number of control points is determined
 from the length of the `scaling` vector.
 
@@ -183,7 +183,7 @@ from the length of the `scaling` vector.
 # Returns
 - `Float64`: Interpolated value at position s
 """
-function interpolate_bezier_piecewise(s::Float64, scaling::Vector)
+function interpolate_hermite_spline(s::Float64, scaling::Vector)
     n_points = length(scaling)
     @assert n_points >= 2 "Need at least 2 control points for interpolation"
     
@@ -239,6 +239,50 @@ function interpolate_bezier_piecewise(s::Float64, scaling::Vector)
     return scaling_result
 end
 
+"""
+    calc_axial_induction2(vis, time, scaling::Vector; group_id=nothing) -> (corrected_induction, distance)
+
+Calculate the axial induction factor for a turbine using optimizable scaling parameters.
+
+This function computes the axial induction factor based on:
+1. Time-dependent scaling via cubic Hermite spline interpolation of control points
+2. Optional group-specific scaling factors for individual turbine group control
+3. Demand-based adjustment with correction for power coefficient nonlinearity
+
+# Arguments
+- `vis`: [`Vis`](@ref) object containing visualization settings (uses `t_skip`)
+- `time::Float64`: Current simulation time in seconds
+- `scaling::Vector{Float64}`: Optimization parameters vector containing:
+  - Elements 1 to CONTROL_POINTS: Time-dependent scaling control points
+  - Elements CONTROL_POINTS+1 to end: Group-specific scaling factors (if GROUP_CONTROL)
+- `group_id::Union{Int,Nothing}`: Turbine group identifier (1 to GROUPS), or `nothing` for no group control
+
+# Returns
+- `corrected_induction::Float64`: Computed axial induction factor, clamped to [MIN_INDUCTION, BETZ_INDUCTION]
+- `distance::Float64`: Constraint violation distance (positive if scaled_demand > 1.0, else 0.0)
+
+# Details
+The function operates in several stages:
+1. Extracts group-specific scaling factor `id_scaling` from the scaling vector (if applicable)
+2. Computes normalized time parameter `s` ∈ [0,1] between T_START and T_END
+3. Interpolates time-dependent scaling using [`interpolate_hermite_spline`](@ref)
+4. Adjusts demand by group-specific scaling and applies time-dependent scaling
+5. Converts scaled demand to induction, applies power coefficient correction
+6. Ensures minimum induction to avoid numerical issues in wake model
+
+# Global Constants Used
+- `CONTROL_POINTS`: Number of time-dependent control points
+- `GROUPS`: Number of turbine groups
+- `MAX_ID_SCALING`: Maximum allowed group scaling factor
+- `T_START`: Time offset to start ramping demand (relative to `vis.t_skip`)
+- `T_END`: Time offset to reach final demand (relative to `vis.t_skip`)
+- `MIN_INDUCTION`: Minimum induction to prevent NaN in FLORIS wake model
+- `BETZ_INDUCTION`: Maximum theoretical induction (Betz limit)
+
+# See Also
+- [`interpolate_hermite_spline`](@ref): Performs cubic Hermite spline interpolation
+- [`calc_induction_matrix2`](@ref): Uses this function to build induction matrices
+"""
 function calc_axial_induction2(vis, time, scaling::Vector; group_id=nothing)
     distance = 0.0
     id_scaling = 1.0
@@ -261,7 +305,7 @@ function calc_axial_induction2(vis, time, scaling::Vector; group_id=nothing)
     s = clamp((time - t1) / (t2 - t1), 0.0, 1.0)
     
     # Perform piecewise cubic Hermite spline interpolation
-    scaling_result = interpolate_bezier_piecewise(s, scaling[1:CONTROL_POINTS])
+    scaling_result = interpolate_hermite_spline(s, scaling[1:CONTROL_POINTS])
     
     demand = calc_demand(time)
     demand_end = calc_demand(t2)
@@ -413,7 +457,7 @@ function plot_scaling_curve(optimal_scaling::Vector{Float64})
     scaling_values = zeros(n_points)
     
     for (i, s) in enumerate(s_vec)
-        scaling_values[i] = interpolate_bezier_piecewise(s, optimal_scaling[1:CONTROL_POINTS])
+        scaling_values[i] = interpolate_hermite_spline(s, optimal_scaling[1:CONTROL_POINTS])
     end
     
     # Print diagnostic information
@@ -427,7 +471,7 @@ function plot_scaling_curve(optimal_scaling::Vector{Float64})
     plot_rmt(collect(s_vec), scaling_values;
              xlabel="Normalized Parameter s [-]",
              ylabel="Scaling Factor [-]",
-             title="Bezier Interpolation Scaling Curve",
+             title="Hermite Spline Interpolation Scaling Curve",
              fig="Scaling Curve",
              pltctrl=pltctrl)
 end
