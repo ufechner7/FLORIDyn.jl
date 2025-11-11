@@ -1582,7 +1582,7 @@ divide evenly, the remainder turbines are distributed to the first groups.
 1. Sort all turbines by their X coordinate (column 1 of `ta.pos`)
 2. Divide sorted turbines into `n_groups` groups of approximately equal size
 3. Distribute any remainder turbines to the first groups
-4. Create a new turbine array with these groups plus an "all" group containing all turbines
+4. Create a new turbine array with these groups plus an 'all' group containing all turbines
 
 # Examples
 ```julia
@@ -1591,7 +1591,7 @@ wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
 
 # Create 8 groups based on X coordinates
 ta_8groups = create_n_groups(ta, 8)
-println("Created ", length(ta_8groups.groups) - 1, " groups")  # -1 for "all" group
+println("Created ", length(ta_8groups.groups) - 1, " groups")  # -1 for 'all' group
 
 # Create 12 groups
 ta_12groups = create_n_groups(ta, 12)
