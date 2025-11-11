@@ -21,6 +21,9 @@ ONLINE = false
 PLOT_STEP_RESPONSE = true
 PLOT_STORAGE_VS_WINDDIR = false
 WIND_DIR = 270.0  # Wind direction for step response simulation
+T_START = 240   # relative time to start increasing demand
+T_END   = 960   # relative time to reach final demand
+
 if PLOT_STEP_RESPONSE
     WIND_DIRS = 200:10:340  # Wind directions for step response simulation
 else
@@ -30,6 +33,7 @@ SAVE_PLOTS = false  # Save plots to docs/src/
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
+vis.t_skip = 440  # skip initial time for visualization
 if (@isdefined plt) && !isnothing(plt)
     plt.ion()
 else
