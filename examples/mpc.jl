@@ -50,7 +50,7 @@ T_EXTRA = 2580  # extra time in addition to sim.end_time for MPC simulation
 MIN_INDUCTION = 0.01
 MAX_DISTANCES = Float64[]
 DELTA_P = Float64[]
-data_file_group_control = data_file_group_control *  "_" * string(GROUPS)*"TGs.jld2"
+data_file_group_control = data_file_group_control * '_' * string(GROUPS) * "TGs.jld2"
 
 GROUP_CONTROL = (GROUPS != 1)
 @assert(GROUPS in (1, 2, 3, 4, 8, 12), "GROUPS must be 1, 2, 3, 4, 8, or 12")
