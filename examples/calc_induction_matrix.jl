@@ -165,7 +165,7 @@ Includes group-based corrections and time interpolation.
 # Returns
 - Axial induction factor for the specified turbine
 """
-function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8) # max 1.8
+function calc_axial_induction(vis::Vis, ta, turbine, time; correction_factor=1.8) # max 1.8
     if ! USE_TGC
         correction_factor = 0.0
     end
@@ -179,7 +179,7 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8) # m
     # - at the same time, increase the power of group 3 by the same amount
     # - interpolate linearly between t=0 and t=t_end with no correction at t=t2
     
-    base_induction = calc_induction_per_group(vis, group_id, time)
+    base_induction = calc_induction_per_group(vis::Vis, group_id, time)
     t1 = vis.t_skip + T_START  # Time to start increasing demand
     t2 = vis.t_skip + T_END    # Time to reach final demand
 
@@ -246,7 +246,7 @@ function calc_induction_matrix(ta, con, time_step, t_end)
     # Calculate induction for each turbine at each time step (columns 2 onwards)
     for (t_idx, time) in enumerate(time_vector)
         for i in 1:n_turbines
-            induction_matrix[t_idx, i + 1] = calc_axial_induction(ta, con, i, time)
+            induction_matrix[t_idx, i + 1] = calc_axial_induction(vis, ta, i, time)
         end
     end
     

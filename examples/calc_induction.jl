@@ -16,6 +16,9 @@ end
 include("remote_plotting.jl")
 include("calc_induction_matrix.jl")
 
+T_START = 240   # time to start increasing demand
+T_END   = 960   # time to reach final demand
+
 USE_TGC = true
 USE_FEED_FORWARD = true
 USE_STEP = true
@@ -25,6 +28,7 @@ settings_file, vis_file = get_default_project()[2:3]
 # get the settings for the wind field, simulator, controller and turbine array
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
 vis = Vis(vis_file)
+vis.t_skip = 440
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
@@ -49,10 +53,10 @@ function plot_demand()
     turbine_group4 = 7   # Turbine 7 is in group 4
     
     # Calculate induction values using actual calc_axial_induction (with corrections)
-    induction_group1 = [calc_axial_induction(ta, con, turbine_group1, t) for t in time_vector]
-    induction_group2 = [calc_axial_induction(ta, con, turbine_group2, t) for t in time_vector]
-    induction_group3 = [calc_axial_induction(ta, con, turbine_group3, t) for t in time_vector]
-    induction_group4 = [calc_axial_induction(ta, con, turbine_group4, t) for t in time_vector]
+    induction_group1 = [calc_axial_induction(vis, ta, turbine_group1, t) for t in time_vector]
+    induction_group2 = [calc_axial_induction(vis, ta, turbine_group2, t) for t in time_vector]
+    induction_group3 = [calc_axial_induction(vis, ta, turbine_group3, t) for t in time_vector]
+    induction_group4 = [calc_axial_induction(vis, ta, turbine_group4, t) for t in time_vector]
     
     # Combine all data series
     all_data = [demand_values, induction_group1, induction_group2, induction_group3, induction_group4]
