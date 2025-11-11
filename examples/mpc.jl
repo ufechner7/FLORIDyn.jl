@@ -7,7 +7,7 @@
 # and GROUPS-1 for individual group scaling, with the last group calculated from a constraint).
 
 # The script uses the NOMAD.jl package for black-box optimization of the scaling parameters.
-# The number of groups can be 1, 2, 4, 8, or 12.
+# The number of groups can be 1, 2, 3, 4, 8, or 12.
 # The mean square error between the production and demand is minimized.
 
 # Always run the script with GROUPS = 1 first to get a baseline result without group control. This baseline 
