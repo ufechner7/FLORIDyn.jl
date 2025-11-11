@@ -35,10 +35,10 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 2 # must be 1, 2, 4, 8 or 12
+GROUPS = 3 # must be 1, 2, 3, 4, 8 or 12
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 1       # maximum number black-box evaluations for NOMAD optimizer
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -52,7 +52,7 @@ DELTA_P = Float64[]
 data_file_group_control = data_file_group_control *  "_" * string(GROUPS)*"TGs.jld2"
 
 GROUP_CONTROL = (GROUPS != 1)
-@assert(GROUPS in (1, 2, 4, 8, 12), "GROUPS must be 1, 2, 4, 8, or 12")
+@assert(GROUPS in (1, 2, 3, 4, 8, 12), "GROUPS must be 1, 2, 4, 8, or 12")
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -494,10 +494,7 @@ function eval_fct(x::Vector{Float64})
         # For NOMAD, constraints should be <= 0, so we formulate as:
         # x[6] + x[7] + ... - GROUPS * MAX_ID_SCALING / 2.0 <= 0
         constraint_sum = sum(x[6:end]) - (GROUPS * MAX_ID_SCALING / 2.0)
-        # Constraint 2: max_distance <= 0.075
-        # Formulate as: max_distance - 0.075 <= 0
-        constraint_maxdist = max_distance - 0.075*10
-        bb_outputs = [error, constraint_sum, constraint_maxdist]
+        bb_outputs = [error, constraint_sum]
     else
         bb_outputs = [error]
     end
@@ -517,8 +514,8 @@ if GROUP_CONTROL
     # Set up NOMAD optimization problem
     p = NomadProblem(
         n_total_params,      # dimension (5 global + GROUPS-1 group parameters)
-        3,                   # number of outputs (objective + 2 constraints)
-        ["OBJ", "PB", "PB"], # output types: OBJ = objective to minimize, PB = progressive barrier constraints
+        2,                   # number of outputs (objective + 1 constraint)
+        ["OBJ", "PB"],       # output types: OBJ = objective to minimize, PB = progressive barrier constraint
         eval_fct;            # evaluation function
         lower_bound=lower_bound,
         upper_bound=upper_bound
@@ -570,6 +567,8 @@ else
             x0 = [1.578, 1.991, 1.54259, 1.33791, 1.27339, 0.017865, 0.886214, 2.87895]
         elseif GROUPS == 2
             x0 = [1.52628, 1.9693, 1.4923, 1.35422, 1.26623, 0.5599]
+        elseif GROUPS == 3
+            x0 = [1.9, 2.0, 1.7, 1.399, 1.3, 0.05, 1.48]
         elseif GROUPS == 12
             # 5 global + 11 group parameters (last group calculated from constraint)
             x0 = [1.409, 1.60396, 1.43527, 1.30722, 1.26675, 0.0877, 0.1621, 0.1235, 1.99722, 0.016, 1.9725, 1.34014, 1.8945, 0.85491, 2.8402, 2.0101]
