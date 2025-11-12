@@ -73,10 +73,20 @@ m_i = \begin{cases}
 \end{cases}
 \end{equation}
 
+If we combine Eq. \ref{eq:induction-time} and Eq. \ref{eq:correction-func}, we get
+\begin{equation}
+\label{eq:induction-time-corrected}
+a = f(c(t) * d(t))
+\end{equation}
+
 
 Fig. \ref{fig:power-demand-1t} shows the resulting induction factor as a function of time:
 
-![Relative Power and Demand\label{fig:power-demand-1t}](Rel_Power_and_Demand_1T.png)
+![Relative Power and Demand\label{fig:power-demand-1t}](Rel_Power_and_Demand_1T.png){width=70%}
+
+
+
+\newpage
 
 ## Turbine group (TG) control
 The axial induction factor $a$ of each turbine group shall be controlled to achieve the best match between power demand and power production.
