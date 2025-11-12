@@ -35,7 +35,7 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 3 # must be 1, 2, 3, 4, 8 or 12
+GROUPS = 6 # must be 1, 2, 3, 4, 8 or 12
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
@@ -52,7 +52,7 @@ MAX_DISTANCES = Float64[]
 data_file_group_control = data_file_group_control * '_' * string(GROUPS) * "TGs.jld2"
 
 GROUP_CONTROL = (GROUPS != 1)
-@assert(GROUPS in (1, 2, 3, 4, 8, 12), "GROUPS must be 1, 2, 3, 4, 8, or 12")
+@assert(GROUPS in (1, 2, 3, 4, 6, 8, 12), "GROUPS must be 1, 2, 3, 4, 6, 8, or 12")
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -609,6 +609,8 @@ else
             x0 = [1.31, 1.4427, 1.35654, 1.28725, 1.28105, 0.0027, 0.0294, 1.8695, 2.0157, 1.8563, 1.1908, 0.0825]
         elseif GROUPS == 4
             x0 = [1.578, 1.991, 1.54259, 1.33791, 1.27339, 0.017865, 0.886214, 2.87895]
+        elseif GROUPS == 6
+            x0 = [1.7, 1.8, 1.5, 1.3, 1.497, 1.05, 2.5, 0.0, 3.0, 0.92]
         elseif GROUPS == 2
             x0 = [1.52628, 1.9693, 1.4923, 1.35422, 1.26623, 0.5599]
         elseif GROUPS == 3
@@ -660,11 +662,8 @@ if GROUP_CONTROL
             ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_power_ref", "rel_demand"], title="Rel. Power and Demand "*string(GROUPS)*" TGs", fig="Rel. Power and Demand", pltctrl)
 else
     plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
-            ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], fig="Rel. Power and Demand", pltctrl)
+            ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], fig="Rel. Power and Demand", title="Rel. Power and Demand (1 TG)", pltctrl)
 end
-# ## plot induction factor vs time for one turbine using calc_axial_induction2
-# induction_factors = induction_data[:, 2]
-# plot_rmt(time_vector, induction_factors; xlabel="Time [s]", ylabel="Axial Induction Factor", fig="induction", pltctrl)
 
 # Plot average axial induction factor per turbine group over time
 begin
