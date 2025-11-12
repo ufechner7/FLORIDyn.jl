@@ -3,10 +3,10 @@
 
 # Main script to run a model predictive control (MPC) simulation with FLORIDyn.jl
 # Currently, two modes are supported: control of all turbines with the same induction factor using CONTROL_POINTS parameters
-# and group control with CONTROL_POINTS + (GROUPS-1) parameters (CONTROL_POINTS for induction scaling at different time points 
-# and GROUPS-1 for individual group scaling, with the last group calculated from a constraint).
+# and group control with CONTROL_POINTS + (GROUPS-1) parameters (CONTROL_POINTS for induction corrections at different time points 
+# and GROUPS-1 for individual group corrections, with the last group calculated from a constraint).
 
-# The script uses the NOMAD.jl package for black-box optimization of the scaling parameters.
+# The script uses the NOMAD.jl package for black-box optimization of the correction parameters.
 # The number of groups can be 1, 2, 3, 4, 6, 8, or 12.
 # The mean square error between the production and demand is minimized.
 
@@ -165,31 +165,31 @@ function run_simulation(set_induction::AbstractMatrix; enable_online=false)
 end
 
 """
-    interpolate_hermite_spline(s::Float64, scaling::Vector) -> Float64
+    interpolate_hermite_spline(s::Float64, correction::Vector) -> Float64
 
 Perform piecewise cubic Hermite spline interpolation across control points.
 
 This function uses cubic Hermite spline interpolation between control points 
 evenly spaced along s ∈ [0, 1]. The method provides smooth C1-continuous transitions while
 respecting the control point values. The number of control points is determined
-from the length of the `scaling` vector.
+from the length of the `correction` vector.
 
 # Arguments
 - `s::Float64`: Normalized parameter in [0, 1] representing position along the curve
-- `scaling::Vector`: Vector containing control point values. For n control points,
+- `correction::Vector`: Vector containing control point values. For n control points,
   they are located at s = 0, 1/(n-1), 2/(n-1), ..., 1.0
 
 # Returns
 - `Float64`: Interpolated value at position s
 """
-function interpolate_hermite_spline(s::Float64, scaling::Vector)
-    n_points = length(scaling)
+function interpolate_hermite_spline(s::Float64, correction::Vector)
+    n_points = length(correction)
     @assert n_points >= 2 "Need at least 2 control points for interpolation"
     
     # Handle edge cases
     if n_points == 2
         # Linear interpolation for 2 points
-        return scaling[1] + s * (scaling[2] - scaling[1])
+        return correction[1] + s * (correction[2] - correction[1])
     end
     
     # Number of segments = number of control points - 1
@@ -200,15 +200,15 @@ function interpolate_hermite_spline(s::Float64, scaling::Vector)
     tangents = zeros(n_points)
     
     # First point: forward difference
-    tangents[1] = (scaling[2] - scaling[1]) / segment_width
+    tangents[1] = (correction[2] - correction[1]) / segment_width
     
     # Interior points: central differences
     for i in 2:(n_points-1)
-        tangents[i] = (scaling[i+1] - scaling[i-1]) / (2 * segment_width)
+        tangents[i] = (correction[i+1] - correction[i-1]) / (2 * segment_width)
     end
     
     # Last point: backward difference
-    tangents[n_points] = (scaling[n_points] - scaling[n_points-1]) / segment_width
+    tangents[n_points] = (correction[n_points] - correction[n_points-1]) / segment_width
     
     # Determine which segment we're in
     segment_idx = min(n_segments, Int(floor(s / segment_width)) + 1)
@@ -228,32 +228,32 @@ function interpolate_hermite_spline(s::Float64, scaling::Vector)
     h11 = t^3 - t^2
     
     # Interpolate using values and tangents at segment endpoints
-    p0 = scaling[segment_idx]
-    p1 = scaling[segment_idx + 1]
+    p0 = correction[segment_idx]
+    p1 = correction[segment_idx + 1]
     m0 = tangents[segment_idx]
     m1 = tangents[segment_idx + 1]
     
-    scaling_result = h00*p0 + h10*segment_width*m0 + h01*p1 + h11*segment_width*m1
+    correction_result = h00*p0 + h10*segment_width*m0 + h01*p1 + h11*segment_width*m1
     
-    return scaling_result
+    return correction_result
 end
 
 """
-    calc_axial_induction2(vis, time, scaling::Vector; group_id=nothing) -> (corrected_induction, distance)
+    calc_axial_induction2(vis, time, correction::Vector; group_id=nothing) -> (corrected_induction, distance)
 
-Calculate the axial induction factor for a turbine using optimizable scaling parameters.
+Calculate the axial induction factor for a turbine using optimizable correction parameters.
 
 This function computes the axial induction factor based on:
-1. Time-dependent scaling via cubic Hermite spline interpolation of control points
-2. Optional group-specific scaling factors for individual turbine group control
+1. Time-dependent correction via cubic Hermite spline interpolation of control points
+2. Optional group-specific correction factors for individual turbine group control
 3. Demand-based adjustment with correction for power coefficient nonlinearity
 
 # Arguments
 - `vis`: [`Vis`](@ref) object containing visualization settings (uses `t_skip`)
 - `time::Float64`: Current simulation time in seconds
-- `scaling::Vector{Float64}`: Optimization parameters vector containing:
-  - Elements 1 to CONTROL_POINTS: Time-dependent scaling control points
-  - Elements CONTROL_POINTS+1 to end: Group-specific scaling factors (if GROUP_CONTROL)
+- `correction::Vector{Float64}`: Optimization parameters vector containing:
+  - Elements 1 to CONTROL_POINTS: Time-dependent correction control points
+  - Elements CONTROL_POINTS+1 to end: Group-specific correction factors (if GROUP_CONTROL)
 - `group_id::Union{Int,Nothing}`: Turbine group identifier (1 to GROUPS), or `nothing` for no group control
 
 # Returns
@@ -262,20 +262,20 @@ This function computes the axial induction factor based on:
 
 # Details
 The function operates in several stages:
-1. Extracts group-specific scaling factor `id_scaling` from the scaling vector (if applicable)
-   - For groups 1 to GROUPS-1: directly from `scaling[CONTROL_POINTS + group_id]`
-   - For the last group (GROUPS): calculated as `GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling[(CONTROL_POINTS+1):end])`
+1. Extracts group-specific correction factor `id_correction` from the correction vector (if applicable)
+   - For groups 1 to GROUPS-1: directly from `correction[CONTROL_POINTS + group_id]`
+   - For the last group (GROUPS): calculated as `GROUPS * MAX_ID_SCALING / 2.0 - sum(correction[(CONTROL_POINTS+1):end])`
      to reduce the number of optimization variables by one
 2. Computes normalized time parameter `s` ∈ [0,1] between T_START and T_END
-3. Interpolates time-dependent scaling using [`interpolate_hermite_spline`](@ref)
-4. Adjusts demand by group-specific scaling and applies time-dependent scaling
+3. Interpolates time-dependent correction using [`interpolate_hermite_spline`](@ref)
+4. Adjusts demand by group-specific correction and applies time-dependent correction
 5. Converts scaled demand to induction, applies power coefficient correction
 6. Ensures minimum induction to avoid numerical issues in wake model
 
 # Global Constants Used
 - `CONTROL_POINTS`: Number of time-dependent control points
 - `GROUPS`: Number of turbine groups
-- `MAX_ID_SCALING`: Maximum allowed group scaling factor
+- `MAX_ID_SCALING`: Maximum allowed group correction factor
 - `T_START`: Time offset to start ramping demand (relative to `vis.t_skip`)
 - `T_END`: Time offset to reach final demand (relative to `vis.t_skip`)
 - `MIN_INDUCTION`: Minimum induction to prevent NaN in FLORIS wake model
@@ -285,17 +285,17 @@ The function operates in several stages:
 - [`interpolate_hermite_spline`](@ref): Performs cubic Hermite spline interpolation
 - [`calc_induction_matrix2`](@ref): Uses this function to build induction matrices
 """
-function calc_axial_induction2(vis, time, scaling::Vector; group_id=nothing)
+function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     distance = 0.0
-    id_scaling = 1.0
-    if length(scaling) > CONTROL_POINTS && !isnothing(group_id) && group_id >= 1
+    id_correction = 1.0
+    if length(correction) > CONTROL_POINTS && !isnothing(group_id) && group_id >= 1
         if group_id <= GROUPS - 1
-            id_scaling = scaling[CONTROL_POINTS + group_id]
+            id_correction = correction[CONTROL_POINTS + group_id]
         elseif group_id == GROUPS
             # Last group: calculate as GROUPS * MAX_ID_SCALING / 2.0 minus sum of groups 1 to GROUPS-1
-            id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling[(CONTROL_POINTS+1):end])
+            id_correction = GROUPS * MAX_ID_SCALING / 2.0 - sum(correction[(CONTROL_POINTS+1):end])
         end
-        id_scaling = clamp(id_scaling, 0.0, MAX_ID_SCALING)
+        id_correction = clamp(id_correction, 0.0, MAX_ID_SCALING)
     end
     t1 = vis.t_skip + T_START  # Time to start increasing demand
     t2 = vis.t_skip + T_END    # Time to reach final demand
@@ -307,15 +307,15 @@ function calc_axial_induction2(vis, time, scaling::Vector; group_id=nothing)
     s = clamp((time - t1) / (t2 - t1), 0.0, 1.0)
     
     # Perform piecewise cubic Hermite spline interpolation
-    scaling_result = interpolate_hermite_spline(s, scaling[1:CONTROL_POINTS])
+    correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS])
     
     demand = calc_demand(vis, time)
     demand_end = calc_demand(vis, t2)
-    interpolated_demand = demand_end - (demand_end - demand) * id_scaling
-    scaled_demand = scaling_result * interpolated_demand
+    interpolated_demand = demand_end - (demand_end - demand) * id_correction
+    scaled_demand = correction_result * interpolated_demand
     if scaled_demand > 1.0
         distance = scaled_demand - 1.0
-        # @warn("Scaled demand exceeds 100% at time=$(time)s: scaled_demand=$(scaled_demand), scaling_result=$(scaling_result), demand=$(demand), id_scaling=$(id_scaling)")
+        # @warn("Scaled demand exceeds 100% at time=$(time)s: scaled_demand=$(scaled_demand), correction_result=$(correction_result), demand=$(demand), id_correction=$(id_correction)")
     end
     base_induction = calc_induction(scaled_demand * cp_max)
 
@@ -341,7 +341,7 @@ function calc_axial_induction2(vis, time, scaling::Vector; group_id=nothing)
     return corrected_induction, distance
 end
 
-function calc_induction_matrix2(vis, ta, time_step, t_end; scaling)
+function calc_induction_matrix2(vis, ta, time_step, t_end; correction)
     # Create time vector from 0 to t_end with time_step intervals
     time_vector = 0:time_step:t_end
     n_time_steps = length(time_vector)
@@ -359,7 +359,7 @@ function calc_induction_matrix2(vis, ta, time_step, t_end; scaling)
     for (t_idx, time) in enumerate(time_vector)
         for i in 1:n_turbines
             group_id = FLORIDyn.turbine_group(ta, i)
-            axial_induction, distance = calc_axial_induction2(vis, time, scaling; group_id=group_id)
+            axial_induction, distance = calc_axial_induction2(vis, time, correction; group_id=group_id)
             induction_matrix[t_idx, i + 1] = axial_induction
             max_distance = max(max_distance, distance)
         end
@@ -383,19 +383,19 @@ function calc_error(vis, rel_power, demand_values, time_step)
 end
 
 """
-    plot_induction(vis, optimal_scaling::Vector{Float64})
+    plot_induction(vis, optimal_correction::Vector{Float64})
 
 Plot the axial induction factor for turbine group 1 over time range 500-1500s.
 
 # Arguments
 - `vis`: Visualization object containing `t_skip` parameter
-- `optimal_scaling::Vector{Float64}`: Optimal scaling parameters from optimization
+- `optimal_correction::Vector{Float64}`: Optimal correction parameters from optimization
 
 # Description
 Uses `calc_axial_induction2` to compute induction values for group 1 and plots
 them against time. The plot uses the global `pltctrl` variable for thread-safe plotting.
 """
-function plot_induction(vis, optimal_scaling::Vector{Float64})
+function plot_induction(vis, optimal_correction::Vector{Float64})
     # Time range: 500 to 1500 seconds
     t_start = vis.t_skip
     t_end   = vis.t_skip + T_END + T_EXTRA
@@ -403,9 +403,9 @@ function plot_induction(vis, optimal_scaling::Vector{Float64})
     
     # Print diagnostic information
     println("\n=== Diagnostic: plot_induction ===")
-    println("optimal_scaling[1:$CONTROL_POINTS]: ", optimal_scaling[1:CONTROL_POINTS])
-    if length(optimal_scaling) > CONTROL_POINTS
-        println("optimal_scaling[$(CONTROL_POINTS+1)] (group 1 id_scaling): ", optimal_scaling[CONTROL_POINTS+1])
+    println("optimal_correction[1:$CONTROL_POINTS]: ", optimal_correction[1:CONTROL_POINTS])
+    if length(optimal_correction) > CONTROL_POINTS
+        println("optimal_correction[$(CONTROL_POINTS+1)] (group 1 id_correction): ", optimal_correction[CONTROL_POINTS+1])
     end
     
     # Create time vector
@@ -417,7 +417,7 @@ function plot_induction(vis, optimal_scaling::Vector{Float64})
     group_id = 1
     
     for (i, t) in enumerate(time_vec)
-        induction, _ = calc_axial_induction2(vis, t, optimal_scaling; group_id=group_id)
+        induction, _ = calc_axial_induction2(vis, t, optimal_correction; group_id=group_id)
         induction_values[i] = induction
     end
     
@@ -438,63 +438,63 @@ function plot_induction(vis, optimal_scaling::Vector{Float64})
 end
 
 """
-    plot_scaling_curve(optimal_scaling::Vector{Float64})
+    plot_correction_curve(optimal_correction::Vector{Float64})
 
-Plot the scaling curve from the piecewise cubic Hermite spline interpolation over s=0..1.
+Plot the correction curve from the piecewise cubic Hermite spline interpolation over s=0..1.
 
 # Arguments
-- `optimal_scaling::Vector{Float64}`: Optimal scaling parameters from optimization
+- `optimal_correction::Vector{Float64}`: Optimal correction parameters from optimization
 
 # Description
-Plots the piecewise cubic Hermite spline interpolation curve showing how the scaling
+Plots the piecewise cubic Hermite spline interpolation curve showing how the correction
 factor varies across the normalized parameter s from 0 to 1. Uses the first CONTROL_POINTS
-elements of `optimal_scaling` as control points evenly spaced from s = 0 to s = 1.0.
+elements of `optimal_correction` as control points evenly spaced from s = 0 to s = 1.0.
 """
-function plot_scaling_curve(optimal_scaling::Vector{Float64})
+function plot_correction_curve(optimal_correction::Vector{Float64})
     # Create s vector from 0 to 1
     s_vec = 0.0:0.01:1.0
     n_points = length(s_vec)
     
-    # Calculate scaling_result for each s value
-    scaling_values = zeros(n_points)
+    # Calculate correction_result for each s value
+    correction_values = zeros(n_points)
     
     for (i, s) in enumerate(s_vec)
-        scaling_values[i] = interpolate_hermite_spline(s, optimal_scaling[1:CONTROL_POINTS])
+        correction_values[i] = interpolate_hermite_spline(s, optimal_correction[1:CONTROL_POINTS])
     end
     
     # Print diagnostic information
-    println("\n=== Diagnostic: plot_scaling_curve ===")
-    println("Control points (scaling[1:$CONTROL_POINTS]): ", optimal_scaling[1:CONTROL_POINTS])
-    println("Min scaling: $(round(minimum(scaling_values), digits=4))")
-    println("Max scaling: $(round(maximum(scaling_values), digits=4))")
+    println("\n=== Diagnostic: plot_correction_curve ===")
+    println("Control points (correction[1:$CONTROL_POINTS]): ", optimal_correction[1:CONTROL_POINTS])
+    println("Min correction: $(round(minimum(correction_values), digits=4))")
+    println("Max correction: $(round(maximum(correction_values), digits=4))")
     println("======================================\n")
     
     # Plot
-    plot_rmt(collect(s_vec), scaling_values;
+    plot_rmt(collect(s_vec), correction_values;
              xlabel="Normalized Parameter s [-]",
-             ylabel="Scaling Factor [-]",
-             title="Hermite Spline Interpolation Scaling Curve",
-             fig="Scaling Curve",
+             ylabel="Correction Factor [-]",
+             title="Hermite Spline Interpolation Correction Curve",
+             fig="Correction Curve",
              pltctrl=pltctrl)
 end
-function plot_scaling2(optimal_scaling::Vector{Float64})
-    points = optimal_scaling[1:CONTROL_POINTS]
+function plot_correction2(optimal_correction::Vector{Float64})
+    points = optimal_correction[1:CONTROL_POINTS]
     s_vec=0:CONTROL_POINTS-1
     plt.plot(s_vec./(CONTROL_POINTS-1), points, label="Control Points",marker="x", linestyle="None")
     # Create s vector from 0 to 1
     s_vec1 = 0.0:0.01:1.0
     n_points = length(s_vec1)
     
-    # Calculate scaling_result for each s value
-    scaling_values = zeros(n_points)
+    # Calculate correction_result for each s value
+    correction_values = zeros(n_points)
     
     for (i, s) in enumerate(s_vec1)
-        scaling_values[i] = interpolate_hermite_spline(s, optimal_scaling[1:CONTROL_POINTS])
+        correction_values[i] = interpolate_hermite_spline(s, optimal_correction[1:CONTROL_POINTS])
     end
-    plt.plot(collect(s_vec1), scaling_values, label="Interpolated", linestyle="--")
+    plt.plot(collect(s_vec1), correction_values, label="Interpolated", linestyle="--")
     plt.xlabel("Normalized Parameter s [-]")
-    plt.ylabel("Scaling Factor [-]")
-    plt.title("Hermite Spline Interpolation Scaling and Control Points")
+    plt.ylabel("Correction Factor [-]")
+    plt.title("Hermite Spline Interpolation Correction and Control Points")
     plt.legend()
     plt.grid(true)
     plt.show()
@@ -512,14 +512,14 @@ end
 """
     eval_fct(x::Vector{Float64}) -> Tuple{Bool, Bool, Vector{Float64}}
 
-Evaluation function for NOMAD optimization of the scaling parameter.
+Evaluation function for NOMAD optimization of the correction parameter.
 
 This function calculates the mean squared error between the relative power output 
-and demand values for a given scaling parameter. It is designed to be minimized 
+and demand values for a given correction parameter. It is designed to be minimized 
 by the NOMAD optimizer.
 
 # Arguments
-- `x::Vector{Float64}`: A vector containing the scaling parameters
+- `x::Vector{Float64}`: A vector containing the correction parameters
 
 # Returns
 - `success::Bool`: Always `true` to indicate successful evaluation
@@ -534,11 +534,11 @@ by the NOMAD optimizer.
 - `GROUP_CONTROL`: Boolean flag for group control mode
 """
 function eval_fct(x::Vector{Float64})
-    scaling = x  # scaling is now a vector with parameters
+    correction = x  # correction is now a vector with parameters
     print(".")  # progress indicator
     
-    # Calculate induction matrix with current scaling
-    induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; scaling=scaling)
+    # Calculate induction matrix with current correction
+    induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=correction)
     if max_distance > 0.0
         push!(MAX_DISTANCES, max_distance)
     end
@@ -571,7 +571,7 @@ function eval_fct(x::Vector{Float64})
 end
 if GROUP_CONTROL
     n_group_params = GROUPS - 1  # One less because last group is calculated from constraint
-    n_total_params = CONTROL_POINTS + n_group_params  # CONTROL_POINTS global scaling + (GROUPS-1) group scaling
+    n_total_params = CONTROL_POINTS + n_group_params  # CONTROL_POINTS global correction + (GROUPS-1) group correction
     
     # Create lower and upper bounds dynamically
     lower_bound = vcat(fill(1.0, CONTROL_POINTS), fill(0.0, n_group_params))
@@ -593,12 +593,12 @@ if GROUP_CONTROL
 else
         # Set up NOMAD optimization problem
     p = NomadProblem(
-        CONTROL_POINTS,      # dimension (CONTROL_POINTS parameters: scaling at CONTROL_POINTS time points)
+        CONTROL_POINTS,      # dimension (CONTROL_POINTS parameters: correction at CONTROL_POINTS time points)
         1,                   # number of outputs (just the objective)
         ["OBJ"],             # output types: OBJ = objective to minimize
         eval_fct;            # evaluation function
-        lower_bound=fill(1.0, CONTROL_POINTS),   # minimum scaling values
-        upper_bound=vcat([2.5], fill(3.0, CONTROL_POINTS - 1))    # maximum scaling values
+        lower_bound=fill(1.0, CONTROL_POINTS),   # minimum correction values
+        upper_bound=vcat([2.5], fill(3.0, CONTROL_POINTS - 1))    # maximum correction values
     )
 
     # Set NOMAD options
@@ -621,7 +621,7 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
     demand_values = results["demand_values"]
     rel_power     = results["rel_power"]
     induction_data = results["induction_data"]
-    optimal_scaling = results["optimal_scaling"]
+    optimal_correction = results["optimal_correction"]
     mse = results["mse"]
 else
     # Run optimization and simulation
@@ -647,13 +647,13 @@ else
         result = solve(p, x0)
         results_ref = JLD2.load(data_file, "results")
         rel_power_ref = results_ref["rel_power"]
-        optimal_scaling = result.x_best_feas
+        optimal_correction = result.x_best_feas
     else
         result = solve(p, [1.18291, 1.19575, 1.21248, 1.2409, 1.30345])  # Start from initial guess
-        optimal_scaling = result.x_best_feas[1:CONTROL_POINTS]
+        optimal_correction = result.x_best_feas[1:CONTROL_POINTS]
     end
 
-    induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; scaling=optimal_scaling)
+    induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=optimal_correction)
     
     # Enable online visualization for the final simulation with optimized parameters
     enable_viz = ONLINE && GROUP_CONTROL
@@ -672,7 +672,7 @@ else
         "demand_values" => demand_values,
         "rel_power" => rel_power,
         "induction_data" => induction_data,
-        "optimal_scaling" => optimal_scaling,
+        "optimal_correction" => optimal_correction,
         "mse" => mse,
     ))
 end
@@ -744,20 +744,20 @@ begin
     end
 end
 
-function print_gains(optimal_scaling)
+function print_gains(optimal_correction)
     if !GROUP_CONTROL || GROUPS == 1
         println("\n=== Power Gain per Turbine Group ===")
         println("Group gains not applicable (GROUP_CONTROL is false or only one group).")
         return
     end
-    scaling = optimal_scaling[(CONTROL_POINTS+1):end]
-    id_scaling = GROUPS * MAX_ID_SCALING / 2.0 - sum(scaling)
-    push!(scaling, id_scaling)
+    correction = optimal_correction[(CONTROL_POINTS+1):end]
+    id_correction = GROUPS * MAX_ID_SCALING / 2.0 - sum(correction)
+    push!(correction, id_correction)
     println("\n=== Power Gain per Turbine Group ===")
-    for (i, gain) in enumerate(scaling)
+    for (i, gain) in enumerate(correction)
         println("Group $i: $(round(gain, digits=2))")
     end
-    println("mean: $(round(mean(scaling), digits=2))")
+    println("mean: $(round(mean(correction), digits=2))")
 end
 
 if GROUP_CONTROL
@@ -772,7 +772,7 @@ if GROUP_CONTROL
     println()
     plot_rmt((1:length(rel_power_gain)).*4, rel_power_gain .* 100; xlabel="Time [s]", ylabel="Rel. Power Gain [%]", fig="rel_power_ref", pltctrl)
     results = JLD2.load(data_file_group_control, "results")
-    print_gains(optimal_scaling)
+    print_gains(optimal_correction)
 else
     results = JLD2.load(data_file, "results")
 end

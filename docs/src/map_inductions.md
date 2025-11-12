@@ -85,6 +85,10 @@ we solve the following optimization problem using the NOMAD optimizer:
 \end{equation}
 where $p(t)$ is the relative wind park power output at time $t$, $t_{\text{start}}$ is the time when the demand starts to increase, $t_{\text{end}}$ the time when it reaches its maximum and $t_{\text{extra}}$ the time the wind field needs to reach its equilibrium.
 
+Fig. \ref{fig:correction-factor} shows optimal correction factors as a function of the normalized parameter $s$ as determined by the optimizer.
+
+![Correction factor\label{fig:correction-factor}](Scaling_Curve.png){width=70%}
+
 If we combine Eq. \ref{eq:induction-time} and Eq. \ref{eq:correction-func}, we get
 \begin{equation}
 \label{eq:induction-time-corrected}
