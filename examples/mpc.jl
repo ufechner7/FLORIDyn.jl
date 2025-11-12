@@ -7,7 +7,7 @@
 # and GROUPS-1 for individual group scaling, with the last group calculated from a constraint).
 
 # The script uses the NOMAD.jl package for black-box optimization of the scaling parameters.
-# The number of groups can be 1, 2, 3, 4, 8, or 12.
+# The number of groups can be 1, 2, 3, 4, 6, 8, or 12.
 # The mean square error between the production and demand is minimized.
 
 # Always run the script with GROUPS = 1 first to get a baseline result without group control. This baseline 
@@ -35,7 +35,7 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 6 # must be 1, 2, 3, 4, 8 or 12
+GROUPS = 1 # must be 1, 2, 3, 4, 6, 8 or 12
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
@@ -477,6 +477,28 @@ function plot_scaling_curve(optimal_scaling::Vector{Float64})
              fig="Scaling Curve",
              pltctrl=pltctrl)
 end
+function plot_scaling2(optimal_scaling::Vector{Float64})
+    points = optimal_scaling[1:CONTROL_POINTS]
+    s_vec=0:CONTROL_POINTS-1
+    plt.plot(s_vec./(CONTROL_POINTS-1), points, label="Control Points",marker="x", linestyle="None")
+    # Create s vector from 0 to 1
+    s_vec1 = 0.0:0.01:1.0
+    n_points = length(s_vec1)
+    
+    # Calculate scaling_result for each s value
+    scaling_values = zeros(n_points)
+    
+    for (i, s) in enumerate(s_vec1)
+        scaling_values[i] = interpolate_hermite_spline(s, optimal_scaling[1:CONTROL_POINTS])
+    end
+    plt.plot(collect(s_vec1), scaling_values, label="Interpolated", linestyle="--")
+    plt.xlabel("Normalized Parameter s [-]")
+    plt.ylabel("Scaling Factor [-]")
+    plt.title("Hermite Spline Interpolation Scaling and Control Points")
+    plt.legend()
+    plt.grid(true)
+    plt.show()
+end
 
 
 # Calculate storage time at 100% power in seconds
@@ -610,7 +632,7 @@ else
         elseif GROUPS == 4
             x0 = [1.578, 1.991, 1.54259, 1.33791, 1.27339, 0.017865, 0.886214, 2.87895]
         elseif GROUPS == 6
-            x0 = [1.7, 1.8, 1.5, 1.3, 1.497, 1.05, 2.5, 0.0, 3.0, 0.92]
+            x0 = [1.65486, 1.97541, 1.5316, 1.31961, 1.25507, 0.34362, 2.65742, 0.00128, 2.99976, 1.61484]
         elseif GROUPS == 2
             x0 = [1.52628, 1.9693, 1.4923, 1.35422, 1.26623, 0.5599]
         elseif GROUPS == 3
