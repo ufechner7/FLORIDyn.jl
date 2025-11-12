@@ -6,7 +6,7 @@ SPDX-FileCopyrightText = "2025 Uwe Fechner"
 SPDX-License-Identifier = "MIT"
 
 [[annotations]]
-path = ["docs/src/*.png", "docs/src/*.md"]
+path = ["docs/src/*.png", "docs/src/*.md", "docs/src/*.bib"]
 SPDX-FileCopyrightText = "2025 Uwe Fechner"
 SPDX-License-Identifier = "CC-BY-4.0"
 
