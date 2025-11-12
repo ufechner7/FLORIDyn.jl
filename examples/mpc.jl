@@ -35,7 +35,7 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 4 # must be 1, 2, 3, 4, 6, 8 or 12
+GROUPS = 4 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
