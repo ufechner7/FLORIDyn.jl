@@ -78,7 +78,7 @@ To obtain the vector of the control points
 \mathbf{c} = c_1, ..., c_n
 \end{equation}
 
-we solve the following optimization problem using the NOMAD optimizer:
+we solve the following optimization problem using the NOMAD [@montoison-pascal-salomon-nomad-2020] optimizer:
 \begin{equation}
 \label{eq:optimization}
 \min_{\mathbf{c}} \sum_{t=t_{\text{start}}}^{t_{\text{end}}+t_{\text{extra}}} \left(p(t) - d(t) \right)^2
