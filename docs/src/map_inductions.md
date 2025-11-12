@@ -73,20 +73,40 @@ m_i = \begin{cases}
 \end{cases}
 \end{equation}
 
+To obtain the vector
+\begin{equation}
+\mathbf{c} = c_1, ..., c_n
+\end{equation}
+
+we solve the following optimization problem using the NOMAD optimizer:
+\begin{equation}
+\label{eq:optimization}
+\min_{\mathbf{c}} \sum_{t=t_{\text{start}}}^{t_{\text{end}}+t_{\text{extra}}} \left(p(t) - d(t) \right)^2
+\end{equation}
+where $p(t)$ is the relative wind park power output at time $t$, $t_{\text{start}}$ is the time when the demand starts to increase, {t_{\text{end}} the time when it reaches its maximum and t_{\text{extra}} the time the wind field needs to reach its equilibrium.
+
 If we combine Eq. \ref{eq:induction-time} and Eq. \ref{eq:correction-func}, we get
 \begin{equation}
 \label{eq:induction-time-corrected}
 a = f(c(t) * d(t))
 \end{equation}
 
+Using this equation, we can calculate the vector
+\begin{equation}
+\mathbf{a} = a_1, ..., a_m
+\end{equation}
+for each time step of the simulation. The result of the FLORIDyn simulation is the vector
+\begin{equation}
+\mathbf{p} = p_1, ..., p_m
+\end{equation}
+of the relative wind park power (relative to the power without wakes at free-flow wind speed).
 
-Fig. \ref{fig:power-demand-1t} shows the resulting induction factor as a function of time:
+\newpage
+
+Fig. \ref{fig:power-demand-1t} shows the resulting relative wind park power and relative demand as a function of time:
 
 ![Relative Power and Demand\label{fig:power-demand-1t}](Rel_Power_and_Demand_1T.png){width=70%}
 
-
-
-\newpage
 
 ## Turbine group (TG) control
 The axial induction factor $a$ of each turbine group shall be controlled to achieve the best match between power demand and power production.
