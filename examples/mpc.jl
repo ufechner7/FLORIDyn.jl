@@ -39,7 +39,7 @@ GROUPS = 4 # must be 1, 2, 3, 4, 6, 8 or 12
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 1       # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_TGC = false
 USE_STEP = false
@@ -53,8 +53,11 @@ MAX_DISTANCES = Float64[]
 data_file_group_control = data_file_group_control * '_' * string(GROUPS) * "TGs.jld2"
 
 GROUP_CONTROL = (GROUPS != 1)
-@assert(GROUPS in (1, 2, 3, 4, 6, 8, 12), "GROUPS must be 1, 2, 3, 4, 6, 8, or 12")
-
+if USE_HARDCODED_INITIAL_GUESS
+    @assert(GROUPS in (1, 2, 3, 4, 6, 8, 12), "GROUPS must be 1, 2, 3, 4, 6, 8, or 12")
+else
+    @assert(GROUPS >= 1, "GROUPS must be at least 1")
+end
 # Load vis settings from YAML file
 vis = Vis(vis_file)
 vis.save = ONLINE
