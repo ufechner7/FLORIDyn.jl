@@ -315,22 +315,9 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     scaled_demand = correction_result * interpolated_demand
     if scaled_demand > 1.0
         distance = scaled_demand - 1.0
-        # @warn("Scaled demand exceeds 100% at time=$(time)s: scaled_demand=$(scaled_demand), correction_result=$(correction_result), demand=$(demand), id_correction=$(id_correction)")
     end
     base_induction = calc_induction(scaled_demand * cp_max)
 
-    # Calculate interpolation factor
-    # 1.0 at t=t1 (full correction), 0.0 at t=t2 (no correction)
-    # Linear interpolation between t1 and t2
-    if time <= t1
-        interp_factor = 1.0  # Full correction before and at t1
-    elseif time >= t2
-        interp_factor = 0.0  # No correction at and after t2
-    else
-        # Linear interpolation between t1 and t2
-        interp_factor = ((t2 - time) / (t2 - t1))
-    end
-    
     rel_power = calc_cp(base_induction) / cp_max
     corrected_induction = calc_induction(rel_power * cp_max)
     
