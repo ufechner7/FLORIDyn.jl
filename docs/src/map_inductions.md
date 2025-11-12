@@ -1,4 +1,4 @@
-# Map free variables to the induction factors
+# Optimize the turbine induction factors
 
 ## Collective turbine control
 The most simple way to match production and demand is to control the induction factor of the turbines of the wind farm cluster, assuming all use the same induction factor.
@@ -73,7 +73,7 @@ m_i = \begin{cases}
 \end{cases}
 \end{equation}
 
-To obtain the vector
+To obtain the vector of the control points
 \begin{equation}
 \mathbf{c} = c_1, ..., c_n
 \end{equation}
@@ -83,7 +83,7 @@ we solve the following optimization problem using the NOMAD optimizer:
 \label{eq:optimization}
 \min_{\mathbf{c}} \sum_{t=t_{\text{start}}}^{t_{\text{end}}+t_{\text{extra}}} \left(p(t) - d(t) \right)^2
 \end{equation}
-where $p(t)$ is the relative wind park power output at time $t$, $t_{\text{start}}$ is the time when the demand starts to increase, {t_{\text{end}} the time when it reaches its maximum and t_{\text{extra}} the time the wind field needs to reach its equilibrium.
+where $p(t)$ is the relative wind park power output at time $t$, $t_{\text{start}}$ is the time when the demand starts to increase, $t_{\text{end}}$ the time when it reaches its maximum and $t_{\text{extra}}$ the time the wind field needs to reach its equilibrium.
 
 If we combine Eq. \ref{eq:induction-time} and Eq. \ref{eq:correction-func}, we get
 \begin{equation}
@@ -91,11 +91,15 @@ If we combine Eq. \ref{eq:induction-time} and Eq. \ref{eq:correction-func}, we g
 a = f(c(t) * d(t))
 \end{equation}
 
-Using this equation, we can calculate the vector
+Using this equation, we can calculate the vector of the induction factors
 \begin{equation}
 \mathbf{a} = a_1, ..., a_m
 \end{equation}
-for each time step of the simulation. The result of the FLORIDyn simulation is the vector
+for each time step of the simulation. Fig. \ref{fig:induction-factor} shows optimal induction factors as a function of time as calculated by the optimizer.
+
+![Induction factor, collective turbine control\label{fig:induction-factor}](Induction_by_Group.png){width=70%}
+
+Using these induction factors as input, the result of the FLORIDyn simulation is the vector
 \begin{equation}
 \mathbf{p} = p_1, ..., p_m
 \end{equation}
