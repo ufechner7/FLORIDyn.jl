@@ -35,11 +35,12 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 1 # must be 1, 2, 3, 4, 6, 8 or 12
+GROUPS = 4 # must be 1, 2, 3, 4, 6, 8 or 12
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
 MAX_STEPS = 1       # maximum number black-box evaluations for NOMAD optimizer
+USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -613,22 +614,27 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
 else
     # Run optimization and simulation
     if GROUP_CONTROL
-        # Create initial guess: CONTROL_POINTS global parameters + (GROUPS-1) group parameters
-        if GROUPS == 8
-            x0 = [1.31, 1.4427, 1.35654, 1.28725, 1.28105, 0.0027, 0.0294, 1.8695, 2.0157, 1.8563, 1.1908, 0.0825]
-        elseif GROUPS == 4
-            x0 = [1.578, 1.991, 1.54259, 1.33791, 1.27339, 0.017865, 0.886214, 2.87895]
-        elseif GROUPS == 6
-            x0 = [1.65486, 1.97541, 1.5316, 1.31961, 1.25507, 0.34362, 2.65742, 0.00128, 2.99976, 1.61484]
-        elseif GROUPS == 2
-            x0 = [1.52628, 1.9693, 1.4923, 1.35422, 1.26623, 0.5599]
-        elseif GROUPS == 3
-            x0 = [1.35, 1.985, 1.7041, 1.396, 1.275, 0.1022, 1.3581]
-        elseif GROUPS == 12
-            # CONTROL_POINTS global + 11 group parameters (last group calculated from constraint)
-            x0 = [1.409, 1.60396, 1.43527, 1.30722, 1.26675, 0.0877, 0.1621, 0.1235, 1.99722, 0.016, 1.9725, 1.34014, 1.8945, 0.85491, 2.8402, 2.0101]
+        if USE_HARDCODED_INITIAL_GUESS
+            # Create initial guess: CONTROL_POINTS global parameters + (GROUPS-1) group parameters
+            if GROUPS == 8
+                x0 = [1.31, 1.4427, 1.35654, 1.28725, 1.28105, 0.0027, 0.0294, 1.8695, 2.0157, 1.8563, 1.1908, 0.0825]
+            elseif GROUPS == 4
+                x0 = [1.513, 2.0, 1.54959, 1.35491, 1.27939, 0.0, 0.797814, 2.99485]
+            elseif GROUPS == 6
+                x0 = [1.65486, 1.97541, 1.5316, 1.31961, 1.25507, 0.34362, 2.65742, 0.00128, 2.99976, 1.61484]
+            elseif GROUPS == 2
+                x0 = [1.52628, 1.9693, 1.4923, 1.35422, 1.26623, 0.5599]
+            elseif GROUPS == 3
+                x0 = [1.35, 1.985, 1.7041, 1.396, 1.275, 0.1022, 1.3581]
+            elseif GROUPS == 12
+                # CONTROL_POINTS global + 11 group parameters (last group calculated from constraint)
+                x0 = [1.409, 1.60396, 1.43527, 1.30722, 1.26675, 0.0877, 0.1621, 0.1235, 1.99722, 0.016, 1.9725, 1.34014, 1.8945, 0.85491, 2.8402, 2.0101]
+            else
+                # Generic initial guess for other group counts
+                x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
+            end
         else
-            # Generic initial guess for other group counts
+            # Default initial guess: all 1.5 for global + all 1.0 for group parameters
             x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
         end
         result = solve(p, x0)
