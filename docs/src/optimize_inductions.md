@@ -85,7 +85,7 @@ we solve the following optimization problem using the NOMAD optimizer:
 \end{equation}
 where $p(t)$ is the relative wind park power output at time $t$, $t_{\text{start}}$ is the time when the demand starts to increase, $t_{\text{end}}$ the time when it reaches its maximum and $t_{\text{extra}}$ the time the wind field needs to reach its equilibrium.
 
-Fig. \ref{fig:correction-factor} shows optimal correction factors as a function of the normalized parameter $s$ as determined by the optimizer.
+Fig. \ref{fig:correction-factor} shows optimal correction factors as a function of the normalized parameter $s$ as determined by the optimizer. The curve is rising when the demand is rising. This makes sense, because a higher demand causes higher induction factors, which cause more wake losses that need to be compensated.
 
 ![Correction factor\label{fig:correction-factor}](Scaling_Curve.png){width=70%}
 
@@ -108,8 +108,6 @@ Using these induction factors as input, the result of the FLORIDyn simulation is
 \mathbf{p} = p_1, ..., p_m
 \end{equation}
 of the relative wind park power (relative to the power without wakes at free-flow wind speed).
-
-\newpage
 
 Fig. \ref{fig:power-demand-1t} shows the resulting relative wind park power and relative demand as a function of time:
 
