@@ -103,7 +103,7 @@ for each time step of the simulation. Fig. \ref{fig:induction-factor} shows opti
 
 ![Induction factor, collective turbine control\label{fig:induction-factor}](Induction_by_Group.png){width=70%}
 
-Using these induction factors as input, the result of the FLORIDyn simulation is the vector
+Using these induction factors as input, the result of the FLORIDyn [@becker2022floridyn] simulation is the vector
 \begin{equation}
 \mathbf{p} = p_1, ..., p_m
 \end{equation}
@@ -128,3 +128,5 @@ We can write:
 \label{eq:induction-group}
 a_i = f(i, t), \quad i \in \{1, \ldots, n\}
 \end{equation}
+
+# References
