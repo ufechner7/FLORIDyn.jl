@@ -35,7 +35,7 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 4 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
@@ -469,6 +469,7 @@ function plot_correction_curve(optimal_correction::Vector{Float64})
              pltctrl=pltctrl)
 end
 function plot_correction2(optimal_correction::Vector{Float64})
+    plt.figure("Hermite Spline Interpolation Correction and Control Points")
     points = optimal_correction[1:CONTROL_POINTS]
     s_vec=0:CONTROL_POINTS-1
     plt.plot(s_vec./(CONTROL_POINTS-1), points, label="Control Points",marker="x", linestyle="None")
@@ -487,7 +488,7 @@ function plot_correction2(optimal_correction::Vector{Float64})
     plt.ylabel("Correction Factor [-]")
     plt.title("Hermite Spline Interpolation Correction and Control Points")
     plt.legend()
-    plt.grid(true)
+    plt.grid(true, color = "#DDDDDD")
     plt.show()
 end
 
@@ -755,6 +756,10 @@ function print_gains(optimal_correction)
     end
     println("mean: $(round(mean(correction), digits=2))")
 end
+
+if !isnothing(plt)
+    plot_correction2(optimal_correction)
+end 
 
 if GROUP_CONTROL
     # calculate rel_power-rel_power_ref
