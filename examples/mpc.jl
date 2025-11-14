@@ -38,16 +38,15 @@ data_file_group_control = "data/mpc_result_group_control"
 GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
-SIMULATE = true      # if false, load cached results if available
-MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
+MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
 ONLINE  = false  # if true, enable online plotting during simulation and create video
-T_START = 240   # relative time to start increasing demand
-T_END   = 960   # relative time to reach final demand
-T_EXTRA = 2580  # extra time in addition to sim.end_time for MPC simulation
+T_START = 240    # relative time to start increasing demand
+T_END   = 960    # relative time to reach final demand
+T_EXTRA = 2580   # extra time in addition to sim.end_time for MPC simulation
 MIN_INDUCTION = 0.01
 MAX_DISTANCES = Float64[]
 data_file_group_control = data_file_group_control * '_' * string(GROUPS) * "TGs.jld2"
@@ -57,6 +56,11 @@ if USE_HARDCODED_INITIAL_GUESS
     @assert(GROUPS in (1, 2, 3, 4, 6, 8, 12), "GROUPS must be 1, 2, 3, 4, 6, 8, or 12")
 else
     @assert(GROUPS >= 1, "GROUPS must be at least 1")
+end
+if MAX_STEPS == 0
+   SIMULATE = false # if false, load cached results if available
+else
+   SIMULATE = true
 end
 # Load vis settings from YAML file
 vis = Vis(vis_file)
