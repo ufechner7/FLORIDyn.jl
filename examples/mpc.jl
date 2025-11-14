@@ -35,12 +35,12 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
-CONTROL_POINTS = 5
+GROUPS = 5 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+CONTROL_POINTS = 6
 MAX_ID_SCALING = 3.0
 SIMULATE = true      # if false, load cached results if available
 MAX_STEPS = 1        # maximum number black-box evaluations for NOMAD optimizer
-USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
+USE_HARDCODED_INITIAL_GUESS = false # set to false to start from generic initial guess
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -622,6 +622,9 @@ else
             # Create initial guess: CONTROL_POINTS global parameters + (GROUPS-1) group parameters
             if GROUPS == 8
                 x0 = [1.31, 1.4427, 1.35654, 1.28725, 1.28105, 0.0027, 0.0294, 1.8695, 2.0157, 1.8563, 1.1908, 0.0825]
+            # elseif GROUPS == 7
+                # [1.4205, 1.99512, 1.53716, 1.29955, 1.24977, 0.056094, 2.99831, 0.168302, 1.99127, 2.94931, 1.8258]
+                # [1.52239, 1.79394, 2.0, 1.57331, 1.43218, 1.30729, 1.30697, 0.0023, 2.9996, 2.1372, 0.7263, 1.5837, 2.7548]
             elseif GROUPS == 4
                 x0 = [1.513, 2.0, 1.54959, 1.35491, 1.27939, 0.0, 0.797814, 2.99485]
             elseif GROUPS == 6
