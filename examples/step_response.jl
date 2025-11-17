@@ -21,6 +21,9 @@ ONLINE = false
 PLOT_STEP_RESPONSE = true
 PLOT_STORAGE_VS_WINDDIR = false
 WIND_DIR = 270.0  # Wind direction for step response simulation
+T_START = 240   # relative time to start increasing demand
+T_END   = 960   # relative time to reach final demand
+
 if PLOT_STEP_RESPONSE
     WIND_DIRS = 200:10:340  # Wind directions for step response simulation
 else
@@ -30,6 +33,7 @@ SAVE_PLOTS = false  # Save plots to docs/src/
 
 # Load vis settings from YAML file
 vis = Vis(vis_file)
+vis.t_skip = 440  # skip initial time for visualization
 if (@isdefined plt) && !isnothing(plt)
     plt.ion()
 else
@@ -53,12 +57,12 @@ function calc_demand_and_power(settings_file; wind_dir=WIND_DIR)
     con.yaw="Constant"
     wind.input_dir="Constant"
     wind.dir_fixed = wind_dir
-    induction = calc_induction_per_group(1, 0)
+    induction = calc_induction_per_group(vis, 1, 0)
     set_induction!(ta, induction)
 
     time_step = sim.time_step  # seconds
     t_end = sim.end_time - sim.start_time  # relative end time in seconds
-    con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
+    con.induction_data = calc_induction_matrix(vis, ta, time_step, t_end)
 
     # create settings struct with automatic parallel/threading detection
     set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
@@ -95,7 +99,7 @@ function calc_demand_and_power(settings_file; wind_dir=WIND_DIR)
     time_vector = 0:time_step:t_end
 
     # Calculate demand for each time point
-    demand_values = [calc_demand(t) for t in time_vector]
+    demand_values = [calc_demand(vis, t) for t in time_vector]
     return rel_power, demand_values, times, wind, sim
 end
 

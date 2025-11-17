@@ -3,20 +3,19 @@
 
 # Calculate induction matrix for all turbines over time
 
-# This file is included by calc_induction.jl and main_mpc.jl
+# This file is included by calc_induction.jl and mpc.jl
 # It provides the functions:
 # - calc_cp(induction)
 # - calc_induction(cp)
-# - calc_demand(time)
-# - calc_induction_per_group(turbine_group, time)
-# - calc_induction_matrix(ta, con, time_step, t_end)
-# - calc_axial_induction(ta, con, turbine, time)
+# - calc_demand(vis, time)
+# - calc_induction_per_group(vis, turbine_group, time)
+# - calc_induction_matrix(vis, ta, time_step, t_end)
+# - calc_axial_induction(vis, ta, turbine, time)
 
 using FLORIDyn
 
 const cp_max = 16/27  # Betz limit
 const BETZ_INDUCTION = 1/3
-const DT = 400
 
 function calc_cp(induction)
     return 4 * induction * (1 - induction)^2
@@ -78,10 +77,10 @@ function calc_induction(cp)
     return (a_low + a_high) / 2
 end
 
-function calc_demand(time; dt=DT)
+function calc_demand(vis::Vis, time)
     if USE_STEP
         # Example: step demand profile
-        if time < 200+dt
+        if time < 200 + vis.t_skip
             return 0.001
         else
             return 0.999
@@ -89,8 +88,8 @@ function calc_demand(time; dt=DT)
     else
         initial_demand = 0.4
         final_demand = 0.8
-        t1 = T_START + dt  # Time to start increasing demand
-        t2 = T_END + dt  # Time to reach final demand
+        t1 = vis.t_skip + T_START  # Time to start increasing demand
+        t2 = vis.t_skip + T_END    # Time to reach final demand
         if time < t1
             return initial_demand
         elseif time < t2
@@ -134,7 +133,7 @@ to include group-specific corrections and wake interactions.
 - [`calc_induction`](@ref): Power coefficient to induction conversion
 - [`calc_axial_induction`](@ref): Turbine-specific induction with corrections
 """
-function calc_induction_per_group(turbine_group, time; scaling = 1.22)
+function calc_induction_per_group(vis::Vis, turbine_group, time; scaling = 1.22)
     if USE_TGC
         scaling = 1.247
     elseif USE_STEP
@@ -142,7 +141,7 @@ function calc_induction_per_group(turbine_group, time; scaling = 1.22)
     else
     end
     # simple example: assume no wakes
-    demand = calc_demand(time)
+    demand = calc_demand(vis, time)
     if USE_TGC
         correction = 1-min(((time - 950)/270)^2, 1)
         demand -= correction*0.016
@@ -152,21 +151,52 @@ function calc_induction_per_group(turbine_group, time; scaling = 1.22)
 end
 
 """
-    calc_axial_induction(ta, con, turbine, time)
+    calc_axial_induction(vis::Vis, ta, turbine, time; correction_factor=1.8)
 
 Calculate axial induction factor for a specific turbine at a given time.
 Includes group-based corrections and time interpolation.
 
+This function computes the turbine-specific axial induction factor by applying
+time-interpolated corrections to the baseline induction from [`calc_induction_per_group`](@ref).
+The corrections implement a group-based control strategy that redistributes power
+demand across turbine groups during the transition period between T_START and T_END.
+
 # Arguments
+- `vis::Vis`: [`Vis`](@ref) object containing simulation settings (e.g., `t_skip`)
 - `ta`: TurbineArray containing turbine positions and configuration
-- `con`: Controller configuration object
 - `turbine`: Turbine index (1-based)
 - `time`: Current simulation time [s]
+- `correction_factor=1.8`: Maximum correction scaling factor (set to 0.0 if `USE_TGC` is disabled)
 
 # Returns
-- Axial induction factor for the specified turbine
+- `Float64`: Axial induction factor for the specified turbine, clamped to [0, 1/3]
+
+# Implementation Details
+The function applies time-interpolated power corrections based on turbine group:
+- **Group 1**: -0.13 correction (large reduction)
+- **Group 2**: -0.10 correction (small reduction)
+- **Group 3**: -0.00 correction (no change)
+- **Group 4**: +0.20 correction (large increase, balancing group 1)
+
+Interpolation schedule:
+- `time ≤ T_START`: Full correction applied (interpolation factor = 1.0)
+- `T_START < time < T_END`: Linear interpolation from full to no correction
+- `time ≥ T_END`: No correction applied (interpolation factor = 0.0)
+
+The corrections are scaled by `correction_factor` and converted to induction factors
+while respecting the Betz limit (maximum induction = 1/3).
+
+# Global Constants Used
+- `T_START`: Time offset to start ramping corrections (relative to `vis.t_skip`)
+- `T_END`: Time offset to reach zero correction (relative to `vis.t_skip`)
+- `USE_TGC`: Flag to enable/disable turbine group control corrections
+
+# See Also
+- [`calc_induction_per_group`](@ref): Baseline induction calculation per group
+- [`calc_induction`](@ref): Power coefficient to induction conversion
+- [`calc_cp`](@ref): Induction to power coefficient conversion
 """
-function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8, dt=DT) # max 1.8
+function calc_axial_induction(vis::Vis, ta, turbine, time; correction_factor=1.8) # max 1.8
     if ! USE_TGC
         correction_factor = 0.0
     end
@@ -180,9 +210,9 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8, dt=
     # - at the same time, increase the power of group 3 by the same amount
     # - interpolate linearly between t=0 and t=t_end with no correction at t=t2
     
-    base_induction = calc_induction_per_group(group_id, time)
-    t1 = T_START + dt  # Time to start increasing demand
-    t2 = T_END   + dt  # Time to reach final demand
+    base_induction = calc_induction_per_group(vis, group_id, time)
+    t1 = vis.t_skip + T_START  # Time to start increasing demand
+    t2 = vis.t_skip + T_END    # Time to reach final demand
 
     # Calculate interpolation factor
     # 1.0 at t=t1 (full correction), 0.0 at t=t2 (no correction)
@@ -215,13 +245,13 @@ function calc_axial_induction(ta, con, turbine, time; correction_factor=1.8, dt=
 end
 
 """
-    calc_induction_matrix(ta, con, time_step, t_end)
+    calc_induction_matrix(vis::Vis, ta, time_step, t_end)
 
 Calculate a matrix of axial induction factors for all turbines over time.
 
 # Arguments
+- `vis::Vis`: [`Vis`](@ref) containing simulation settings (e.g., `t_skip`)
 - `ta`: TurbineArray containing turbine positions and configuration
-- `con`: Controller configuration object
 - `time_step`: Time step for the simulation [s]
 - `t_end`: End time of the simulation [s]
 
@@ -231,7 +261,7 @@ Calculate a matrix of axial induction factors for all turbines over time.
   - Subsequent columns contain induction factors for each turbine
   - Rows represent time steps
 """
-function calc_induction_matrix(ta, con, time_step, t_end)
+function calc_induction_matrix(vis::Vis, ta, time_step, t_end)
     # Create time vector from 0 to t_end with time_step intervals
     time_vector = 0:time_step:t_end
     n_time_steps = length(time_vector)
@@ -247,7 +277,7 @@ function calc_induction_matrix(ta, con, time_step, t_end)
     # Calculate induction for each turbine at each time step (columns 2 onwards)
     for (t_idx, time) in enumerate(time_vector)
         for i in 1:n_turbines
-            induction_matrix[t_idx, i + 1] = calc_axial_induction(ta, con, i, time)
+            induction_matrix[t_idx, i + 1] = calc_axial_induction(vis, ta, i, time)
         end
     end
     

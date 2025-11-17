@@ -15,6 +15,10 @@ T_END   = 960   # time to reach final demand
 
 include("../examples/calc_induction_matrix.jl")
 
+# Create a minimal vis object with t_skip = 0
+vis = Vis()
+vis.t_skip = 0.0
+
 """Original Lagrange interpolation (can have dips)"""
 function interpolate_scaling_lagrange(time, t1, t2, scaling::Vector{Float64})
     scaling_begin = scaling[1]
@@ -95,8 +99,8 @@ function interpolate_scaling(time, t1, t2, scaling::Vector{Float64}; group_id=1)
                  h01 * scaling_end + h11 * slope_end * (1.0 - t_mid)
     end
 
-    demand = calc_demand(time)
-    demand_end = calc_demand(t2)
+    demand = calc_demand(vis, time)
+    demand_end = calc_demand(vis, t2)
     # id_scaling interpolates between demand (1.0) and demand_end (0.0)
     # result is the time-varying scaling factor
     interpolated_demand = demand_end - (demand_end - demand) * id_scaling

@@ -7,7 +7,7 @@ using FLORIDyn, ControlPlots, YAML
 
 settings_file = get_default_project()[2]
 
-GROUPS = 4
+GROUPS = 8
 
 function plot_turbines(ta::TurbineArray, turbine_groups)
     # Extract x and y coordinates from the position matrix
@@ -58,7 +58,8 @@ function plot_turbines(ta::TurbineArray, turbine_groups)
     
     plt.xlabel("X Coordinate [m]")
     plt.ylabel("Y Coordinate [m]")
-    plt.title("Wind Farm Layout - Turbine Groups by X Coordinate")
+    n_groups = length([g for g in turbine_groups if g["name"] != "all"])
+    plt.title("Wind Farm Layout - $n_groups Turbine Groups by X Coordinate")
     plt.grid(true, alpha=0.3)
     plt.legend(loc="lower right")
     
@@ -94,6 +95,15 @@ try
     
     # Use setup function to load all configuration data including turbine array
     wind, sim, con, floris, floridyn, ta = setup(settings_file)
+    
+    # Override with n groups if GROUPS is specified
+    if GROUPS != length([g for g in turbine_groups if g["name"] != "all"])
+        println("Creating $GROUPS turbine groups based on X coordinates...")
+        ta_grouped = create_n_groups(ta, GROUPS)
+        # Convert TurbineArray groups to dictionary format for plotting
+        turbine_groups = [Dict("name" => g.name, "id" => g.id, "turbines" => g.turbines) 
+                         for g in ta_grouped.groups]
+    end
     
     println("Found $(size(ta.pos, 1)) turbines in the configuration")
     println("Turbine types: $(unique(ta.type))")

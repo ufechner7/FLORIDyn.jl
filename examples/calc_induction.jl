@@ -16,14 +16,19 @@ end
 include("remote_plotting.jl")
 include("calc_induction_matrix.jl")
 
+T_START = 240   # time to start increasing demand
+T_END   = 960   # time to reach final demand
+
 USE_TGC = true
 USE_FEED_FORWARD = true
 USE_STEP = true
 
-settings_file = get_default_project()[2]
+settings_file, vis_file = get_default_project()[2:3]
 
 # get the settings for the wind field, simulator, controller and turbine array
 wind, sim, con, floris, floridyn, ta = setup(settings_file)
+vis = Vis(vis_file)
+vis.t_skip = 440
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
@@ -36,7 +41,7 @@ function plot_demand()
     time_vector = 0:time_step:t_end
 
     # Calculate demand for each time point
-    demand_values = [calc_demand(t) for t in time_vector]
+    demand_values = [calc_demand(vis, t) for t in time_vector]
     
     # Calculate actual induction values for representative turbines from each group
     # (This includes the time-dependent corrections implemented in calc_axial_induction)
@@ -48,10 +53,10 @@ function plot_demand()
     turbine_group4 = 7   # Turbine 7 is in group 4
     
     # Calculate induction values using actual calc_axial_induction (with corrections)
-    induction_group1 = [calc_axial_induction(ta, con, turbine_group1, t) for t in time_vector]
-    induction_group2 = [calc_axial_induction(ta, con, turbine_group2, t) for t in time_vector]
-    induction_group3 = [calc_axial_induction(ta, con, turbine_group3, t) for t in time_vector]
-    induction_group4 = [calc_axial_induction(ta, con, turbine_group4, t) for t in time_vector]
+    induction_group1 = [calc_axial_induction(vis, ta, turbine_group1, t) for t in time_vector]
+    induction_group2 = [calc_axial_induction(vis, ta, turbine_group2, t) for t in time_vector]
+    induction_group3 = [calc_axial_induction(vis, ta, turbine_group3, t) for t in time_vector]
+    induction_group4 = [calc_axial_induction(vis, ta, turbine_group4, t) for t in time_vector]
     
     # Combine all data series
     all_data = [demand_values, induction_group1, induction_group2, induction_group3, induction_group4]
@@ -68,7 +73,7 @@ end
 
 function plot_induction_matrix()
     # Calculate induction matrix for all turbines over time
-    induction_matrix = calc_induction_matrix(ta, con, time_step, t_end)
+    induction_matrix = calc_induction_matrix(vis, ta, time_step, t_end)
     time_vector = induction_matrix[:, 1]  # Extract time from first column
     n_time_steps = size(induction_matrix, 1)
     
@@ -111,6 +116,6 @@ function plot_induction_matrix()
              pltctrl=pltctrl)
 end
 
-con.induction_data = calc_induction_matrix(ta, con, time_step, t_end)
+con.induction_data = calc_induction_matrix(vis, ta, time_step, t_end)
 
 plot_induction_matrix()
