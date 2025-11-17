@@ -20,3 +20,13 @@ data/mpc_result_group_control.jld2
 data/bak/mpc_result_group_control.jld2
 data/bak/mpc_result.jld2
 data/bak/step_response.jld2
+data/mpc_error.jld2
+data/mpc_result_group_control_2TGs.jld2
+data/mpc_result_group_control_3TGs.jld2
+data/mpc_result_group_control_4TGs.jld2
+data/mpc_result_group_control_5TGs.jld2
+data/mpc_result_group_control_6TGs.jld2
+data/mpc_result_group_control_8TGs.jld2
+data/mpc_result_group_control_12TGs.jld2
+docs/src/map_inductions.pdf
+docs/src/optimize_inductions.pdf
