@@ -44,6 +44,7 @@ USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
 ONLINE  = false  # if true, enable online plotting during simulation and create video
+TURBULENCE = false # if true, show the added turbulence in the visualization
 T_START = 240    # relative time to start increasing demand
 T_END   = 960    # relative time to reach final demand
 T_EXTRA = 2580   # extra time in addition to sim.end_time for MPC simulation
@@ -61,6 +62,11 @@ if MAX_STEPS == 0
    SIMULATE = false # if false, load cached results if available
 else
    SIMULATE = true
+end
+if TURBULENCE
+    msr = AddedTurbulence
+else
+    msr = VelReduction
 end
 # Load vis settings from YAML file
 vis = Vis(vis_file)
@@ -157,13 +163,13 @@ function calc_max_power(wind_speed, ta, wf, floris)
 end
 
 # This function implements the "model" in the block diagram.
-function run_simulation(set_induction::AbstractMatrix; enable_online=false)
+function run_simulation(set_induction::AbstractMatrix; enable_online=false, msr=msr)
     global set, wind, con, floridyn, floris, sim, ta, vis 
     con.induction_data = set_induction
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     # Only enable online visualization if explicitly requested (to avoid NaN issues during optimization)
     vis.online = enable_online
-    wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=msr)
     # Calculate total wind farm power by grouping by time and summing turbine powers
     total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
     # Calculate theoretical maximum power based on turbine ratings and wind conditions
