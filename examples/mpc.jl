@@ -43,8 +43,8 @@ USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial 
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
-ONLINE  = false  # if true, enable online plotting during simulation and create video
-TURBULENCE = false # if true, show the added turbulence in the visualization
+ONLINE  = true  # if true, enable online plotting during simulation and create video
+TURBULENCE = true # if true, show the added turbulence in the visualization
 T_START = 240    # relative time to start increasing demand
 T_END   = 960    # relative time to reach final demand
 T_EXTRA = 2580   # extra time in addition to sim.end_time for MPC simulation
@@ -792,9 +792,13 @@ else
 end
 
 if ONLINE
-    println("Creating video from velocity reduction frames")
+    println("Creating video from png files...")
     postfix = string(GROUPS)*"T"
-    video_path = createVideo("ff_velocity_reduction"; fps=6, postfix=postfix)
+    if TURBULENCE
+        video_path = createVideo("ff_added_turbulence"; fps=6, postfix=postfix)
+    else
+        video_path = createVideo("ff_velocity_reduction"; fps=6, postfix=postfix)
+    end
     if !isempty(video_path)
         println("✓ Created video: $video_path")
     else
