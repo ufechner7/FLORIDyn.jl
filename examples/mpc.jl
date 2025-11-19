@@ -571,70 +571,13 @@ end
 
 println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
 
-if GROUP_CONTROL
-    plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, rel_power_ref[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
-            ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_power_ref", "rel_demand"], title="Rel. Power and Demand "*string(GROUPS)*" TGs", fig="Rel. Power and Demand", pltctrl)
-else
-    plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
-            ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_demand"], fig="Rel. Power and Demand", title="Rel. Power and Demand (1 TG)", pltctrl)
-end
+plot_power_and_demand(time_vector, rel_power, rel_power_ref, demand_values; vis, pltctrl)
 
-# Plot average axial induction factor per turbine group over time
-begin
-    # Extract time from first column of induction_data
-    time_vec_ind = induction_data[:, 1]
-    n_time_steps = size(induction_data, 1)
-    n_turbines = size(ta.pos, 1)
+plot_axial_induction()
 
-    # Prepare containers for the groups
-    group_data = [Float64[] for _ in 1:GROUPS]
-
-    # Since all turbines in a group have identical induction, pick one representative turbine per group
-    group_indices = [findfirst(i -> FLORIDyn.turbine_group(ta, i) == g, 1:n_turbines) for g in 1:GROUPS]
-    for g in 1:GROUPS
-        idx = group_indices[g]
-        if isnothing(idx)
-            group_data[g] = fill(0.0, n_time_steps)
-        else
-            group_data[g] = induction_data[:, idx + 1]
-        end
-    end
-    
-    # Create group labels dynamically
-    group_labels = ["Group $i" for i in 1:GROUPS]
-    
-    plot_rmt(time_vec_ind, group_data;
-             xlabel="Time [s]",
-             ylabel="Axial Induction Factor [-]",
-             title="Average Axial Induction Factor vs Time by Turbine Group",
-             labels=group_labels,
-             fig="Induction by Group",
-             pltctrl=pltctrl)
-    
-    # Create bar plot of average induction factor per group
-    avg_induction = [isempty(group_data[g]) ? 0.0 : mean(group_data[g]) for g in 1:GROUPS]
-    
-    if !isnothing(plt)
-        plt.figure(figsize=(10, 6))
-        
-        # Create color palette - cycle through colors if more than 8 groups
-        base_colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f"]
-        colors = [base_colors[mod1(i, length(base_colors))] for i in 1:GROUPS]
-        
-        bars = plt.bar(1:GROUPS, avg_induction, color=colors)
-        plt.xlabel("Turbine Group", fontsize=12)
-        plt.ylabel("Average Axial Induction Factor [-]", fontsize=12)
-        plt.title("Average Axial Induction Factor by Turbine Group", fontsize=14)
-        plt.xticks(1:GROUPS, ["Group $i" for i in 1:GROUPS], rotation=45, ha="right")
-        plt.grid(axis="y", alpha=0.3)
-        plt.tight_layout()
-        
-        # Add value labels on top of bars
-        for (i, v) in enumerate(avg_induction)
-            plt.text(i, v, @sprintf("%.3f", v), ha="center", va="bottom", fontsize=10)
-        end
-    end
-end
+if !isnothing(plt)
+    plot_correction2(optimal_correction)
+end 
 
 function print_gains(optimal_correction)
     if !GROUP_CONTROL || GROUPS == 1
@@ -651,10 +594,6 @@ function print_gains(optimal_correction)
     end
     println("mean: $(round(mean(correction), digits=2))")
 end
-
-if !isnothing(plt)
-    plot_correction2(optimal_correction)
-end 
 
 if GROUP_CONTROL
     # calculate rel_power-rel_power_ref
