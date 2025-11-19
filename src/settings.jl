@@ -299,6 +299,7 @@ throughout the simulation to determine turbine control actions.
     induction::String = "Constant"
     induction_fixed::Float64 = 0.33
     induction_data::Union{Nothing, Matrix{Float64}} = [0.33;;]
+    demand_data::Union{Nothing, Vector{Float64}} = nothing
 end
 
 """

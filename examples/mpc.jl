@@ -38,7 +38,7 @@ data_file_group_control = "data/mpc_result_group_control"
 GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 0    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_TGC = false
 USE_STEP = false
@@ -128,7 +128,8 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 
 # Calculate demand for each time point
 time_vector = 0:time_step:t_end
-demand_values = [calc_demand(vis, t) for t in time_vector]
+demand_data = [calc_demand(vis, t) for t in time_vector]
+con.demand_data = demand_data
 
 """
     calc_max_power(wind_speed, ta, wf, floris) -> Float64
@@ -369,17 +370,17 @@ function calc_induction_matrix2(vis, ta, time_step, t_end; correction)
     return induction_matrix, max_distance
 end
 
-function calc_error(vis, rel_power, demand_values, time_step)
+function calc_error(vis, rel_power, demand_data, time_step)
     # Start index after skipping initial transient; +1 because Julia is 1-based
     i0 = Int(floor(vis.t_skip / time_step)) + 1
     # Clamp to valid range
     i0 = max(1, i0)
-    n = min(length(rel_power), length(demand_values)) - i0 + 1
+    n = min(length(rel_power), length(demand_data)) - i0 + 1
     if n <= 0
-        error("calc_error: empty overlap after skip; check vis.t_skip and lengths (rel_power=$(length(rel_power)), demand=$(length(demand_values)), i0=$(i0))")
+        error("calc_error: empty overlap after skip; check vis.t_skip and lengths (rel_power=$(length(rel_power)), demand=$(length(demand_data)), i0=$(i0))")
     end
     r = @view rel_power[i0:i0 + n - 1]
-    d = @view demand_values[i0:i0 + n - 1]
+    d = @view demand_data[i0:i0 + n - 1]
     return sum((r .- d) .^ 2) / length(d)
 end
 
@@ -414,7 +415,7 @@ by the NOMAD optimizer.
 - `ta`: Turbine array
 - `time_step`: Simulation time step
 - `t_end`: End time of simulation
-- `demand_values`: Target demand values
+- `demand_data`: Target demand values
 - `GROUP_CONTROL`: Boolean flag for group control mode
 """
 function eval_fct(x::Vector{Float64})
@@ -431,7 +432,7 @@ function eval_fct(x::Vector{Float64})
     rel_power = run_simulation(induction_data)
     
     # Calculate error
-    error = calc_error(vis, rel_power, demand_values, time_step)
+    error = calc_error(vis, rel_power, demand_data, time_step)
     success = true
     if isnothing(error) || isnan(error)
         error = 1e6
@@ -502,7 +503,7 @@ if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_g
     end
     # Unpack
     time_vector   = results["time_vector"]
-    demand_values = results["demand_values"]
+    demand_data = results["demand_values"]
     rel_power     = results["rel_power"]
     induction_data = results["induction_data"]
     optimal_correction = results["optimal_correction"]
@@ -551,7 +552,7 @@ else
     enable_viz = ONLINE && GROUP_CONTROL
     
     rel_power = run_simulation(induction_data; enable_online=enable_viz)
-    mse = calc_error(vis, rel_power, demand_values, time_step)
+    mse = calc_error(vis, rel_power, demand_data, time_step)
 
     # Persist
     if GROUP_CONTROL
@@ -561,7 +562,7 @@ else
     end
     JLD2.jldsave(data_file1; results=Dict(
         "time_vector" => collect(time_vector),
-        "demand_values" => demand_values,
+        "demand_values" => demand_data,
         "rel_power" => rel_power,
         "induction_data" => induction_data,
         "optimal_correction" => optimal_correction,
@@ -571,7 +572,7 @@ end
 
 println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
 
-plot_power_and_demand(time_vector, rel_power, rel_power_ref, demand_values; vis, pltctrl)
+plot_power_and_demand(time_vector, rel_power, rel_power_ref, demand_data; vis, pltctrl)
 
 plot_axial_induction()
 
