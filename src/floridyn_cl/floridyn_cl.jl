@@ -723,6 +723,18 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
 end
 
 """
+    get_demand(con::Con, sim::Sim, time::Float64) -> Float64
+
+Retrieve the demand value for a given simulation time step.
+This function calculates the appropriate index in the demand data array based on the current simulation time
+and the defined time step, ensuring the index stays within valid bounds.
+"""
+function get_demand(con, sim, time)
+    index = Int(clamp(floor(time / sim.time_step) + 1, 1, sim.n_sim_steps))
+    return con.demand_data[index]
+end
+
+"""
     runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris;
                 rmt_plot_fn=nothing, msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
 
@@ -839,6 +851,10 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         # ========== Live Plotting ============
         if vis.online
             t_rel = sim_time - sim.start_time
+            if ! isnothing(con.demand_data)
+                demand = get_demand(con, sim, t_rel)
+                vis.subtitle = "demand: $(round(demand*100, digits=2)) %"
+            end
             if mod(t_rel - vis.t_skip, vis.up_int) == 0 && t_rel >= vis.t_skip
                 Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
                 rel_vel = Z[:,:,1]
