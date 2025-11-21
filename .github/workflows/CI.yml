@@ -32,7 +32,7 @@ jobs:
         version:
           - '1.11'
           - '1.10'
-          - 'pre'
+          - '1.12'
         os:
           - ubuntu-latest
         arch:
