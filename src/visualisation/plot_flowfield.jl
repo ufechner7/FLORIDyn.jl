@@ -139,6 +139,9 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             time_str = lpad(time_str, 4, '0')  # Pad to 4 digits with leading zeros
             title = title * ", t: " * time_str * " s"
         end
+        if length(vis.subtitle) > 0
+            title = title * "; " * vis.subtitle
+        end
         
         # Initialize or update plot state
         if state === nothing
