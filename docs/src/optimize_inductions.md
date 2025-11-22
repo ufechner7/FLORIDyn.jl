@@ -142,4 +142,15 @@ This value is than limited to the valid range between zero and one and finally u
 a_i = f(\text{clamp}(p_\text{set,i}, 0, 1))
 \end{equation}
 
+Using these induction factors as input, the result of the FLORIDyn [@becker2022floridyn] simulation is the vector
+\begin{equation}
+\mathbf{p} = p_1, ..., p_m
+\end{equation}
+of the relative wind park power (relative to the power without wakes at free-flow wind speed).
+
+Fig. \ref{fig:power-demand-6TG} shows the resulting relative wind park power and relative demand as a function of time:
+
+![Relative Power and Demand\label{fig:power-demand-6TG}](Rel_Power_and_Demand_6T.png){width=70%}
+
+
 # References
