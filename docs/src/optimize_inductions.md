@@ -120,7 +120,7 @@ To improve the tracking between production and demand, the turbines are now divi
 
 The axial induction factor $a$ of each turbine group shall be controlled to achieve the best match between power demand and power production. To achieve this goal, in addition to the vector $\mathbf{c}$ as defined in Eq. \ref{eq:control_points} we need a second vector that controls the power distribution of the turbine groups. We define the vector $\mathbf{e}$ with $u$ elements as
 \begin{equation}
-\mathbf{e} = e_1 .. e_u, \quad 1 \leq e_i \leq 3
+\mathbf{e} = e_1 \ldots e_u, \quad 1 \leq e_i \leq 3
 \end{equation}
 with $u$ being the number of turbine groups and
 \begin{equation}
@@ -128,23 +128,18 @@ e_u = \frac{3}{2} u - \sum_{i=1}^{u-1} e_i
 \end{equation}
 With this definition we achieve the goal that the mean of the elements of $\mathbf{e}$ is $1.5$ and thus constant. Changing $e_1 .. e_{u-1}$ shall only modify the distribution of the power between the turbine groups, but not the total free-stream power. The variables $e_1 .. d_{e-1}$ are the additional free variables that need to be optimized.
 
-The cost function (Eq. \ref{optimization}) stays the same, but Eq. \ref{eq:induction-time-corrected} must be extended, and is now defined as:
+The cost function (Eq. \ref{eq:optimization}) stays the same, but Eq. \ref{eq:induction-time-corrected} must be extended. We do this in
+two steps: First, we calculate the power that a turbine group shall contribute to the total power. We do that such that for $e_\text{i}=0$ the turbine group works at full power all the time, for $e_\text{i}=1$ it contributes exactly the free-stream power that would mach the demand, for higher values of $e_\text{i}$ it contributes less, and for values above two the contribution at the beginning is zero and the turbine starts to operate later. We do this because we know that at the end of the rise of the demand all available power is needed, and at the beginning some of the turbine groups should produce nothing or less than their full share.
+\begin{equation}
+p_\text{set,i} = c(t) \big(p_\text{max} - e_\text{i} (p_\text{max} - d(t))\big)
+\end{equation}
+We use the same, time dependent correction function $c(t)$ for all turbine groups, but the required relative power per turbine group is corrected using the formula given above.
+
+This value is than limited to the valid range between zero and one and finally used to calculate the required induction factor:
+
 \begin{equation}
 \label{eq:induction_tg}
-a_i = f(c(t) * d(t) * e_i)
-\end{equation}
-We use the same, time dependent correction function $c(t)$ for all turbine groups, but ...
-
-Let the relative power demand be defined by the function:
-\begin{equation}
-\label{eq:demand-func}
-d = g(t), \quad 0 < d < 1.0
-\end{equation}
-
-We can write:
-\begin{equation}
-\label{eq:induction-group}
-a_i = f(i, t), \quad i \in \{1, \ldots, n\}
+a_i = f(\text{clamp}(p_\text{set,i}, 0, 1))
 \end{equation}
 
 # References
