@@ -75,6 +75,7 @@ m_i = \begin{cases}
 
 To obtain the vector of the control points
 \begin{equation}
+\label{eq:control_points}
 \mathbf{c} = c_1, ..., c_n
 \end{equation}
 
@@ -115,7 +116,16 @@ Fig. \ref{fig:power-demand-1t} shows the resulting relative wind park power and 
 
 
 ## Turbine group (TG) control
-The axial induction factor $a$ of each turbine group shall be controlled to achieve the best match between power demand and power production.
+To improve the tracking between production and demand, the turbines are now divided in (approximately) equal sized groups. The grouping is done depending on the coordinate of each turbine in the mean wind direction, such that the most upwind group of turbines has number one. 
+
+The axial induction factor $a$ of each turbine group shall be controlled to achieve the best match between power demand and power production. To achieve this goal, in addition to the vector $\mathbf{c}$ as defined in Eq. \ref{eq:control_points} we need a second vector that controls the power distribution of the turbine groups. We define the vector $\mathbf{d}$ with $u$ elements as
+\begin{equation}
+\mathbf{d} = d_1 .. d_u, \quad 1 \leq d_i \leq 3
+\end{equation}
+with $u$ being the number of turbine groups and
+\begin{equation}
+d_u = \frac{3}{2} u - \sum_{i=1}^{u-1} d_i
+\end{equation} 
 
 Let the relative power demand be defined by the function:
 \begin{equation}
