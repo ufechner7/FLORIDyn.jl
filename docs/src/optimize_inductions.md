@@ -1,4 +1,11 @@
-# Optimize the turbine induction factors
+# Optimization of the turbine induction factors
+
+## Test case
+As test case the NordseeOne wind farm at a free flow wind speed of $8.2 m/s$ and a turbulence intensity of 6.2 % at turbine hight was used. A constant wind direction, directly from the west is assumed.
+
+The wind farm layout, using six turbine groups is shown in Fig. \ref{fig:windfarm_6T}:
+
+![Wind farm NordseeOne\label{fig:windfarm_6T}](windfarm_6T.png){width=100%}
 
 ## Collective turbine control
 The most simple way to match production and demand is to control the induction factor of the turbines of the wind farm cluster, assuming all use the same induction factor.
