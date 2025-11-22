@@ -135,7 +135,11 @@ p_\text{set,i} = c(t) \big(p_\text{max} - e_\text{i} (p_\text{max} - d(t))\big)
 \end{equation}
 We use the same, time dependent correction function $c(t)$ for all turbine groups, but the required relative power per turbine group is corrected using the formula given above.
 
-This value is than limited to the valid range between zero and one and finally used to calculate the required induction factor:
+This value is than limited to the valid range between zero and one and finally used to calculate the required induction factor. Using the helper function
+\begin{equation}
+\text{clamp}(x,a,b) = \min(\max(x,a),b)
+\end{equation}
+we define:
 
 \begin{equation}
 \label{eq:induction_tg}
