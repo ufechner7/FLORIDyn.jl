@@ -118,14 +118,22 @@ Fig. \ref{fig:power-demand-1t} shows the resulting relative wind park power and 
 ## Turbine group (TG) control
 To improve the tracking between production and demand, the turbines are now divided in (approximately) equal sized groups. The grouping is done depending on the coordinate of each turbine in the mean wind direction, such that the most upwind group of turbines has number one. 
 
-The axial induction factor $a$ of each turbine group shall be controlled to achieve the best match between power demand and power production. To achieve this goal, in addition to the vector $\mathbf{c}$ as defined in Eq. \ref{eq:control_points} we need a second vector that controls the power distribution of the turbine groups. We define the vector $\mathbf{d}$ with $u$ elements as
+The axial induction factor $a$ of each turbine group shall be controlled to achieve the best match between power demand and power production. To achieve this goal, in addition to the vector $\mathbf{c}$ as defined in Eq. \ref{eq:control_points} we need a second vector that controls the power distribution of the turbine groups. We define the vector $\mathbf{e}$ with $u$ elements as
 \begin{equation}
-\mathbf{d} = d_1 .. d_u, \quad 1 \leq d_i \leq 3
+\mathbf{e} = e_1 .. e_u, \quad 1 \leq e_i \leq 3
 \end{equation}
 with $u$ being the number of turbine groups and
 \begin{equation}
-d_u = \frac{3}{2} u - \sum_{i=1}^{u-1} d_i
-\end{equation} 
+e_u = \frac{3}{2} u - \sum_{i=1}^{u-1} e_i
+\end{equation}
+With this definition we achieve the goal that the mean of the elements of $\mathbf{e}$ is $1.5$ and thus constant. Changing $e_1 .. e_{u-1}$ shall only modify the distribution of the power between the turbine groups, but not the total free-stream power. The variables $e_1 .. d_{e-1}$ are the additional free variables that need to be optimized.
+
+The cost function (Eq. \ref{optimization}) stays the same, but Eq. \ref{eq:induction-time-corrected} must be extended, and is now defined as:
+\begin{equation}
+\label{eq:induction_tg}
+a_i = f(c(t) * d(t) * e_i)
+\end{equation}
+We use the same, time dependent correction function $c(t)$ for all turbine groups, but ...
 
 Let the relative power demand be defined by the function:
 \begin{equation}
