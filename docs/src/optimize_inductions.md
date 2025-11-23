@@ -44,11 +44,10 @@ a = f(d(t))
 
 This would be correct without wakes. Because of the wake effects, we need to increase the
 set-power of the turbines with a correction factor. This - time dependent - correction factor
-is defined as a cubic Hermite spline, based on $n$ control points. The first control point defines the correction 
+is defined as a cubic Hermite spline [@Fageot2020], based on $n$ control points. The first control point defines the correction 
 for $t <= t_\text{start}$, the last control point defines the correction for $t >= t_\text{end}$, and the additional 
 control points are distributed evenly between the first and the last point.
 
-The correction function is defined as a piecewise cubic Hermite spline:
 \begin{equation}
 \label{eq:correction-func}
 c(t) = \begin{cases}
@@ -172,5 +171,5 @@ Fig. \ref{fig:power-demand-6TG} shows the resulting relative wind park power and
 The Root Mean Square Error (RMSE) between demand and production is 2.61% (down from 3.86% without turbine group control). 
 The estimated storage time at 100% power is 23.08s. 
 
-
+\newpage
 # References
