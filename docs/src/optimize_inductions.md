@@ -167,7 +167,7 @@ In Fig. \ref{fig:induction-by-group-6t}, the resulting time series of the induct
 
 ![Induction by turbine group; the blue line is behind the green line.\label{fig:induction-by-group-6t}](Induction_by_Group_6T.png){width=70%}
 
-Using this array of induction factors as input, the result of the FLORIDyn [@becker2022floridyn] simulation is the vector
+Using this matrix of induction factors as input, the result of the FLORIDyn [@becker2022floridyn] simulation is the vector
 \begin{equation}
 \mathbf{p} = p_1, ..., p_m
 \end{equation}
