@@ -140,8 +140,13 @@ e_\text{u} = \frac{3}{2} u - \sum_{i=1}^{u-1} e_\text{i}
 \end{equation}
 With this definition we achieve the goal that the mean of the elements of $\mathbf{e}$ is $1.5$ and thus constant. Changing $e_1 .. e_{u-1}$ shall only modify the distribution of the power between the turbine groups, but not the total free-stream power. The variables $e_1 .. e_\text{u-1}$ are the additional free variables that need to be optimized.
 
-The cost function (Eq. \ref{eq:optimization}) stays the same, but Eq. \ref{eq:induction-time-corrected} must be extended. We do this in
-two steps: First, we calculate the power that a turbine group shall contribute to the total power. We do that such that for $e_\text{i}=0$ the turbine group works at full power all the time, for $e_\text{i}=1$ it contributes exactly the free-stream power that would mach the demand, for higher values of $e_\text{i}$ it contributes less, and for values above two the contribution at the beginning is zero and the turbine starts to operate later. We do this because we know that at the end of the rise of the demand all available power is needed, and at the beginning some of the turbine groups should produce nothing or less than their full share.
+The optimization problem (Eq. \ref{eq:optimization}) needs to be extended to include the vector e and now looks like:
+\begin{equation}
+\label{eq:optimization_tg}
+\min_{\mathbf{c,~e}} \sum_{t=t_{\text{start}}}^{t_{\text{end}}+t_{\text{extra}}} \left(p(t) - d(t) \right)^2
+\end{equation} .
+
+Eq. \ref{eq:induction-time-corrected} must be extended, too. We do this in two steps: First, we calculate the power that a turbine group shall contribute to the total power. We do that such that for $e_\text{i}=0$ the turbine group works at full power all the time, for $e_\text{i}=1$ it contributes exactly the free-stream power that would mach the demand, for higher values of $e_\text{i}$ it contributes less, and for values above two the contribution at the beginning is zero and the turbine starts to operate later. We do this because we know that at the end of the rise of the demand all available power is needed, and at the beginning some of the turbine groups should produce nothing or less than their full share.
 \begin{equation}
 p_\text{set,i} = c(t) \big(p_\text{max} - e_\text{i} (p_\text{max} - d(t))\big)
 \end{equation}
