@@ -7,6 +7,10 @@ The wind farm layout, using six turbine groups is shown in Fig. \ref{fig:windfar
 
 ![Wind farm NordseeOne\label{fig:windfarm_6T}](windfarm_6T.png){width=100%}
 
+The goal of the optimization is, that the production matches the demand as close as possible. In this test case
+we assume a constant demand of 40% of the power at free-flow wind speed at the beginning, that starts to rise at
+1740s simulation time, rises to 80% at 2460s and then stays constant again.
+
 ## Collective turbine control
 The most simple way to match production and demand is to control the induction factor of the turbines of the wind farm cluster, assuming all use the same induction factor.
 
@@ -127,13 +131,13 @@ To improve the tracking between production and demand, the turbines are now divi
 
 The axial induction factor $a$ of each turbine group shall be controlled to achieve the best match between power demand and power production. To achieve this goal, in addition to the vector $\mathbf{c}$ as defined in Eq. \ref{eq:control_points} we need a second vector that controls the power distribution of the turbine groups. We define the vector $\mathbf{e}$ with $u$ elements as
 \begin{equation}
-\mathbf{e} = e_1 \ldots e_u, \quad 1 \leq e_i \leq 3
+\mathbf{e} = e_1 \ldots e_\text{u}, \quad 1 \leq e_\text{i} \leq 3
 \end{equation}
 with $u$ being the number of turbine groups and
 \begin{equation}
-e_u = \frac{3}{2} u - \sum_{i=1}^{u-1} e_i
+e_\text{u} = \frac{3}{2} u - \sum_{i=1}^{u-1} e_\text{i}
 \end{equation}
-With this definition we achieve the goal that the mean of the elements of $\mathbf{e}$ is $1.5$ and thus constant. Changing $e_1 .. e_{u-1}$ shall only modify the distribution of the power between the turbine groups, but not the total free-stream power. The variables $e_1 .. d_{e-1}$ are the additional free variables that need to be optimized.
+With this definition we achieve the goal that the mean of the elements of $\mathbf{e}$ is $1.5$ and thus constant. Changing $e_1 .. e_{u-1}$ shall only modify the distribution of the power between the turbine groups, but not the total free-stream power. The variables $e_1 .. e_\text{u-1}$ are the additional free variables that need to be optimized.
 
 The cost function (Eq. \ref{eq:optimization}) stays the same, but Eq. \ref{eq:induction-time-corrected} must be extended. We do this in
 two steps: First, we calculate the power that a turbine group shall contribute to the total power. We do that such that for $e_\text{i}=0$ the turbine group works at full power all the time, for $e_\text{i}=1$ it contributes exactly the free-stream power that would mach the demand, for higher values of $e_\text{i}$ it contributes less, and for values above two the contribution at the beginning is zero and the turbine starts to operate later. We do this because we know that at the end of the rise of the demand all available power is needed, and at the beginning some of the turbine groups should produce nothing or less than their full share.
@@ -161,7 +165,7 @@ of the relative wind park power (relative to the power without wakes at free-flo
 
 Fig. \ref{fig:power-demand-6TG} shows the resulting relative wind park power and relative demand as a function of time:
 
-![Relative Power and Demand\label{fig:power-demand-6TG}](Rel_Power_and_Demand_6T.png){width=70%}
+![Relative Power and Demand, optimized result for six turbine groups\label{fig:power-demand-6TG}](Rel_Power_and_Demand_6T.png){width=70%}
 
 
 # References
