@@ -160,10 +160,10 @@ we define:
 
 \begin{equation}
 \label{eq:induction_tg}
-a_i = f(\text{clamp}(p_\text{set,i}, 0, 1))
+\mathbf{a}_\text{i} = f(\text{clamp}(p_\text{set,i}, 0, 1))
 \end{equation}
 
-Using these induction factors as input, the result of the FLORIDyn [@becker2022floridyn] simulation is the vector
+Using this array of induction factors as input, the result of the FLORIDyn [@becker2022floridyn] simulation is the vector
 \begin{equation}
 \mathbf{p} = p_1, ..., p_m
 \end{equation}
