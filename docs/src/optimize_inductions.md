@@ -125,6 +125,8 @@ Fig. \ref{fig:power-demand-1t} shows the resulting relative wind park power and 
 
 ![Relative Power and Demand\label{fig:power-demand-1t}](Rel_Power_and_Demand_1T.png){width=70%}
 
+The Root Mean Square Error (RMSE) between demand and production is 3.86%. 
+
 
 ## Turbine group (TG) control
 To improve the tracking between production and demand, the turbines are now divided in (approximately) equal sized groups. The grouping is done depending on the coordinate of each turbine in the mean wind direction, such that the most upwind group of turbines has number one. 
@@ -166,6 +168,9 @@ of the relative wind park power (relative to the power without wakes at free-flo
 Fig. \ref{fig:power-demand-6TG} shows the resulting relative wind park power and relative demand as a function of time:
 
 ![Relative Power and Demand, optimized result for six turbine groups\label{fig:power-demand-6TG}](Rel_Power_and_Demand_6T.png){width=70%}
+
+The Root Mean Square Error (RMSE) between demand and production is 2.61% (down from 3.86% without turbine group control). 
+The estimated storage time at 100% power is 23.08s. 
 
 
 # References
