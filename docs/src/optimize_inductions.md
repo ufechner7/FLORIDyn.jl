@@ -163,6 +163,10 @@ we define:
 \mathbf{a}_\text{i} = f(\text{clamp}(p_\text{set,i}, 0, 1))
 \end{equation}
 
+In Fig. \ref{fig:induction-by-group-6t}, the resulting time series of the induction factors per turbine group are shown:
+
+![Induction by turbine group; the blue line is behind the green line.\label{fig:induction-by-group-6t}](Induction_by_Group_6T.png){width=70%}
+
 Using this array of induction factors as input, the result of the FLORIDyn [@becker2022floridyn] simulation is the vector
 \begin{equation}
 \mathbf{p} = p_1, ..., p_m
