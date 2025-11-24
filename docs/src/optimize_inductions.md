@@ -50,7 +50,7 @@ This would be correct without wakes. Because of the wake effects, we need to inc
 set-power of the turbines with a correction factor. This - time dependent - correction factor
 is defined as a cubic Hermite spline [@Fageot2020], based on $n$ control points. The first control point defines the correction 
 for $t <= t_\text{start}$, the last control point defines the correction for $t >= t_\text{end}$, and the additional 
-control points are distributed evenly between the first and the last point.
+control points are distributed evenly between the first and the last point. In mathematical notation:
 
 \begin{equation}
 \label{eq:correction-func}
@@ -136,13 +136,13 @@ To improve the tracking between production and demand, the turbines are now divi
 
 The axial induction factor $a$ of each turbine group shall be controlled to achieve the best match between power demand and power production. To achieve this goal, in addition to the vector $\mathbf{c}$ as defined in Eq. \ref{eq:control_points} we need a second vector that controls the power distribution of the turbine groups. We define the vector $\mathbf{e}$ with $u$ elements as
 \begin{equation}
-\mathbf{e} = e_1 \ldots e_\text{u}, \quad 1 \leq e_\text{i} \leq 3
+\mathbf{e} = e_1 \ldots e_\text{u}, \quad 1 \leq e_i \leq 3
 \end{equation}
 with $u$ being the number of turbine groups and
 \begin{equation}
-e_\text{u} = \frac{3}{2} u - \sum_{i=1}^{u-1} e_\text{i}
+e_\text{u} = \frac{3}{2} u - \sum_{i=1}^{u-1} e_i
 \end{equation}
-With this definition we achieve the goal that the mean of the elements of $\mathbf{e}$ is $1.5$ and thus constant. Changing $e_1 .. e_{u-1}$ shall only modify the distribution of the power between the turbine groups, but not the total free-stream power. The variables $e_1 .. e_\text{u-1}$ are the additional free variables that need to be optimized.
+With this definition we achieve the goal that the mean of the elements of $\mathbf{e}$ is $1.5$ and thus constant. Changing $e_1 .. e_{u-1}$ shall only modify the distribution of the power between the turbine groups, but not the total free-stream power. The variables $e_1 .. e_{u-1}$ are the additional free variables that need to be optimized.
 
 The optimization problem (Eq. \ref{eq:optimization}) needs to be extended to include the vector e and now looks like:
 \begin{equation}
