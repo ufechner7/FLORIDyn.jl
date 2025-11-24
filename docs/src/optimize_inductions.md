@@ -183,13 +183,13 @@ Fig. \ref{fig:power-demand-6TG} shows the resulting relative wind park power and
 ![Relative Power and Demand, optimized result for six turbine groups\label{fig:power-demand-6TG}](Rel_Power_and_Demand_6T.png){width=70%}
 
 The Root Mean Square Error (RMSE) between demand and production is 2.61% (down from 3.86% without turbine group control). 
-The estimated storage time at 100% power is 23.08s.
+The estimated storage time at 100% power is 23.08s. This means, for about 10 minutes more than 2% additional power is available, compared to collective turbine control. This energy was stored as kinetic energy in the wind field.
 
 ## Optimization software
 The model and the optimization software used are available under an open source license at [@fechner_2025_17287772].
 Use the command `include("examples/mpc.jl")` at the Julia prompt to reproduce the results, presented here.
 
-The optimization for collective turbine control required about 500 simulations, the optimization with six turbine groups about 1400 simulations to converge, where one simulation needs about 3s on a Laptop with an Ryzen 7890U CPU.
+The optimization for collective turbine control required about 500 simulations, the optimization with six turbine groups about 1400 simulations to converge, where one simulation needs about 3s on a Laptop with an Ryzen 7840U CPU.
 
 \newpage
 # References
