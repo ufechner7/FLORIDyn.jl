@@ -194,4 +194,12 @@ Use the command `include("examples/mpc.jl")` at the Julia prompt to reproduce th
 
 The optimization for collective turbine control required about 500 simulations, the optimization with six turbine groups about 1400 simulations to converge, where one simulation needs about 3s on a Laptop with an Ryzen 7840U CPU.
 
+## Conclusions and outlook
+The simulations indicate that a slight increase in power when it is needed most is possible, for example 2% more for 10 minutes for a single wind farm. Perhaps larger values can be achieved when controlling a wind farm cluster. Next steps are:
+
+- use a second test case with a time varying wind speed (impulse shaped)
+- simulate a wind farm cluster
+- investigate the sensitivity of the result regarding wind speed and wind direction
+- further verify the simulation model using LES simulation
+
 # References
