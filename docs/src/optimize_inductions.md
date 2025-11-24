@@ -9,7 +9,7 @@ The wind farm layout, using six turbine groups is shown in Fig. \ref{fig:windfar
 
 The goal of the optimization is, that the production matches the demand as close as possible. In this test case
 we assume a constant demand of 40% of the power at free-flow wind speed at the beginning, that starts to rise at
-1740s simulation time, rises to 80% at 2460s and then stays constant again.
+1740s simulation time, rises to 80% at 2460s and then stays constant again (see Fig. \ref{fig:power-demand-1t}).
 
 ## Collective turbine control
 The most simple way to match production and demand is to control the induction factor of the turbines of the wind farm cluster, assuming all use the same induction factor.
@@ -36,7 +36,8 @@ C_{\text{p}} = 4a(1-a)^2
 \end{equation}
 The inverse relationship $a(C_{\text{p}})$ is obtained by numerically solving this equation for $a \in [0, 1/3]$.
 
-By combining Eqs. \eqref{eq:cp-max}, \eqref{eq:demand-rel} and \eqref{eq:cp-induction}, and applying $C_{\text{p}} = d(t) \cdot C_{\text{p,max}}$ we can write:
+By combining Eqs. \eqref{eq:cp-max}, \eqref{eq:demand-rel} and \eqref{eq:cp-induction}, and applying $C_{\text{p}} = d(t) \cdot C_{\text{p,max}}$ we can 
+determine the set value of the induction factor of the turbines as
 \begin{equation}
 \label{eq:induction-time}
 a = f(d(t))
@@ -53,7 +54,7 @@ control points are distributed evenly between the first and the last point.
 c(t) = \begin{cases}
 c_1 & \text{if } t \leq t_{\text{start}} \\
 H_i(s) & \text{if } t_{\text{start}} < t < t_{\text{end}} \\
-c_n & \text{if } t \geq t_{\text{end}}
+c_\text{n} & \text{if } t \geq t_{\text{end}}
 \end{cases}
 \end{equation}
 
@@ -98,7 +99,7 @@ where $p(t)$ is the relative wind park power output at time $t$, $t_{\text{start
 
 Fig. \ref{fig:correction-factor} shows optimal correction factors as a function of the normalized parameter $s$ as determined by the optimizer. The curve is rising when the demand is rising. This makes sense, because a higher demand causes higher induction factors, which cause more wake losses that need to be compensated.
 
-![Correction factor\label{fig:correction-factor}](Scaling_Curve.png){width=70%}
+![Correction factor for the set value of the power of the turbines\label{fig:correction-factor}](Scaling_Curve.png){width=70%}
 
 If we combine Eq. \ref{eq:induction-time} and Eq. \ref{eq:correction-func}, we get
 \begin{equation}
@@ -152,6 +153,10 @@ p_\text{set,i} = c(t) \big(p_\text{max} - e_\text{i} (p_\text{max} - d(t))\big)
 \end{equation}
 We use the same, time dependent correction function $c(t)$ for all turbine groups, but the required relative power per turbine group is corrected using the formula given above.
 
+The correction function based on the optimized values of $\mathbf{c}$ is shown in Fig. \ref{fig:correction-6t}:
+
+![Correction function for six turbine groups.\label{fig:correction-6t}](Scaling_Curve_6T.png){width=70%}
+
 This value is than limited to the valid range between zero and one and finally used to calculate the required induction factor. Using the helper function
 \begin{equation}
 \text{clamp}(x,a,b) = \min(\max(x,a),b)
@@ -178,7 +183,13 @@ Fig. \ref{fig:power-demand-6TG} shows the resulting relative wind park power and
 ![Relative Power and Demand, optimized result for six turbine groups\label{fig:power-demand-6TG}](Rel_Power_and_Demand_6T.png){width=70%}
 
 The Root Mean Square Error (RMSE) between demand and production is 2.61% (down from 3.86% without turbine group control). 
-The estimated storage time at 100% power is 23.08s. 
+The estimated storage time at 100% power is 23.08s.
+
+## Optimization software
+The model and the optimization software used are available under an open source license at [@fechner_2025_17287772].
+Use the command `include("examples/mpc.jl")` at the Julia prompt to reproduce the results, presented here.
+
+The optimization for collective turbine control required about 500 simulations, the optimization with six turbine groups about 1400 simulations to converge, where one simulation needs about 3s on a Laptop with an Ryzen 7890U CPU.
 
 \newpage
 # References
