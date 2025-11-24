@@ -15,7 +15,7 @@ jobs:
   reuse-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Run REUSE lint
         run: |
           docker run --rm --volume ${{ github.workspace }}:/data fsfe/reuse lint
@@ -58,7 +58,7 @@ jobs:
           tar -xf ${RELEASE_NAME}.tar.xz
           mv ${RELEASE_NAME}/ffmpeg ${RELEASE_NAME}/ffprobe /usr/local/bin/
           rm -rf ${RELEASE_NAME}
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
@@ -95,7 +95,7 @@ jobs:
       actions: write
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Cache Chocolatey FFmpeg
         id: cache-ffmpeg-choco
         uses: actions/cache@v4
@@ -132,7 +132,7 @@ jobs:
       actions: write
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - name: Install FFmpeg (Homebrew)
         run: |
           brew update
@@ -171,7 +171,7 @@ jobs:
         run: sudo bash -c 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do echo "Waiting for dpkg lock..."; sleep 1; done'
       - name: Install matplotlib
         run: sudo apt-get install -y python3-matplotlib
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: julia-actions/setup-julia@v2
       - name: Build PyCall
         run: julia --project=docs/ -e 'ENV["PYTHON"]=""; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); Pkg.build("PyCall")'
