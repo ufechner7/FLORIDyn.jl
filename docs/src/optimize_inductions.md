@@ -57,7 +57,7 @@ control points are distributed evenly between the first and the last point. In m
 c(t) = \begin{cases}
 c_1 & \text{if } t \leq t_{\text{start}} \\
 H_i(s) & \text{if } t_{\text{start}} < t < t_{\text{end}} \\
-c_\text{n} & \text{if } t \geq t_{\text{end}}
+c_n & \text{if } t \geq t_{\text{end}}
 \end{cases}
 \end{equation}
 
