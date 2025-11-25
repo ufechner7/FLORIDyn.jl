@@ -4,7 +4,7 @@
 In the literature you can find some research results on dynamic induction factor control with the goal to reduce wake effects and to increase the power output [@Frederik2020], [@Munters2018]. But the question if and how much the power of a wind farm or of a wind farm cluster can be shifted in time by using dynamic induction control has not yet been investigated. Here, we try to find an answer to this question.
 
 ## Test case
-As test case the NordseeOne wind farm at a free flow wind speed of $8.2 m/s$ and a turbulence intensity of 6.2 % at turbine hight was used. A constant wind direction, directly from the west is assumed.
+As test case the NordseeOne wind farm at a free flow wind speed of $8.2 m/s$ and a turbulence intensity of 6.2 % at turbine height was used. A constant wind direction, directly from the west is assumed.
 
 The wind farm layout, using six turbine groups is shown in Fig. \ref{fig:windfarm_6T}:
 
