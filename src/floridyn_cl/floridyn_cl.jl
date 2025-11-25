@@ -730,7 +730,7 @@ This function calculates the appropriate index in the demand data array based on
 and the defined time step, ensuring the index stays within valid bounds.
 """
 function get_demand(con, sim, time)
-    index = Int(clamp(floor(time / sim.time_step) + 1, 1, sim.n_sim_steps))
+    index = Int(clamp(floor(time / sim.time_step) + 1, 1, sim.n_sim_steps + 1))
     return con.demand_data[index]
 end
 
