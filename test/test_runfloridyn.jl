@@ -56,4 +56,39 @@ wf_dict_03 = vars_before_interpolateOPs_T["T"]
     
 end
 
+@testset "runfloridyn_with_demand_data" begin
+    settings_file = "data/2021_9T_Data.yaml"
+    # get the settings for the wind field, simulator and controller
+    wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
+    # create settings struct
+    set = Settings(wind, sim, con)
+    vis = Vis(online=false, save=false, rel_v_min=20.0, up_int = 4)
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+    
+    # Set up demand data with values between 0.01 and 1.0
+    sim.n_sim_steps = 10
+    con.demand_data = range(0.01, 1.0, length=sim.n_sim_steps) |> collect
+    
+    # Run simulation
+    wf, md, mi = runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
+    
+    # Test that simulation completed successfully
+    @test size(md, 1) == sim.n_sim_steps * wf.nT
+    @test size(md, 2) == 6
+    @test all(md.Time .>= 0)
+    @test all(0 .<= md.ForeignReduction .<= 100)
+    @test all(md.AddedTurbulence .>= 0)
+    @test all(md.EffWindSpeed .>= 0)
+    @test all(md.FreeWindSpeed .>= 0)
+    @test all(md.PowerGen .>= 0)
+    
+    # Test interaction matrix dimensions
+    @test size(mi, 1) == sim.n_sim_steps * wf.nT
+    @test size(mi, 2) == wf.nT + 1  # Time column + nT turbine columns
+    
+    # Verify demand_data was used correctly
+    @test length(con.demand_data) == sim.n_sim_steps
+    @test all(0.01 .<= con.demand_data .<= 1.0)
+end
+
 nothing
