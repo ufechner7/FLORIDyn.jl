@@ -90,7 +90,7 @@ m_i = \begin{cases}
 To obtain the vector of the control points
 \begin{equation}
 \label{eq:control_points}
-\mathbf{c} = c_1, ..., c_n
+\mathbf{c} = (c_1, \ldots, c_n)
 \end{equation}
 
 we solve the following optimization problem using the NOMAD [@montoison-pascal-salomon-nomad-2020] optimizer:
@@ -112,7 +112,7 @@ a = f(c(t) * d(t))
 
 Using this equation, we can calculate the vector of the induction factors
 \begin{equation}
-\mathbf{a} = a_1, ..., a_m
+\mathbf{a} = (a_1, \ldots, a_m)
 \end{equation}
 for each time step of the simulation. Fig. \ref{fig:induction-factor} shows optimal induction factors as a function of time as calculated by the optimizer.
 
@@ -120,7 +120,7 @@ for each time step of the simulation. Fig. \ref{fig:induction-factor} shows opti
 
 Using these induction factors as input, the result of the FLORIDyn [@becker2022floridyn] simulation is the vector
 \begin{equation}
-\mathbf{p} = p_1, ..., p_m
+\mathbf{p} = (p_1, \ldots, p_m)
 \end{equation}
 of the relative wind park power (relative to the power without wakes at free-flow wind speed).
 
@@ -136,7 +136,7 @@ To improve the tracking between production and demand, the turbines are now divi
 
 The axial induction factor $a$ of each turbine group shall be controlled to achieve the best match between power demand and power production. To achieve this goal, in addition to the vector $\mathbf{c}$ as defined in Eq. \ref{eq:control_points} we need a second vector that controls the power distribution of the turbine groups. We define the vector $\mathbf{e}$ with $u$ elements as
 \begin{equation}
-\mathbf{e} = e_1 \ldots e_\text{u}, \quad 1 \leq e_i \leq 3
+\mathbf{e} = (e_1, \ldots, e_\text{u}), \quad 1 \leq e_i \leq 3
 \end{equation}
 with $u$ being the number of turbine groups and
 \begin{equation}
@@ -177,7 +177,7 @@ In Fig. \ref{fig:induction-by-group-6t}, the resulting time series of the induct
 
 Using this matrix of induction factors as input, the result of the FLORIDyn [@becker2022floridyn] simulation is the vector
 \begin{equation}
-\mathbf{p} = p_1, ..., p_m
+\mathbf{p} = (p_1, \ldots, p_m)
 \end{equation}
 of the relative wind park power (relative to the power without wakes at free-flow wind speed).
 
