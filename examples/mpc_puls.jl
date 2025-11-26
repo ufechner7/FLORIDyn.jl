@@ -114,8 +114,17 @@ set_induction!(ta, induction)
 time_step = sim.time_step  # seconds
 t_end = sim.end_time - sim.start_time  # relative end time in seconds
 
+# Set up wind velocity interpolation BEFORE creating induction matrix and settings
+wind.input_vel = "Interpolation"
+wind.vel = calc_vel(vis)
+
+# Calculate demand for each time point
+time_vector = 0:time_step:t_end
+wind_data = [calc_wind(vis, t) for t in time_vector]
+
 # For initial setup, use calc_induction_matrix (only affects pre-optimization visualization)
 # During optimization, calc_induction_matrix2 will be used with proper group handling
+# Do NOT call prepareSimulation here - it will be called in run_simulation()
 con.induction_data = calc_induction_matrix(vis, ta, time_step, t_end)
 
 # create settings struct with automatic parallel/threading detection
@@ -125,13 +134,6 @@ if USE_FEED_FORWARD
 else
     set.induction_mode = Induction_Constant()
 end
-wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-
-# Calculate demand for each time point
-time_vector = 0:time_step:t_end
-wind_data = [calc_wind(vis, t) for t in time_vector]
-wind.input_vel = "Interpolation"
-wind.vel = calc_vel(vis)
 
 """
     calc_max_power(wind_speed, ta, wf, floris) -> Float64
@@ -169,7 +171,6 @@ end
 function run_simulation(; enable_online=false, msr=msr)
     global set, wind, con, floridyn, floris, sim, ta, vis 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-    wind.vel = calc_vel(vis)
     # Only enable online visualization if explicitly requested (to avoid NaN issues during optimization)
     vis.online = enable_online
     wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=msr)
@@ -383,7 +384,7 @@ end
 
 include("mpc_plotting.jl")
 
-plot_rmt(collect(time_vector), wind_data; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
-    ylabel="v_wind [m/s]", fig="v_wind", title="Wind speed vs time", pltctrl)
+# plot_rmt(collect(time_vector), wind_data; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
+#     ylabel="v_wind [m/s]", fig="v_wind", title="Wind speed vs time", pltctrl)
 
 md = run_simulation()
