@@ -101,17 +101,36 @@ function calc_demand(vis::Vis, time)
 end
 
 function calc_wind(vis::Vis, time)
+    local wind
     low_wind = 6.0
     high_wind = 8.2
-    t1 = vis.t_skip + T_START  # Time to start increasing demand
-    t2 = vis.t_skip + T_END    # Time to reach final demand
+    t1 = vis.t_skip + T_START  # Time to start increased wind speed
+    t2 = vis.t_skip + T_END    # Time to stop  increased wind speed
     if time < t1
-        return low_wind
+        wind = low_wind
     elseif time < t2
-        return high_wind
+        wind = high_wind
     else
-        return low_wind
+        wind = low_wind
     end
+
+    return wind
+end
+
+function calc_vel(vis::Vis)
+    local vel
+    dt = 4
+    low_wind = 6.0
+    high_wind = 8.2
+    t1 = vis.t_skip + T_START  # Time to start increased wind speed
+    t2 = vis.t_skip + T_END    # Time to stop  increased wind speed
+    vel = [0 low_wind
+            t1-dt low_wind
+            t1 high_wind
+            t2-dt high_wind
+            t2 low_wind
+            t2+T_EXTRA low_wind]    
+    return vel
 end
 
 """

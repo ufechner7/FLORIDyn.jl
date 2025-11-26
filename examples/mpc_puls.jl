@@ -130,6 +130,8 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 # Calculate demand for each time point
 time_vector = 0:time_step:t_end
 wind_data = [calc_wind(vis, t) for t in time_vector]
+wind.input_vel = "Interpolation"
+wind.vel = calc_vel(vis)
 
 """
     calc_max_power(wind_speed, ta, wf, floris) -> Float64
@@ -164,19 +166,14 @@ function calc_max_power(wind_speed, ta, wf, floris)
 end
 
 # This function implements the "model" in the block diagram.
-function run_simulation(set_induction::AbstractMatrix; enable_online=false, msr=msr)
+function run_simulation(; enable_online=false, msr=msr)
     global set, wind, con, floridyn, floris, sim, ta, vis 
-    con.induction_data = set_induction
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+    wind.vel = calc_vel(vis)
     # Only enable online visualization if explicitly requested (to avoid NaN issues during optimization)
     vis.online = enable_online
     wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=msr)
-    # Calculate total wind farm power by grouping by time and summing turbine powers
-    total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
-    # Calculate theoretical maximum power based on turbine ratings and wind conditions
-    # Assumptions: free flow wind speed from wind.vel, optimal axial induction factor, no yaw
-    max_power = calc_max_power(wind.vel, ta, wf, floris)
-    rel_power = (total_power_df.TotalPower ./ max_power) 
+    return md 
 end
 
 """
@@ -385,14 +382,6 @@ function calc_error(vis, rel_power, demand_data, time_step)
 end
 
 include("mpc_plotting.jl")
-
-# Calculate storage time at 100% power in seconds
-function calc_storage_time(time_vector, rel_power_gain)
-    dt = time_vector[2]-time_vector[1]
-    mean_gain = mean(rel_power_gain)
-    time = length(rel_power_gain)*dt
-    storage_time = mean_gain * time
-end
 
 # plot(time_vector, wind_data)
 plot_rmt(collect(time_vector), wind_data; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
