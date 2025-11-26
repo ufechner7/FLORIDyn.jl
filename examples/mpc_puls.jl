@@ -129,8 +129,7 @@ wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris,
 
 # Calculate demand for each time point
 time_vector = 0:time_step:t_end
-demand_data = [calc_demand(vis, t) for t in time_vector]
-con.demand_data = demand_data
+wind_data = [calc_wind(vis, t) for t in time_vector]
 
 """
     calc_max_power(wind_speed, ta, wf, floris) -> Float64
@@ -395,239 +394,244 @@ function calc_storage_time(time_vector, rel_power_gain)
     storage_time = mean_gain * time
 end
 
-"""
-    eval_fct(x::Vector{Float64}) -> Tuple{Bool, Bool, Vector{Float64}}
+# plot(time_vector, wind_data)
+plot_rmt(collect(time_vector), wind_data; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
+    ylabel="v_wind [m/s]", fig="v_wind", title="Wind speed vs time", pltctrl)
 
-Evaluation function for NOMAD optimization of the correction parameter.
 
-This function calculates the mean squared error between the relative power output 
-and demand values for a given correction parameter. It is designed to be minimized 
-by the NOMAD optimizer.
+# """
+#     eval_fct(x::Vector{Float64}) -> Tuple{Bool, Bool, Vector{Float64}}
 
-# Arguments
-- `x::Vector{Float64}`: A vector containing the correction parameters
+# Evaluation function for NOMAD optimization of the correction parameter.
 
-# Returns
-- `success::Bool`: Always `true` to indicate successful evaluation
-- `count_eval::Bool`: Always `true` to count this evaluation
-- `bb_outputs::Vector{Float64}`: Vector containing [objective, constraint(s)]
+# This function calculates the mean squared error between the relative power output 
+# and demand values for a given correction parameter. It is designed to be minimized 
+# by the NOMAD optimizer.
 
-# Global Variables Used
-- `ta`: Turbine array
-- `time_step`: Simulation time step
-- `t_end`: End time of simulation
-- `demand_data`: Target demand values
-- `GROUP_CONTROL`: Boolean flag for group control mode
-"""
-function eval_fct(x::Vector{Float64})
-    correction = x  # correction is now a vector with parameters
-    print(".")  # progress indicator
+# # Arguments
+# - `x::Vector{Float64}`: A vector containing the correction parameters
+
+# # Returns
+# - `success::Bool`: Always `true` to indicate successful evaluation
+# - `count_eval::Bool`: Always `true` to count this evaluation
+# - `bb_outputs::Vector{Float64}`: Vector containing [objective, constraint(s)]
+
+# # Global Variables Used
+# - `ta`: Turbine array
+# - `time_step`: Simulation time step
+# - `t_end`: End time of simulation
+# - `demand_data`: Target demand values
+# - `GROUP_CONTROL`: Boolean flag for group control mode
+# """
+# function eval_fct(x::Vector{Float64})
+#     correction = x  # correction is now a vector with parameters
+#     print(".")  # progress indicator
     
-    # Calculate induction matrix with current correction
-    induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=correction)
-    if max_distance > 0.0
-        push!(MAX_DISTANCES, max_distance)
-    end
+#     # Calculate induction matrix with current correction
+#     induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=correction)
+#     if max_distance > 0.0
+#         push!(MAX_DISTANCES, max_distance)
+#     end
 
-    # Run simulation and get relative power
-    rel_power = run_simulation(induction_data)
+#     # Run simulation and get relative power
+#     rel_power = run_simulation(induction_data)
     
-    # Calculate error
-    error = calc_error(vis, rel_power, demand_data, time_step)
-    success = true
-    if isnothing(error) || isnan(error)
-        error = 1e6
-        success = false
-    end
+#     # Calculate error
+#     error = calc_error(vis, rel_power, demand_data, time_step)
+#     success = true
+#     if isnothing(error) || isnan(error)
+#         error = 1e6
+#         success = false
+#     end
     
-    # Add constraint if GROUP_CONTROL is true
-    if GROUP_CONTROL
-        # Constraint: x[CONTROL_POINTS+1] + x[CONTROL_POINTS+2] + ... <= GROUPS * MAX_ID_SCALING / 2.0
-        # For NOMAD, constraints should be <= 0, so we formulate as:
-        # x[CONTROL_POINTS+1] + x[CONTROL_POINTS+2] + ... - GROUPS * MAX_ID_SCALING / 2.0 <= 0
-        constraint_sum = sum(x[(CONTROL_POINTS+1):end]) - (GROUPS * MAX_ID_SCALING / 2.0)
-        bb_outputs = [error, constraint_sum]
-    else
-        bb_outputs = [error]
-    end
+#     # Add constraint if GROUP_CONTROL is true
+#     if GROUP_CONTROL
+#         # Constraint: x[CONTROL_POINTS+1] + x[CONTROL_POINTS+2] + ... <= GROUPS * MAX_ID_SCALING / 2.0
+#         # For NOMAD, constraints should be <= 0, so we formulate as:
+#         # x[CONTROL_POINTS+1] + x[CONTROL_POINTS+2] + ... - GROUPS * MAX_ID_SCALING / 2.0 <= 0
+#         constraint_sum = sum(x[(CONTROL_POINTS+1):end]) - (GROUPS * MAX_ID_SCALING / 2.0)
+#         bb_outputs = [error, constraint_sum]
+#     else
+#         bb_outputs = [error]
+#     end
     
-    count_eval = true
+#     count_eval = true
     
-    return (success, count_eval, bb_outputs)
-end
-if GROUP_CONTROL
-    n_group_params = GROUPS - 1  # One less because last group is calculated from constraint
-    n_total_params = CONTROL_POINTS + n_group_params  # CONTROL_POINTS global correction + (GROUPS-1) group correction
+#     return (success, count_eval, bb_outputs)
+# end
+# if GROUP_CONTROL
+#     n_group_params = GROUPS - 1  # One less because last group is calculated from constraint
+#     n_total_params = CONTROL_POINTS + n_group_params  # CONTROL_POINTS global correction + (GROUPS-1) group correction
     
-    # Create lower and upper bounds dynamically
-    lower_bound = vcat(fill(1.0, CONTROL_POINTS), fill(0.0, n_group_params))
-    upper_bound = vcat(fill(2.0, CONTROL_POINTS), fill(MAX_ID_SCALING, n_group_params))
+#     # Create lower and upper bounds dynamically
+#     lower_bound = vcat(fill(1.0, CONTROL_POINTS), fill(0.0, n_group_params))
+#     upper_bound = vcat(fill(2.0, CONTROL_POINTS), fill(MAX_ID_SCALING, n_group_params))
     
-    # Set up NOMAD optimization problem
-    p = NomadProblem(
-        n_total_params,      # dimension (CONTROL_POINTS global + GROUPS-1 group parameters)
-        2,                   # number of outputs (objective + 1 constraint)
-        ["OBJ", "PB"],       # output types: OBJ = objective to minimize, PB = progressive barrier constraint
-        eval_fct;            # evaluation function
-        lower_bound=lower_bound,
-        upper_bound=upper_bound
-    )
+#     # Set up NOMAD optimization problem
+#     p = NomadProblem(
+#         n_total_params,      # dimension (CONTROL_POINTS global + GROUPS-1 group parameters)
+#         2,                   # number of outputs (objective + 1 constraint)
+#         ["OBJ", "PB"],       # output types: OBJ = objective to minimize, PB = progressive barrier constraint
+#         eval_fct;            # evaluation function
+#         lower_bound=lower_bound,
+#         upper_bound=upper_bound
+#     )
 
-    # Set NOMAD options
-    p.options.max_bb_eval = MAX_STEPS      # maximum number of function evaluations
-    p.options.display_degree = 2    # verbosity level
-else
-        # Set up NOMAD optimization problem
-    p = NomadProblem(
-        CONTROL_POINTS,      # dimension (CONTROL_POINTS parameters: correction at CONTROL_POINTS time points)
-        1,                   # number of outputs (just the objective)
-        ["OBJ"],             # output types: OBJ = objective to minimize
-        eval_fct;            # evaluation function
-        lower_bound=fill(1.0, CONTROL_POINTS),   # minimum correction values
-        upper_bound=vcat([2.5], fill(3.0, CONTROL_POINTS - 1))    # maximum correction values
-    )
+#     # Set NOMAD options
+#     p.options.max_bb_eval = MAX_STEPS      # maximum number of function evaluations
+#     p.options.display_degree = 2    # verbosity level
+# else
+#         # Set up NOMAD optimization problem
+#     p = NomadProblem(
+#         CONTROL_POINTS,      # dimension (CONTROL_POINTS parameters: correction at CONTROL_POINTS time points)
+#         1,                   # number of outputs (just the objective)
+#         ["OBJ"],             # output types: OBJ = objective to minimize
+#         eval_fct;            # evaluation function
+#         lower_bound=fill(1.0, CONTROL_POINTS),   # minimum correction values
+#         upper_bound=vcat([2.5], fill(3.0, CONTROL_POINTS - 1))    # maximum correction values
+#     )
 
-    # Set NOMAD options
-    p.options.max_bb_eval = MAX_STEPS      # maximum number of function evaluations
-    p.options.display_degree = 2           # verbosity level
-end
+#     # Set NOMAD options
+#     p.options.max_bb_eval = MAX_STEPS      # maximum number of function evaluations
+#     p.options.display_degree = 2           # verbosity level
+# end
 
-results = nothing
-if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_group_control) && GROUP_CONTROL))
-    println("Loading cached MPC results from $(data_file)…")
-    if GROUP_CONTROL
-        results = JLD2.load(data_file_group_control, "results")
-        results_ref = JLD2.load(data_file, "results")
-        rel_power_ref = results_ref["rel_power"]
-    else
-        results = JLD2.load(data_file, "results")   
-    end
-    # Unpack
-    time_vector   = results["time_vector"]
-    demand_data = results["demand_values"]
-    rel_power     = results["rel_power"]
-    induction_data = results["induction_data"]
-    optimal_correction = results["optimal_correction"]
-    mse = results["mse"]
-else
-    # Run optimization and simulation
-    if GROUP_CONTROL
-        if USE_HARDCODED_INITIAL_GUESS
-            # Create initial guess: CONTROL_POINTS global parameters + (GROUPS-1) group parameters
-            if GROUPS == 8
-                x0 = [1.31, 1.4427, 1.35654, 1.28725, 1.28105, 0.0027, 0.0294, 1.8695, 2.0157, 1.8563, 1.1908, 0.0825]
-            # elseif GROUPS == 7
-                # [1.4205, 1.99512, 1.53716, 1.29955, 1.24977, 0.056094, 2.99831, 0.168302, 1.99127, 2.94931, 1.8258]
-                # [1.52239, 1.79394, 2.0, 1.57331, 1.43218, 1.30729, 1.30697, 0.0023, 2.9996, 2.1372, 0.7263, 1.5837, 2.7548]
-            elseif GROUPS == 4
-                x0 = [1.513, 2.0, 1.54959, 1.35491, 1.27939, 0.0, 0.797814, 2.99485]
-            elseif GROUPS == 6
-                x0 = [1.65486, 1.97541, 1.5316, 1.31961, 1.25507, 0.34362, 2.65742, 0.00128, 2.99976, 1.61484]
-            elseif GROUPS == 2
-                x0 = [1.52628, 1.9693, 1.4923, 1.35422, 1.26623, 0.5599]
-            elseif GROUPS == 3
-                x0 = [1.35, 1.985, 1.7041, 1.396, 1.275, 0.1022, 1.3581]
-            elseif GROUPS == 12
-                # CONTROL_POINTS global + 11 group parameters (last group calculated from constraint)
-                x0 = [1.409, 1.60396, 1.43527, 1.30722, 1.26675, 0.0877, 0.1621, 0.1235, 1.99722, 0.016, 1.9725, 1.34014, 1.8945, 0.85491, 2.8402, 2.0101]
-            else
-                # Generic initial guess for other group counts
-                x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
-            end
-        else
-            # Default initial guess: all 1.5 for global + all 1.0 for group parameters
-            x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
-        end
-        result = solve(p, x0)
-        results_ref = JLD2.load(data_file, "results")
-        rel_power_ref = results_ref["rel_power"]
-        optimal_correction = result.x_best_feas
-    else
-        result = solve(p, [1.18291, 1.19575, 1.21248, 1.2409, 1.30345])  # Start from initial guess
-        optimal_correction = result.x_best_feas[1:CONTROL_POINTS]
-    end
+# results = nothing
+# if (! SIMULATE) && ((isfile(data_file) && !GROUP_CONTROL) || (isfile(data_file_group_control) && GROUP_CONTROL))
+#     println("Loading cached MPC results from $(data_file)…")
+#     if GROUP_CONTROL
+#         results = JLD2.load(data_file_group_control, "results")
+#         results_ref = JLD2.load(data_file, "results")
+#         rel_power_ref = results_ref["rel_power"]
+#     else
+#         results = JLD2.load(data_file, "results")   
+#     end
+#     # Unpack
+#     time_vector   = results["time_vector"]
+#     demand_data = results["demand_values"]
+#     rel_power     = results["rel_power"]
+#     induction_data = results["induction_data"]
+#     optimal_correction = results["optimal_correction"]
+#     mse = results["mse"]
+# else
+#     # Run optimization and simulation
+#     if GROUP_CONTROL
+#         if USE_HARDCODED_INITIAL_GUESS
+#             # Create initial guess: CONTROL_POINTS global parameters + (GROUPS-1) group parameters
+#             if GROUPS == 8
+#                 x0 = [1.31, 1.4427, 1.35654, 1.28725, 1.28105, 0.0027, 0.0294, 1.8695, 2.0157, 1.8563, 1.1908, 0.0825]
+#             # elseif GROUPS == 7
+#                 # [1.4205, 1.99512, 1.53716, 1.29955, 1.24977, 0.056094, 2.99831, 0.168302, 1.99127, 2.94931, 1.8258]
+#                 # [1.52239, 1.79394, 2.0, 1.57331, 1.43218, 1.30729, 1.30697, 0.0023, 2.9996, 2.1372, 0.7263, 1.5837, 2.7548]
+#             elseif GROUPS == 4
+#                 x0 = [1.513, 2.0, 1.54959, 1.35491, 1.27939, 0.0, 0.797814, 2.99485]
+#             elseif GROUPS == 6
+#                 x0 = [1.65486, 1.97541, 1.5316, 1.31961, 1.25507, 0.34362, 2.65742, 0.00128, 2.99976, 1.61484]
+#             elseif GROUPS == 2
+#                 x0 = [1.52628, 1.9693, 1.4923, 1.35422, 1.26623, 0.5599]
+#             elseif GROUPS == 3
+#                 x0 = [1.35, 1.985, 1.7041, 1.396, 1.275, 0.1022, 1.3581]
+#             elseif GROUPS == 12
+#                 # CONTROL_POINTS global + 11 group parameters (last group calculated from constraint)
+#                 x0 = [1.409, 1.60396, 1.43527, 1.30722, 1.26675, 0.0877, 0.1621, 0.1235, 1.99722, 0.016, 1.9725, 1.34014, 1.8945, 0.85491, 2.8402, 2.0101]
+#             else
+#                 # Generic initial guess for other group counts
+#                 x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
+#             end
+#         else
+#             # Default initial guess: all 1.5 for global + all 1.0 for group parameters
+#             x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
+#         end
+#         result = solve(p, x0)
+#         results_ref = JLD2.load(data_file, "results")
+#         rel_power_ref = results_ref["rel_power"]
+#         optimal_correction = result.x_best_feas
+#     else
+#         result = solve(p, [1.18291, 1.19575, 1.21248, 1.2409, 1.30345])  # Start from initial guess
+#         optimal_correction = result.x_best_feas[1:CONTROL_POINTS]
+#     end
 
-    induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=optimal_correction)
+#     induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=optimal_correction)
     
-    # Enable online visualization for the final simulation with optimized parameters
-    enable_viz = ONLINE && GROUP_CONTROL
+#     # Enable online visualization for the final simulation with optimized parameters
+#     enable_viz = ONLINE && GROUP_CONTROL
     
-    rel_power = run_simulation(induction_data; enable_online=enable_viz)
-    mse = calc_error(vis, rel_power, demand_data, time_step)
+#     rel_power = run_simulation(induction_data; enable_online=enable_viz)
+#     mse = calc_error(vis, rel_power, demand_data, time_step)
 
-    # Persist
-    if GROUP_CONTROL
-        data_file1 = data_file_group_control
-    else
-        data_file1 = data_file
-    end
-    JLD2.jldsave(data_file1; results=Dict(
-        "time_vector" => collect(time_vector),
-        "demand_values" => demand_data,
-        "rel_power" => rel_power,
-        "induction_data" => induction_data,
-        "optimal_correction" => optimal_correction,
-        "mse" => mse,
-    ))
-end
+#     # Persist
+#     if GROUP_CONTROL
+#         data_file1 = data_file_group_control
+#     else
+#         data_file1 = data_file
+#     end
+#     JLD2.jldsave(data_file1; results=Dict(
+#         "time_vector" => collect(time_vector),
+#         "demand_values" => demand_data,
+#         "rel_power" => rel_power,
+#         "induction_data" => induction_data,
+#         "optimal_correction" => optimal_correction,
+#         "mse" => mse,
+#     ))
+# end
 
-println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
+# println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
 
-plot_power_and_demand(time_vector, rel_power, demand_data, rel_power_ref; vis, pltctrl)
+# plot_power_and_demand(time_vector, rel_power, demand_data, rel_power_ref; vis, pltctrl)
 
-plot_axial_induction()
+# plot_axial_induction()
 
-if !isnothing(plt)
-    plot_correction2(optimal_correction)
-end 
+# if !isnothing(plt)
+#     plot_correction2(optimal_correction)
+# end 
 
-function print_gains(optimal_correction)
-    if !GROUP_CONTROL || GROUPS == 1
-        println("\n=== Power Gain per Turbine Group ===")
-        println("Group gains not applicable (GROUP_CONTROL is false or only one group).")
-        return
-    end
-    correction = optimal_correction[(CONTROL_POINTS+1):end]
-    id_correction = GROUPS * MAX_ID_SCALING / 2.0 - sum(correction)
-    push!(correction, id_correction)
-    println("\n=== Power Gain per Turbine Group ===")
-    for (i, gain) in enumerate(correction)
-        println("Group $i: $(round(gain, digits=2))")
-    end
-    println("mean: $(round(mean(correction), digits=2))")
-end
+# function print_gains(optimal_correction)
+#     if !GROUP_CONTROL || GROUPS == 1
+#         println("\n=== Power Gain per Turbine Group ===")
+#         println("Group gains not applicable (GROUP_CONTROL is false or only one group).")
+#         return
+#     end
+#     correction = optimal_correction[(CONTROL_POINTS+1):end]
+#     id_correction = GROUPS * MAX_ID_SCALING / 2.0 - sum(correction)
+#     push!(correction, id_correction)
+#     println("\n=== Power Gain per Turbine Group ===")
+#     for (i, gain) in enumerate(correction)
+#         println("Group $i: $(round(gain, digits=2))")
+#     end
+#     println("mean: $(round(mean(correction), digits=2))")
+# end
 
-if GROUP_CONTROL
-    # calculate rel_power-rel_power_ref
-    start_index = Int(floor((vis.t_skip-40+T_START+(T_END-T_START)) / time_step)) + 1
-    common_length = min(length(rel_power), length(rel_power_ref))
-    rel_power = rel_power[1:common_length]
-    rel_power_ref = rel_power_ref[1:common_length]
-    rel_power_gain = rel_power[start_index:end] .- rel_power_ref[start_index:end]
-    storage_time = calc_storage_time(time_vector, rel_power_gain)
-    println("Estimated storage time at 100% power: $(round(storage_time, digits=2)) s")
-    println()
-    plot_rmt((1:length(rel_power_gain)).*4, rel_power_gain .* 100; xlabel="Time [s]", ylabel="Rel. Power Gain [%]", fig="rel_power_ref", pltctrl)
-    results = JLD2.load(data_file_group_control, "results")
-    print_gains(optimal_correction)
-else
-    results = JLD2.load(data_file, "results")
-end
+# if GROUP_CONTROL
+#     # calculate rel_power-rel_power_ref
+#     start_index = Int(floor((vis.t_skip-40+T_START+(T_END-T_START)) / time_step)) + 1
+#     common_length = min(length(rel_power), length(rel_power_ref))
+#     rel_power = rel_power[1:common_length]
+#     rel_power_ref = rel_power_ref[1:common_length]
+#     rel_power_gain = rel_power[start_index:end] .- rel_power_ref[start_index:end]
+#     storage_time = calc_storage_time(time_vector, rel_power_gain)
+#     println("Estimated storage time at 100% power: $(round(storage_time, digits=2)) s")
+#     println()
+#     plot_rmt((1:length(rel_power_gain)).*4, rel_power_gain .* 100; xlabel="Time [s]", ylabel="Rel. Power Gain [%]", fig="rel_power_ref", pltctrl)
+#     results = JLD2.load(data_file_group_control, "results")
+#     print_gains(optimal_correction)
+# else
+#     results = JLD2.load(data_file, "results")
+# end
 
-if ONLINE
-    println("Creating video from png files...")
-    postfix = string(GROUPS)*"T"
-    if TURBULENCE
-        video_path = createVideo("ff_added_turbulence"; fps=6, postfix=postfix)
-    else
-        video_path = createVideo("ff_velocity_reduction"; fps=6, postfix=postfix)
-    end
-    if !isempty(video_path)
-        println("✓ Created video: $video_path")
-    else
-        println("No velocity reduction frames found or video creation failed")
-    end
-end
+# if ONLINE
+#     println("Creating video from png files...")
+#     postfix = string(GROUPS)*"T"
+#     if TURBULENCE
+#         video_path = createVideo("ff_added_turbulence"; fps=6, postfix=postfix)
+#     else
+#         video_path = createVideo("ff_velocity_reduction"; fps=6, postfix=postfix)
+#     end
+#     if !isempty(video_path)
+#         println("✓ Created video: $video_path")
+#     else
+#         println("No velocity reduction frames found or video creation failed")
+#     end
+# end
 
-results
-
+# results
+nothing
