@@ -100,6 +100,20 @@ function calc_demand(vis::Vis, time)
     end
 end
 
+function calc_wind(vis::Vis, time)
+    low_wind = 6.0
+    high_wind = 8.2
+    t1 = vis.t_skip + T_START  # Time to start increasing demand
+    t2 = vis.t_skip + T_END    # Time to reach final demand
+    if time < t1
+        return low_wind
+    elseif time < t2
+        return high_wind
+    else
+        return low_wind
+    end
+end
+
 """
     calc_induction_per_group(turbine_group, time; scaling = 1.22)
 
