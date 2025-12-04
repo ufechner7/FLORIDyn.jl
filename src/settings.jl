@@ -594,6 +594,7 @@ The struct automatically adapts to different computing environments:
     turb_max::Float64 = 35
     up_int::Int = 1  # update interval
     unit_test::Bool = false  # enable unit test mode for visualization functions
+    subtitle::String = ""  # subtitle for plots
 end
 
 # Helper to resolve a file under local or package data directories
