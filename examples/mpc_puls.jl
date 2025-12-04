@@ -108,7 +108,7 @@ con.yaw="Constant"
 con.yaw_fixed = 270.0
 wind.input_dir="Constant"
 wind.dir_fixed = 270.0
-induction = calc_induction_per_group(vis, 1, 0)
+induction = 1/3  # Use Betz limit (optimal induction factor)
 set_induction!(ta, induction)
 
 time_step = sim.time_step  # seconds
@@ -125,7 +125,13 @@ wind_data = [calc_wind(vis, t) for t in time_vector]
 # For initial setup, use calc_induction_matrix (only affects pre-optimization visualization)
 # During optimization, calc_induction_matrix2 will be used with proper group handling
 # Do NOT call prepareSimulation here - it will be called in run_simulation()
-con.induction_data = calc_induction_matrix(vis, ta, time_step, t_end)
+# Create constant induction matrix with value 1/3 (Betz limit)
+time_vec = 0:time_step:t_end
+n_time_steps = length(time_vec)
+n_turbines = size(ta.pos, 1)
+con.induction_data = zeros(Float64, n_time_steps, n_turbines + 1)
+con.induction_data[:, 1] = collect(time_vec)
+con.induction_data[:, 2:end] .= 1/3  # Set constant induction of 1/3 for all turbines
 
 # create settings struct with automatic parallel/threading detection
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
