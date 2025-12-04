@@ -384,7 +384,21 @@ end
 
 include("mpc_plotting.jl")
 
-# plot_rmt(collect(time_vector), wind_data; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
-#     ylabel="v_wind [m/s]", fig="v_wind", title="Wind speed vs time", pltctrl)
-
 md = run_simulation()
+
+# Plot wind speed vs time (using relative time)
+plot_rmt(collect(time_vector), wind_data; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
+    ylabel="v_wind [m/s]", fig="v_wind", title="Wind speed vs time", pltctrl)
+
+# Plot total power output vs time
+if "PowerGen" in names(md)
+    # Group by time and sum power across all turbines
+    time_points = unique(md.Time)
+    total_power = [sum(md[md.Time .== t, "PowerGen"]) for t in time_points]
+    
+    # Convert absolute time to relative time for consistent x-axis
+    time_points_rel = time_points .- sim.start_time
+    
+    plot_rmt(collect(time_points_rel), total_power; xlabel="Time [s]", xlims=(vis.t_skip, time_points_rel[end]),
+        ylabel="Total Power [MW]", fig="total_power", title="Total power output vs time", pltctrl)
+end
