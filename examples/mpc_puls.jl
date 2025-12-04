@@ -116,7 +116,7 @@ t_end = sim.end_time - sim.start_time  # relative end time in seconds
 
 # Set up wind velocity interpolation BEFORE creating induction matrix and settings
 wind.input_vel = "Interpolation"
-wind.vel = calc_vel(vis)
+wind.vel = calc_vel(vis, sim.start_time, sim.end_time)
 
 # Calculate demand for each time point
 time_vector = 0:time_step:t_end

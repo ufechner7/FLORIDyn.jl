@@ -160,18 +160,21 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         wind.vel.TimePrev = sim.start_time
         wind.vel.start_time = sim.start_time
     elseif input_vel == "Interpolation"
-        try
-            path = joinpath(vel_file_dir, "WindVel.csv")
-            if !isfile(path)
-                path = joinpath(pkg_path, path)
+        # Only read from file if wind.vel is not already set as a matrix
+        if !isa(wind.vel, AbstractMatrix)
+            try
+                path = joinpath(vel_file_dir, "WindVel.csv")
+                if !isfile(path)
+                    path = joinpath(pkg_path, path)
+                end
+                if !isfile(path)
+                    @error "WindVel.csv not found in $vel_file_dir"
+                end
+                df = CSV.read(path, DataFrame; header=false)
+                wind.vel = readdlm(path, ',', Float64)
+            catch
+                push!(loadDataWarnings, "WindVel.csv not found.")
             end
-            if !isfile(path)
-                @error "WindVel.csv not found in $vel_file_dir"
-            end
-            df = CSV.read(path, DataFrame; header=false)
-            wind.vel = readdlm(path, ',', Float64)
-        catch
-            push!(loadDataWarnings, "WindVel.csv not found.")
         end
     # elseif input_vel == "InterpTurbine"
     #     try

@@ -117,19 +117,21 @@ function calc_wind(vis::Vis, time)
     return wind
 end
 
-function calc_vel(vis::Vis)
+function calc_vel(vis::Vis, start_time::Real, end_time::Real)
     local vel
     dt = 4
     low_wind = 6.0
     high_wind = 8.2
-    t1 = vis.t_skip + T_START  # Time to start increased wind speed
-    t2 = vis.t_skip + T_END    # Time to stop  increased wind speed
-    vel = [0 low_wind
+    # Use absolute times based on start_time
+    t1 = start_time + vis.t_skip + T_START  # Absolute time to start increased wind speed
+    t2 = start_time + vis.t_skip + T_END    # Absolute time to stop increased wind speed
+    # Ensure the velocity table extends to the end of simulation
+    vel = [start_time low_wind
             t1-dt low_wind
             t1 high_wind
             t2-dt high_wind
             t2 low_wind
-            t2+T_EXTRA low_wind]    
+            end_time low_wind]
     return vel
 end
 
