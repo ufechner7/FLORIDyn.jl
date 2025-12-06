@@ -40,6 +40,7 @@ CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
+USE_PULSE = true
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
@@ -396,7 +397,7 @@ md = run_simulation()
 plot_rmt(collect(time_vector), wind_data; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
     ylabel="v_wind [m/s]", fig="v_wind", title="Wind speed vs time", pltctrl)
 
-# Plot total power output vs time
+# Plot total power output and demand vs time
 if "PowerGen" in names(md)
     # Group by time and sum power across all turbines
     time_points = unique(md.Time)
@@ -405,6 +406,9 @@ if "PowerGen" in names(md)
     # Convert absolute time to relative time for consistent x-axis
     time_points_rel = time_points .- sim.start_time
     
-    plot_rmt(collect(time_points_rel), total_power; xlabel="Time [s]", xlims=(vis.t_skip, time_points_rel[end]),
-        ylabel="Total Power [MW]", fig="total_power", title="Total power output vs time", pltctrl)
+    # Calculate demand for all time points (convert from W to MW)
+    demand_power = [calc_demand(vis, t) / 1e6 for t in time_points_rel]
+    
+    plot_rmt(collect(time_points_rel), [total_power, demand_power]; xlabel="Time [s]", xlims=(vis.t_skip, time_points_rel[end]),
+        ylabel="Total Power [MW]", fig="total_power", title="Total power output and demand vs time", labels=["Power Output", "Demand"], pltctrl)
 end

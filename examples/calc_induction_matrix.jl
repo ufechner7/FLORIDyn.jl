@@ -85,6 +85,15 @@ function calc_demand(vis::Vis, time)
         else
             return 0.999
         end
+    elseif USE_PULSE
+        # Example: pulse demand profile
+        pulse_start = vis.t_skip + T_START
+        pulse_end = vis.t_skip + T_END
+        if time >= pulse_start && time <= pulse_end
+            return 207.15e6
+        else
+            return 81.19e6
+        end
     else
         initial_demand = 0.4
         final_demand = 0.8
