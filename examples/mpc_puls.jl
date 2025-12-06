@@ -407,7 +407,7 @@ if "PowerGen" in names(md)
     time_points_rel = time_points .- sim.start_time
     
     # Calculate demand for all time points (convert from W to MW)
-    demand_power = [calc_demand(vis, t) / 1e6 for t in time_points_rel]
+    demand_power = [calc_demand(vis, t; t_shift=60) / 1e6 for t in time_points_rel]
     
     plot_rmt(collect(time_points_rel), [total_power, demand_power]; xlabel="Time [s]", xlims=(vis.t_skip, time_points_rel[end]),
         ylabel="Total Power [MW]", fig="total_power", title="Total power output and demand vs time", labels=["Power Output", "Demand"], pltctrl)
