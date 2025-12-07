@@ -48,6 +48,7 @@ ONLINE  = false  # if true, enable online plotting during simulation and create 
 TURBULENCE = true # if true, show the added turbulence in the visualization
 T_START = 240    # relative time to start increasing demand
 T_END   = 960    # relative time to reach final demand
+T_SHIFT = 60     # time shift the demand compared to the wind speed in seconds
 T_EXTRA = 2580   # extra time in addition to sim.end_time for MPC simulation
 MIN_INDUCTION = 0.01
 MAX_DISTANCES = Float64[]
@@ -407,7 +408,7 @@ if "PowerGen" in names(md)
     time_points_rel = time_points .- sim.start_time
     
     # Calculate demand for all time points (convert from W to MW)
-    demand_power = [calc_demand(vis, t; t_shift=60) / 1e6 for t in time_points_rel]
+    demand_power = [calc_demand(vis, t; t_shift=T_SHIFT) / 1e6 for t in time_points_rel]
     
     plot_rmt(collect(time_points_rel), [total_power, demand_power]; xlabel="Time [s]", xlims=(vis.t_skip, time_points_rel[end]),
         ylabel="Total Power [MW]", fig="total_power", title="Total power output and demand vs time", labels=["Power Output", "Demand"], pltctrl)
