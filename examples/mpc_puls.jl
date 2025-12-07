@@ -310,15 +310,15 @@ The function operates in several stages:
 function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     distance = 0.0
     id_correction = 1.0
-    # if length(correction) > CONTROL_POINTS && !isnothing(group_id) && group_id >= 1
-    #     if group_id <= GROUPS - 1
-    #         id_correction = correction[CONTROL_POINTS + group_id]
-    #     elseif group_id == GROUPS
-    #         # Last group: calculate as GROUPS * MAX_ID_SCALING / 2.0 minus sum of groups 1 to GROUPS-1
-    #         id_correction = GROUPS * MAX_ID_SCALING / 2.0 - sum(correction[(CONTROL_POINTS+1):end])
-    #     end
-    #     id_correction = clamp(id_correction, 0.0, MAX_ID_SCALING)
-    # end
+    if length(correction) > CONTROL_POINTS && !isnothing(group_id) && group_id >= 1
+        if group_id <= GROUPS - 1
+            id_correction = correction[CONTROL_POINTS + group_id]
+        elseif group_id == GROUPS
+            # Last group: calculate as GROUPS * MAX_ID_SCALING / 2.0 minus sum of groups 1 to GROUPS-1
+            id_correction = GROUPS * MAX_ID_SCALING / 2.0 - sum(correction[(CONTROL_POINTS+1):end])
+        end
+        id_correction = clamp(id_correction, 0.0, MAX_ID_SCALING)
+    end
     t1 = vis.t_skip + T_START            # Time to start wind speed
     t2 = vis.t_skip + T_END + T_SHIFT    # Time to end high demand
 
@@ -424,6 +424,8 @@ end
 correction = ones(CONTROL_POINTS)
 
 if GROUP_CONTROL && GROUPS > 1
+    local induction_values = Float64[]
+    local induction
     # Plot induction for each turbine group
     group_inductions = []
     group_labels = []
