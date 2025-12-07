@@ -35,7 +35,7 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+GROUPS = 2 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
@@ -464,19 +464,23 @@ if GROUP_CONTROL && GROUPS > 1
     local induction_values = Float64[]
     local induction
     # Plot induction for each turbine group
-    group_inductions = []
-    group_labels = []
+    group_inductions = [Float64[] for _ in 1:GROUPS]
+    group_labels = ["Group $group_id" for group_id in 1:GROUPS]
+    
     for group_id in 1:GROUPS
-        induction_values = Float64[]
         for t in time_vector
             induction, _ = calc_axial_induction2(vis, t, correction; group_id=group_id)
-            push!(induction_values, induction)
+            push!(group_inductions[group_id], induction)
         end
-        push!(group_inductions, induction_values)
-        push!(group_labels, "Group $group_id")
     end
-    plot_rmt(collect(time_vector), group_inductions; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
-        ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", labels=group_labels, pltctrl)
+    
+    plot_rmt(collect(time_vector), group_inductions;
+        xlabel="Time [s]",
+        ylabel="Axial Induction Factor [-]",
+        title="Axial induction factor vs time",
+        labels=group_labels,
+        fig="axial_induction",
+        pltctrl=pltctrl)
 else
     # Plot induction for all turbines (using group_id=1 or nothing)
     induction_values = Float64[]
@@ -500,21 +504,28 @@ matrix_time = induction_matrix[:, 1]
 
 if GROUP_CONTROL && GROUPS > 1
     # Plot average induction per group from the matrix
-    group_matrix_inductions = []
-    group_matrix_labels = []
+    group_matrix_inductions = [Float64[] for _ in 1:GROUPS]
+    group_matrix_labels = ["Group $group_id" for group_id in 1:GROUPS]
+    
     for group_id in 1:GROUPS
         # Find turbines in this group
         turbine_indices = [i for i in 1:n_turbines if FLORIDyn.turbine_group(ta, i) == group_id]
         if !isempty(turbine_indices)
             # Average induction across turbines in this group (columns are turbine_index + 1)
             avg_induction = mean(induction_matrix[:, turbine_indices .+ 1], dims=2)[:]
-            push!(group_matrix_inductions, avg_induction)
-            push!(group_matrix_labels, "Group $group_id")
+            group_matrix_inductions[group_id] = avg_induction
+        else
+            group_matrix_inductions[group_id] = zeros(size(induction_matrix, 1))
         end
     end
-    plot_rmt(collect(matrix_time), group_matrix_inductions; xlabel="Time [s]", xlims=(vis.t_skip, matrix_time[end]),
-        ylabel="Axial Induction Factor [-]", fig="induction_matrix_test", 
-        title="Induction matrix test (calc_induction_matrix2)", labels=group_matrix_labels, pltctrl)
+    
+    plot_rmt(collect(matrix_time), group_matrix_inductions;
+        xlabel="Time [s]",
+        ylabel="Axial Induction Factor [-]",
+        title="Induction matrix test (calc_induction_matrix2)",
+        labels=group_matrix_labels,
+        fig="induction_matrix_test",
+        pltctrl=pltctrl)
 else
     # Plot average induction across all turbines
     avg_matrix_induction = mean(induction_matrix[:, 2:end], dims=2)[:]
