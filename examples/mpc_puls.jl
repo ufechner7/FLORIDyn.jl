@@ -310,15 +310,15 @@ The function operates in several stages:
 function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     distance = 0.0
     id_correction = 1.0
-    if length(correction) > CONTROL_POINTS && !isnothing(group_id) && group_id >= 1
-        if group_id <= GROUPS - 1
-            id_correction = correction[CONTROL_POINTS + group_id]
-        elseif group_id == GROUPS
-            # Last group: calculate as GROUPS * MAX_ID_SCALING / 2.0 minus sum of groups 1 to GROUPS-1
-            id_correction = GROUPS * MAX_ID_SCALING / 2.0 - sum(correction[(CONTROL_POINTS+1):end])
-        end
-        id_correction = clamp(id_correction, 0.0, MAX_ID_SCALING)
-    end
+    # if length(correction) > CONTROL_POINTS && !isnothing(group_id) && group_id >= 1
+    #     if group_id <= GROUPS - 1
+    #         id_correction = correction[CONTROL_POINTS + group_id]
+    #     elseif group_id == GROUPS
+    #         # Last group: calculate as GROUPS * MAX_ID_SCALING / 2.0 minus sum of groups 1 to GROUPS-1
+    #         id_correction = GROUPS * MAX_ID_SCALING / 2.0 - sum(correction[(CONTROL_POINTS+1):end])
+    #     end
+    #     id_correction = clamp(id_correction, 0.0, MAX_ID_SCALING)
+    # end
     t1 = vis.t_skip + T_START            # Time to start wind speed
     t2 = vis.t_skip + T_END + T_SHIFT    # Time to end high demand
 
@@ -329,7 +329,8 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     s = clamp((time - t1) / (t2 - t1), 0.0, 1.0)
     
     # Perform piecewise cubic Hermite spline interpolation
-    correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS])
+    # correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS])
+    correction_result = 1.0
     
     demand = calc_demand(vis, time; t_shift=T_SHIFT, rel_power=REL_POWER)
     scaled_demand = correction_result * demand
@@ -393,6 +394,9 @@ end
 
 include("mpc_plotting.jl")
 
+# Prepare simulation to get wf (needed for calc_axial_induction2)
+wf, wind_prep, sim_prep, con_prep, floris_prep = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+
 md = run_simulation()
 
 # Plot wind speed vs time (using relative time)
@@ -415,32 +419,32 @@ if "PowerGen" in names(md)
         ylabel="Total Power [MW]", fig="total_power", title="Total power output and demand vs time", labels=["Power Output", "Demand"], pltctrl)
 end
 
-# Plot axial induction vs time
-if !isnothing(con.induction_data) && size(con.induction_data, 1) > 0
-    # Extract time and induction data
-    induction_times = con.induction_data[:, 1]
-    
+# Plot axial induction vs time using calc_axial_induction2
+# Create a simple correction vector with no correction (all 1.0)
+correction = ones(CONTROL_POINTS)
+
+if GROUP_CONTROL && GROUPS > 1
     # Plot induction for each turbine group
-    if GROUP_CONTROL && GROUPS > 1
-        # Plot average induction per group
-        group_inductions = []
-        group_labels = []
-        for group_id in 1:GROUPS
-            # Find turbines in this group
-            turbine_indices = [i for i in 1:n_turbines if FLORIDyn.turbine_group(ta, i) == group_id]
-            if !isempty(turbine_indices)
-                # Average induction across turbines in this group (columns are turbine_index + 1)
-                avg_induction = mean(con.induction_data[:, turbine_indices .+ 1], dims=2)[:]
-                push!(group_inductions, avg_induction)
-                push!(group_labels, "Group $group_id")
-            end
+    group_inductions = []
+    group_labels = []
+    for group_id in 1:GROUPS
+        induction_values = Float64[]
+        for t in time_vector
+            induction, _ = calc_axial_induction2(vis, t, correction; group_id=group_id)
+            push!(induction_values, induction)
         end
-        plot_rmt(collect(induction_times), group_inductions; xlabel="Time [s]", xlims=(vis.t_skip, induction_times[end]),
-            ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", labels=group_labels, pltctrl)
-    else
-        # Plot average induction across all turbines
-        avg_induction = mean(con.induction_data[:, 2:end], dims=2)[:]
-        plot_rmt(collect(induction_times), avg_induction; xlabel="Time [s]", xlims=(vis.t_skip, induction_times[end]),
-            ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", pltctrl)
+        push!(group_inductions, induction_values)
+        push!(group_labels, "Group $group_id")
     end
+    plot_rmt(collect(time_vector), group_inductions; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
+        ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", labels=group_labels, pltctrl)
+else
+    # Plot induction for all turbines (using group_id=1 or nothing)
+    induction_values = Float64[]
+    for t in time_vector
+        induction, _ = calc_axial_induction2(vis, t, correction; group_id=1)
+        push!(induction_values, induction)
+    end
+    plot_rmt(collect(time_vector), induction_values; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
+        ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", pltctrl)
 end
