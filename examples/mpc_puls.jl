@@ -470,6 +470,9 @@ end
 
 include("mpc_plotting.jl")
 
+# Prepare simulation to get wf (needed for calc_axial_induction2 during optimization)
+wf, wind_prep, sim_prep, con_prep, floris_prep = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
     x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
@@ -479,9 +482,6 @@ if SIMULATE
     println("Best correction: ", optimal_correction)
     induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=optimal_correction)
 end
-
-# Prepare simulation to get wf (needed for calc_axial_induction2)
-wf, wind_prep, sim_prep, con_prep, floris_prep = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
 md = run_simulation(con.induction_data)
 
