@@ -177,8 +177,9 @@ function calc_max_power(wind_speed, ta, wf, floris)
 end
 
 # This function implements the "model" in the block diagram.
-function run_simulation(; enable_online=false, msr=msr)
-    global set, wind, con, floridyn, floris, sim, ta, vis 
+function run_simulation(set_induction::AbstractMatrix; enable_online=false, msr=msr)
+    global set, wind, con, floridyn, floris, sim, ta, vis
+    con.induction_data = set_induction
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     # Only enable online visualization if explicitly requested (to avoid NaN issues during optimization)
     vis.online = enable_online
@@ -434,7 +435,7 @@ include("mpc_plotting.jl")
 # Prepare simulation to get wf (needed for calc_axial_induction2)
 wf, wind_prep, sim_prep, con_prep, floris_prep = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
-md = run_simulation()
+md = run_simulation(con.induction_data)
 
 # Plot wind speed vs time (using relative time)
 plot_rmt(collect(time_vector), wind_data; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
