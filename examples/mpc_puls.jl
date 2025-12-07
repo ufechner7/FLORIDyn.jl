@@ -329,8 +329,8 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     s = clamp((time - t1) / (t2 - t1), 0.0, 1.0)
     
     # Perform piecewise cubic Hermite spline interpolation
-    # correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS])
-    correction_result = 1.0
+    correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS])
+    # correction_result = 1.0
     
     demand = calc_demand(vis, time; t_shift=T_SHIFT, rel_power=REL_POWER)
     scaled_demand = correction_result * demand
