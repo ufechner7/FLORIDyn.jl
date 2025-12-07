@@ -414,3 +414,33 @@ if "PowerGen" in names(md)
     plot_rmt(collect(time_points_rel), [total_power, demand_power]; xlabel="Time [s]", xlims=(vis.t_skip, time_points_rel[end]),
         ylabel="Total Power [MW]", fig="total_power", title="Total power output and demand vs time", labels=["Power Output", "Demand"], pltctrl)
 end
+
+# Plot axial induction vs time
+if !isnothing(con.induction_data) && size(con.induction_data, 1) > 0
+    # Extract time and induction data
+    induction_times = con.induction_data[:, 1]
+    
+    # Plot induction for each turbine group
+    if GROUP_CONTROL && GROUPS > 1
+        # Plot average induction per group
+        group_inductions = []
+        group_labels = []
+        for group_id in 1:GROUPS
+            # Find turbines in this group
+            turbine_indices = [i for i in 1:n_turbines if FLORIDyn.turbine_group(ta, i) == group_id]
+            if !isempty(turbine_indices)
+                # Average induction across turbines in this group (columns are turbine_index + 1)
+                avg_induction = mean(con.induction_data[:, turbine_indices .+ 1], dims=2)[:]
+                push!(group_inductions, avg_induction)
+                push!(group_labels, "Group $group_id")
+            end
+        end
+        plot_rmt(collect(induction_times), group_inductions; xlabel="Time [s]", xlims=(vis.t_skip, induction_times[end]),
+            ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", labels=group_labels, pltctrl)
+    else
+        # Plot average induction across all turbines
+        avg_induction = mean(con.induction_data[:, 2:end], dims=2)[:]
+        plot_rmt(collect(induction_times), avg_induction; xlabel="Time [s]", xlims=(vis.t_skip, induction_times[end]),
+            ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", pltctrl)
+    end
+end
