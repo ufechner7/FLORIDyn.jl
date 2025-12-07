@@ -318,8 +318,8 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
         end
         id_correction = clamp(id_correction, 0.0, MAX_ID_SCALING)
     end
-    t1 = vis.t_skip + T_START  # Time to start increasing demand
-    t2 = vis.t_skip + T_END    # Time to reach final demand
+    t1 = vis.t_skip + T_START            # Time to start wind speed
+    t2 = vis.t_skip + T_END + T_SHIFT    # Time to end high demand
 
     if time < t1
         time = t1
@@ -331,12 +331,12 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS])
     
     demand = calc_demand(vis, time)
-    demand_end = calc_demand(vis, t2)
-    interpolated_demand = demand_end - (demand_end - demand) * id_correction
-    scaled_demand = correction_result * interpolated_demand
-    if scaled_demand > 1.0
-        distance = scaled_demand - 1.0
-    end
+    scaled_demand = correction_result * demand
+    # convert abs demand to relative demand (scaled by max power)
+    max_power = calc_max_power(calc_wind(vis, time), ta, wf, floris) * 1e6  # in W
+    scaled_demand /= max_power
+    # Apply group-specific correction
+    scaled_demand *= id_correction
     base_induction = calc_induction(scaled_demand * cp_max)
 
     rel_power = calc_cp(base_induction) / cp_max
