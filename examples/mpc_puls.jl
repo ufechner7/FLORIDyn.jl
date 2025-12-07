@@ -378,6 +378,43 @@ function calc_induction_matrix2(vis, ta, time_step, t_end; correction)
     return induction_matrix, max_distance
 end
 
+function eval_fct(x::Vector{Float64})
+    correction = x  # correction is now a vector with parameters
+    print(".")  # progress indicator
+    
+    # Calculate induction matrix with current correction
+    induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=correction)
+    if max_distance > 0.0
+        push!(MAX_DISTANCES, max_distance)
+    end
+
+    # Run simulation and get relative power
+    rel_power = run_simulation(induction_data)
+    
+    # Calculate error
+    error = calc_error(vis, rel_power, demand_data, time_step)
+    success = true
+    if isnothing(error) || isnan(error)
+        error = 1e6
+        success = false
+    end
+    
+    # Add constraint if GROUP_CONTROL is true
+    if GROUP_CONTROL
+        # Constraint: x[CONTROL_POINTS+1] + x[CONTROL_POINTS+2] + ... <= GROUPS * MAX_ID_SCALING / 2.0
+        # For NOMAD, constraints should be <= 0, so we formulate as:
+        # x[CONTROL_POINTS+1] + x[CONTROL_POINTS+2] + ... - GROUPS * MAX_ID_SCALING / 2.0 <= 0
+        constraint_sum = sum(x[(CONTROL_POINTS+1):end]) - (GROUPS * MAX_ID_SCALING / 2.0)
+        bb_outputs = [error, constraint_sum]
+    else
+        bb_outputs = [error]
+    end
+    
+    count_eval = true
+    
+    return (success, count_eval, bb_outputs)
+end
+
 function calc_error(vis, rel_power, demand_data, time_step)
     # Start index after skipping initial transient; +1 because Julia is 1-based
     i0 = Int(floor(vis.t_skip / time_step)) + 1
@@ -449,4 +486,39 @@ else
     end
     plot_rmt(collect(time_vector), induction_values; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
         ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", pltctrl)
+end
+
+# Test case for calc_induction_matrix2: plot induction matrix per turbine group
+println("\nTesting calc_induction_matrix2...")
+test_correction = ones(CONTROL_POINTS)  # Use unity correction for testing
+induction_matrix, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=test_correction)
+println("Generated induction matrix: $(size(induction_matrix)) (time_steps × turbines+1)")
+println("Max constraint distance: $max_distance")
+
+# Extract time from first column
+matrix_time = induction_matrix[:, 1]
+
+if GROUP_CONTROL && GROUPS > 1
+    # Plot average induction per group from the matrix
+    group_matrix_inductions = []
+    group_matrix_labels = []
+    for group_id in 1:GROUPS
+        # Find turbines in this group
+        turbine_indices = [i for i in 1:n_turbines if FLORIDyn.turbine_group(ta, i) == group_id]
+        if !isempty(turbine_indices)
+            # Average induction across turbines in this group (columns are turbine_index + 1)
+            avg_induction = mean(induction_matrix[:, turbine_indices .+ 1], dims=2)[:]
+            push!(group_matrix_inductions, avg_induction)
+            push!(group_matrix_labels, "Group $group_id")
+        end
+    end
+    plot_rmt(collect(matrix_time), group_matrix_inductions; xlabel="Time [s]", xlims=(vis.t_skip, matrix_time[end]),
+        ylabel="Axial Induction Factor [-]", fig="induction_matrix_test", 
+        title="Induction matrix test (calc_induction_matrix2)", labels=group_matrix_labels, pltctrl)
+else
+    # Plot average induction across all turbines
+    avg_matrix_induction = mean(induction_matrix[:, 2:end], dims=2)[:]
+    plot_rmt(collect(matrix_time), avg_matrix_induction; xlabel="Time [s]", xlims=(vis.t_skip, matrix_time[end]),
+        ylabel="Axial Induction Factor [-]", fig="induction_matrix_test", 
+        title="Induction matrix test (calc_induction_matrix2)", pltctrl)
 end
