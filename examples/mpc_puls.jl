@@ -35,7 +35,7 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 2 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
@@ -415,6 +415,44 @@ function eval_fct(x::Vector{Float64})
     
     return (success, count_eval, bb_outputs)
 end
+
+if GROUP_CONTROL
+    n_group_params = GROUPS - 1  # One less because last group is calculated from constraint
+    n_total_params = CONTROL_POINTS + n_group_params  # CONTROL_POINTS global correction + (GROUPS-1) group correction
+    
+    # Create lower and upper bounds dynamically
+    lower_bound = vcat(fill(1.0, CONTROL_POINTS), fill(0.0, n_group_params))
+    upper_bound = vcat(fill(2.0, CONTROL_POINTS), fill(MAX_ID_SCALING, n_group_params))
+    
+    # Set up NOMAD optimization problem
+    p = NomadProblem(
+        n_total_params,      # dimension (CONTROL_POINTS global + GROUPS-1 group parameters)
+        2,                   # number of outputs (objective + 1 constraint)
+        ["OBJ", "PB"],       # output types: OBJ = objective to minimize, PB = progressive barrier constraint
+        eval_fct;            # evaluation function
+        lower_bound=lower_bound,
+        upper_bound=upper_bound
+    )
+
+    # Set NOMAD options
+    p.options.max_bb_eval = MAX_STEPS      # maximum number of function evaluations
+    p.options.display_degree = 2    # verbosity level
+else
+        # Set up NOMAD optimization problem
+    p = NomadProblem(
+        CONTROL_POINTS,      # dimension (CONTROL_POINTS parameters: correction at CONTROL_POINTS time points)
+        1,                   # number of outputs (just the objective)
+        ["OBJ"],             # output types: OBJ = objective to minimize
+        eval_fct;            # evaluation function
+        lower_bound=fill(1.0, CONTROL_POINTS),   # minimum correction values
+        upper_bound=vcat([2.5], fill(3.0, CONTROL_POINTS - 1))    # maximum correction values
+    )
+
+    # Set NOMAD options
+    p.options.max_bb_eval = MAX_STEPS      # maximum number of function evaluations
+    p.options.display_degree = 2           # verbosity level
+end
+
 
 function calc_error(vis, rel_power, demand_data, time_step)
     # Start index after skipping initial transient; +1 because Julia is 1-based
