@@ -77,7 +77,7 @@ function calc_induction(cp)
     return (a_low + a_high) / 2
 end
 
-function calc_demand(vis::Vis, time; t_shift=0.0)
+function calc_demand(vis::Vis, time; t_shift=0.0, rel_power=1.0)
     if USE_STEP
         # Example: step demand profile
         if time < 200 + vis.t_skip
@@ -90,7 +90,7 @@ function calc_demand(vis::Vis, time; t_shift=0.0)
         pulse_start = vis.t_skip + T_START + t_shift
         pulse_end = vis.t_skip + T_END + t_shift
         if time >= pulse_start && time <= pulse_end
-            return 207.15e6
+            return 207.15e6 * rel_power
         else
             return 81.19e6
         end
