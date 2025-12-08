@@ -36,7 +36,7 @@ error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
 GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
-CONTROL_POINTS = 5
+CONTROL_POINTS = 6
 MAX_ID_SCALING = 3.0
 MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
@@ -215,26 +215,27 @@ function run_simulation_full(set_induction::AbstractMatrix; enable_online=false,
 end
 
 """
-    interpolate_hermite_spline(s::Float64, correction::Vector) -> Float64
+    interpolate_hermite_spline(s::Float64, correction::Vector, s_positions::Vector) -> Float64
 
-Perform piecewise cubic Hermite spline interpolation across control points.
+Perform piecewise cubic Hermite spline interpolation across non-equidistant control points.
 
 This function uses cubic Hermite spline interpolation between control points 
-evenly spaced along s ∈ [0, 1]. The method provides smooth C1-continuous transitions while
-respecting the control point values. The number of control points is determined
-from the length of the `correction` vector.
+located at specified positions along s ∈ [0, 1]. The method provides smooth C1-continuous 
+transitions while respecting the control point values.
 
 # Arguments
 - `s::Float64`: Normalized parameter in [0, 1] representing position along the curve
-- `correction::Vector`: Vector containing control point values. For n control points,
-  they are located at s = 0, 1/(n-1), 2/(n-1), ..., 1.0
+- `correction::Vector`: Vector containing control point values
+- `s_positions::Vector`: Normalized positions [0, 1] of each control point
 
 # Returns
 - `Float64`: Interpolated value at position s
 """
-function interpolate_hermite_spline(s::Float64, correction::Vector)
+function interpolate_hermite_spline(s::Float64, correction::Vector, s_positions::Vector)
     n_points = length(correction)
     @assert n_points >= 2 "Need at least 2 control points for interpolation"
+    @assert length(s_positions) == n_points "Number of positions must match number of corrections"
+    @assert s_positions[1] == 0.0 && s_positions[end] == 1.0 "Positions must span [0, 1]"
     
     # Handle edge cases
     if n_points == 2
@@ -242,34 +243,42 @@ function interpolate_hermite_spline(s::Float64, correction::Vector)
         return correction[1] + s * (correction[2] - correction[1])
     end
     
-    # Number of segments = number of control points - 1
-    n_segments = n_points - 1
-    segment_width = 1.0 / n_segments
+    # Find which segment we're in
+    segment_idx = 1
+    for i in 1:(n_points-1)
+        if s >= s_positions[i] && s <= s_positions[i+1]
+            segment_idx = i
+            break
+        end
+    end
+    if s >= s_positions[end]
+        segment_idx = n_points - 1
+    end
     
     # Calculate tangents for all control points using finite differences
     tangents = zeros(n_points)
     
     # First point: forward difference
-    tangents[1] = (correction[2] - correction[1]) / segment_width
+    tangents[1] = (correction[2] - correction[1]) / (s_positions[2] - s_positions[1])
     
-    # Interior points: central differences
+    # Interior points: central differences (accounting for non-uniform spacing)
     for i in 2:(n_points-1)
-        tangents[i] = (correction[i+1] - correction[i-1]) / (2 * segment_width)
+        h_left = s_positions[i] - s_positions[i-1]
+        h_right = s_positions[i+1] - s_positions[i]
+        # Weighted average based on segment widths
+        tangents[i] = ((correction[i] - correction[i-1]) / h_left + 
+                       (correction[i+1] - correction[i]) / h_right) / 2.0
     end
     
     # Last point: backward difference
-    tangents[n_points] = (correction[n_points] - correction[n_points-1]) / segment_width
-    
-    # Determine which segment we're in
-    segment_idx = min(n_segments, Int(floor(s / segment_width)) + 1)
-    if s >= 1.0
-        segment_idx = n_segments
-    end
+    tangents[n_points] = (correction[n_points] - correction[n_points-1]) / 
+                         (s_positions[n_points] - s_positions[n_points-1])
     
     # Local parameter t within the segment [0, 1]
-    s_start = (segment_idx - 1) * segment_width
-    t = (s - s_start) / segment_width
-    t = clamp(t, 0.0, 1.0)
+    s_start = s_positions[segment_idx]
+    s_end = s_positions[segment_idx + 1]
+    segment_width = s_end - s_start
+    t = clamp((s - s_start) / segment_width, 0.0, 1.0)
     
     # Cubic Hermite basis functions
     h00 = 2*t^3 - 3*t^2 + 1
@@ -349,14 +358,23 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     end
     t1 = vis.t_skip + T_START            # Time to start wind speed
     t2 = vis.t_skip + T_END + T_SHIFT    # Time to end high demand
+    t3 = vis.t_skip + T_END              # Intermediate spline control point
 
     # Calculate normalized time parameter s for interpolation
     # Clamp time for s calculation, but preserve original time for demand/wind
     time_clamped = max(time, t1)
     s = clamp((time_clamped - t1) / (t2 - t1), 0.0, 1.0)
     
+    # Define normalized positions for the 6 control points:
+    # Point 1: t1 (s=0.0)
+    # Points 2-4: evenly spaced between t1 and t3
+    # Point 5: t3 (intermediate point at T_END)
+    # Point 6: t2 (s=1.0, at T_END + T_SHIFT)
+    s3 = (t3 - t1) / (t2 - t1)  # normalized position of t3
+    s_positions = [0.0, s3/4, s3/2, 3*s3/4, s3, 1.0]
+    
     # Perform piecewise cubic Hermite spline interpolation
-    correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS])
+    correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS], s_positions)
     # correction_result = 1.0
     
     # BUG FIX: time was clamped to t1, but we should use original time for demand calculation
@@ -508,7 +526,7 @@ demand_data = demand_data ./ max_powers  # Convert to relative power
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
     # x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
-    x0 = [1.38, 1.28, 1.27, 1.19, 1.3]  # hardcoded initial guess for GROUPS = 1
+    x0 = [1.31, 1.25, 1.19, 1.23, 1.3, 1.95]  # hardcoded initial guess for GROUPS = 1, CONTROL_POINTS = 6
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
     println("\nNOMAD optimization completed.")
