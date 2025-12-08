@@ -350,16 +350,16 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     t1 = vis.t_skip + T_START            # Time to start wind speed
     t2 = vis.t_skip + T_END + T_SHIFT    # Time to end high demand
 
-    if time < t1
-        time = t1
-    end
-    
-    s = clamp((time - t1) / (t2 - t1), 0.0, 1.0)
+    # Calculate normalized time parameter s for interpolation
+    # Clamp time for s calculation, but preserve original time for demand/wind
+    time_clamped = max(time, t1)
+    s = clamp((time_clamped - t1) / (t2 - t1), 0.0, 1.0)
     
     # Perform piecewise cubic Hermite spline interpolation
     correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS])
     # correction_result = 1.0
     
+    # BUG FIX: time was clamped to t1, but we should use original time for demand calculation
     demand = calc_demand(vis, time; t_shift=T_SHIFT, rel_power=REL_POWER)
     scaled_demand = correction_result * demand
     # convert abs demand to relative demand (scaled by max power)
