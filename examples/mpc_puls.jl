@@ -584,6 +584,8 @@ else
         ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", pltctrl)
 end
 
+plot_correction_curve(correction)
+
 # # Test case for calc_induction_matrix2: plot induction matrix per turbine group
 # println("\nTesting calc_induction_matrix2...")
 # test_correction = ones(CONTROL_POINTS)  # Use unity correction for testing
