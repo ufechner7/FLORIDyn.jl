@@ -471,9 +471,7 @@ end
 include("mpc_plotting.jl")
 
 # Prepare simulation to get wf and floris (needed for calc_axial_induction2)
-wf, wind_prep, sim_prep, con_prep, floris_prep = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-# Use the prepared floris for calculations (wf and floris are now global)
-floris = floris_prep
+wf, wind_prep, sim_prep, con_prep, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
