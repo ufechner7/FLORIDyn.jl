@@ -124,6 +124,12 @@ wind.vel = calc_vel(vis, sim.start_time, sim.end_time)
 # Calculate demand for each time point
 time_vector = 0:time_step:t_end
 wind_data = [calc_wind(vis, t) for t in time_vector]
+# Calculate demand in absolute power (Watts)
+demand_abs = [calc_demand(vis, t; t_shift=T_SHIFT, rel_power=REL_POWER) for t in time_vector]
+# Convert to relative power by dividing by maximum power at each time point
+# We need to do this after prepareSimulation to have wf and floris available
+# So store demand_abs for now and convert later
+demand_data = demand_abs  # Will be converted to relative power after prepareSimulation
 
 # For initial setup, use calc_induction_matrix (only affects pre-optimization visualization)
 # During optimization, calc_induction_matrix2 will be used with proper group handling
@@ -184,7 +190,28 @@ function run_simulation(set_induction::AbstractMatrix; enable_online=false, msr=
     # Only enable online visualization if explicitly requested (to avoid NaN issues during optimization)
     vis.online = enable_online
     wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=msr)
-    return md 
+    
+    # Calculate total wind farm power by grouping by time and summing turbine powers
+    total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
+    
+    # Calculate maximum power for each time point based on wind speed
+    time_points_rel = total_power_df.Time .- sim.start_time
+    max_powers = [calc_max_power(calc_wind(vis, t), ta, wf, floris) for t in time_points_rel]
+    
+    # Convert to relative power
+    rel_power = (total_power_df.TotalPower ./ max_powers)
+    
+    return rel_power
+end
+
+# Separate function to run simulation and return full DataFrame for plotting
+function run_simulation_full(set_induction::AbstractMatrix; enable_online=false, msr=msr)
+    global set, wind, con, floridyn, floris, sim, ta, vis
+    con.induction_data = set_induction
+    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+    vis.online = enable_online
+    wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=msr)
+    return md
 end
 
 """
@@ -473,6 +500,11 @@ include("mpc_plotting.jl")
 # Prepare simulation to get wf and floris (needed for calc_axial_induction2)
 wf, wind_prep, sim_prep, con_prep, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
+# Now convert demand_data from absolute power to relative power
+# Calculate maximum power for each time point based on wind speed
+max_powers = [calc_max_power(wind_data[i], ta, wf, floris) * 1e6 for i in 1:length(wind_data)]  # Convert MW to W
+demand_data = demand_data ./ max_powers  # Convert to relative power
+
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
     x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
@@ -483,7 +515,8 @@ if SIMULATE
     induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=optimal_correction)
 end
 
-md = run_simulation(con.induction_data)
+# Run final simulation and get full DataFrame for plotting
+md = run_simulation_full(con.induction_data)
 
 # Plot wind speed vs time (using relative time)
 plot_rmt(collect(time_vector), wind_data; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
