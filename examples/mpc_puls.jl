@@ -38,7 +38,7 @@ data_file_group_control = "data/mpc_result_group_control"
 GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 0    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_PULSE = true
 USE_TGC = false
@@ -508,7 +508,7 @@ demand_data = demand_data ./ max_powers  # Convert to relative power
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
     # x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
-    x0 = [2.5, 1.22, 2.64, 1.19, 1.51]  # hardcoded initial guess for GROUPS = 1
+    x0 = [1.38, 1.28, 1.27, 1.19, 1.3]  # hardcoded initial guess for GROUPS = 1
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
     println("\nNOMAD optimization completed.")
