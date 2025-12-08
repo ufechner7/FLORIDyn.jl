@@ -507,7 +507,8 @@ demand_data = demand_data ./ max_powers  # Convert to relative power
 
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
-    x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
+    # x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
+    x0 = [2.5, 1.22, 2.64, 1.19, 1.51]  # hardcoded initial guess for GROUPS = 1
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
     println("\nNOMAD optimization completed.")
@@ -540,7 +541,16 @@ end
 
 # Plot axial induction vs time using calc_axial_induction2
 # Create a simple correction vector with no correction (all 1.0)
-correction = ones(CONTROL_POINTS)
+if SIMULATE
+    correction = optimal_correction
+else
+    if GROUP_CONTROL
+        n_group_params = GROUPS - 1
+        correction = vcat(fill(1.0, CONTROL_POINTS), fill(1.0, n_group_params))
+    else
+        correction = ones(CONTROL_POINTS)
+    end
+end
 
 if GROUP_CONTROL && GROUPS > 1
     local induction_values = Float64[]
@@ -574,44 +584,44 @@ else
         ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", pltctrl)
 end
 
-# Test case for calc_induction_matrix2: plot induction matrix per turbine group
-println("\nTesting calc_induction_matrix2...")
-test_correction = ones(CONTROL_POINTS)  # Use unity correction for testing
-induction_matrix, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=test_correction)
-println("Generated induction matrix: $(size(induction_matrix)) (time_steps × turbines+1)")
-println("Max constraint distance: $max_distance")
+# # Test case for calc_induction_matrix2: plot induction matrix per turbine group
+# println("\nTesting calc_induction_matrix2...")
+# test_correction = ones(CONTROL_POINTS)  # Use unity correction for testing
+# induction_matrix, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=test_correction)
+# println("Generated induction matrix: $(size(induction_matrix)) (time_steps × turbines+1)")
+# println("Max constraint distance: $max_distance")
 
-# Extract time from first column
-matrix_time = induction_matrix[:, 1]
+# # Extract time from first column
+# matrix_time = induction_matrix[:, 1]
 
-if GROUP_CONTROL && GROUPS > 1
-    # Plot average induction per group from the matrix
-    group_matrix_inductions = [Float64[] for _ in 1:GROUPS]
-    group_matrix_labels = ["Group $group_id" for group_id in 1:GROUPS]
+# if GROUP_CONTROL && GROUPS > 1
+#     # Plot average induction per group from the matrix
+#     group_matrix_inductions = [Float64[] for _ in 1:GROUPS]
+#     group_matrix_labels = ["Group $group_id" for group_id in 1:GROUPS]
     
-    for group_id in 1:GROUPS
-        # Find turbines in this group
-        turbine_indices = [i for i in 1:n_turbines if FLORIDyn.turbine_group(ta, i) == group_id]
-        if !isempty(turbine_indices)
-            # Average induction across turbines in this group (columns are turbine_index + 1)
-            avg_induction = mean(induction_matrix[:, turbine_indices .+ 1], dims=2)[:]
-            group_matrix_inductions[group_id] = avg_induction
-        else
-            group_matrix_inductions[group_id] = zeros(size(induction_matrix, 1))
-        end
-    end
+#     for group_id in 1:GROUPS
+#         # Find turbines in this group
+#         turbine_indices = [i for i in 1:n_turbines if FLORIDyn.turbine_group(ta, i) == group_id]
+#         if !isempty(turbine_indices)
+#             # Average induction across turbines in this group (columns are turbine_index + 1)
+#             avg_induction = mean(induction_matrix[:, turbine_indices .+ 1], dims=2)[:]
+#             group_matrix_inductions[group_id] = avg_induction
+#         else
+#             group_matrix_inductions[group_id] = zeros(size(induction_matrix, 1))
+#         end
+#     end
     
-    plot_rmt(collect(matrix_time), group_matrix_inductions;
-        xlabel="Time [s]",
-        ylabel="Axial Induction Factor [-]",
-        title="Induction matrix test (calc_induction_matrix2)",
-        labels=group_matrix_labels,
-        fig="induction_matrix_test",
-        pltctrl=pltctrl)
-else
-    # Plot average induction across all turbines
-    avg_matrix_induction = mean(induction_matrix[:, 2:end], dims=2)[:]
-    plot_rmt(collect(matrix_time), avg_matrix_induction; xlabel="Time [s]", xlims=(vis.t_skip, matrix_time[end]),
-        ylabel="Axial Induction Factor [-]", fig="induction_matrix_test", 
-        title="Induction matrix test (calc_induction_matrix2)", pltctrl)
-end
+#     plot_rmt(collect(matrix_time), group_matrix_inductions;
+#         xlabel="Time [s]",
+#         ylabel="Axial Induction Factor [-]",
+#         title="Induction matrix test (calc_induction_matrix2)",
+#         labels=group_matrix_labels,
+#         fig="induction_matrix_test",
+#         pltctrl=pltctrl)
+# else
+#     # Plot average induction across all turbines
+#     avg_matrix_induction = mean(induction_matrix[:, 2:end], dims=2)[:]
+#     plot_rmt(collect(matrix_time), avg_matrix_induction; xlabel="Time [s]", xlims=(vis.t_skip, matrix_time[end]),
+#         ylabel="Axial Induction Factor [-]", fig="induction_matrix_test", 
+#         title="Induction matrix test (calc_induction_matrix2)", pltctrl)
+# end
