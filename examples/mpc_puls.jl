@@ -416,8 +416,9 @@ function calc_induction_matrix2(vis, ta, time_step, t_end; correction)
     for (t_idx, time) in enumerate(time_vector)
         for i in 1:n_turbines
             group_id = FLORIDyn.turbine_group(ta, i)
-            axial_induction, distance = calc_axial_induction2(vis, time, correction; group_id=group_id)
-            induction_matrix[t_idx, i + 1] = axial_induction
+            time_shifted = time - time_step  # shift back by one time step to suppress spike
+            axial_induction, distance = calc_axial_induction2(vis, time_shifted, correction; group_id=group_id)
+            induction_matrix[t_idx, i+1] = axial_induction
             max_distance = max(max_distance, distance)
         end
     end
@@ -527,7 +528,7 @@ demand_data = demand_data ./ max_powers  # Convert to relative power
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
     # x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
-    x0 = [1.31, 1.25, 1.19, 1.23, 1.3, 1.95]  # hardcoded initial guess for GROUPS = 1, CONTROL_POINTS = 6
+    x0 = [1.34, 1.28, 1.23, 1.24, 1.32, 1.83]  # hardcoded initial guess for GROUPS = 1, CONTROL_POINTS = 6
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
     println("\nNOMAD optimization completed.")
