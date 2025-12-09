@@ -525,7 +525,7 @@ wf, wind_prep, sim_prep, con_prep, floris = prepareSimulation(set, wind, con, fl
 
 # Now convert demand_data from absolute power to relative power
 # Calculate maximum power for each time point based on wind speed
-max_powers = [calc_max_power(wind_data[i], ta, wf, floris) * 1e6 for i in 1:length(wind_data)]  # Convert MW to W
+max_powers = [calc_max_power(wind_data[i], ta, wf, floris) * 1e6 for i in eachindex(wind_data)]  # Convert MW to W
 demand_data = demand_data ./ max_powers  # Convert to relative power
 
 if SIMULATE

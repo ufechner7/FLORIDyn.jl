@@ -226,7 +226,7 @@ function centerline!(deflection::AbstractMatrix,
         end
     end
 
-    # States (vectorised)
+    # States (vectorized)
     Ct  = calcCt(states_t[:, 1], states_t[:, 2])
     yaw = -deg2rad.(states_t[:, 2])
     TI  = states_t[:, 3]
