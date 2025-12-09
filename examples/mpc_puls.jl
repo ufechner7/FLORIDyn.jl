@@ -356,21 +356,21 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
         end
         id_correction = clamp(id_correction, 0.0, MAX_ID_SCALING)
     end
-    t1 = vis.t_skip + T_START            # Time to start wind speed
-    t2 = vis.t_skip + T_END + T_SHIFT    # Time to end high demand
+    t1 = vis.t_skip + T_START            # Time of the beginning of the high wind speed
     t3 = vis.t_skip + T_END              # Intermediate spline control point
+    t4 = vis.t_skip + T_END + T_SHIFT    # Time to end high demand
 
     # Calculate normalized time parameter s for interpolation
     # Clamp time for s calculation, but preserve original time for demand/wind
     time_clamped = max(time, t1)
-    s = clamp((time_clamped - t1) / (t2 - t1), 0.0, 1.0)
+    s = clamp((time_clamped - t1) / (t4 - t1), 0.0, 1.0)
     
     # Define normalized positions for the 6 control points:
     # Point 1: t1 (s=0.0)
     # Points 2-4: evenly spaced between t1 and t3
     # Point 5: t3 (intermediate point at T_END)
-    # Point 6: t2 (s=1.0, at T_END + T_SHIFT)
-    s3 = (t3 - t1) / (t2 - t1)  # normalized position of t3
+    # Point 6: t4 (s=1.0, at T_END + T_SHIFT)
+    s3 = (t3 - t1) / (t4 - t1)  # normalized position of t3
     s_positions = [0.0, s3/4, s3/2, 3*s3/4, s3, 1.0]
     
     # Perform piecewise cubic Hermite spline interpolation
