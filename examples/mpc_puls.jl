@@ -36,7 +36,7 @@ error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
 GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
-CONTROL_POINTS = 6
+CONTROL_POINTS = 7
 MAX_ID_SCALING = 3.0
 MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
@@ -359,6 +359,7 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
         id_correction = clamp(id_correction, 0.0, MAX_ID_SCALING)
     end
     t1 = vis.t_skip + T_START            # Time of the beginning of the high wind speed
+    t2 = vis.t_skip + T_END - 4          # Additional control point before t3
     t3 = vis.t_skip + T_END              # Intermediate spline control point
     t4 = vis.t_skip + T_END + T_SHIFT    # Time to end high demand
 
@@ -367,13 +368,15 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     time_clamped = max(time, t1)
     s = clamp((time_clamped - t1) / (t4 - t1), 0.0, 1.0)
     
-    # Define normalized positions for the 6 control points:
+    # Define normalized positions for the 7 control points:
     # Point 1: t1 (s=0.0)
-    # Points 2-4: evenly spaced between t1 and t3
-    # Point 5: t3 (intermediate point at T_END)
-    # Point 6: t4 (s=1.0, at T_END + T_SHIFT)
+    # Points 2-4: evenly spaced between t1 and t2
+    # Point 5: t2 (additional control point)
+    # Point 6: t3 (intermediate point at T_END)
+    # Point 7: t4 (s=1.0, at T_END + T_SHIFT)
+    s2 = (t2 - t1) / (t4 - t1)  # normalized position of t2
     s3 = (t3 - t1) / (t4 - t1)  # normalized position of t3
-    s_positions = [0.0, s3/4, s3/2, 3*s3/4, s3, 1.0]
+    s_positions = [0.0, s2/4, s2/2, 3*s2/4, s2, s3, 1.0]
     spline_positions = s_positions  # store for plotting later
     
     # Perform piecewise cubic Hermite spline interpolation
@@ -528,7 +531,7 @@ demand_data = demand_data ./ max_powers  # Convert to relative power
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
     # x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
-    x0 = [1.34, 1.28, 1.23, 1.24, 1.32, 1.83]  # hardcoded initial guess for GROUPS = 1, CONTROL_POINTS = 6
+    x0 = [1.3432, 1.2803, 1.2378, 1.2306, 1.2983, 1.3321, 1.7469] # hardcoded initial guess for GROUPS = 1, CONTROL_POINTS = 7
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
     println("\nNOMAD optimization completed.")
