@@ -55,6 +55,7 @@ MIN_INDUCTION = 0.01
 MAX_DISTANCES = Float64[]
 data_file_group_control = data_file_group_control * '_' * string(GROUPS) * "TGs.jld2"
 rel_power_ref = nothing
+spline_positions = Float64[]
 
 GROUP_CONTROL = (GROUPS != 1)
 if USE_HARDCODED_INITIAL_GUESS
@@ -345,6 +346,7 @@ The function operates in several stages:
 - [`calc_induction_matrix2`](@ref): Uses this function to build induction matrices
 """
 function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
+    global spline_positions
     distance = 0.0
     id_correction = 1.0
     if length(correction) > CONTROL_POINTS && !isnothing(group_id) && group_id >= 1
@@ -372,6 +374,7 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     # Point 6: t4 (s=1.0, at T_END + T_SHIFT)
     s3 = (t3 - t1) / (t4 - t1)  # normalized position of t3
     s_positions = [0.0, s3/4, s3/2, 3*s3/4, s3, 1.0]
+    spline_positions = s_positions  # store for plotting later
     
     # Perform piecewise cubic Hermite spline interpolation
     correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS], s_positions)
@@ -600,7 +603,7 @@ else
         ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", pltctrl)
 end
 
-plot_correction_curve(correction)
+plot_correction_curve(correction, spline_positions))
 
 # # Test case for calc_induction_matrix2: plot induction matrix per turbine group
 # println("\nTesting calc_induction_matrix2...")

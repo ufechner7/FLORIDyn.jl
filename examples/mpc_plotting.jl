@@ -71,7 +71,7 @@ Plots the piecewise cubic Hermite spline interpolation curve showing how the cor
 factor varies across the normalized parameter s from 0 to 1. Uses the first CONTROL_POINTS
 elements of `optimal_correction` as control points evenly spaced from s = 0 to s = 1.0.
 """
-function plot_correction_curve(optimal_correction::Vector{Float64})
+function plot_correction_curve(optimal_correction::Vector{Float64}, spline_positions)
     # Create s vector from 0 to 1
     s_vec = 0.0:0.01:1.0
     n_points = length(s_vec)
@@ -80,7 +80,7 @@ function plot_correction_curve(optimal_correction::Vector{Float64})
     correction_values = zeros(n_points)
     
     for (i, s) in enumerate(s_vec)
-        correction_values[i] = interpolate_hermite_spline(s, optimal_correction[1:CONTROL_POINTS])
+        correction_values[i] = interpolate_hermite_spline(s, optimal_correction[1:CONTROL_POINTS], spline_positions)
     end
     
     # Print diagnostic information
