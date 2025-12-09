@@ -73,7 +73,8 @@ elements of `optimal_correction` as control points evenly spaced from s = 0 to s
 """
 function plot_correction_curve(optimal_correction::Vector{Float64}, spline_positions)
     # Create s vector from 0 to 1
-    s_vec = 0.0:0.01:1.0
+    # s_vec = 0.0:0.01:1.0
+    s_vec = spline_positions
     n_points = length(s_vec)
     
     # Calculate correction_result for each s value

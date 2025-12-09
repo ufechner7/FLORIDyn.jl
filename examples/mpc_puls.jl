@@ -36,7 +36,7 @@ error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
 GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
-CONTROL_POINTS = 7
+CONTROL_POINTS = 8
 MAX_ID_SCALING = 3.0
 MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
@@ -376,7 +376,7 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     # Point 7: t4 (s=1.0, at T_END + T_SHIFT)
     s2 = (t2 - t1) / (t4 - t1)  # normalized position of t2
     s3 = (t3 - t1) / (t4 - t1)  # normalized position of t3
-    s_positions = [0.0, s2/4, s2/2, 3*s2/4, s2, s3, 1.0]
+    s_positions = [0.0, s2/4, s2/2, 3*s2/4, 7/8*s2, s2, s3, 1.0]
     spline_positions = s_positions  # store for plotting later
     
     # Perform piecewise cubic Hermite spline interpolation
@@ -531,7 +531,7 @@ demand_data = demand_data ./ max_powers  # Convert to relative power
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
     # x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
-    x0 = [1.3432, 1.2803, 1.2378, 1.2306, 1.2983, 1.3321, 1.7469] # hardcoded initial guess for GROUPS = 1, CONTROL_POINTS = 7
+    x0 =  [1.3732, 1.2803, 1.225, 1.2315, 1.23, 1.2754, 1.2575, 2.4769] # hardcoded initial guess for GROUPS = 1, CONTROL_POINTS = 7
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
     println("\nNOMAD optimization completed.")
