@@ -84,7 +84,7 @@ function getYaw(::Yaw_SOWFA, con::Con, iT, t)
     end
 
     # Create interpolation object for each turbine column
-    interp_funcs = [linear_interpolation(time, yaw_data[:, j], extrapolation_bc=Flat()) for j in 1:size(yaw_data, 2)]
+    interp_funcs = [linear_interpolation(time, yaw_data[:, j], extrapolation_bc=Flat()) for j in axes(yaw_data, 2)]
 
     # Get interpolated yaw(s)
     if isa(iT, Integer)
@@ -281,7 +281,7 @@ function getInduction(::Induction_TGC, con::Con, iT, t)
 
     # Create interpolation object for each turbine column
     # TODO optimize by storing these in con.induction_interp_funcs after first call
-    interp_funcs = [linear_interpolation(time, induction_data[:, j], extrapolation_bc=Flat()) for j in 1:size(induction_data, 2)]
+    interp_funcs = [linear_interpolation(time, induction_data[:, j], extrapolation_bc=Flat()) for j in axes(induction_data, 2)]
 
     # Get interpolated induction(s)
     if isa(iT, Integer)

@@ -50,7 +50,7 @@ function plot_turbines(ta::TurbineArray, turbine_groups)
     end
     
     # Add turbine IDs as labels
-    for i in 1:length(x_coords)
+    for i in eachindex(x_coords)
         plt.annotate("T$i", (x_coords[i], y_coords[i]), xytext=(5, 5), 
                     textcoords="offset points", fontsize=8, 
                     bbox=Dict("boxstyle"=>"round,pad=0.2", "facecolor"=>"white", "alpha"=>0.7))
