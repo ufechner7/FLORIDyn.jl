@@ -421,7 +421,7 @@ end
                 
 #                 sum_w = sum_w + T.weight{iT}(iiT);
 #             end
-#             % Divide to get weigthed average
+#             % Divide to get weighted average
 #             T.States_WF(T.StartI(iT),2) = sum_wP / sum_w;
 #         end
 #     end
