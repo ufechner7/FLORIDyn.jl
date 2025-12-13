@@ -232,7 +232,7 @@ function getDataVel(set::Settings, wind::Wind, wf::WindFarm, t, tmp_m, floris::F
             u = u ./ tmp_m[:, 1]
         end
     elseif wind.input_vel == "RW_with_Mean"
-        u = getWindSpeedT(wf.States_WF[wf.StartI, 1], wind.vel)
+        u = getWindSpeedT(RW_with_Mean(), wf.States_WF[wf.StartI, 1], wind.vel)
     elseif wind.input_vel == "EnKF_InterpTurbine"
         u = getWindSpeedT_EnKF(Velocity_EnKF_InterpTurbine(), wind.vel, idx, t)
     else
