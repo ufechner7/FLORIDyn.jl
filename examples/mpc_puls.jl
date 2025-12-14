@@ -36,7 +36,7 @@ error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
 GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
-CONTROL_POINTS = 8
+CONTROL_POINTS = 11
 MAX_ID_SCALING = 3.0
 MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
@@ -56,6 +56,7 @@ MAX_DISTANCES = Float64[]
 data_file_group_control = data_file_group_control * '_' * string(GROUPS) * "TGs.jld2"
 rel_power_ref = nothing
 spline_positions = Float64[]
+rel_spline_positions = Float64[]
 
 GROUP_CONTROL = (GROUPS != 1)
 if USE_HARDCODED_INITIAL_GUESS
@@ -346,7 +347,7 @@ The function operates in several stages:
 - [`calc_induction_matrix2`](@ref): Uses this function to build induction matrices
 """
 function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
-    global spline_positions
+    global spline_positions, rel_spline_positions
     distance = 0.0
     id_correction = 1.0
     if length(correction) > CONTROL_POINTS && !isnothing(group_id) && group_id >= 1
@@ -358,26 +359,39 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
         end
         id_correction = clamp(id_correction, 0.0, MAX_ID_SCALING)
     end
-    t1 = vis.t_skip + T_START            # Time of the beginning of the high wind speed
-    t2 = vis.t_skip + T_END - 4          # Additional control point before t3
-    t3 = vis.t_skip + T_END              # Intermediate spline control point
-    t4 = vis.t_skip + T_END + T_SHIFT    # Time to end high demand
+    t1 = vis.t_skip + T_START               # Time of the beginning of the high wind speed
+    t1b = t1 + T_SHIFT                      # Additional control point after t1                    
+    t2 = vis.t_skip + T_END - 4             # Additional control point before t3
+    t2_ = t1b+9/10*(t2-t1b)                 # Slightly before t2 for better control
+    t3 = vis.t_skip + T_END                 # Intermediate spline control point
+    t4 = vis.t_skip + T_END + T_SHIFT       # Time to end high demand
+    t4b = vis.t_skip + T_END + T_SHIFT + 4  # Additional control point after t4
 
     # Calculate normalized time parameter s for interpolation
     # Clamp time for s calculation, but preserve original time for demand/wind
     time_clamped = max(time, t1)
-    s = clamp((time_clamped - t1) / (t4 - t1), 0.0, 1.0)
+    s = clamp((time_clamped - t1) / (t4b - t1), 0.0, 1.0)
     
-    # Define normalized positions for the 7 control points:
+    # Define normalized positions for the 11 control points:
     # Point 1: t1 (s=0.0)
-    # Points 2-4: evenly spaced between t1 and t2
-    # Point 5: t2 (additional control point)
-    # Point 6: t3 (intermediate point at T_END)
-    # Point 7: t4 (s=1.0, at T_END + T_SHIFT)
-    s2 = (t2 - t1) / (t4 - t1)  # normalized position of t2
-    s3 = (t3 - t1) / (t4 - t1)  # normalized position of t3
-    s_positions = [0.0, s2/4, s2/2, 3*s2/4, 7/8*s2, s2, s3, 1.0]
-    spline_positions = s_positions  # store for plotting later
+    # Point 2: t1b (additional control point after t1)
+    # Points 3-5: evenly spaced between t1b and t2_
+    # Point 6: t2_ (additional control point slightly before t2)
+    # Point 7: t2 (additional control point)
+    # Point 8: t3 (intermediate point at T_END)
+    # Point 9: between t3 and t4
+    # Point 10: t4 (at T_END + T_SHIFT)
+    # Point 11: t4b (s=1.0, additional control point after t4)
+    s1b = (t1b - t1) / (t4b - t1)   # normalized position of t1b
+    s2_ = (t2_ - t1) / (t4b - t1)   # normalized position of t2_
+    s2 = (t2 - t1) / (t4b - t1)     # normalized position of t2
+    s3 = (t3 - t1) / (t4b - t1)     # normalized position of t3
+    s4 = (t4 - t1) / (t4b - t1)     # normalized position of t4
+    s_positions = [0.0, s1b, s1b + (s2_-s1b)/4, s1b + (s2_-s1b)/2, s1b + 3*(s2_-s1b)/4, s2_, s2, s3, (s3+s4)/2, s4, 1.0]
+    rel_spline_positions = s_positions
+    # Store actual time values (not normalized) for plotting
+    spline_positions = [t1, t1b, t1 + s_positions[3]*(t4b-t1), t1 + s_positions[4]*(t4b-t1), 
+                        t1 + s_positions[5]*(t4b-t1), t2_, t2, t3, (t3+t4)/2, t4, t4b]
     
     # Perform piecewise cubic Hermite spline interpolation
     correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS], s_positions)
@@ -531,7 +545,9 @@ demand_data = demand_data ./ max_powers  # Convert to relative power
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
     # x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
-    x0 =  [1.3732, 1.2803, 1.225, 1.2315, 1.23, 1.2754, 1.2575, 2.4769] # hardcoded initial guess for GROUPS = 1, CONTROL_POINTS = 7
+    # x0 =  [1.3678, 1.3349, 1.2684, 1.2248, 1.2306, 1.2905, 1.3242, 2.6458, 1.89, 1.5, 1.5]
+    x0 = [1.3557, 1.327822, 1.272538, 1.22529, 1.237354, 1.156155, 1.270225, 1.239977, 2.9048, 1.596324, 2.3189]
+    # x0 =  [1.3732, 1.2803, 1.225, 1.2315, 1.23, 1.2754, 1.2575, 2.4769, 1.5] # hardcoded initial guess for GROUPS = 1, CONTROL_POINTS = 9
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
     println("\nNOMAD optimization completed.")
@@ -607,7 +623,7 @@ else
         ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", pltctrl)
 end
 
-plot_correction_curve(correction, spline_positions)
+plot_correction_curve(correction, rel_spline_positions)
 
 # # Test case for calc_induction_matrix2: plot induction matrix per turbine group
 # println("\nTesting calc_induction_matrix2...")
