@@ -444,6 +444,7 @@ function calc_induction_matrix2(vis, ta, time_step, t_end; correction)
 end
 
 function eval_fct(x::Vector{Float64})
+    global rel_power
     correction = x  # correction is now a vector with parameters
     print(".")  # progress indicator
     
@@ -545,9 +546,7 @@ demand_data = demand_data ./ max_powers  # Convert to relative power
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
     # x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
-    # x0 =  [1.3678, 1.3349, 1.2684, 1.2248, 1.2306, 1.2905, 1.3242, 2.6458, 1.89, 1.5, 1.5]
-    x0 = [1.3557, 1.327822, 1.272538, 1.22529, 1.237354, 1.156155, 1.270225, 1.239977, 2.9048, 1.596324, 2.3189]
-    # x0 =  [1.3732, 1.2803, 1.225, 1.2315, 1.23, 1.2754, 1.2575, 2.4769, 1.5] # hardcoded initial guess for GROUPS = 1, CONTROL_POINTS = 9
+    x0 = [1.3557, 1.327822, 1.272538, 1.22529*1.03, 1.237354, 1.156155*1.1, 1.270225*0.985, 1.239977, 2.9048, 1.596324, 2.3189]
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
     println("\nNOMAD optimization completed.")
