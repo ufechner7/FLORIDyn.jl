@@ -131,7 +131,7 @@ demand_abs = [calc_demand(vis, t; t_shift=T_SHIFT, rel_power=REL_POWER) for t in
 # Convert to relative power by dividing by maximum power at each time point
 # We need to do this after prepareSimulation to have wf and floris available
 # So store demand_abs for now and convert later
-demand_data = demand_abs  # Will be converted to relative power after prepareSimulation
+demand_data = demand_abs ./ 1e6
 
 # For initial setup, use calc_induction_matrix (only affects pre-optimization visualization)
 # During optimization, calc_induction_matrix2 will be used with proper group handling
@@ -196,14 +196,10 @@ function run_simulation(set_induction::AbstractMatrix; enable_online=false, msr=
     # Calculate total wind farm power by grouping by time and summing turbine powers
     total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
     
-    # Calculate maximum power for each time point based on wind speed
-    time_points_rel = total_power_df.Time .- sim.start_time
-    max_powers = [calc_max_power(calc_wind(vis, t), ta, wf, floris) for t in time_points_rel]
+    # Return absolute power in Watts
+    abs_power = total_power_df.TotalPower
     
-    # Convert to relative power
-    rel_power = (total_power_df.TotalPower ./ max_powers)
-    
-    return rel_power
+    return abs_power
 end
 
 # Separate function to run simulation and return full DataFrame for plotting
@@ -454,11 +450,11 @@ function eval_fct(x::Vector{Float64})
         push!(MAX_DISTANCES, max_distance)
     end
 
-    # Run simulation and get relative power
-    rel_power = run_simulation(induction_data)
+    # Run simulation and get absolute power
+    abs_power = run_simulation(induction_data)
     
     # Calculate error
-    error = calc_error(vis, rel_power, demand_data, time_step)
+    error = calc_error(vis, abs_power, demand_data, time_step)
     success = true
     if isnothing(error) || isnan(error)
         error = 1e6
@@ -519,18 +515,18 @@ else
 end
 
 
-function calc_error(vis, rel_power, demand_data, time_step)
+function calc_error(vis, abs_power, demand_data, time_step)
     # Start index after skipping initial transient; +1 because Julia is 1-based
     i0 = Int(floor(vis.t_skip / time_step)) + 1
     # Clamp to valid range
     i0 = max(1, i0)
-    n = min(length(rel_power), length(demand_data)) - i0 + 1
+    n = min(length(abs_power), length(demand_data)) - i0 + 1
     if n <= 0
-        error("calc_error: empty overlap after skip; check vis.t_skip and lengths (rel_power=$(length(rel_power)), demand=$(length(demand_data)), i0=$(i0))")
+        error("calc_error: empty overlap after skip; check vis.t_skip and lengths (abs_power=$(length(abs_power)), demand=$(length(demand_data)), i0=$(i0))")
     end
-    r = @view rel_power[i0:i0 + n - 1]
+    p = @view abs_power[i0:i0 + n - 1]
     d = @view demand_data[i0:i0 + n - 1]
-    return sum((r .- d) .^ 2) / length(d)
+    return sum((p .- d) .^ 2) / length(d)
 end
 
 include("mpc_plotting.jl")
@@ -538,16 +534,12 @@ include("mpc_plotting.jl")
 # Prepare simulation to get wf and floris (needed for calc_axial_induction2)
 wf, wind_prep, sim_prep, con_prep, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
-# Now convert demand_data from absolute power to relative power
-# Calculate maximum power for each time point based on wind speed
-max_powers = [calc_max_power(wind_data[i], ta, wf, floris) * 1e6 for i in eachindex(wind_data)]  # Convert MW to W
-demand_data = demand_data ./ max_powers  # Convert to relative power
+# demand_data is already in absolute power (Watts), no conversion needed
 
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
     # x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
-    # x0 = [1.3557, 1.327822, 1.272538, 1.22529*1.03, 1.237354, 1.156155*1.1, 1.270225*0.985, 1.239977, 2.9048, 1.596324, 2.3189]
-    x0 = [1.3557, 1.327822, 1.272538, 1.22529, 1.237354, 1.156155, 1.270225, 1.239977, 2.9048, 1.596324, 2.3189]
+    x0 = [1.350296, 1.32317, 1.271178, 1.26714, 1.259054, 1.24993796181799, 1.275175, 1.277277, 2.600089, 1.6348460123967, 1.6901]
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
     println("\nNOMAD optimization completed.")
@@ -625,8 +617,14 @@ end
 
 plot_correction_curve(correction, rel_spline_positions)
 
-error = calc_error(vis, rel_power, demand_data, time_step)
-println("\nFinal error after optimization: $(round(error*100, digits=2)) %")
+# Calculate absolute power from the final simulation for error calculation
+total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
+abs_power = total_power_df.TotalPower
+
+error = calc_error(vis, abs_power, demand_data, time_step)
+mean_demand = mean(demand_data[Int(floor(vis.t_skip / time_step)) + 1:end])
+println("\nFinal error after optimization: $(round(sqrt(error)/mean_demand * 100, sigdigits=2)) %")
+println("\nFinal error after optimization: $(round(sqrt(error), sigdigits=4)) MW")
 
 # # Test case for calc_induction_matrix2: plot induction matrix per turbine group
 # println("\nTesting calc_induction_matrix2...")
