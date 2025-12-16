@@ -35,22 +35,22 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 2 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 11
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_PULSE = true
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
-ONLINE  = false  # if true, enable online plotting during simulation and create video
+ONLINE  = false   # if true, enable online plotting during simulation and create video
 TURBULENCE = true # if true, show the added turbulence in the visualization
-T_START = 240    # relative time to start increasing demand
-T_END   = 960    # relative time to reach final demand
-T_SHIFT = 60     # time shift the demand compared to the wind speed in seconds
-REL_POWER = 0.9  # relative power for pulse demand
-T_EXTRA = 2580   # extra time in addition to sim.end_time for MPC simulation
+T_START = 240     # relative time to start increasing demand
+T_END   = 960     # relative time to reach final demand
+T_SHIFT = 60      # time shift the demand compared to the wind speed in seconds
+REL_POWER = 0.9   # relative power for pulse demand
+T_EXTRA = 2580    # extra time in addition to sim.end_time for MPC simulation
 MIN_INDUCTION = 0.01
 MAX_DISTANCES = Float64[]
 data_file_group_control = data_file_group_control * '_' * string(GROUPS) * "TGs.jld2"
@@ -541,6 +541,8 @@ if SIMULATE
     if GROUP_CONTROL
         if GROUPS == 2
             x0 =  [1.0, 1.1, 1.1, 1.1, 1.3, 1.1, 1.6, 2.0, 1.5, 1.502, 1.4, 1.05]
+        elseif GROUPS == 6
+            x0 = [1.504, 1.349, 1.304, 1.3, 1.316, 1.305, 1.7, 2.0, 1.387, 1.902, 1.597, 0.93, 0.83, 1.19, 0.97, 0.91]
         else
             # For group control, use generic initial guess with CONTROL_POINTS corrections + (GROUPS-1) group scalings
             x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
@@ -554,6 +556,7 @@ if SIMULATE
     println("\nNOMAD optimization completed.")
     println("Best correction: ", optimal_correction)
     induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=optimal_correction)
+    con.induction_data = induction_data  # Update controller with optimized induction data
 end
 
 # Run final simulation and get full DataFrame for plotting
