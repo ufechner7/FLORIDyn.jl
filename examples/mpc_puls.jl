@@ -546,7 +546,8 @@ demand_data = demand_data ./ max_powers  # Convert to relative power
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
     # x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
-    x0 = [1.3557, 1.327822, 1.272538, 1.22529*1.03, 1.237354, 1.156155*1.1, 1.270225*0.985, 1.239977, 2.9048, 1.596324, 2.3189]
+    # x0 = [1.3557, 1.327822, 1.272538, 1.22529*1.03, 1.237354, 1.156155*1.1, 1.270225*0.985, 1.239977, 2.9048, 1.596324, 2.3189]
+    x0 = [1.3557, 1.327822, 1.272538, 1.22529, 1.237354, 1.156155, 1.270225, 1.239977, 2.9048, 1.596324, 2.3189]
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
     println("\nNOMAD optimization completed.")
@@ -623,6 +624,9 @@ else
 end
 
 plot_correction_curve(correction, rel_spline_positions)
+
+error = calc_error(vis, rel_power, demand_data, time_step)
+println("\nFinal error after optimization: $(round(error*100, digits=2)) %")
 
 # # Test case for calc_induction_matrix2: plot induction matrix per turbine group
 # println("\nTesting calc_induction_matrix2...")
