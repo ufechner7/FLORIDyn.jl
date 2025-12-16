@@ -1,0 +1,80 @@
+# Copyright (c) 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
+using Statistics  # For mean, but optional
+
+function calc_wind(time)
+    local wind
+    t_skip = 0.0
+    low_wind = 6.0
+    high_wind = 8.2
+    t1 = t_skip + T_START  # Time to start increased wind speed
+    t2 = t_skip + T_END    # Time to stop  increased wind speed
+    if time < t1
+        wind = low_wind
+    elseif time < t2
+        wind = high_wind
+    else
+        wind = low_wind
+    end
+    return wind
+end
+
+"""
+    compute_c(u_entry::Vector{Float64}, u_meas::Vector{Float64}, Δt::Float64, x::Float64) -> Float64
+
+Computes advection speed c = x / τ using cross-correlation lag τ.
+u_entry: wind speed time series at entry (x=0)
+u_meas: wind speed time series at position x (same length and Δt)
+Δt: time step [s]
+x: distance [m]
+
+Assumes data aligned in time, computes max correlation lag τ.
+"""
+function compute_c(u_entry::Vector{Float64}, u_meas::Vector{Float64}, Δt::Float64, x::Float64)
+    N = length(u_entry)
+    @assert length(u_meas) == N "Time series must have equal length"
+    
+    # Remove mean for better correlation
+    u_entry_demean = u_entry .- mean(u_entry)
+    u_meas_demean = u_meas .- mean(u_meas)
+    
+    # Compute cross-correlation lags (negative lags: entry leads meas)
+    max_lag = div(N, 4)  # Limit search range for efficiency
+    lags = -max_lag:max_lag
+    corrs = zeros(Float64, length(lags))
+    
+    for (i, lag) in enumerate(lags)
+        if lag >= 0
+            idx1 = 1:N-lag
+            idx2 = 1+lag:N
+        else
+            idx1 = 1-lag:N
+            idx2 = 1:N+lag
+        end
+        corrs[i] = dot(u_entry_demean[idx1], u_meas_demean[idx2])
+    end
+    
+    # Find lag τ maximizing correlation (negative τ means entry arrives first)
+    τ_idx = argmax(corrs)
+    τ_steps = lags[τ_idx]
+    τ_sec = τ_steps * Δt
+    
+    c = x / τ_sec  # Should be positive if τ_sec > 0
+    return c, τ_sec, τ_steps
+end
+
+function estimate_c(est::OnlineAdvectionEst)
+    compute_c(est.buffer_entry, est.buffer_meas, est.Δt, est.x)[1]
+end
+
+## Example usage
+u0 = randn(1000)  # Simulated entry speeds
+c_true = 10.0     # m/s
+Δt = 0.1          # s
+x = 100.0         # m
+u_x = [u0[max(1, i - round(Int, x/c_true/Δt)):i] for i in 1:length(u0)][end-length(u0)+1:end]  # Delayed
+
+c_est, τ, τ_steps = compute_c(u0, u_x, Δt, x)
+println("Estimated c: $c_est m/s, true: 10.0 m/s, τ: $τ s")
+
