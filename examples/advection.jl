@@ -67,8 +67,8 @@ end
 ## Example usage
 u0 = randn(1000)  # Simulated entry speeds
 c_true = 10.0     # m/s
-Δt = 0.1          # s
-x = 100.0         # m
+Δt = 4.0          # s
+x = 400.0         # m
 delay_steps = round(Int, x / c_true / Δt)  # Number of time steps for delay
 
 # Create delayed signal: u_x[i] = u0[i - delay_steps]
