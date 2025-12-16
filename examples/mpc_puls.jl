@@ -526,7 +526,7 @@ function calc_error(vis, abs_power, demand_data, time_step)
     end
     p = @view abs_power[i0:i0 + n - 1]
     d = @view demand_data[i0:i0 + n - 1]
-    return sum((p .- d) .^ 2) / length(d)
+    return sqrt(sum((p .- d) .^ 2) / length(d))
 end
 
 include("mpc_plotting.jl")
@@ -623,8 +623,8 @@ abs_power = total_power_df.TotalPower
 
 error = calc_error(vis, abs_power, demand_data, time_step)
 mean_demand = mean(demand_data[Int(floor(vis.t_skip / time_step)) + 1:end])
-println("\nFinal error after optimization: $(round(sqrt(error)/mean_demand * 100, sigdigits=2)) %")
-println("\nFinal error after optimization: $(round(sqrt(error), sigdigits=4)) MW")
+println("\nFinal error after optimization: $(round(error/mean_demand * 100, digits=2)) %")
+println("\nFinal error after optimization: $(round(error, sigdigits=4)) MW")
 
 # # Test case for calc_induction_matrix2: plot induction matrix per turbine group
 # println("\nTesting calc_induction_matrix2...")
