@@ -35,7 +35,7 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+GROUPS = 2 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 11
 MAX_ID_SCALING = 3.0
 MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
@@ -538,8 +538,17 @@ wf, wind_prep, sim_prep, con_prep, floris = prepareSimulation(set, wind, con, fl
 
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
-    # x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
-    x0 = [1.350296, 1.32317, 1.271178, 1.26714, 1.259054, 1.24993796181799, 1.275175, 1.277277, 2.600089, 1.6348460123967, 1.6901]
+    if GROUP_CONTROL
+        if GROUPS == 2
+            x0 =  [1.0, 1.1, 1.1, 1.1, 1.3, 1.1, 1.6, 2.0, 1.5, 1.502, 1.4, 1.05]
+        else
+            # For group control, use generic initial guess with CONTROL_POINTS corrections + (GROUPS-1) group scalings
+            x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
+        end
+    else
+        # For single group (GROUPS=1), use hardcoded optimized initial guess from previous runs
+        x0 = [1.350296, 1.32317, 1.271178, 1.26714, 1.259054, 1.24993796181799, 1.275175, 1.277277, 2.600089, 1.6348460123967, 1.6901]
+    end
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
     println("\nNOMAD optimization completed.")
