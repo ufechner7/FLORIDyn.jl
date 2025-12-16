@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 using Statistics, LinearAlgebra  # For mean, but optional
+t_end = 3780.0  # total simulation time [s]
 
 function calc_wind(time)
     local wind
@@ -65,11 +66,13 @@ function compute_c(u_entry::Vector{Float64}, u_meas::Vector{Float64}, Δt::Float
 end
 
 ## Example usage
-u0 = randn(1000)  # Simulated entry speeds
-c_true = 10.0     # m/s
-Δt = 4.0          # s
+time_step = 4.0  # s
+time_vec = 0:time_step:t_end
+u0 = calc_wind.(time_vec)  # Simulated entry speeds
+c_true = mean(u0)     # m/s
+time_step = 4.0          # s
 x = 400.0         # m
-delay_steps = round(Int, x / c_true / Δt)  # Number of time steps for delay
+delay_steps = round(Int, x / c_true / time_step)  # Number of time steps for delay
 
 # Create delayed signal: u_x[i] = u0[i - delay_steps]
 u_x = zeros(Float64, length(u0))
@@ -78,6 +81,6 @@ for i in 1:length(u0)
     u_x[i] = u0[src_idx]
 end
 
-c_est, τ, τ_steps = compute_c(u0, u_x, Δt, x)
+c_est, τ, τ_steps = compute_c(u0, u_x, time_step, x)
 println("Estimated c: $c_est m/s, true: $c_true m/s, τ: $τ s, delay steps: $delay_steps, estimated steps: $τ_steps")
 
