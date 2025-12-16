@@ -542,7 +542,7 @@ if SIMULATE
         if GROUPS == 2
             x0 =  [1.0, 1.1, 1.1, 1.1, 1.3, 1.1, 1.6, 2.0, 1.5, 1.502, 1.4, 1.05]
         elseif GROUPS == 6
-            x0 = [1.504, 1.349, 1.304, 1.3, 1.316, 1.305, 1.7, 2.0, 1.387, 1.902, 1.597, 0.93, 0.83, 1.19, 0.97, 0.91]
+            x0 = [1.31402, 1.32704, 1.32814, 1.30537, 1.31809, 1.32428, 1.70191, 1.9548, 1.26287, 1.89919, 1.94463, 0.999, 0.7266, 1.1566, 0.83, 0.9925]
         else
             # For group control, use generic initial guess with CONTROL_POINTS corrections + (GROUPS-1) group scalings
             x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
