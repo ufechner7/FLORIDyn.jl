@@ -37,10 +37,10 @@ error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
 GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
-CONTROL_POINTS = 11
+CONTROL_POINTS = 7
 MAX_ID_SCALING = 3.0
 MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
-USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
+USE_HARDCODED_INITIAL_GUESS = false # set to false to start from generic initial guess
 USE_ADVECTION = true  
 USE_PULSE = true
 USE_TGC = false
@@ -493,9 +493,22 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     # # Store actual time values (not normalized) for plotting
     # spline_positions = [t1, t1b, t1 + s_positions[3]*(t4b-t1), t1 + s_positions[4]*(t4b-t1), 
     #                     t1 + s_positions[5]*(t4b-t1), t2_, t2, t3, (t3+t4)/2, t4, t4b]
+    t1 = 1940.0
+    t2 = 5686.0
     
-    # # Perform piecewise cubic Hermite spline interpolation
-    # correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS], s_positions)
+    # Calculate s_positions equally spaced between 0 and 1
+    s_positions = range(0.0, 1.0, length=CONTROL_POINTS) |> collect
+    rel_spline_positions = s_positions
+    
+    # Calculate absolute time positions for spline control points
+    spline_positions = [t1 + s * (t2 - t1) for s in s_positions]
+    
+    # Calculate normalized time parameter s for interpolation
+    # Clamp time for s calculation, but preserve original time for demand/wind
+    time_clamped = max(time, t1)
+    s = clamp((time_clamped - t1) / (t2 - t1), 0.0, 1.0)
+    # Perform piecewise cubic Hermite spline interpolation
+    correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS], s_positions)
     correction_result = 1.0
     
     demand = calc_demand(vis, time; t_shift=T_SHIFT, rel_power=REL_POWER)
@@ -662,7 +675,9 @@ if SIMULATE
         end
     else
         # For single group (GROUPS=1), use hardcoded optimized initial guess from previous runs
+        # Note: Only use first CONTROL_POINTS elements to match the problem dimension
         x0 = [1.350296, 1.32317, 1.271178, 1.26714, 1.259054, 1.24993796181799, 1.275175, 1.277277, 2.600089, 1.6348460123967, 1.6901]
+        x0 = x0[1:CONTROL_POINTS]
     end
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
@@ -754,7 +769,7 @@ else
         ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", pltctrl)
 end
 
-# plot_correction_curve(correction, rel_spline_positions)
+plot_correction_curve(correction, rel_spline_positions)
 
 # Calculate absolute power from the final simulation for error calculation
 total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
