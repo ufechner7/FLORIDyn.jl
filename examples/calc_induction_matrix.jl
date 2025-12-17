@@ -112,7 +112,7 @@ end
 function calc_wind(vis::Vis, time)
     local wind
     low_wind = 6.8
-    high_wind = 8.8
+    high_wind = 8.6
     t1 = vis.t_skip + T_START  # Time to start increased wind speed
     t2 = vis.t_skip + T_END    # Time to stop  increased wind speed
     if time < t1
