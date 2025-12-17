@@ -322,7 +322,7 @@ function getWindSpeedT(::Velocity_InterpTurbine, wind_vel::AbstractMatrix, iT, t
     times = wind_vel[:, 1]
     wind_data = wind_vel[:, 2:end]
 
-    if t < times[1]
+    if t < times[1]So
         @warn "The time $t is out of bounds, using $(times[1]) instead."
         t = times[1]
     elseif t > times[end]
