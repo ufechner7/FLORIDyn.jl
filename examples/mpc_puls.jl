@@ -35,10 +35,10 @@ data_file               = "data/mpc_result.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 11
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 0     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_ADVECTION = true  
 USE_PULSE = true
@@ -48,10 +48,14 @@ USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
 ONLINE  = false   # if true, enable online plotting during simulation and create video
 TURBULENCE = true # if true, show the added turbulence in the visualization
 T_START = 240     # relative time to start increasing demand
-T_END   = 960     # relative time to reach final demand
+T_END   = 2060     # relative time to reach final demand
 T_SHIFT = 60      # time shift the demand compared to the wind speed in seconds
 REL_POWER = 0.9   # relative power for pulse demand
-T_EXTRA = 2580    # extra time in addition to sim.end_time for MPC simulation
+if USE_ADVECTION
+    T_EXTRA = 4380    # extra time in addition to sim.end_time for MPC simulation
+else
+    T_EXTRA = 2580    # extra time in addition to sim.end_time for MPC simulation
+end
 MIN_INDUCTION = 0.01
 MAX_DISTANCES = Float64[]
 data_file_group_control = data_file_group_control * '_' * string(GROUPS) * "TGs.jld2"
@@ -143,6 +147,25 @@ function calc_vel(vis, ta::TurbineArray, start_time, t_end)
     return wind_data
 end
 
+"""
+    u_mean(wind_data) -> Vector{Float64}
+
+Calculate the cubic mean wind speed over all turbines for each time step.
+
+# Arguments
+- `wind_data::Matrix{Float64}`: Matrix where column 1 is time and columns 2:end are wind speeds for each turbine
+
+# Returns
+- `Vector{Float64}`: Cubic mean wind speed for each time step: (mean(u^3))^(1/3)
+"""
+function u_mean(wind_data)
+    # Extract wind speeds (skip first column which is time)
+    wind_speeds = wind_data[:, 2:end]
+    n_turbines = size(wind_speeds, 2)
+    
+    # Calculate cubic mean for each time step (row)
+    return [cbrt(sum(wind_speeds[i, :] .^ 3) / n_turbines) for i in 1:size(wind_speeds, 1)]
+end
 
 
 # Calculate demand for each time point
@@ -594,6 +617,9 @@ end
 md = run_simulation_full(con.induction_data)
 
 # Plot wind speed vs time (using relative time)
+if USE_ADVECTION
+    wind_data = u_mean(wind.vel)
+end
 plot_rmt(collect(time_vector), wind_data; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
     ylabel="v_wind [m/s]", fig="v_wind", title="Wind speed vs time", pltctrl)
 
