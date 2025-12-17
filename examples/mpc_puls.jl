@@ -126,7 +126,6 @@ time_step = sim.time_step  # seconds
 t_end = sim.end_time - sim.start_time  # relative end time in seconds
 
 function calc_vel(vis, ta::TurbineArray, start_time, t_end)
-    global u0
     n_turbines = size(ta.pos, 1)
     time_vector = start_time:time_step:t_end
     u0 = calc_wind.(Ref(vis), time_vector.-start_time)
@@ -169,6 +168,35 @@ function u_mean(wind_data)
     return [cbrt(sum(wind_speeds[i, :] .^ 3) / n_turbines) for i in 1:size(wind_speeds, 1)]
 end
 
+"""
+    u_mean(wind_data, time) -> Float64
+
+Calculate the cubic mean wind speed over all turbines at a specific time point.
+
+# Arguments
+- `wind_data::Matrix{Float64}`: Matrix where column 1 is time and columns 2:end are wind speeds for each turbine
+- `time::Float64`: Time point at which to calculate the mean wind speed
+
+# Returns
+- `Float64`: Cubic mean wind speed at the specified time: (mean(u^3))^(1/3)
+"""
+function u_mean(wind_data, time)
+    # Find the row index corresponding to the given time
+    time_vec = wind_data[:, 1]
+    idx = findfirst(t -> t >= time, time_vec)
+    
+    if isnothing(idx)
+        idx = length(time_vec)  # Use last time point if time is beyond range
+    end
+    
+    # Extract wind speeds for all turbines at this time point
+    wind_speeds = wind_data[idx, 2:end]
+    n_turbines = length(wind_speeds)
+    
+    # Calculate cubic mean: (mean(u^3))^(1/3)
+    return cbrt(sum(wind_speeds .^ 3) / n_turbines)
+end
+
 
 # Calculate demand for each time point
 time_vector = 0:time_step:t_end
@@ -202,10 +230,7 @@ else
     demand_abs = [calc_demand(vis, t; t_shift=T_SHIFT, rel_power=REL_POWER) for t in time_vector]
 end
 
-# Convert to relative power by dividing by maximum power at each time point
-# We need to do this after prepareSimulation to have wf and floris available
-# So store demand_abs for now and convert later
-demand_data = demand_abs ./ 1e6
+demand_data = demand_abs 
 
 # For initial setup, use calc_induction_matrix (only affects pre-optimization visualization)
 # During optimization, calc_induction_matrix2 will be used with proper group handling
@@ -429,47 +454,49 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
         end
         id_correction = clamp(id_correction, 0.0, MAX_ID_SCALING)
     end
-    t1 = vis.t_skip + T_START               # Time of the beginning of the high wind speed
-    t1b = t1 + T_SHIFT                      # Additional control point after t1                    
-    t2 = vis.t_skip + T_END - 4             # Additional control point before t3
-    t2_ = t1b+9/10*(t2-t1b)                 # Slightly before t2 for better control
-    t3 = vis.t_skip + T_END                 # Intermediate spline control point
-    t4 = vis.t_skip + T_END + T_SHIFT       # Time to end high demand
-    t4b = vis.t_skip + T_END + T_SHIFT + 4  # Additional control point after t4
+    # t1 = vis.t_skip + T_START               # Time of the beginning of the high wind speed
+    # t1b = t1 + T_SHIFT                      # Additional control point after t1                    
+    # t2 = vis.t_skip + T_END - 4             # Additional control point before t3
+    # t2_ = t1b+9/10*(t2-t1b)                 # Slightly before t2 for better control
+    # t3 = vis.t_skip + T_END                 # Intermediate spline control point
+    # t4 = vis.t_skip + T_END + T_SHIFT       # Time to end high demand
+    # t4b = vis.t_skip + T_END + T_SHIFT + 4  # Additional control point after t4
 
-    # Calculate normalized time parameter s for interpolation
-    # Clamp time for s calculation, but preserve original time for demand/wind
-    time_clamped = max(time, t1)
-    s = clamp((time_clamped - t1) / (t4b - t1), 0.0, 1.0)
+    # # Calculate normalized time parameter s for interpolation
+    # # Clamp time for s calculation, but preserve original time for demand/wind
+    # time_clamped = max(time, t1)
+    # s = clamp((time_clamped - t1) / (t4b - t1), 0.0, 1.0)
     
-    # Define normalized positions for the 11 control points:
-    # Point 1: t1 (s=0.0)
-    # Point 2: t1b (additional control point after t1)
-    # Points 3-5: evenly spaced between t1b and t2_
-    # Point 6: t2_ (additional control point slightly before t2)
-    # Point 7: t2 (additional control point)
-    # Point 8: t3 (intermediate point at T_END)
-    # Point 9: between t3 and t4
-    # Point 10: t4 (at T_END + T_SHIFT)
-    # Point 11: t4b (s=1.0, additional control point after t4)
-    s1b = (t1b - t1) / (t4b - t1)   # normalized position of t1b
-    s2_ = (t2_ - t1) / (t4b - t1)   # normalized position of t2_
-    s2 = (t2 - t1) / (t4b - t1)     # normalized position of t2
-    s3 = (t3 - t1) / (t4b - t1)     # normalized position of t3
-    s4 = (t4 - t1) / (t4b - t1)     # normalized position of t4
-    s_positions = [0.0, s1b, s1b + (s2_-s1b)/4, s1b + (s2_-s1b)/2, s1b + 3*(s2_-s1b)/4, s2_, s2, s3, (s3+s4)/2, s4, 1.0]
-    rel_spline_positions = s_positions
-    # Store actual time values (not normalized) for plotting
-    spline_positions = [t1, t1b, t1 + s_positions[3]*(t4b-t1), t1 + s_positions[4]*(t4b-t1), 
-                        t1 + s_positions[5]*(t4b-t1), t2_, t2, t3, (t3+t4)/2, t4, t4b]
+    # # Define normalized positions for the 11 control points:
+    # # Point 1: t1 (s=0.0)
+    # # Point 2: t1b (additional control point after t1)
+    # # Points 3-5: evenly spaced between t1b and t2_
+    # # Point 6: t2_ (additional control point slightly before t2)
+    # # Point 7: t2 (additional control point)
+    # # Point 8: t3 (intermediate point at T_END)
+    # # Point 9: between t3 and t4
+    # # Point 10: t4 (at T_END + T_SHIFT)
+    # # Point 11: t4b (s=1.0, additional control point after t4)
+    # s1b = (t1b - t1) / (t4b - t1)   # normalized position of t1b
+    # s2_ = (t2_ - t1) / (t4b - t1)   # normalized position of t2_
+    # s2 = (t2 - t1) / (t4b - t1)     # normalized position of t2
+    # s3 = (t3 - t1) / (t4b - t1)     # normalized position of t3
+    # s4 = (t4 - t1) / (t4b - t1)     # normalized position of t4
+    # s_positions = [0.0, s1b, s1b + (s2_-s1b)/4, s1b + (s2_-s1b)/2, s1b + 3*(s2_-s1b)/4, s2_, s2, s3, (s3+s4)/2, s4, 1.0]
+    # rel_spline_positions = s_positions
+    # # Store actual time values (not normalized) for plotting
+    # spline_positions = [t1, t1b, t1 + s_positions[3]*(t4b-t1), t1 + s_positions[4]*(t4b-t1), 
+    #                     t1 + s_positions[5]*(t4b-t1), t2_, t2, t3, (t3+t4)/2, t4, t4b]
     
-    # Perform piecewise cubic Hermite spline interpolation
-    correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS], s_positions)
+    # # Perform piecewise cubic Hermite spline interpolation
+    # correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS], s_positions)
+    correction_result = 1.0
     
     demand = calc_demand(vis, time; t_shift=T_SHIFT, rel_power=REL_POWER)
     scaled_demand = correction_result * demand
     # convert abs demand to relative demand (scaled by max power)
-    max_power = calc_max_power(calc_wind(vis, time), ta, wf, floris) * 1e6  # in W
+    v_wind = u_mean(wind.vel, time)
+    max_power = calc_max_power(v_wind, ta, wf, floris) * 1e6  # in W
     scaled_demand /= max_power
     # Apply group-specific correction
     scaled_demand *= id_correction
@@ -715,7 +742,7 @@ else
         ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", pltctrl)
 end
 
-plot_correction_curve(correction, rel_spline_positions)
+# plot_correction_curve(correction, rel_spline_positions)
 
 # Calculate absolute power from the final simulation for error calculation
 total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)

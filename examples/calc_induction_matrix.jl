@@ -78,7 +78,10 @@ function calc_induction(cp)
 end
 
 function calc_demand(vis::Vis, time; t_shift=0.0, rel_power=1.0)
-    if USE_STEP
+    if USE_ADVECTION
+        res = demand_data[Int(clamp(round((time - vis.t_skip)/time_step) + 1, 1, length(demand_data)))]
+        return res * 1e6
+    elseif USE_STEP
         # Example: step demand profile
         if time < 200 + vis.t_skip
             return 0.001
