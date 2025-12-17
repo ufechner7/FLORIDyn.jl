@@ -36,7 +36,7 @@ reference_file          = "data/mpc_reference.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 7
 MAX_ID_SCALING = 3.0
 MAX_STEPS = 100     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
@@ -646,7 +646,7 @@ if SIMULATE
             x0 = vcat(fill(1.0, CONTROL_POINTS), fill(1.0, GROUPS - 1))
         end
     else
-        x0 = [0.994, 0.961, 0.989, 0.98, 1.042, 1.033, 0.994]
+        x0 = [0.996, 0.957, 0.988, 0.984, 1.041, 1.004, 0.996]
     end
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
