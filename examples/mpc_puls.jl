@@ -51,7 +51,7 @@ TURBULENCE = true # if true, show the added turbulence in the visualization
 T_START = 240     # relative time to start increasing demand
 T_END   = 2260     # relative time to reach final demand
 T_SHIFT = 60      # time shift the demand compared to the wind speed in seconds
-REL_POWER = 1.0   # relative power for pulse demand
+REL_POWER = 0.9   # relative power for pulse demand
 if USE_ADVECTION
     T_EXTRA = 4580    # extra time in addition to sim.end_time for MPC simulation
 else
