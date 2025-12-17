@@ -80,7 +80,7 @@ end
 function calc_demand(vis::Vis, time; t_shift=0.0, rel_power=1.0)
     if USE_ADVECTION
         n_shift_steps = round(Int, t_shift / time_step)
-        res = demand_ref[Int(clamp(round((time)/time_step) + 1 + n_shift_steps, 1, length(demand_ref)))]
+        res = demand_ref[Int(clamp(round((time)/time_step) + 1 - n_shift_steps, 1, length(demand_ref)))]
         return res * 1e6 * rel_power
     elseif USE_STEP
         # Example: step demand profile

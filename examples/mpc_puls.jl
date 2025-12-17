@@ -51,7 +51,7 @@ TURBULENCE = true # if true, show the added turbulence in the visualization
 T_START = 240     # relative time to start increasing demand
 T_END   = 2260     # relative time to reach final demand
 T_SHIFT = 60      # time shift the demand compared to the wind speed in seconds
-REL_POWER = 0.9   # relative power for pulse demand
+REL_POWER = 1.0   # relative power for pulse demand
 if USE_ADVECTION
     T_EXTRA = 4580    # extra time in addition to sim.end_time for MPC simulation
 else
@@ -63,6 +63,9 @@ data_file_group_control = data_file_group_control * '_' * string(GROUPS) * "TGs.
 rel_power_ref = nothing
 spline_positions = Float64[]
 rel_spline_positions = Float64[]
+rel_demands = Float64[]
+max_powers = Float64[]
+scaled_demands = Float64[]
 
 GROUP_CONTROL = (GROUPS != 1)
 if USE_HARDCODED_INITIAL_GUESS
@@ -445,7 +448,7 @@ The function operates in several stages:
 - [`calc_induction_matrix2`](@ref): Uses this function to build induction matrices
 """
 function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
-    global spline_positions, rel_spline_positions
+    global spline_positions, rel_spline_positions, rel_demands
     distance = 0.0
     id_correction = 1.0
     if length(correction) > CONTROL_POINTS && !isnothing(group_id) && group_id >= 1
@@ -504,6 +507,9 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     if rel_demand > 1.0
         rel_demand = 1.0
     end
+    push!(rel_demands, rel_demand)
+    push!(max_powers, max_power)
+    push!(scaled_demands, scaled_demand)
     base_induction = calc_induction(rel_demand * cp_max)
 
     rel_power = calc_cp(base_induction) / cp_max
@@ -512,9 +518,9 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     # Ensure minimum induction to avoid numerical issues in FLORIS (NaN from zero induction)
     # Minimum value of MIN_INDUCTION ensures the wake model has valid inputs
     corrected_induction = max(MIN_INDUCTION, min(BETZ_INDUCTION, corrected_induction))
-    if corrected_induction >= 0.28
-        @warn "Corrected induction is very high: $corrected_induction, $rel_demand, $scaled_demand, $max_power at time $time s"
-    end
+    # if corrected_induction >= 0.28
+    #     @warn "Corrected induction is very high: $corrected_induction, $rel_demand, $scaled_demand, $max_power at time $time s"
+    # end
     return corrected_induction, distance
 end
 
