@@ -191,6 +191,12 @@ if isfile(reference_file)
         )
     end
     demand_abs = ref_data["total_power"]
+    # apply T_SHIFT to demand_abs
+    if T_SHIFT != 0
+        n_shift_steps = round(Int, T_SHIFT / time_step)
+        demand_abs = vcat(zeros(Float64, n_shift_steps), demand_abs[1:end - n_shift_steps])
+    end
+    demand_abs .*= REL_POWER
 else
     # Calculate demand in absolute power (Watts)
     demand_abs = [calc_demand(vis, t; t_shift=T_SHIFT, rel_power=REL_POWER) for t in time_vector]
