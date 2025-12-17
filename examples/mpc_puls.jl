@@ -32,6 +32,7 @@ if Threads.nthreads() == 1; using ControlPlots; end
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"
 data_file               = "data/mpc_result.jld2"
+reference_file          = "data/mpc_reference.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
@@ -181,8 +182,20 @@ else
     wind.input_vel = "Interpolation"
     wind.vel = calc_vel(vis, sim.start_time, sim.end_time)
 end
-# Calculate demand in absolute power (Watts)
-demand_abs = [calc_demand(vis, t; t_shift=T_SHIFT, rel_power=REL_POWER) for t in time_vector]
+if isfile(reference_file)
+    # Load reference relative power for error calculation
+    ref_data = JLD2.jldopen(reference_file, "r") do file
+        Dict(
+            "time_vector" => file["results"]["time_vector"],
+            "total_power" => file["results"]["total_power"]
+        )
+    end
+    demand_abs = ref_data["total_power"]
+else
+    # Calculate demand in absolute power (Watts)
+    demand_abs = [calc_demand(vis, t; t_shift=T_SHIFT, rel_power=REL_POWER) for t in time_vector]
+end
+
 # Convert to relative power by dividing by maximum power at each time point
 # We need to do this after prepareSimulation to have wf and floris available
 # So store demand_abs for now and convert later
@@ -634,9 +647,18 @@ if "PowerGen" in names(md)
     
     # Convert absolute time to relative time for consistent x-axis
     time_points_rel = time_points .- sim.start_time
+
+    if GROUPS==1 && MAX_STEPS==0
+        # store reference power
+        JLD2.jldsave(reference_file; results=Dict(
+            "time_vector" => collect(time_points_rel),
+            "total_power" => total_power)
+        )
+        @info "Reference results saved to $reference_file"
+    end
     
     # Calculate demand for all time points (convert from W to MW)
-    demand_power = [calc_demand(vis, t; t_shift=T_SHIFT, rel_power=REL_POWER) / 1e6 for t in time_points_rel]
+    demand_power = demand_abs
     
     plot_rmt(collect(time_points_rel), [total_power, demand_power]; xlabel="Time [s]", xlims=(vis.t_skip, time_points_rel[end]),
         ylabel="Total Power [MW]", fig="total_power", title="Total power output and demand vs time", labels=["Power Output", "Demand"], pltctrl)
