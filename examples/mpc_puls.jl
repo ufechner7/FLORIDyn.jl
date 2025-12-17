@@ -40,6 +40,7 @@ CONTROL_POINTS = 11
 MAX_ID_SCALING = 3.0
 MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
+USE_ADVECTION = true  
 USE_PULSE = true
 USE_TGC = false
 USE_STEP = false
@@ -119,13 +120,43 @@ set_induction!(ta, induction)
 time_step = sim.time_step  # seconds
 t_end = sim.end_time - sim.start_time  # relative end time in seconds
 
-# Set up wind velocity interpolation BEFORE creating induction matrix and settings
-wind.input_vel = "Interpolation"
-wind.vel = calc_vel(vis, sim.start_time, sim.end_time)
+function calc_vel(vis, ta::TurbineArray, t_end)
+    n_turbines = size(ta.pos, 1)
+    time_vector = 0:time_step:t_end
+    u0 = calc_wind.(Ref(vis), time_vector)
+    c_true = mean(u0)     # m/s
+    # `wind_data::Matrix{Float64}`: Matrix where each row is time, U_T0, U_T1, ... U_Tn.
+    wind_data = zeros(Float64, length(time_vector), n_turbines + 1)
+    wind_data[:, 1] = collect(time_vector)
+    for i in 1:n_turbines
+        # calculate the x position of each turbine
+        x_pos = ta.pos[i, 1]
+        delay_steps = round(Int, x_pos / c_true / time_step)  # Number of time steps for delay
+        # Create delayed signal: u_x[i] = u0[i - delay_steps]
+        u_x = zeros(Float64, length(u0))
+        for i in 1:length(u0)
+            src_idx = max(1, i - delay_steps)
+            u_x[i] = u0[src_idx]
+        end
+        wind_data[:, i + 1] .= u_x
+    end
+    return wind_data
+end
+
+
 
 # Calculate demand for each time point
 time_vector = 0:time_step:t_end
 wind_data = [calc_wind(vis, t) for t in time_vector]
+if USE_ADVECTION
+    # Set up wind velocity interpolation BEFORE creating induction matrix and settings
+    wind.input_vel = "InterpTurbine"
+    wind.vel = calc_vel(vis, ta, t_end)
+else
+    # Set up wind velocity interpolation BEFORE creating induction matrix and settings
+    wind.input_vel = "Interpolation"
+    wind.vel = calc_vel(vis, sim.start_time, sim.end_time)
+end
 # Calculate demand in absolute power (Watts)
 demand_abs = [calc_demand(vis, t; t_shift=T_SHIFT, rel_power=REL_POWER) for t in time_vector]
 # Convert to relative power by dividing by maximum power at each time point
