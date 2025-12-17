@@ -50,10 +50,10 @@ ONLINE  = false   # if true, enable online plotting during simulation and create
 TURBULENCE = true # if true, show the added turbulence in the visualization
 T_START = 240     # relative time to start increasing demand
 T_END   = 2260     # relative time to reach final demand
-T_SHIFT = 120      # time shift the demand compared to the wind speed in seconds
+T_SHIFT = 300      # time shift the demand compared to the wind speed in seconds
 REL_POWER = 0.90   # relative power for pulse demand
 if USE_ADVECTION
-    T_EXTRA = 4580    # extra time in addition to sim.end_time for MPC simulation
+    T_EXTRA = 4880    # extra time in addition to sim.end_time for MPC simulation
 else
     T_EXTRA = 2580    # extra time in addition to sim.end_time for MPC simulation
 end
@@ -460,39 +460,7 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
         end
         id_correction = clamp(id_correction, 0.0, MAX_ID_SCALING)
     end
-    # t1 = vis.t_skip + T_START               # Time of the beginning of the high wind speed
-    # t1b = t1 + T_SHIFT                      # Additional control point after t1                    
-    # t2 = vis.t_skip + T_END - 4             # Additional control point before t3
-    # t2_ = t1b+9/10*(t2-t1b)                 # Slightly before t2 for better control
-    # t3 = vis.t_skip + T_END                 # Intermediate spline control point
-    # t4 = vis.t_skip + T_END + T_SHIFT       # Time to end high demand
-    # t4b = vis.t_skip + T_END + T_SHIFT + 4  # Additional control point after t4
 
-    # # Calculate normalized time parameter s for interpolation
-    # # Clamp time for s calculation, but preserve original time for demand/wind
-    # time_clamped = max(time, t1)
-    # s = clamp((time_clamped - t1) / (t4b - t1), 0.0, 1.0)
-    
-    # # Define normalized positions for the 11 control points:
-    # # Point 1: t1 (s=0.0)
-    # # Point 2: t1b (additional control point after t1)
-    # # Points 3-5: evenly spaced between t1b and t2_
-    # # Point 6: t2_ (additional control point slightly before t2)
-    # # Point 7: t2 (additional control point)
-    # # Point 8: t3 (intermediate point at T_END)
-    # # Point 9: between t3 and t4
-    # # Point 10: t4 (at T_END + T_SHIFT)
-    # # Point 11: t4b (s=1.0, additional control point after t4)
-    # s1b = (t1b - t1) / (t4b - t1)   # normalized position of t1b
-    # s2_ = (t2_ - t1) / (t4b - t1)   # normalized position of t2_
-    # s2 = (t2 - t1) / (t4b - t1)     # normalized position of t2
-    # s3 = (t3 - t1) / (t4b - t1)     # normalized position of t3
-    # s4 = (t4 - t1) / (t4b - t1)     # normalized position of t4
-    # s_positions = [0.0, s1b, s1b + (s2_-s1b)/4, s1b + (s2_-s1b)/2, s1b + 3*(s2_-s1b)/4, s2_, s2, s3, (s3+s4)/2, s4, 1.0]
-    # rel_spline_positions = s_positions
-    # # Store actual time values (not normalized) for plotting
-    # spline_positions = [t1, t1b, t1 + s_positions[3]*(t4b-t1), t1 + s_positions[4]*(t4b-t1), 
-    #                     t1 + s_positions[5]*(t4b-t1), t2_, t2, t3, (t3+t4)/2, t4, t4b]
     t1 = 1940.0
     t2 = 5686.0
     
@@ -674,9 +642,7 @@ if SIMULATE
             x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
         end
     else
-        # For single group (GROUPS=1), use hardcoded optimized initial guess from previous runs
-        # x0 = ones(CONTROL_POINTS)
-        x0 = [1.0, 0.987, 0.992, 0.989, 1.016, 1.004, 1.001]
+        x0 = [0.994, 0.961, 0.989, 0.98, 1.042, 1.033, 0.994]
     end
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
