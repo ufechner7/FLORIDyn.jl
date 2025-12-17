@@ -48,11 +48,11 @@ USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
 ONLINE  = false   # if true, enable online plotting during simulation and create video
 TURBULENCE = true # if true, show the added turbulence in the visualization
 T_START = 240     # relative time to start increasing demand
-T_END   = 2060     # relative time to reach final demand
+T_END   = 2260     # relative time to reach final demand
 T_SHIFT = 60      # time shift the demand compared to the wind speed in seconds
 REL_POWER = 0.9   # relative power for pulse demand
 if USE_ADVECTION
-    T_EXTRA = 4380    # extra time in addition to sim.end_time for MPC simulation
+    T_EXTRA = 4580    # extra time in addition to sim.end_time for MPC simulation
 else
     T_EXTRA = 2580    # extra time in addition to sim.end_time for MPC simulation
 end
@@ -125,6 +125,7 @@ time_step = sim.time_step  # seconds
 t_end = sim.end_time - sim.start_time  # relative end time in seconds
 
 function calc_vel(vis, ta::TurbineArray, start_time, t_end)
+    global u0
     n_turbines = size(ta.pos, 1)
     time_vector = start_time:time_step:t_end
     u0 = calc_wind.(Ref(vis), time_vector.-start_time)
@@ -618,10 +619,12 @@ md = run_simulation_full(con.induction_data)
 
 # Plot wind speed vs time (using relative time)
 if USE_ADVECTION
-    wind_data = u_mean(wind.vel)
+    plot_rmt(collect(time_vector), [wind_data, u_mean(wind.vel)]; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
+        ylabel="v_wind [m/s]", labels=["u_inflow","u_mean"], fig="v_wind", title="Wind speed vs time", pltctrl)
+else
+    plot_rmt(collect(time_vector), wind_data; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
+        ylabel="v_wind [m/s]", fig="v_wind", title="Wind speed vs time", pltctrl)
 end
-plot_rmt(collect(time_vector), wind_data; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
-    ylabel="v_wind [m/s]", fig="v_wind", title="Wind speed vs time", pltctrl)
 
 # Plot total power output and demand vs time
 if "PowerGen" in names(md)
