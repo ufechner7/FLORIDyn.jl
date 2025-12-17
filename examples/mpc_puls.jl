@@ -509,7 +509,7 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     s = clamp((time_clamped - t1) / (t2 - t1), 0.0, 1.0)
     # Perform piecewise cubic Hermite spline interpolation
     correction_result = interpolate_hermite_spline(s, correction[1:CONTROL_POINTS], s_positions)
-    correction_result = 1.0
+    # correction_result = 1.0
     
     demand = calc_demand(vis, time; t_shift=T_SHIFT, rel_power=REL_POWER)
     scaled_demand = correction_result * demand
@@ -631,8 +631,8 @@ else
         1,                   # number of outputs (just the objective)
         ["OBJ"],             # output types: OBJ = objective to minimize
         eval_fct;            # evaluation function
-        lower_bound=fill(1.0, CONTROL_POINTS),   # minimum correction values
-        upper_bound=vcat([2.5], fill(3.0, CONTROL_POINTS - 1))    # maximum correction values
+        lower_bound=fill(0.8, CONTROL_POINTS),   # minimum correction values
+        upper_bound=vcat([1.2], fill(1.2, CONTROL_POINTS - 1))    # maximum correction values
     )
 
     # Set NOMAD options
@@ -675,9 +675,8 @@ if SIMULATE
         end
     else
         # For single group (GROUPS=1), use hardcoded optimized initial guess from previous runs
-        # Note: Only use first CONTROL_POINTS elements to match the problem dimension
-        x0 = [1.350296, 1.32317, 1.271178, 1.26714, 1.259054, 1.24993796181799, 1.275175, 1.277277, 2.600089, 1.6348460123967, 1.6901]
-        x0 = x0[1:CONTROL_POINTS]
+        # x0 = ones(CONTROL_POINTS)
+        x0 = [1.0, 0.987, 0.992, 0.989, 1.016, 1.004, 1.001]
     end
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
