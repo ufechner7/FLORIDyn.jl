@@ -39,7 +39,7 @@ data_file_group_control = "data/mpc_result_group_control"
 GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 11
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 0     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_ADVECTION = true  
 USE_PULSE = true
@@ -50,8 +50,8 @@ ONLINE  = false   # if true, enable online plotting during simulation and create
 TURBULENCE = true # if true, show the added turbulence in the visualization
 T_START = 240     # relative time to start increasing demand
 T_END   = 2260     # relative time to reach final demand
-T_SHIFT = 4      # time shift the demand compared to the wind speed in seconds
-REL_POWER = 1.0   # relative power for pulse demand
+T_SHIFT = 60      # time shift the demand compared to the wind speed in seconds
+REL_POWER = 0.9   # relative power for pulse demand
 if USE_ADVECTION
     T_EXTRA = 4580    # extra time in addition to sim.end_time for MPC simulation
 else
@@ -211,7 +211,7 @@ else
     wind.vel = calc_vel(vis, sim.start_time, sim.end_time)
 end
 if isfile(reference_file)
-    global demand_ref
+    global demand_ref, demand_abs
     # Load reference relative power for error calculation
     ref_data = JLD2.jldopen(reference_file, "r") do file
         Dict(
@@ -224,6 +224,8 @@ if isfile(reference_file)
     if T_SHIFT != 0
         n_shift_steps = round(Int, T_SHIFT / time_step)
         demand_abs = vcat(zeros(Float64, n_shift_steps), demand_ref[1:end - n_shift_steps])
+    else
+        demand_abs = copy(demand_ref)
     end
     demand_abs .*= REL_POWER
 else
@@ -496,10 +498,13 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     demand = calc_demand(vis, time; t_shift=T_SHIFT, rel_power=REL_POWER)
     scaled_demand = correction_result * demand
     max_power = calc_demand(vis, time; t_shift=0.0, rel_power=1.0)
-    scaled_demand /= max_power
+    rel_demand = scaled_demand / max_power
     # Apply group-specific correction
-    scaled_demand *= id_correction
-    base_induction = calc_induction(scaled_demand * cp_max)
+    rel_demand *= id_correction
+    if rel_demand > 1.0
+        rel_demand = 1.0
+    end
+    base_induction = calc_induction(rel_demand * cp_max)
 
     rel_power = calc_cp(base_induction) / cp_max
     corrected_induction = calc_induction(rel_power * cp_max)
@@ -507,7 +512,9 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     # Ensure minimum induction to avoid numerical issues in FLORIS (NaN from zero induction)
     # Minimum value of MIN_INDUCTION ensures the wake model has valid inputs
     corrected_induction = max(MIN_INDUCTION, min(BETZ_INDUCTION, corrected_induction))
-    
+    if corrected_induction >= 0.28
+        @warn "Corrected induction is very high: $corrected_induction, $rel_demand, $scaled_demand, $max_power at time $time s"
+    end
     return corrected_induction, distance
 end
 
