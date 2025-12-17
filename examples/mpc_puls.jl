@@ -50,8 +50,8 @@ ONLINE  = false   # if true, enable online plotting during simulation and create
 TURBULENCE = true # if true, show the added turbulence in the visualization
 T_START = 240     # relative time to start increasing demand
 T_END   = 2260     # relative time to reach final demand
-T_SHIFT = 60      # time shift the demand compared to the wind speed in seconds
-REL_POWER = 0.9   # relative power for pulse demand
+T_SHIFT = 4      # time shift the demand compared to the wind speed in seconds
+REL_POWER = 1.0   # relative power for pulse demand
 if USE_ADVECTION
     T_EXTRA = 4580    # extra time in addition to sim.end_time for MPC simulation
 else
@@ -211,6 +211,7 @@ else
     wind.vel = calc_vel(vis, sim.start_time, sim.end_time)
 end
 if isfile(reference_file)
+    global demand_ref
     # Load reference relative power for error calculation
     ref_data = JLD2.jldopen(reference_file, "r") do file
         Dict(
@@ -218,11 +219,11 @@ if isfile(reference_file)
             "total_power" => file["results"]["total_power"]
         )
     end
-    demand_abs = ref_data["total_power"]
+    demand_ref = ref_data["total_power"]
     # apply T_SHIFT to demand_abs
     if T_SHIFT != 0
         n_shift_steps = round(Int, T_SHIFT / time_step)
-        demand_abs = vcat(zeros(Float64, n_shift_steps), demand_abs[1:end - n_shift_steps])
+        demand_abs = vcat(zeros(Float64, n_shift_steps), demand_ref[1:end - n_shift_steps])
     end
     demand_abs .*= REL_POWER
 else
@@ -494,9 +495,7 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     
     demand = calc_demand(vis, time; t_shift=T_SHIFT, rel_power=REL_POWER)
     scaled_demand = correction_result * demand
-    # convert abs demand to relative demand (scaled by max power)
-    v_wind = u_mean(wind.vel, time)
-    max_power = calc_max_power(v_wind, ta, wf, floris) * 1e6  # in W
+    max_power = calc_demand(vis, time; t_shift=0.0, rel_power=1.0)
     scaled_demand /= max_power
     # Apply group-specific correction
     scaled_demand *= id_correction
