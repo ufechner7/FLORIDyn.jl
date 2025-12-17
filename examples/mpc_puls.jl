@@ -36,7 +36,7 @@ reference_file          = "data/mpc_reference.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 7
 MAX_ID_SCALING = 3.0
 MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
@@ -576,8 +576,8 @@ if GROUP_CONTROL
     n_total_params = CONTROL_POINTS + n_group_params  # CONTROL_POINTS global correction + (GROUPS-1) group correction
     
     # Create lower and upper bounds dynamically
-    lower_bound = vcat(fill(1.0, CONTROL_POINTS), fill(0.0, n_group_params))
-    upper_bound = vcat(fill(2.0, CONTROL_POINTS), fill(MAX_ID_SCALING, n_group_params))
+    lower_bound = vcat(fill(0.8, CONTROL_POINTS), fill(0.0, n_group_params))
+    upper_bound = vcat(fill(1.4, CONTROL_POINTS), fill(MAX_ID_SCALING, n_group_params))
     
     # Set up NOMAD optimization problem
     p = NomadProblem(
@@ -634,12 +634,16 @@ if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
     if GROUP_CONTROL
         if GROUPS == 2
-            x0 =  [1.0, 1.1, 1.1, 1.1, 1.3, 1.1, 1.6, 2.0, 1.5, 1.502, 1.4, 1.05]
+            # Hardcoded initial guess from previous runs (originally for 11 control points)
+            x0_full =  [1.0, 1.1, 1.1, 1.1, 1.3, 1.1, 1.6, 2.0, 1.5, 1.502, 1.4, 1.05]
+            # Adjust to current CONTROL_POINTS: take first CONTROL_POINTS + (GROUPS-1) elements
+            x0 = x0_full[1:(CONTROL_POINTS + GROUPS - 1)]
         elseif GROUPS == 6
-            x0 = [1.31402, 1.32704, 1.32814, 1.30537, 1.31809, 1.32428, 1.70191, 1.9548, 1.26287, 1.89919, 1.94463, 0.999, 0.7266, 1.1566, 0.83, 0.9925]
+            # Hardcoded initial guess from previous runs
+            x0 = [0.994, 0.966, 0.988, 0.984, 1.2, 1.2, 0.987, 1.03, 0.95, 0.92, 1.01, 1.01]
         else
             # For group control, use generic initial guess with CONTROL_POINTS corrections + (GROUPS-1) group scalings
-            x0 = vcat(fill(1.5, CONTROL_POINTS), fill(1.0, GROUPS - 1))
+            x0 = vcat(fill(1.0, CONTROL_POINTS), fill(1.0, GROUPS - 1))
         end
     else
         x0 = [0.994, 0.961, 0.989, 0.98, 1.042, 1.033, 0.994]
