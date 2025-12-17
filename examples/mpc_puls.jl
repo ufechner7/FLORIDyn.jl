@@ -120,10 +120,10 @@ set_induction!(ta, induction)
 time_step = sim.time_step  # seconds
 t_end = sim.end_time - sim.start_time  # relative end time in seconds
 
-function calc_vel(vis, ta::TurbineArray, t_end)
+function calc_vel(vis, ta::TurbineArray, start_time, t_end)
     n_turbines = size(ta.pos, 1)
-    time_vector = 0:time_step:t_end
-    u0 = calc_wind.(Ref(vis), time_vector)
+    time_vector = start_time:time_step:t_end
+    u0 = calc_wind.(Ref(vis), time_vector.-start_time)
     c_true = mean(u0)     # m/s
     # `wind_data::Matrix{Float64}`: Matrix where each row is time, U_T0, U_T1, ... U_Tn.
     wind_data = zeros(Float64, length(time_vector), n_turbines + 1)
@@ -151,7 +151,7 @@ wind_data = [calc_wind(vis, t) for t in time_vector]
 if USE_ADVECTION
     # Set up wind velocity interpolation BEFORE creating induction matrix and settings
     wind.input_vel = "InterpTurbine"
-    wind.vel = calc_vel(vis, ta, t_end)
+    wind.vel = calc_vel(vis, ta, sim.start_time, sim.end_time)
 else
     # Set up wind velocity interpolation BEFORE creating induction matrix and settings
     wind.input_vel = "Interpolation"
