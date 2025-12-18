@@ -124,7 +124,7 @@ function plot_correction2(optimal_correction::Vector{Float64})
     plt.show()
 end
 
-function plot_power_and_demand(time_vector, rel_power, demand_values, rel_power_ref=nothing; vis, pltctrl)
+function plot_power_and_demand(time_vector, rel_power, demand_values, rel_power_ref; vis, pltctrl)
     if GROUP_CONTROL
         plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, rel_power_ref[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
                 ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_power_ref", "rel_demand"], title="Rel. Power and Demand "*string(GROUPS)*" TGs", fig="Rel. Power and Demand", pltctrl)
