@@ -33,25 +33,25 @@ x: distance [m]
 Assumes data aligned in time, computes max correlation lag τ.
 """
 function compute_c(u_entry::Vector{Float64}, u_meas::Vector{Float64}, Δt::Float64, x::Float64)
-    N = length(u_entry)
-    @assert length(u_meas) == N "Time series must have equal length"
+    n = length(u_entry)
+    @assert length(u_meas) == n "Time series must have equal length"
     
     # Remove mean for better correlation
     u_entry_demean = u_entry .- mean(u_entry)
     u_meas_demean = u_meas .- mean(u_meas)
     
     # Compute cross-correlation lags (negative lags: entry leads meas)
-    max_lag = div(N, 4)  # Limit search range for efficiency
+    max_lag = div(n, 4)  # Limit search range for efficiency
     lags = -max_lag:max_lag
     corrs = zeros(Float64, length(lags))
     
     for (i, lag) in enumerate(lags)
         if lag >= 0
-            idx1 = 1:N-lag
-            idx2 = 1+lag:N
+            idx1 = 1:n-lag
+            idx2 = 1+lag:n
         else
-            idx1 = 1-lag:N
-            idx2 = 1:N+lag
+            idx1 = 1-lag:n
+            idx2 = 1:n+lag
         end
         corrs[i] = dot(u_entry_demean[idx1], u_meas_demean[idx2])
     end
