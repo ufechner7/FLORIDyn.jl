@@ -142,9 +142,9 @@ function calc_vel(vis, ta::TurbineArray, start_time, t_end)
         delay_steps = round(Int, x_pos / c_true / time_step)  # Number of time steps for delay
         # Create delayed signal: u_x[i] = u0[i - delay_steps]
         u_x = zeros(Float64, length(u0))
-        for i in 1:length(u0)
-            src_idx = max(1, i - delay_steps)
-            u_x[i] = u0[src_idx]
+        for j in 1:length(u0)
+            src_idx = max(1, j - delay_steps)
+            u_x[j] = u0[src_idx]
         end
         wind_data[:, i + 1] .= u_x
     end
