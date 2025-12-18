@@ -136,13 +136,13 @@ function calc_vel(vis, ta::TurbineArray, start_time, t_end)
     # `wind_data::Matrix{Float64}`: Matrix where each row is time, U_T0, U_T1, ... U_Tn.
     wind_data = zeros(Float64, length(time_vector), n_turbines + 1)
     wind_data[:, 1] = collect(time_vector)
-    for i in 1:n_turbines
+    for i in eachindex(ta.pos[:, 1])
         # calculate the x position of each turbine
         x_pos = ta.pos[i, 1]
         delay_steps = round(Int, x_pos / c_true / time_step)  # Number of time steps for delay
         # Create delayed signal: u_x[i] = u0[i - delay_steps]
         u_x = zeros(Float64, length(u0))
-        for j in 1:length(u0)
+        for j in eachindex(u0)
             src_idx = max(1, j - delay_steps)
             u_x[j] = u0[src_idx]
         end
