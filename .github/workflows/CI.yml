@@ -43,7 +43,7 @@ jobs:
     steps:
       - name: Load cached FFmpeg
         id: cache-ffmpeg
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             /usr/local/bin/ffmpeg
@@ -98,7 +98,7 @@ jobs:
       - uses: actions/checkout@v5
       - name: Cache Chocolatey FFmpeg
         id: cache-ffmpeg-choco
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: C:\ProgramData\chocolatey\lib\ffmpeg
           key: ${{ runner.os }}-choco-ffmpeg-latest
