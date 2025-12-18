@@ -114,7 +114,6 @@ function calc_demand(vis::Vis, time; t_shift=0.0, rel_power=1.0)
 end
 
 function calc_wind(vis::Vis, time)
-    local wind
     low_wind = 6.8
     high_wind = 8.6
     t1 = vis.t_skip + T_START  # Time to start increased wind speed
