@@ -22,7 +22,7 @@
 # To create a bar plot, run Julia single threaded.
 
 using Pkg
-if ! ("NOMAD" ∈ keys(Pkg.project().dependencies))
+if !("NOMAD" ∈ keys(Pkg.project().dependencies))
     using TestEnv; TestEnv.activate()
 end
 using FLORIDyn, TerminalPager, DistributedNext, DataFrames, NOMAD, JLD2, Statistics, Printf
