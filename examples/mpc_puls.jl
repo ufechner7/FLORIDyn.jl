@@ -287,6 +287,7 @@ function calc_max_power(wind_speed, ta, wf, floris)
     rotor_area = π * (wf.D[1] / 2)^2  # assuming all turbines have same diameter
     max_power_per_turbine = 0.5 * floris.airDen * rotor_area * Cp_opt * wind_speed^3 * floris.eta * cos(yaw)^floris.p_p / 1e6  # MW
     max_power = nT * max_power_per_turbine  # total maximum power in MW
+    return max_power
 end
 
 # This function implements the "model" in the block diagram.
