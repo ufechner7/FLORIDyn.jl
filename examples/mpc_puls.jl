@@ -36,10 +36,10 @@ reference_file          = "data/mpc_reference.jld2"
 error_file              = "data/mpc_error.jld2"
 data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 7
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 100     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = false # set to false to start from generic initial guess
 USE_ADVECTION = true  
 USE_PULSE = true
@@ -640,7 +640,7 @@ if SIMULATE
             x0 = x0_full[1:(CONTROL_POINTS + GROUPS - 1)]
         elseif GROUPS == 6
             # Hardcoded initial guess from previous runs
-            x0 =  [0.998, 0.957, 0.993, 0.979, 1.296, 1.387, 0.996, 0.99, 0.92, 0.9, 1.04, 1.06]
+            x0 =   [0.94889360946378, 0.93554178821267, 1.00324321839752, 1.01961987061882, 1.39999863001249, 1.39999941594734, 1.08844998810365, 1.21782772762842, 0.8313427753303, 0.97125073528246, 0.83848620902655, 0.84929076664137]
         else
             # For group control, use generic initial guess with CONTROL_POINTS corrections + (GROUPS-1) group scalings
             x0 = vcat(fill(1.0, CONTROL_POINTS), fill(1.0, GROUPS - 1))
