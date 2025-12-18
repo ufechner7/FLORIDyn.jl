@@ -168,7 +168,7 @@ function u_mean(wind_data)
     n_turbines = size(wind_speeds, 2)
     
     # Calculate cubic mean for each time step (row)
-    return [cbrt(sum(wind_speeds[i, :] .^ 3) / n_turbines) for i in 1:size(wind_speeds, 1)]
+    return [cbrt(sum(wind_speeds[i, :] .^ 3) / n_turbines) for i in axes(wind_speeds, 1)]
 end
 
 """
