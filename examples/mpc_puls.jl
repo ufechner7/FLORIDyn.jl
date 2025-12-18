@@ -577,7 +577,7 @@ if GROUP_CONTROL
     
     # Create lower and upper bounds dynamically
     lower_bound = vcat(fill(0.8, CONTROL_POINTS), fill(0.0, n_group_params))
-    upper_bound = vcat(fill(1.4, CONTROL_POINTS), fill(MAX_ID_SCALING, n_group_params))
+    upper_bound = vcat(fill(1.8, CONTROL_POINTS), fill(MAX_ID_SCALING, n_group_params))
     
     # Set up NOMAD optimization problem
     p = NomadProblem(
@@ -640,7 +640,7 @@ if SIMULATE
             x0 = x0_full[1:(CONTROL_POINTS + GROUPS - 1)]
         elseif GROUPS == 6
             # Hardcoded initial guess from previous runs
-            x0 =   [0.94889360946378, 0.93554178821267, 1.00324321839752, 1.01961987061882, 1.39999863001249, 1.39999941594734, 1.08844998810365, 1.21782772762842, 0.8313427753303, 0.97125073528246, 0.83848620902655, 0.84929076664137]
+            x0 =   [0.94903517973113, 0.93664007574596, 1.00502832270567, 1.0219815310748, 1.43912151093264, 1.59996382313805, 1.08683828399377, 1.21784664062968, 0.823461, 0.97709790234443, 0.83260174057084, 0.8506117657747]
         else
             # For group control, use generic initial guess with CONTROL_POINTS corrections + (GROUPS-1) group scalings
             x0 = vcat(fill(1.0, CONTROL_POINTS), fill(1.0, GROUPS - 1))
