@@ -521,7 +521,7 @@ function calc_induction_matrix2(vis, ta, time_step, t_end; correction)
     # Calculate induction for each turbine at each time step (columns 2 onwards)
     max_distance = 0.0
     for (t_idx, time) in enumerate(time_vector)
-        for i in 1:n_turbines
+        for i in eachindex(ta.pos[:, 1])
             group_id = FLORIDyn.turbine_group(ta, i)
             time_shifted = time - time_step  # shift back by one time step to suppress spike
             axial_induction, distance = calc_axial_induction2(vis, time_shifted, correction; group_id=group_id)
