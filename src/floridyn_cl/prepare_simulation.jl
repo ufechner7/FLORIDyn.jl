@@ -170,7 +170,6 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
                 if !isfile(path)
                     @error "WindVel.csv not found in $vel_file_dir"
                 end
-                df = CSV.read(path, DataFrame; header=false)
                 wind.vel = readdlm(path, ',', Float64)
             catch
                 push!(loadDataWarnings, "WindVel.csv not found.")
