@@ -59,17 +59,18 @@ function plot_induction(vis, optimal_correction::Vector{Float64})
 end
 
 """
-    plot_correction_curve(optimal_correction::Vector{Float64})
+    plot_correction_curve(optimal_correction::Vector{Float64}, spline_positions)
 
 Plot the correction curve from the piecewise cubic Hermite spline interpolation over s=0..1.
 
 # Arguments
 - `optimal_correction::Vector{Float64}`: Optimal correction parameters from optimization
+- `spline_positions`: Positions of the spline control points
 
 # Description
 Plots the piecewise cubic Hermite spline interpolation curve showing how the correction
 factor varies across the normalized parameter s from 0 to 1. Uses the first CONTROL_POINTS
-elements of `optimal_correction` as control points evenly spaced from s = 0 to s = 1.0.
+elements of `optimal_correction` as control points at the positions specified by `spline_positions`.
 """
 function plot_correction_curve(optimal_correction::Vector{Float64}, spline_positions)
     # Create s vector from 0 to 1
