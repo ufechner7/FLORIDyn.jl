@@ -2,7 +2,10 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 using Statistics, LinearAlgebra  # For mean, but optional
-t_end = 3780.0  # total simulation time [s]
+
+T_START = 240   # relative time to start increasing demand [s]
+T_END = 900     # relative time to stop increasing demand [s]
+T_TOTAL = 3780.0  # total simulation time [s]
 
 function calc_wind(time)
     local wind
@@ -67,7 +70,7 @@ end
 
 ## Example usage
 time_step = 4.0  # s
-time_vec = 0:time_step:t_end
+time_vec = 0:time_step:T_TOTAL
 u0 = calc_wind.(time_vec)  # Simulated entry speeds
 c_true = mean(u0)     # m/s
 time_step = 4.0          # s
