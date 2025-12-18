@@ -69,12 +69,11 @@ function compute_c(u_entry::Vector{Float64}, u_meas::Vector{Float64}, Δt::Float
 end
 
 ## Example usage
-time_step = 4.0  # s
+time_step = 4.0            # s
 time_vec = 0:time_step:T_TOTAL
 u0 = calc_wind.(time_vec)  # Simulated entry speeds
-c_true = mean(u0)     # m/s
-time_step = 4.0          # s
-x = 400.0         # m
+c_true = mean(u0)          # m/s
+x = 400.0                  # m
 delay_steps = round(Int, x / c_true / time_step)  # Number of time steps for delay
 
 # Create delayed signal: u_x[i] = u0[i - delay_steps]
