@@ -29,25 +29,25 @@ using FLORIDyn, TerminalPager, DistributedNext, DataFrames, NOMAD, JLD2, Statist
 using FLORIDyn: TurbineGroup, TurbineArray
 if Threads.nthreads() == 1; using ControlPlots; end
 
-settings_file = "data/2021_54T_NordseeOne.yaml"
-vis_file      = "data/vis_54T.yaml"
-data_file               = "data/mpc_result.jld2"
-reference_file          = "data/mpc_reference.jld2"
-error_file              = "data/mpc_error.jld2"
-data_file_group_control = "data/mpc_result_group_control"
+const settings_file = "data/2021_54T_NordseeOne.yaml"
+const vis_file      = "data/vis_54T.yaml"
+const data_file               = "data/mpc_result.jld2"
+const reference_file          = "data/mpc_reference.jld2"
+const error_file              = "data/mpc_error.jld2"
+const data_file_group_control = "data/mpc_result_group_control"
 
-GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+const GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 7
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+const MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = false # set to false to start from generic initial guess
-USE_ADVECTION = true  
+const USE_ADVECTION = true  
 USE_PULSE = true
 USE_TGC = false
 USE_STEP = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
 ONLINE  = false   # if true, enable online plotting during simulation and create video
-TURBULENCE = true # if true, show the added turbulence in the visualization
+const TURBULENCE = true # if true, show the added turbulence in the visualization
 T_START = 240     # relative time to start increasing demand
 T_END   = 2260     # relative time to reach final demand
 T_SHIFT = 300      # time shift the demand compared to the wind speed in seconds
@@ -59,7 +59,7 @@ else
 end
 MIN_INDUCTION = 0.01
 MAX_DISTANCES = Float64[]
-data_file_group_control = data_file_group_control * '_' * string(GROUPS) * "TGs.jld2"
+# data_file_group_control_full = data_file_group_control * '_' * string(GROUPS) * "TGs.jld2"
 rel_power_ref = nothing
 spline_positions = Float64[]
 rel_spline_positions = Float64[]
@@ -67,16 +67,16 @@ rel_demands = Float64[]
 max_powers = Float64[]
 scaled_demands = Float64[]
 
-GROUP_CONTROL = (GROUPS != 1)
+const GROUP_CONTROL = (GROUPS != 1)
 if USE_HARDCODED_INITIAL_GUESS
     @assert(GROUPS in (1, 2, 3, 4, 6, 8, 12), "GROUPS must be 1, 2, 3, 4, 6, 8, or 12")
 else
     @assert(GROUPS >= 1, "GROUPS must be at least 1")
 end
 if MAX_STEPS == 0
-   SIMULATE = false # if false, load cached results if available
+   const SIMULATE = false # if false, load cached results if available
 else
-   SIMULATE = true
+   const SIMULATE = true
 end
 if TURBULENCE
     msr = AddedTurbulence
@@ -99,6 +99,8 @@ else
 end
 
 pltctrl = nothing
+md::DataFrame = DataFrame()
+
 # Provide ControlPlots module only for pure sequential plotting (single-threaded, no workers)
 if Threads.nthreads() == 1
     pltctrl = ControlPlots
