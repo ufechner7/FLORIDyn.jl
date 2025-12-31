@@ -64,6 +64,7 @@ export UnifiedBuffers, create_unified_buffers
 export get_default_project
 export select_project
 export get_default_msr, set_default_msr, select_measurement
+export interpolate_hermite_spline
 
 """
     MSR `VelReduction` `AddedTurbulence` `EffWind`
@@ -440,6 +441,7 @@ include("correction/turbulence.jl")
 include("floridyn_cl/prepare_simulation.jl")
 include("floridyn_cl/iterate.jl")
 
+include("controller/splines.jl")
 include("controller/controller.jl")
 include("visualisation/calc_flowfield.jl")
 include("visualisation/calc_power.jl")
