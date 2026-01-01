@@ -95,12 +95,37 @@ function plot_correction_curve(optimal_correction::Vector{Float64}, spline_posit
     
     # Plot
     if t1 != t2
-        plot_rmt(collect(t_vec), correction_values;
-                xlabel="Time [s]",
-                ylabel="Correction Factor [-]",
-                title="Hermite Spline Interpolation Correction Curve",
-                fig="Correction Curve",
-                pltctrl=pltctrl)        
+        if isnothing(pltctrl)
+            plot_rmt(collect(t_vec), correction_values;
+                    xlabel="Time [s]",
+                    ylabel="Correction Factor [-]",
+                    title="Hermite Spline Interpolation Correction Curve",
+                    fig="Correction Curve",
+                    pltctrl=pltctrl)
+        else
+            plt.figure("Hermite Spline Interpolation Correction and Control Points")
+            points = optimal_correction[1:CONTROL_POINTS]
+            s_vec1=(0:CONTROL_POINTS-1)./(CONTROL_POINTS-1)
+            t_vec1 = t1 .+ s_vec1 .* (t2 - t1)
+            plt.plot(t_vec1, points, label="Control Points",marker="x", linestyle="None")
+            # Create s vector from 0 to 1
+            s_vec1 = 0.0:0.01:1.0
+            n_points = length(s_vec1)
+            
+            # Calculate correction_result for each s value
+            correction_values = zeros(n_points)
+            
+            for (i, s) in enumerate(s_vec1)
+                correction_values[i] = interpolate_hermite_spline(s, optimal_correction[1:CONTROL_POINTS], spline_positions)
+            end
+            plt.plot(collect(t_vec), correction_values, label="Interpolated", linestyle="--")
+            plt.xlabel("Normalized Parameter s [-]")
+            plt.ylabel("Correction Factor [-]")
+            plt.title("Hermite Spline Interpolation Correction and Control Points")
+            plt.legend()
+            plt.grid(true, color = "#DDDDDD")
+            plt.show()
+        end      
     else
         plot_rmt(collect(s_vec), correction_values;
                 xlabel="Normalized Parameter s [-]",
