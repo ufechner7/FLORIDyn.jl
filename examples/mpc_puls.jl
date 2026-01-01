@@ -39,7 +39,7 @@ const data_file_group_control = "data/mpc_result_group_control"
 const GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 7
 MAX_ID_SCALING = 3.0
-const MAX_STEPS = 3000     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+const MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = false # set to false to start from generic initial guess
 const USE_ADVECTION = true  
 USE_PULSE = true
