@@ -39,7 +39,7 @@ const data_file_group_control = "data/mpc_result_group_control"
 const GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 7
 MAX_ID_SCALING = 3.0
-const MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+const MAX_STEPS = 3000     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = false # set to false to start from generic initial guess
 const USE_ADVECTION = true  
 USE_PULSE = true
@@ -563,7 +563,7 @@ if SIMULATE
             x0 = x0_full[1:(CONTROL_POINTS + GROUPS - 1)]
         elseif GROUPS == 6
             # Hardcoded initial guess from previous runs
-            x0 = [0.94903517973113, 0.93664007574596, 1.00502832270567, 1.0219815310748, 1.43912151093264, 1.8, 1.08683828399377, 1.21784664062968, 0.823461, 0.97709790234443, 0.83260174057084, 0.8506117657747]
+            x0 = [0.94518303918679, 0.93269599433136, 1.00092898512453, 1.01904687495053, 1.47398102169963, 1.99998018368223, 1.07802139832096, 1.2224803349927, 0.82466261195206, 0.98282706090237, 0.8370533275206, 0.85516767133612]
         else
             # For group control, use generic initial guess with CONTROL_POINTS corrections + (GROUPS-1) group scalings
             x0 = vcat(fill(1.0, CONTROL_POINTS), fill(1.0, GROUPS - 1))
