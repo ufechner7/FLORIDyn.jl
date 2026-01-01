@@ -51,6 +51,8 @@ const TURBULENCE = true # if true, show the added turbulence in the visualizatio
 T_START = 240     # relative time to start increasing demand
 T_END   = 2260     # relative time to reach final demand
 T_SHIFT = 300      # time shift the demand compared to the wind speed in seconds
+T1 = 1940.0        # start time of correction spline
+T2 = 5686.0        # end time of correction spline
 REL_POWER = 0.90   # relative power for pulse demand
 if USE_ADVECTION
     T_EXTRA = 4880    # extra time in addition to sim.end_time for MPC simulation
@@ -382,8 +384,8 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
         id_correction = clamp(id_correction, 0.0, MAX_ID_SCALING)
     end
 
-    t1 = 1940.0
-    t2 = 5686.0
+    t1 = T1
+    t2 = T2
     
     # Calculate s_positions equally spaced between 0 and 1
     s_positions = range(0.0, 1.0, length=CONTROL_POINTS) |> collect
@@ -659,7 +661,7 @@ else
         ylabel="Axial Induction Factor [-]", fig="axial_induction", title="Axial induction factor vs time", pltctrl)
 end
 
-plot_correction_curve(correction, rel_spline_positions)
+plot_correction_curve(correction, rel_spline_positions; t1=T1, t2=T2)
 
 # Calculate absolute power from the final simulation for error calculation
 total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)

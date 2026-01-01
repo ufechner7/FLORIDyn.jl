@@ -72,10 +72,11 @@ Plots the piecewise cubic Hermite spline interpolation curve showing how the cor
 factor varies across the normalized parameter s from 0 to 1. Uses the first CONTROL_POINTS
 elements of `optimal_correction` as control points at the positions specified by `spline_positions`.
 """
-function plot_correction_curve(optimal_correction::Vector{Float64}, spline_positions)
+function plot_correction_curve(optimal_correction::Vector{Float64}, spline_positions; t1=0.0, t2=0.0)
     # Create s vector from 0 to 1
     s_vec = 0.0:0.01:1.0
     # s_vec = spline_positions
+    t_vec = t1 .+ s_vec .* (t2 - t1)
     n_points = length(s_vec)
     
     # Calculate correction_result for each s value
@@ -93,12 +94,21 @@ function plot_correction_curve(optimal_correction::Vector{Float64}, spline_posit
     println("======================================\n")
     
     # Plot
-    plot_rmt(collect(s_vec), correction_values;
-             xlabel="Normalized Parameter s [-]",
-             ylabel="Correction Factor [-]",
-             title="Hermite Spline Interpolation Correction Curve",
-             fig="Correction Curve",
-             pltctrl=pltctrl)
+    if t1 != t2
+        plot_rmt(collect(t_vec), correction_values;
+                xlabel="Time [s]",
+                ylabel="Correction Factor [-]",
+                title="Hermite Spline Interpolation Correction Curve",
+                fig="Correction Curve",
+                pltctrl=pltctrl)        
+    else
+        plot_rmt(collect(s_vec), correction_values;
+                xlabel="Normalized Parameter s [-]",
+                ylabel="Correction Factor [-]",
+                title="Hermite Spline Interpolation Correction Curve",
+                fig="Correction Curve",
+                pltctrl=pltctrl)
+    end
 end
 function plot_correction2(optimal_correction::Vector{Float64})
     plt.figure("Hermite Spline Interpolation Correction and Control Points")
