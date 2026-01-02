@@ -36,7 +36,7 @@ const reference_file          = "data/mpc_reference.jld2"
 const error_file              = "data/mpc_error.jld2"
 const data_file_group_control = "data/mpc_result_group_control"
 
-const GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+const GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 7
 MAX_ID_SCALING = 3.0
 const MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
@@ -569,7 +569,7 @@ if SIMULATE
             x0 = vcat(fill(1.0, CONTROL_POINTS), fill(1.0, GROUPS - 1))
         end
     else
-        x0 = [0.996, 0.957, 0.988, 0.984, 1.041, 1.004, 0.996]
+        x0 = [0.99055661760185, 0.95955086565182, 0.98819178660071, 0.9856740943524, 1.03187884206546, 1.00458036586437, 0.99286704613765]
     end
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
