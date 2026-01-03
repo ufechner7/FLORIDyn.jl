@@ -7,7 +7,7 @@ using FLORIDyn, ControlPlots, YAML
 
 settings_file = get_default_project()[2]
 
-GROUPS = 6
+GROUPS = 9
 
 function plot_turbines(ta::TurbineArray, turbine_groups)
     # Extract x and y coordinates from the position matrix
