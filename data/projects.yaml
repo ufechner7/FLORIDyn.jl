@@ -18,4 +18,9 @@ projects:
       name: 2026_108T_NordseeOne
       description: A reference simulation with 108 turbines
       settings: 2026_108T_NordseeOne.yaml
-      vis: vis_54T.yaml
+      vis: vis_108T.yaml
+  - project:
+      name: 2026_162T_NordseeOne
+      description: A reference simulation with 162 turbines
+      settings: 2026_162T_NordseeOne.yaml
+      vis: vis_162T.yaml
