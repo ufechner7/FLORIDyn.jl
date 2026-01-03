@@ -30,12 +30,12 @@ using FLORIDyn: TurbineGroup, TurbineArray
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2026_108T_NordseeOne.yaml"
-vis_file      = "data/vis_54T.yaml"
-data_file               = "data/mpc_result.jld2"
-error_file              = "data/mpc_error.jld2"
-data_file_group_control = "data/mpc_result_group_control"
+vis_file      = "data/vis_108T.yaml"
+data_file               = "data/mpc_result_108.jld2"
+error_file              = "data/mpc_error_108.jld2"
+data_file_group_control = "data/mpc_result_group_control_108"
 
-GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
@@ -501,7 +501,9 @@ end
 
 println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
 
-plot_power_and_demand(time_vector, rel_power, demand_data, rel_power_ref; vis, pltctrl)
+if @isdefined rel_power_ref
+    plot_power_and_demand(time_vector, rel_power, demand_data, rel_power_ref; vis, pltctrl)
+end
 
 plot_axial_induction()
 
