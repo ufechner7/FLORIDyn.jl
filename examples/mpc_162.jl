@@ -35,11 +35,11 @@ data_file               = "data/mpc_result_162.jld2"
 error_file              = "data/mpc_error_162.jld2"
 data_file_group_control = "data/mpc_result_group_control_162"
 
-GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+GROUPS = 9 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
-USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
+MAX_STEPS = 10    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+USE_HARDCODED_INITIAL_GUESS = false # set to false to start from generic initial guess
 USE_TGC = false
 USE_STEP = false
 USE_PULSE = false
@@ -49,7 +49,7 @@ TURBULENCE = true # if true, show the added turbulence in the visualization
 USE_ADVECTION = false
 T_START = 240    # relative time to start increasing demand
 T_END   = 960    # relative time to reach final demand
-T_EXTRA = 2580+5000   # extra time in addition to sim.end_time for MPC simulation
+T_EXTRA = 2580+5000+5000   # extra time in addition to sim.end_time for MPC simulation
 MIN_INDUCTION = 0.01
 MAX_DISTANCES = Float64[]
 data_file_group_control = data_file_group_control * '_' * string(GROUPS) * "TGs.jld2"
@@ -455,6 +455,8 @@ else
                 x0 = [1.52628, 1.9693, 1.4923, 1.35422, 1.26623, 0.5599]
             elseif GROUPS == 3
                 x0 = [1.35, 1.985, 1.7041, 1.396, 1.275, 0.1022, 1.3581]
+            elseif GROUPS == 9
+                x0 = [1.6, 1.6, 1.5, 1.5, 1.5, 1, 1, 1, 3, 1, 1, 1, 1]
             elseif GROUPS == 12
                 # CONTROL_POINTS global + 11 group parameters (last group calculated from constraint)
                 x0 = [1.409, 1.60396, 1.43527, 1.30722, 1.26675, 0.0877, 0.1621, 0.1235, 1.99722, 0.016, 1.9725, 1.34014, 1.8945, 0.85491, 2.8402, 2.0101]

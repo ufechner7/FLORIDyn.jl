@@ -6,7 +6,7 @@ vis:
   print_filenames: false # If true, print the names of the saved files
   video_folder: "video"  # Relative video folder path
   fps: 12                # Frames per second for video output
-  t_skip: 4500.0         # Time in seconds to skip at beginning of simulation for visualization
+  t_skip: 7500.0         # Time in seconds to skip at beginning of simulation for visualization
   output_folder: "out"   # Relative output folder path
   unique_output_folder: true # If true, a unique output folder is created for each simulation run
   skip_flow_fields: false    # When true, do not create flow field visualizations
