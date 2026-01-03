@@ -38,7 +38,7 @@ data_file_group_control = "data/mpc_result_group_control_108"
 GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 10    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_TGC = false
 USE_STEP = false
@@ -450,7 +450,7 @@ else
             elseif GROUPS == 4
                 x0 = [1.513, 2.0, 1.54959, 1.35491, 1.27939, 0.0, 0.797814, 2.99485]
             elseif GROUPS == 6
-                x0 = [1.753, 1.614, 1.507, 1.293, 1.404, 0.08, 0, 0, 2.17, 1.78]
+                x0 = [1.853, 1.814, 1.507, 1.293, 1.304, 0.08, 1, 0, 2.17, 1.78]
             elseif GROUPS == 2
                 x0 = [1.52628, 1.9693, 1.4923, 1.35422, 1.26623, 0.5599]
             elseif GROUPS == 3
