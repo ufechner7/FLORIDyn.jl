@@ -39,22 +39,23 @@ data_file               = "data/mpc_result_162.jld2"
 error_file              = "data/mpc_error_162.jld2"
 data_file_group_control = "data/mpc_result_group_control_162"
 
-GROUPS = 9 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8, 9 or 12, otherwise any integer >= 1
+GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8, 9 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 0    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+FINAL_DEMAND = 0.81
+MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_TGC = false
 USE_STEP = false
 USE_PULSE = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
 ONLINE  = false  # if true, enable online plotting during simulation and create video
-SAVE_FINAL_FRAME = true # if true, save flowfield visualization of final timestep only
+SAVE_FINAL_FRAME = false # if true, save flowfield visualization of final timestep only
 TURBULENCE = true # if true, show the added turbulence in the visualization
 USE_ADVECTION = false
 T_START = 240    # relative time to start increasing demand
 T_END   = 960    # relative time to reach final demand
-T_EXTRA = 2580+5000+3000   # extra time in addition to sim.end_time for MPC simulation
+T_EXTRA = 2580+5000+4000   # extra time in addition to sim.end_time for MPC simulation
 MIN_INDUCTION = 0.01
 MAX_DISTANCES = Float64[]
 data_file_group_control = data_file_group_control * '_' * string(GROUPS) * "TGs.jld2"

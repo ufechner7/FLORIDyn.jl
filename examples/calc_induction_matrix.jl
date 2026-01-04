@@ -100,7 +100,7 @@ function calc_demand(vis::Vis, time; t_shift=0.0, rel_power=1.0)
         end
     else
         initial_demand = 0.4
-        final_demand = 0.8
+        final_demand = FINAL_DEMAND
         t1 = vis.t_skip + T_START  # Time to start increasing demand
         t2 = vis.t_skip + T_END    # Time to reach final demand
         if time < t1
