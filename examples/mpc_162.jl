@@ -21,6 +21,10 @@
 
 # To create a bar plot, run Julia single threaded.
 
+# Result after 600 NOMAD evaluations with GROUPS = 9:
+# Root Mean Square Error (RMSE): 2.03%
+# Estimated storage time at 100% power: 40.39 s
+
 using Pkg
 if ! ("NOMAD" ∈ keys(Pkg.project().dependencies))
     using TestEnv; TestEnv.activate()
@@ -38,7 +42,7 @@ data_file_group_control = "data/mpc_result_group_control_162"
 GROUPS = 9 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8, 9 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 600    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_TGC = false
 USE_STEP = false
@@ -456,7 +460,7 @@ else
             elseif GROUPS == 3
                 x0 = [1.35, 1.985, 1.7041, 1.396, 1.275, 0.1022, 1.3581]
             elseif GROUPS == 9
-                x0 = [1.487, 1.496, 1.795, 1.42, 1.6, 2.01, 3, 0, 2, 2.08, 0.04, 0, 0.14]
+                x0 = [1.998, 1.973, 1.444, 1.269, 1.273, 1.91, 2.95, 0.06, 1.87, 2.18, 0, 0.04, 0.05]
             elseif GROUPS == 12
                 # CONTROL_POINTS global + 11 group parameters (last group calculated from constraint)
                 x0 = [1.409, 1.60396, 1.43527, 1.30722, 1.26675, 0.0877, 0.1621, 0.1235, 1.99722, 0.016, 1.9725, 1.34014, 1.8945, 0.85491, 2.8402, 2.0101]
