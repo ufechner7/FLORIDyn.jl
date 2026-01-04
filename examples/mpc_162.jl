@@ -22,8 +22,9 @@
 # To create a bar plot, run Julia single threaded.
 
 # Result after 600 NOMAD evaluations with GROUPS = 9:
-# Root Mean Square Error (RMSE): 2.03%
-# Estimated storage time at 100% power: 40.39 s
+# Root Mean Square Error (RMSE): 1.71%
+# Estimated storage time at 100% power: 63.42 s
+# Without group control: 3.31% RMSE
 
 using Pkg
 if ! ("NOMAD" ∈ keys(Pkg.project().dependencies))
@@ -39,7 +40,7 @@ data_file               = "data/mpc_result_162.jld2"
 error_file              = "data/mpc_error_162.jld2"
 data_file_group_control = "data/mpc_result_group_control_162"
 
-GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8, 9 or 12, otherwise any integer >= 1
+GROUPS = 9 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8, 9 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 FINAL_DEMAND = 0.81
