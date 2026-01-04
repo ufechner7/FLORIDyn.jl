@@ -49,6 +49,7 @@ USE_STEP = false
 USE_PULSE = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
 ONLINE  = false  # if true, enable online plotting during simulation and create video
+SAVE_FINAL_FRAME = true # if true, save flowfield visualization of final timestep only
 TURBULENCE = true # if true, show the added turbulence in the visualization
 USE_ADVECTION = false
 T_START = 240    # relative time to start increasing demand
@@ -170,13 +171,14 @@ function calc_max_power(wind_speed, ta, wf, floris)
 end
 
 # This function implements the "model" in the block diagram.
-function run_simulation(set_induction::AbstractMatrix; enable_online=false, msr=msr)
+function run_simulation(set_induction::AbstractMatrix; enable_online=false, msr=msr, save_final_only=false)
     global set, wind, con, floridyn, floris, sim, ta, vis 
     con.induction_data = set_induction
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     # Only enable online visualization if explicitly requested (to avoid NaN issues during optimization)
     vis.online = enable_online
-    wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=msr)
+    vis.save = enable_online  # Enable saving when visualization is enabled
+    wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=msr, save_final_only=save_final_only)
     # Calculate total wind farm power by grouping by time and summing turbine powers
     total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
     # Calculate theoretical maximum power based on turbine ratings and wind conditions
@@ -552,7 +554,13 @@ else
     results = JLD2.load(data_file, "results")
 end
 
-if ONLINE
+# Visualize final state only (without full video)
+if SAVE_FINAL_FRAME && !ONLINE
+    println("\nCreating flowfield visualization for final timestep...")
+    # Run simulation with visualization enabled only for final state
+    rel_power_final = run_simulation(induction_data; enable_online=true, msr=msr, save_final_only=true)
+    println("✓ Flowfield visualization saved to video/ folder")
+elseif ONLINE
     println("Creating video from png files...")
     postfix = string(GROUPS)*"T"
     if TURBULENCE
