@@ -59,9 +59,9 @@ wind:
     # - None
     # - Influence
     ti: None
-  # Wind Field state pertubation / process noise
-  #   To model a changing and evolving wind field, state pertubation can be activated. 
-  #   This adds a normal distributed pertubation to all states with a given standard deviation .
+  # Wind Field state perturbation / process noise
+  #   To model a changing and evolving wind field, state perturbation can be activated. 
+  #   This adds a normal distributed perturbation to all states with a given standard deviation .
   perturbation:
     vel: 0
     vel_sigma: 0.2
@@ -154,7 +154,7 @@ floris:
            # turbines therein as source of higher TI.
 
 floridyn:
-  n_op: 400
+  n_op: 800
   deltaUW: 10.0
   deltaDW: 0.5
   deltaCW: 3.0
