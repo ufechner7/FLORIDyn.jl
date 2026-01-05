@@ -22,8 +22,8 @@
 # To create a bar plot, run Julia single threaded.
 
 # Result after 600 NOMAD evaluations with GROUPS = 9:
-# Root Mean Square Error (RMSE): 1.71%
-# Estimated storage time at 100% power: 63.42 s
+# Root Mean Square Error (RMSE): 1.7%
+# Estimated storage time at 100% power: 63.49 s
 # Without group control: 3.31% RMSE
 
 using Pkg
@@ -464,7 +464,7 @@ else
             elseif GROUPS == 3
                 x0 = [1.35, 1.985, 1.7041, 1.396, 1.275, 0.1022, 1.3581]
             elseif GROUPS == 9
-                x0 = [1.998, 1.973, 1.444, 1.269, 1.273, 1.91, 2.95, 0.06, 1.87, 2.18, 0, 0.04, 0.05]
+                x0 = [1.99721, 1.985, 1.45508, 1.25008, 1.27259, 1.9224, 2.9815, 0.0269, 1.8755, 2.1808, 0.0177, 0.0015, 0.0482]
             elseif GROUPS == 12
                 # CONTROL_POINTS global + 11 group parameters (last group calculated from constraint)
                 x0 = [1.409, 1.60396, 1.43527, 1.30722, 1.26675, 0.0877, 0.1621, 0.1235, 1.99722, 0.016, 1.9725, 1.34014, 1.8945, 0.85491, 2.8402, 2.0101]
