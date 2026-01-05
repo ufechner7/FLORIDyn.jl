@@ -44,7 +44,7 @@ GROUPS = 9 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8, 9 or 12, otherwi
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 FINAL_DEMAND = 0.81
-MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 0    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_TGC = false
 USE_STEP = false
@@ -174,13 +174,15 @@ end
 
 # This function implements the "model" in the block diagram.
 function run_simulation(set_induction::AbstractMatrix; enable_online=false, msr=msr, save_final_only=false)
-    global set, wind, con, floridyn, floris, sim, ta, vis 
+    global set, wind, con, floridyn, floris, sim, ta, vis, md_global
     con.induction_data = set_induction
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
     # Only enable online visualization if explicitly requested (to avoid NaN issues during optimization)
     vis.online = enable_online
     vis.save = enable_online  # Enable saving when visualization is enabled
     wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=msr, save_final_only=save_final_only)
+    # Store md in global variable for plotting
+    md_global = md
     # Calculate total wind farm power by grouping by time and summing turbine powers
     total_power_df = combine(groupby(md, :Time), :PowerGen => sum => :TotalPower)
     # Calculate theoretical maximum power based on turbine ratings and wind conditions
@@ -521,6 +523,10 @@ plot_axial_induction()
 
 if !isnothing(plt)
     plot_correction2(optimal_correction)
+end
+
+if @isdefined md_global
+    plot_power_per_group(md_global, time_step; vis, pltctrl)
 end 
 
 function print_gains(optimal_correction)

@@ -225,3 +225,49 @@ function plot_axial_induction()
         end
     end
 end
+
+function plot_power_per_group(md, time_step; vis, pltctrl)
+    # Plot total power per turbine group vs time
+    # md is the metadata DataFrame from run_floridyn with columns: Time, PowerGen, etc.
+    # Data structure: For each time point, there are nT consecutive rows (one per turbine)
+    
+    n_turbines = size(ta.pos, 1)
+    
+    # Get unique time points from the metadata
+    time_points = sort(unique(md.Time))
+    
+    # Calculate relative time (subtract start time)
+    rel_time = time_points .- time_points[1]
+    
+    # Initialize storage for power per group at each time point
+    group_power_data = [Float64[] for _ in 1:GROUPS]
+    
+    # Extract power data by time and turbine
+    # md has structure: [T1@t1, T2@t1, ..., TN@t1, T1@t2, T2@t2, ..., TN@t2, ...]
+    power_data = reshape(md.PowerGen, n_turbines, :)  # reshape to (nT × n_timesteps)
+    
+    # For each time point, sum power by group
+    for (t_idx, t) in enumerate(time_points)
+        for g in 1:GROUPS
+            # Get turbines in this group
+            group_turbines = [i for i in 1:n_turbines if FLORIDyn.turbine_group(ta, i) == g]
+            
+            # Sum power for turbines in this group at this time
+            group_power = sum(power_data[group_turbines, t_idx])
+            push!(group_power_data[g], group_power)
+        end
+    end
+    
+    # Create group labels
+    group_labels = ["Group $i" for i in 1:GROUPS]
+    
+    # Plot power per group vs time
+    plot_rmt(rel_time, group_power_data;
+             xlabel="Time [s]",
+             xlims=(vis.t_skip, rel_time[end]),
+             ylabel="Power Output [MW]",
+             title="Power Output vs Time by Turbine Group",
+             labels=group_labels,
+             fig="Power by Group",
+             pltctrl=pltctrl)
+end
