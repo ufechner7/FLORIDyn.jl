@@ -271,3 +271,51 @@ function plot_power_per_group(md, time_step; vis, pltctrl)
              fig="Power by Group",
              pltctrl=pltctrl)
 end
+
+function plot_power_per_wind_farm(md, time_step; vis, pltctrl, n_farms=3, turbines_per_farm=54)
+    # Plot total power per wind farm vs time
+    # md is the metadata DataFrame from run_floridyn with columns: Time, PowerGen, etc.
+    # Data structure: For each time point, there are nT consecutive rows (one per turbine)
+    # Assumes turbines are organized sequentially by wind farm (1-54 = farm 1, 55-108 = farm 2, etc.)
+    
+    n_turbines = size(ta.pos, 1)
+    
+    # Get unique time points from the metadata
+    time_points = sort(unique(md.Time))
+    
+    # Calculate relative time (subtract start time)
+    rel_time = time_points .- time_points[1]
+    
+    # Initialize storage for power per wind farm at each time point
+    farm_power_data = [Float64[] for _ in 1:n_farms]
+    
+    # Extract power data by time and turbine
+    # md has structure: [T1@t1, T2@t1, ..., TN@t1, T1@t2, T2@t2, ..., TN@t2, ...]
+    power_data = reshape(md.PowerGen, n_turbines, :)  # reshape to (nT × n_timesteps)
+    
+    # For each time point, sum power by wind farm
+    for t_idx in 1:length(time_points)
+        for farm_id in 1:n_farms
+            # Get turbine range for this farm
+            start_turbine = (farm_id - 1) * turbines_per_farm + 1
+            end_turbine = farm_id * turbines_per_farm
+            
+            # Sum power for turbines in this wind farm at this time
+            farm_power = sum(power_data[start_turbine:end_turbine, t_idx])
+            push!(farm_power_data[farm_id], farm_power)
+        end
+    end
+    
+    # Create farm labels
+    farm_labels = ["Wind Farm $i" for i in 1:n_farms]
+    
+    # Plot power per wind farm vs time
+    plot_rmt(rel_time, farm_power_data;
+             xlabel="Time [s]",
+             xlims=(vis.t_skip, rel_time[end]),
+             ylabel="Power Output [MW]",
+             title="Power Output vs Time by Wind Farm",
+             labels=farm_labels,
+             fig="Power by Wind Farm",
+             pltctrl=pltctrl)
+end

@@ -527,6 +527,7 @@ end
 
 if @isdefined md_global
     plot_power_per_group(md_global, time_step; vis, pltctrl)
+    plot_power_per_wind_farm(md_global, time_step; vis, pltctrl)
 end 
 
 function print_gains(optimal_correction)
