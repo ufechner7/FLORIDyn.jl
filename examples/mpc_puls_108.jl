@@ -232,6 +232,36 @@ if isfile(reference_file) && USE_ADVECTION
         )
     end
     demand_ref = ref_data["total_power"]
+    
+    # Check for and fix NaN or invalid values
+    n_nans = count(x -> isnan(x) || isinf(x), demand_ref)
+    if n_nans > 0
+        println("WARNING: Found $n_nans NaN/Inf values in reference data, interpolating...")
+        for i in 1:length(demand_ref)
+            if isnan(demand_ref[i]) || isinf(demand_ref[i])
+                # Find nearest valid values for interpolation
+                prev_idx = findlast(x -> !isnan(x) && !isinf(x), demand_ref[1:i])
+                next_idx = findfirst(x -> !isnan(x) && !isinf(x), demand_ref[i:end])
+                next_idx = isnothing(next_idx) ? nothing : next_idx + i - 1
+                
+                if !isnothing(prev_idx) && !isnothing(next_idx)
+                    # Linear interpolation
+                    demand_ref[i] = demand_ref[prev_idx] + 
+                        (demand_ref[next_idx] - demand_ref[prev_idx]) * (i - prev_idx) / (next_idx - prev_idx)
+                elseif !isnothing(prev_idx)
+                    demand_ref[i] = demand_ref[prev_idx]
+                elseif !isnothing(next_idx)
+                    demand_ref[i] = demand_ref[next_idx]
+                else
+                    demand_ref[i] = 0.0
+                end
+            end
+        end
+    end
+    
+    println("Loaded demand_ref with $(length(demand_ref)) time steps")
+    println("demand_ref range: $(minimum(demand_ref)) to $(maximum(demand_ref)) MW")
+    
     # apply T_SHIFT to demand_abs
     if T_SHIFT != 0
         n_shift_steps = round(Int, T_SHIFT / time_step)
@@ -245,6 +275,34 @@ else
     demand_ref = Float64[]
     # Calculate demand in absolute power (Watts)
     demand_abs = [calc_demand(vis, t; t_shift=T_SHIFT, rel_power=REL_POWER) for t in time_vector]
+end
+
+# Replace values below 100 MW with last valid value
+let last_valid = 0.0, n_replaced = 0
+    for i in 1:length(demand_abs)
+        if demand_abs[i] >= 100
+            last_valid = demand_abs[i]
+        elseif last_valid > 0
+            demand_abs[i] = last_valid
+            n_replaced += 1
+        end
+    end
+    if n_replaced > 0
+        println("Replaced $n_replaced values below 100 MW with last valid value")
+    end
+end
+
+# Report values around 8540s
+if USE_ADVECTION
+    idx_8540 = round(Int, 8540 / time_step) + 1
+    if idx_8540 <= length(demand_abs)
+        idx_range = max(1, idx_8540-2):min(length(demand_abs), idx_8540+2)
+        println("Demand values around t=8540s:")
+        for i in idx_range
+            t = (i-1) * time_step
+            println("  t=$(t)s: $(demand_abs[i]/1e6) MW")
+        end
+    end
 end
 
 demand_data = demand_abs 
