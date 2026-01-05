@@ -280,19 +280,6 @@ let last_valid = 0.0, n_replaced = 0
     end
 end
 
-# Report values around 8540s
-if USE_ADVECTION
-    idx_8540 = round(Int, 8540 / time_step) + 1
-    if idx_8540 <= length(demand_abs)
-        idx_range = max(1, idx_8540-2):min(length(demand_abs), idx_8540+2)
-        println("Demand values around t=8540s:")
-        for i in idx_range
-            t = (i-1) * time_step
-            println("  t=$(t)s: $(demand_abs[i]/1e6) MW")
-        end
-    end
-end
-
 demand_data = demand_abs 
 
 # For initial setup, use calc_induction_matrix (only affects pre-optimization visualization)
