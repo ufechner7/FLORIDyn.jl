@@ -492,6 +492,7 @@ else
     # Enable online visualization for the final simulation with optimized parameters
     enable_viz = ONLINE && GROUP_CONTROL
     
+    @info "Running final simulation with optimized parameters..."
     rel_power = run_simulation(induction_data; enable_online=enable_viz)
     mse = calc_error(vis, rel_power, demand_data, time_step)
 

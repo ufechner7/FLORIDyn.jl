@@ -39,7 +39,7 @@ const data_file_group_control = "data/mpc_puls_108_result_group_control"
 const GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 7
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 0     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = false # set to false to start from generic initial guess
 USE_ADVECTION = true  
 USE_PULSE = true
@@ -235,7 +235,7 @@ if isfile(reference_file) && USE_ADVECTION
     # Replace values below 100 MW with last valid value
     let last_valid = 0.0, n_replaced = 0
         for i in 1:length(demand_ref)
-            if demand_ref[i] >= 100
+            if demand_ref[i] >= 100 && ! isnan(demand_ref[i])
                 last_valid = demand_ref[i]
             elseif last_valid > 0
                 demand_ref[i] = last_valid
@@ -624,14 +624,113 @@ if SIMULATE
     println("Best correction: ", optimal_correction)
     induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=optimal_correction)
     con.induction_data = induction_data  # Update controller with optimized induction data
+else
+    # Load cached results when not simulating
+    println("Loading cached optimization results...")
+    if GROUP_CONTROL
+        data_file_group_control_full = data_file_group_control * "_" * string(GROUPS) * "TGs.jld2"
+        if isfile(data_file_group_control_full)
+            optimal_correction = JLD2.load(data_file_group_control_full, "optimal_correction")
+            println("Loaded optimal correction from $data_file_group_control_full")
+        else
+            @warn "Cache file not found: $data_file_group_control_full. Using generic correction."
+            n_group_params = GROUPS - 1
+            optimal_correction = vcat(fill(1.0, CONTROL_POINTS), fill(1.0, n_group_params))
+        end
+    else
+        if isfile(data_file)
+            optimal_correction = JLD2.load(data_file, "optimal_correction")
+            println("Loaded optimal correction from $data_file")
+        else
+            @warn "Cache file not found: $data_file. Using generic correction."
+            optimal_correction = ones(CONTROL_POINTS)
+        end
+    end
+    induction_data, max_distance = calc_induction_matrix2(vis, ta, time_step, t_end; correction=optimal_correction)
+    con.induction_data = induction_data  # Update controller with optimized induction data
+end
+
+# Verify induction_data before running simulation
+println("Induction data size: $(size(con.induction_data))")
+if any(isnan.(con.induction_data))
+    error("con.induction_data contains NaN values! Check calc_induction_matrix2 or wind data.")
+end
+
+# Check wind velocity data for NaN values
+if any(isnan.(wind.vel))
+    @warn "wind.vel contains $(sum(isnan.(wind.vel))) NaN values!"
+    nan_rows = findall(any(isnan.(wind.vel), dims=2)[:])
+    println("NaN found in wind.vel at rows: $nan_rows")
+    println("Time values at NaN rows: $(wind.vel[nan_rows, 1])")
+end
+
+# Check time points around problematic area before simulation
+problematic_time = 28236.0
+time_idx = findfirst(t -> abs(t - problematic_time) < time_step, con.induction_data[:, 1])
+if !isnothing(time_idx)
+    println("\nDiagnosing time around $problematic_time seconds (index $time_idx):")
+    start_idx = max(1, time_idx - 2)
+    end_idx = min(size(con.induction_data, 1), time_idx + 2)
+    println("Induction data rows $start_idx to $end_idx:")
+    println("Time: ", con.induction_data[start_idx:end_idx, 1])
+    println("Sample induction values (turbine 1): ", con.induction_data[start_idx:end_idx, 2])
+    
+    # Check wind velocity at this time
+    if USE_ADVECTION
+        wind_idx = findfirst(t -> abs(t - problematic_time) < time_step, wind.vel[:, 1])
+        if !isnothing(wind_idx)
+            wind_start = max(1, wind_idx - 2)
+            wind_end = min(size(wind.vel, 1), wind_idx + 2)
+            println("Wind vel rows $wind_start to $wind_end:")
+            println("Time: ", wind.vel[wind_start:wind_end, 1])
+            println("Sample wind speeds (turbine 1): ", wind.vel[wind_start:wind_end, 2])
+        end
+    end
 end
 
 # Run final simulation and get full DataFrame for plotting
 md = run_simulation_full(con.induction_data)
 
+# Check if md.Time contains NaN and diagnose
+if any(isnan.(md.Time))
+    nan_indices = findall(isnan.(md.Time))
+    println("\n⚠️  WARNING: md.Time contains $(length(nan_indices)) NaN value(s)!")
+    println("NaN found at row indices: $(nan_indices[1:min(10, length(nan_indices))])")
+    
+    # Show surrounding rows for context
+    if length(nan_indices) > 0
+        idx = nan_indices[1]
+        start_idx = max(1, idx - 2)
+        end_idx = min(nrow(md), idx + 2)
+        println("\nContext around first NaN (rows $start_idx to $end_idx):")
+        println(md[start_idx:end_idx, [:Time, :PowerGen]])
+        
+        # Try to identify which turbines have issues
+        turbine_col = :Turbine in names(md) ? :Turbine : :turbineID
+        if turbine_col in names(md)
+            nan_turbines = unique(md[nan_indices, turbine_col])
+            println("\nTurbines with NaN: $(nan_turbines[1:min(10, length(nan_turbines))])")
+        end
+    end
+    
+    # Filter out NaN rows for plotting
+    println("\nFiltering out $(length(nan_indices)) NaN rows from md.Time for plotting...")
+    md = md[.!isnan.(md.Time), :]
+    println("Remaining rows: $(nrow(md))")
+end
+
 # Plot wind speed vs time (using relative time)
 if USE_ADVECTION
-    plot_rmt(collect(time_vector), [wind_data, u_mean(wind.vel)]; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
+    # Extract time from wind.vel and compute relative time
+    wind_time_rel = wind.vel[:, 1] .- sim.start_time
+    u_mean_vals = u_mean(wind.vel)
+    
+    # Ensure all arrays have the same length by finding minimum
+    min_len = min(length(time_vector), length(wind_data), length(u_mean_vals))
+    println("Plotting lengths: time_vector=$(length(time_vector)), wind_data=$(length(wind_data)), u_mean=$(length(u_mean_vals)), using min_len=$min_len")
+    
+    plot_rmt(collect(time_vector)[1:min_len], [wind_data[1:min_len], u_mean_vals[1:min_len]]; 
+        xlabel="Time [s]", xlims=(vis.t_skip, collect(time_vector)[min_len]),
         ylabel="v_wind [m/s]", labels=["u_inflow","u_mean"], fig="v_wind", title="Wind speed vs time", pltctrl)
 else
     plot_rmt(collect(time_vector), wind_data; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
@@ -656,11 +755,14 @@ if "PowerGen" in names(md)
         @info "Reference results saved to $reference_file"
     end
     
-    # Calculate demand for all time points (convert from W to MW)
-    demand_power = demand_abs
+    # Calculate demand for all time points - ensure matching lengths
+    min_power_len = min(length(time_points_rel), length(total_power), length(demand_abs))
+    demand_power = demand_abs[1:min_power_len]
     
-    plot_rmt(collect(time_points_rel), [total_power, demand_power]; xlabel="Time [s]", xlims=(vis.t_skip, time_points_rel[end]),
-        ylabel="Total Power [MW]", fig="total_power", title="Total power output and demand vs time", labels=["Power Output", "Demand"], pltctrl)
+    plot_rmt(collect(time_points_rel)[1:min_power_len], [total_power[1:min_power_len], demand_power]; 
+        xlabel="Time [s]", xlims=(vis.t_skip, time_points_rel[min_power_len]),
+        ylabel="Total Power [MW]", fig="total_power", title="Total power output and demand vs time", 
+        labels=["Power Output", "Demand"], pltctrl)
 end
 
 # Plot axial induction vs time using calc_axial_induction2
