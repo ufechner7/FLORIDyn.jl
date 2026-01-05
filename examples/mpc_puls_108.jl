@@ -39,7 +39,7 @@ const data_file_group_control = "data/mpc_puls_108_result_group_control"
 const GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 7
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 0     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = false # set to false to start from generic initial guess
 USE_ADVECTION = true  
 USE_PULSE = true
@@ -232,33 +232,21 @@ if isfile(reference_file) && USE_ADVECTION
         )
     end
     demand_ref = ref_data["total_power"]
-    
-    # Check for and fix NaN or invalid values
-    n_nans = count(x -> isnan(x) || isinf(x), demand_ref)
-    if n_nans > 0
-        println("WARNING: Found $n_nans NaN/Inf values in reference data, interpolating...")
+    # Replace values below 100 MW with last valid value
+    let last_valid = 0.0, n_replaced = 0
         for i in 1:length(demand_ref)
-            if isnan(demand_ref[i]) || isinf(demand_ref[i])
-                # Find nearest valid values for interpolation
-                prev_idx = findlast(x -> !isnan(x) && !isinf(x), demand_ref[1:i])
-                next_idx = findfirst(x -> !isnan(x) && !isinf(x), demand_ref[i:end])
-                next_idx = isnothing(next_idx) ? nothing : next_idx + i - 1
-                
-                if !isnothing(prev_idx) && !isnothing(next_idx)
-                    # Linear interpolation
-                    demand_ref[i] = demand_ref[prev_idx] + 
-                        (demand_ref[next_idx] - demand_ref[prev_idx]) * (i - prev_idx) / (next_idx - prev_idx)
-                elseif !isnothing(prev_idx)
-                    demand_ref[i] = demand_ref[prev_idx]
-                elseif !isnothing(next_idx)
-                    demand_ref[i] = demand_ref[next_idx]
-                else
-                    demand_ref[i] = 0.0
-                end
+            if demand_ref[i] >= 100
+                last_valid = demand_ref[i]
+            elseif last_valid > 0
+                demand_ref[i] = last_valid
+                n_replaced += 1
             end
         end
+        if n_replaced > 0
+            println("Replaced $n_replaced values below 100 MW with last valid value")
+        end
     end
-    
+       
     println("Loaded demand_ref with $(length(demand_ref)) time steps")
     println("demand_ref range: $(minimum(demand_ref)) to $(maximum(demand_ref)) MW")
     
@@ -470,7 +458,14 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     demand = calc_demand(vis, time; t_shift=T_SHIFT, rel_power=REL_POWER)
     scaled_demand = correction_result * demand
     max_power = calc_demand(vis, time; t_shift=0.0, rel_power=1.0)
-    rel_demand = scaled_demand / max_power
+    
+    # Protect against division by very small max_power values
+    if max_power < 1e6  # Less than 1 MW
+        rel_demand = 0.0
+    else
+        rel_demand = scaled_demand / max_power
+    end
+    
     # Apply group-specific correction
     rel_demand *= id_correction
     if rel_demand > 1.0
