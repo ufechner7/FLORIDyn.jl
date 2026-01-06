@@ -39,7 +39,7 @@ const data_file_group_control = "data/mpc_puls_108_result_group_control"
 const GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 7
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 100     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = false # set to false to start from generic initial guess
 USE_ADVECTION = true  
 USE_PULSE = true
@@ -50,9 +50,11 @@ ONLINE  = false    # if true, enable online plotting during simulation and creat
 const TURBULENCE = true # if true, show the added turbulence in the visualization
 T_START = 240      # relative time to start increasing demand
 T_END   = 2260+4000     # relative time to reach final demand
-T_SHIFT = 300      # time shift the demand compared to the wind speed in seconds
-T1 = 1940.0        # start time of correction spline
-T2 = 5686.0        # end time of correction spline
+T_SHIFT = 600      # time shift the demand compared to the wind speed in seconds
+T1 = 5400.0        # start time of correction spline
+T2 = 16700.0        # end time of correction spline
+T3 = 14830.0       # extra spline position
+T4 = 11325.0       # extra spline position
 REL_POWER = 0.90   # relative power for pulse demand
 if USE_ADVECTION
     T_EXTRA = 4880+12000    # extra time in addition to sim.end_time for MPC simulation
@@ -426,9 +428,32 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
 
     t1 = T1
     t2 = T2
+    t3 = T3
+    t4 = T4
     
-    # Calculate s_positions equally spaced between 0 and 1
-    s_positions = range(0.0, 1.0, length=CONTROL_POINTS) |> collect
+    # Calculate s_positions equally spaced between 0 and 1, leaving room for T3 and T4
+    s_positions = range(0.0, 1.0, length=CONTROL_POINTS-2) |> collect
+    
+    # Calculate relative positions of T3 and T4
+    rel_t3 = (t3 - t1) / (t2 - t1)
+    rel_t4 = (t4 - t1) / (t2 - t1)
+    
+    # Insert T3 at the correct position to maintain monotonic increasing order
+    insert_idx = findfirst(x -> x > rel_t3, s_positions)
+    if !isnothing(insert_idx)
+        insert!(s_positions, insert_idx, rel_t3)
+    else
+        push!(s_positions, rel_t3)
+    end
+    
+    # Insert T4 at the correct position to maintain monotonic increasing order
+    insert_idx = findfirst(x -> x > rel_t4, s_positions)
+    if !isnothing(insert_idx)
+        insert!(s_positions, insert_idx, rel_t4)
+    else
+        push!(s_positions, rel_t4)
+    end
+    
     rel_spline_positions = s_positions
     
     # Calculate absolute time positions for spline control points
