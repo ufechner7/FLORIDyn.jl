@@ -105,7 +105,8 @@ function plot_correction_curve(optimal_correction::Vector{Float64}, spline_posit
         else
             plt.figure("Hermite Spline Interpolation Correction and Control Points")
             points = optimal_correction[1:CONTROL_POINTS]
-            s_vec1=(0:CONTROL_POINTS-1)./(CONTROL_POINTS-1)
+            # s_vec1=(0:CONTROL_POINTS-1)./(CONTROL_POINTS-1)
+            s_vec1 = spline_positions
             t_vec1 = t1 .+ s_vec1 .* (t2 - t1)
             plt.plot(t_vec1, points, label="Control Points",marker="x", linestyle="None")
             # Create s vector from 0 to 1
