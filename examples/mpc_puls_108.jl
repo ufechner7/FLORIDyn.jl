@@ -36,10 +36,10 @@ const reference_file          = "data/mpc_puls_108_reference.jld2"
 const error_file              = "data/mpc_puls_108_error.jld2"
 const data_file_group_control = "data/mpc_puls_108_result_group_control"
 
-const GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
+const GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 8
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 20     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = false # set to false to start from generic initial guess
 USE_ADVECTION = true  
 USE_PULSE = true
@@ -624,8 +624,8 @@ if SIMULATE
             # Adjust to current CONTROL_POINTS: take first CONTROL_POINTS + (GROUPS-1) elements
             x0 = x0_full[1:(CONTROL_POINTS + GROUPS - 1)]
         elseif GROUPS == 6
-            # Hardcoded initial guess from previous runs
-            x0 = [0.94518303918679, 0.93269599433136, 1.00092898512453, 1.01904687495053, 1.47398102169963, 1.99998018368223, 1.07802139832096, 1.2224803349927, 0.82466261195206, 0.98282706090237, 0.8370533275206, 0.85516767133612]
+            # Hardcoded initial guess from previous runs, extended to match CONTROL_POINTS=8
+            x0 = [0.94518303918679, 0.93269599433136, 1.00092898512453, 1.01904687495053, 1.47398102169963, 1.99998018368223, 1.07802139832096, 1.0, 1.2224803349927, 0.82466261195206, 0.98282706090237, 0.8370533275206, 0.85516767133612]
         else
             # For group control, use generic initial guess with CONTROL_POINTS corrections + (GROUPS-1) group scalings
             x0 = vcat(fill(1.0, CONTROL_POINTS), fill(1.0, GROUPS - 1))
