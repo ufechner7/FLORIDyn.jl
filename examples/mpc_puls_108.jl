@@ -37,9 +37,9 @@ const error_file              = "data/mpc_puls_108_error.jld2"
 const data_file_group_control = "data/mpc_puls_108_result_group_control"
 
 const GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
-CONTROL_POINTS = 7
+CONTROL_POINTS = 8
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 100     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = false # set to false to start from generic initial guess
 USE_ADVECTION = true  
 USE_PULSE = true
@@ -428,23 +428,13 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
 
     t1 = T1
     t2 = T2
-    t3 = T3
     t4 = T4
     
-    # Calculate s_positions equally spaced between 0 and 1, leaving room for T3 and T4
-    s_positions = range(0.0, 1.0, length=CONTROL_POINTS-2) |> collect
+    # Calculate s_positions equally spaced between 0 and 1, leaving room for T4
+    s_positions = range(0.0, 1.0, length=CONTROL_POINTS-1) |> collect
     
-    # Calculate relative positions of T3 and T4
-    rel_t3 = (t3 - t1) / (t2 - t1)
+    # Calculate relative position of T4
     rel_t4 = (t4 - t1) / (t2 - t1)
-    
-    # Insert T3 at the correct position to maintain monotonic increasing order
-    insert_idx = findfirst(x -> x > rel_t3, s_positions)
-    if !isnothing(insert_idx)
-        insert!(s_positions, insert_idx, rel_t3)
-    else
-        push!(s_positions, rel_t3)
-    end
     
     # Insert T4 at the correct position to maintain monotonic increasing order
     insert_idx = findfirst(x -> x > rel_t4, s_positions)
@@ -641,7 +631,7 @@ if SIMULATE
             x0 = vcat(fill(1.0, CONTROL_POINTS), fill(1.0, GROUPS - 1))
         end
     else
-        x0 = [0.99055661760185, 0.95955086565182, 0.98819178660071, 0.9856740943524, 1.03187884206546, 1.00458036586437, 0.99286704613765]
+        x0 = [0.89055661760185, 0.95955086565182, 0.98819178660071, 0.9856740943524, 1.03187884206546, 1.00458036586437, 0.99286704613765, 1.1]
     end
     result = solve(p, x0)
     optimal_correction = result.x_best_feas
