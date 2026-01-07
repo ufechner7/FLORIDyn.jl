@@ -640,7 +640,7 @@ if SIMULATE
             x0 = x0_full[1:(CONTROL_POINTS + GROUPS - 1)]
         elseif GROUPS == 6
             # Hardcoded initial guess from previous runs, extended to match CONTROL_POINTS=8
-            x0 = [0.94518303918679, 0.96269599433136, 1.02092898512453, 1.73, 2.0, 1.66998018368223, 2.0, 1.54, 1.1424803349927, 1.20466261195206, 2.5, 0.4570533275206, 0.76516767133612]
+            x0 = [0.96248303918679, 0.95459599433136, 1.05892898512453, 1.7208, 2.0, 1.61958018368223, 1.9877, 1.54, 1.1637803349927, 1.17626261195206, 1.2071, 0.4911533275206, 0.58616767133612]
         else
             # For group control, use generic initial guess with CONTROL_POINTS corrections + (GROUPS-1) group scalings
             x0 = vcat(fill(1.0, CONTROL_POINTS), fill(1.0, GROUPS - 1))
