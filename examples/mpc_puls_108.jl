@@ -21,7 +21,7 @@
 
 # To create a bar plot, run Julia single threaded.
 
-using Pkg
+using Pkg, Timers
 if !("NOMAD" ∈ keys(Pkg.project().dependencies))
     using TestEnv; TestEnv.activate()
 end
@@ -39,7 +39,7 @@ const data_file_group_control = "data/mpc_puls_108_result_group_control"
 const GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 8
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 20     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 1     # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = false # set to false to start from generic initial guess
 USE_ADVECTION = true  
 USE_PULSE = true
@@ -590,7 +590,7 @@ else
 
     # Set NOMAD options
     p.options.max_bb_eval = MAX_STEPS      # maximum number of function evaluations
-    p.options.display_degree = 2           # verbosity level
+    p.options.display_degree = 3           # verbosity level
 end
 
 
@@ -605,7 +605,21 @@ function calc_error(vis, abs_power, demand_data, time_step)
     end
     p = @view abs_power[i0:i0 + n - 1]
     d = @view demand_data[i0:i0 + n - 1]
-    return sqrt(sum((p .- d) .^ 2) / length(d))
+    
+    # Filter out NaN values from both vectors
+    valid_mask = .!(isnan.(p) .| isnan.(d))
+    p_valid = p[valid_mask]
+    d_valid = d[valid_mask]
+    
+    if length(p_valid) == 0
+        @warn "calc_error: all values are NaN, returning NaN"
+        return NaN
+    end
+    
+    res = sqrt(sum((p_valid .- d_valid) .^ 2) / length(d_valid))
+    # toc()
+    # @info "calc_error: RMSE = $res over $(length(d_valid)) valid time steps ($(n - length(d_valid)) NaN values filtered)"
+    return res
 end
 
 include("mpc_plotting.jl")
@@ -617,6 +631,7 @@ wf, wind_prep, sim_prep, con_prep, floris = prepareSimulation(set, wind, con, fl
 
 if SIMULATE
     println("Starting NOMAD optimization with max $(p.options.max_bb_eval) evaluations...")
+    tic()
     if GROUP_CONTROL
         if GROUPS == 2
             # Hardcoded initial guess from previous runs (originally for 11 control points)
@@ -625,7 +640,7 @@ if SIMULATE
             x0 = x0_full[1:(CONTROL_POINTS + GROUPS - 1)]
         elseif GROUPS == 6
             # Hardcoded initial guess from previous runs, extended to match CONTROL_POINTS=8
-            x0 = [0.94518303918679, 0.93269599433136, 1.00092898512453, 1.01904687495053, 1.47398102169963, 1.99998018368223, 1.07802139832096, 1.0, 1.2224803349927, 0.82466261195206, 0.98282706090237, 0.8370533275206, 0.85516767133612]
+            x0 = [0.94518303918679, 0.96269599433136, 1.02092898512453, 1.73, 2.0, 1.66998018368223, 2.0, 1.54, 1.1424803349927, 1.20466261195206, 2.5, 0.4570533275206, 0.76516767133612]
         else
             # For group control, use generic initial guess with CONTROL_POINTS corrections + (GROUPS-1) group scalings
             x0 = vcat(fill(1.0, CONTROL_POINTS), fill(1.0, GROUPS - 1))
