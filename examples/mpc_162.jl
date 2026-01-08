@@ -523,7 +523,10 @@ end
 plot_axial_induction()
 
 if !isnothing(plt)
-    plot_correction2(optimal_correction)
+    spline_positions = range(0.0, 1.0, length=CONTROL_POINTS) |> collect
+    t1 = vis.t_skip + T_START
+    t2 = vis.t_skip + T_END
+    plot_correction_curve(optimal_correction, spline_positions; t1=t1, t2=t2)
 end
 
 if @isdefined md_global

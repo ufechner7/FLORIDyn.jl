@@ -120,7 +120,7 @@ function plot_correction_curve(optimal_correction::Vector{Float64}, spline_posit
                 correction_values[i] = interpolate_hermite_spline(s, optimal_correction[1:CONTROL_POINTS], spline_positions)
             end
             plt.plot(collect(t_vec), correction_values, label="Interpolated", linestyle="--")
-            plt.xlabel("Normalized Parameter s [-]")
+            plt.xlabel("Time [s]")
             plt.ylabel("Correction Factor [-]")
             plt.title("Hermite Spline Interpolation Correction and Control Points")
             plt.legend()
@@ -193,14 +193,23 @@ function plot_axial_induction()
     
     # Create group labels dynamically
     group_labels = ["Group $i" for i in 1:GROUPS]
-    
-    plot_rmt(time_vec_ind, group_data;
-             xlabel="Time [s]",
-             ylabel="Axial Induction Factor [-]",
-             title="Average Axial Induction Factor vs Time by Turbine Group",
-             labels=group_labels,
-             fig="Induction by Group",
-             pltctrl=pltctrl)
+    if GROUPS > 1
+        plot_rmt(time_vec_ind, group_data;
+                xlabel="Time [s]",
+                ylabel="Axial Induction Factor [-]",
+                title="Average Axial Induction Factor vs Time by Turbine Group",
+                labels=group_labels,
+                fig="Induction by Group",
+                pltctrl=pltctrl)
+    else
+                plot_rmt(time_vec_ind, group_data;
+                xlabel="Time [s]",
+                ylabel="Axial Induction Factor [-]",
+                # title="Average Axial Induction Factor vs Time by Turbine Group",
+                # labels=group_labels,
+                fig="Axial Induction Factor over Time",
+                pltctrl=pltctrl)
+    end
     
     # Create bar plot of average induction factor per group
     avg_induction = [isempty(group_data[g]) ? 0.0 : mean(group_data[g]) for g in 1:GROUPS]
