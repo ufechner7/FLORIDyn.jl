@@ -30,7 +30,7 @@ function plot_turbines(ta::TurbineArray, turbine_groups)
         end
         
         group_turbines = group["turbines"]
-        group_name = group["name"]
+        group_name = replace(group["name"], "group_" => "TG")
         group_id = group["id"]
         
         # Get coordinates for this group
@@ -61,7 +61,7 @@ function plot_turbines(ta::TurbineArray, turbine_groups)
     n_groups = length([g for g in turbine_groups if g["name"] != "all"])
     plt.title("Wind Farm Layout - $n_groups Turbine Groups by X Coordinate")
     plt.grid(true, alpha=0.3)
-    plt.legend(loc="lower right")
+    plt.legend(loc="upper center", bbox_to_anchor=(0.69, 0.4))
     
     # Set axis limits to reduce unused space
     y_min = minimum(y_coords)
