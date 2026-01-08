@@ -40,11 +40,11 @@ data_file               = "data/mpc_result_162.jld2"
 error_file              = "data/mpc_error_162.jld2"
 data_file_group_control = "data/mpc_result_group_control_162"
 
-GROUPS = 9 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8, 9 or 12, otherwise any integer >= 1
+GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8, 9 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 FINAL_DEMAND = 0.81
-MAX_STEPS = 0    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_TGC = false
 USE_STEP = false
