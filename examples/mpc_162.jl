@@ -40,7 +40,7 @@ data_file               = "data/mpc_result_162.jld2"
 error_file              = "data/mpc_error_162.jld2"
 data_file_group_control = "data/mpc_result_group_control_162"
 
-GROUPS = 1 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8, 9 or 12, otherwise any integer >= 1
+GROUPS = 9 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8, 9 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
 FINAL_DEMAND = 0.81
@@ -587,6 +587,9 @@ elseif ONLINE
         println("No velocity reduction frames found or video creation failed")
     end
 end
+
+max_power = calc_max_power(wind.vel, ta, wf, floris)
+println("Maximum theoretical power at free stream wind velocity ($(wind.vel) m/s): $(round(max_power, digits=2)) MW")
 
 results
 
