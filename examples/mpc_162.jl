@@ -169,7 +169,7 @@ function calc_max_power(wind_speed, ta, wf, floris)
     nT = length(ta.pos[:, 1])  # number of turbines
     rotor_area = π * (wf.D[1] / 2)^2  # assuming all turbines have same diameter
     max_power_per_turbine = 0.5 * floris.airDen * rotor_area * Cp_opt * wind_speed^3 * floris.eta * cos(yaw)^floris.p_p / 1e6  # MW
-    max_power = nT * max_power_per_turbine  # total maximum power in MW
+    nT * max_power_per_turbine  # total maximum power in MW
 end
 
 # This function implements the "model" in the block diagram.
@@ -281,7 +281,7 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     
     return corrected_induction, distance
 end
-
+using PyPlot; pyimport("matplotlib"); matplotlib.use("Qt5Agg")
 function calc_induction_matrix2(vis, ta, time_step, t_end; correction)
     # Create time vector from 0 to t_end with time_step intervals
     time_vector = 0:time_step:t_end
