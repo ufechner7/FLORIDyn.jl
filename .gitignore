@@ -37,3 +37,4 @@ data/mpc_result_group_control_108_6TGs.jld2
 data/mpc_result_group_control_162_9TGs.jld2
 .idea
 docs/src/optimize_inductions.tex
+.JETLSConfig.toml
