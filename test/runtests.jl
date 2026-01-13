@@ -65,6 +65,7 @@ all_test_files = [
     "test_velocity_influence.jl",
     "test_ti_influence.jl",
     "test_controller.jl",
+    "test_splines.jl",
     "test_settings.jl",
     "test_high_res_time.jl",
     "test_visualisation.jl",
