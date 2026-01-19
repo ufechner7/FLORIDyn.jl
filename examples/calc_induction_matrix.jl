@@ -77,17 +77,30 @@ function calc_induction(cp)
     return (a_low + a_high) / 2
 end
 
-function calc_demand(vis::Vis, time)
-    if USE_STEP
+function calc_demand(vis::Vis, time; t_shift=0.0, rel_power=1.0)
+    if USE_ADVECTION
+        n_shift_steps = round(Int, t_shift / time_step)
+        res = demand_ref[Int(clamp(round((time)/time_step) + 1 - n_shift_steps, 1, length(demand_ref)))]
+        return res * 1e6 * rel_power
+    elseif USE_STEP
         # Example: step demand profile
         if time < 200 + vis.t_skip
             return 0.001
         else
             return 0.999
         end
+    elseif USE_PULSE
+        # Example: pulse demand profile
+        pulse_start = vis.t_skip + T_START + t_shift
+        pulse_end = vis.t_skip + T_END + t_shift
+        if time >= pulse_start && time <= pulse_end
+            return 207.15e6 * rel_power
+        else
+            return 81.19e6
+        end
     else
         initial_demand = 0.4
-        final_demand = 0.8
+        final_demand = FINAL_DEMAND
         t1 = vis.t_skip + T_START  # Time to start increasing demand
         t2 = vis.t_skip + T_END    # Time to reach final demand
         if time < t1
@@ -98,6 +111,40 @@ function calc_demand(vis::Vis, time)
             return final_demand
         end
     end
+end
+
+function calc_wind(vis::Vis, time)
+    low_wind = 6.8
+    high_wind = 8.6
+    t1 = vis.t_skip + T_START  # Time to start increased wind speed
+    t2 = vis.t_skip + T_END    # Time to stop  increased wind speed
+    if time < t1
+        wind = low_wind
+    elseif time < t2
+        wind = high_wind
+    else
+        wind = low_wind
+    end
+
+    return wind
+end
+
+function calc_vel(vis::Vis, start_time::Real, end_time::Real)
+    local vel
+    dt = 4
+    low_wind = 6.0
+    high_wind = 8.2
+    # Use absolute times based on start_time
+    t1 = start_time + vis.t_skip + T_START  # Absolute time to start increased wind speed
+    t2 = start_time + vis.t_skip + T_END    # Absolute time to stop increased wind speed
+    # Ensure the velocity table extends to the end of simulation
+    vel = [start_time low_wind
+            t1-dt low_wind
+            t1 high_wind
+            t2-dt high_wind
+            t2 low_wind
+            end_time low_wind]
+    return vel
 end
 
 """

@@ -330,10 +330,16 @@ function getWindSpeedT(::Velocity_InterpTurbine, wind_vel::AbstractMatrix, iT, t
         t = times[end]
     end
 
-    # Interpolate specific turbine column
-    turbine_data = wind_data[:, iT]
-    itp = interpolate((times,), turbine_data, Gridded(Linear()))
-    return itp(t)
+    # Create individual 1D interpolations for each turbine column
+    n_turbines = size(wind_data, 2)
+    U_out = similar(wind_data[1, :])
+    for j in 1:n_turbines
+        itp = linear_interpolation(times, wind_data[:, j], extrapolation_bc=Flat())
+        U_out[j] = itp(t)
+    end
+
+    # Select the requested turbine(s)
+    return U_out[iT]
 end
 
 """

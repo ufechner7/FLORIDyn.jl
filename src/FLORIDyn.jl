@@ -64,6 +64,7 @@ export UnifiedBuffers, create_unified_buffers
 export get_default_project
 export select_project
 export get_default_msr, set_default_msr, select_measurement
+export interpolate_hermite_spline
 
 """
     MSR `VelReduction` `AddedTurbulence` `EffWind`
@@ -440,6 +441,7 @@ include("correction/turbulence.jl")
 include("floridyn_cl/prepare_simulation.jl")
 include("floridyn_cl/iterate.jl")
 
+include("controller/splines.jl")
 include("controller/controller.jl")
 include("visualisation/calc_flowfield.jl")
 include("visualisation/calc_power.jl")
@@ -473,12 +475,12 @@ for running FLORIDyn simulations with appropriate plotting callbacks.
 # Returns
 - Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
 """
-function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction)
+function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction, save_final_only=false)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Multi-threading mode: use remote plotting callback
         # The rmt_plot_flow_field function should be defined via remote_plotting.jl
         try
-            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr)
+            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr, save_final_only)
         catch e
             if isa(e, UndefVarError)
                 error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
@@ -488,7 +490,7 @@ function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=V
         end
     else
         # Single-threading mode: no plotting callback
-        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
+        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
     end
 end
 

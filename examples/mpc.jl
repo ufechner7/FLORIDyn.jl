@@ -38,13 +38,15 @@ data_file_group_control = "data/mpc_result_group_control"
 GROUPS = 6 # for USE_HARDCODED_INITIAL_GUESS: 1, 2, 3, 4, 6, 8 or 12, otherwise any integer >= 1
 CONTROL_POINTS = 5
 MAX_ID_SCALING = 3.0
-MAX_STEPS = 0    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
+MAX_STEPS = 1    # maximum number black-box evaluations for NOMAD optimizer; zero means load cached results if available
 USE_HARDCODED_INITIAL_GUESS = true # set to false to start from generic initial guess
 USE_TGC = false
 USE_STEP = false
+USE_PULSE = false
 USE_FEED_FORWARD = true # if false, use constant induction (no feed-forward)
 ONLINE  = false  # if true, enable online plotting during simulation and create video
 TURBULENCE = true # if true, show the added turbulence in the visualization
+USE_ADVECTION = false
 T_START = 240    # relative time to start increasing demand
 T_END   = 960    # relative time to reach final demand
 T_EXTRA = 2580   # extra time in addition to sim.end_time for MPC simulation
@@ -179,79 +181,6 @@ function run_simulation(set_induction::AbstractMatrix; enable_online=false, msr=
     rel_power = (total_power_df.TotalPower ./ max_power) 
 end
 
-"""
-    interpolate_hermite_spline(s::Float64, correction::Vector) -> Float64
-
-Perform piecewise cubic Hermite spline interpolation across control points.
-
-This function uses cubic Hermite spline interpolation between control points 
-evenly spaced along s ∈ [0, 1]. The method provides smooth C1-continuous transitions while
-respecting the control point values. The number of control points is determined
-from the length of the `correction` vector.
-
-# Arguments
-- `s::Float64`: Normalized parameter in [0, 1] representing position along the curve
-- `correction::Vector`: Vector containing control point values. For n control points,
-  they are located at s = 0, 1/(n-1), 2/(n-1), ..., 1.0
-
-# Returns
-- `Float64`: Interpolated value at position s
-"""
-function interpolate_hermite_spline(s::Float64, correction::Vector)
-    n_points = length(correction)
-    @assert n_points >= 2 "Need at least 2 control points for interpolation"
-    
-    # Handle edge cases
-    if n_points == 2
-        # Linear interpolation for 2 points
-        return correction[1] + s * (correction[2] - correction[1])
-    end
-    
-    # Number of segments = number of control points - 1
-    n_segments = n_points - 1
-    segment_width = 1.0 / n_segments
-    
-    # Calculate tangents for all control points using finite differences
-    tangents = zeros(n_points)
-    
-    # First point: forward difference
-    tangents[1] = (correction[2] - correction[1]) / segment_width
-    
-    # Interior points: central differences
-    for i in 2:(n_points-1)
-        tangents[i] = (correction[i+1] - correction[i-1]) / (2 * segment_width)
-    end
-    
-    # Last point: backward difference
-    tangents[n_points] = (correction[n_points] - correction[n_points-1]) / segment_width
-    
-    # Determine which segment we're in
-    segment_idx = min(n_segments, Int(floor(s / segment_width)) + 1)
-    if s >= 1.0
-        segment_idx = n_segments
-    end
-    
-    # Local parameter t within the segment [0, 1]
-    s_start = (segment_idx - 1) * segment_width
-    t = (s - s_start) / segment_width
-    t = clamp(t, 0.0, 1.0)
-    
-    # Cubic Hermite basis functions
-    h00 = 2*t^3 - 3*t^2 + 1
-    h10 = t^3 - 2*t^2 + t
-    h01 = -2*t^3 + 3*t^2
-    h11 = t^3 - t^2
-    
-    # Interpolate using values and tangents at segment endpoints
-    p0 = correction[segment_idx]
-    p1 = correction[segment_idx + 1]
-    m0 = tangents[segment_idx]
-    m1 = tangents[segment_idx + 1]
-    
-    correction_result = h00*p0 + h10*segment_width*m0 + h01*p1 + h11*segment_width*m1
-    
-    return correction_result
-end
 
 """
     calc_axial_induction2(vis, time, correction::Vector; group_id=nothing) -> (corrected_induction, distance)
@@ -572,7 +501,7 @@ end
 
 println("\nRoot Mean Square Error (RMSE): $(round(sqrt(mse) * 100, digits=2))%")
 
-plot_power_and_demand(time_vector, rel_power, rel_power_ref, demand_data; vis, pltctrl)
+plot_power_and_demand(time_vector, rel_power, demand_data, rel_power_ref; vis, pltctrl)
 
 plot_axial_induction()
 

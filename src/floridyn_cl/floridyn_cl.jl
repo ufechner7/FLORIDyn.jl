@@ -778,7 +778,7 @@ applying control strategies and updating turbine states over time.
 
 """
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris; rmt_plot_fn=nothing, 
-                          msr=VelReduction, debug=nothing)
+                          msr=VelReduction, debug=nothing, save_final_only=false)
     nT = wf.nT
     sim_steps = sim.n_sim_steps
     ma = zeros(sim_steps * nT, 6)
@@ -855,7 +855,15 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
                 demand = get_demand(con, sim, t_rel)
                 vis.subtitle = "demand: $(round(demand*100, digits=2)) %"
             end
-            if mod(t_rel - vis.t_skip, vis.up_int) == 0 && t_rel >= vis.t_skip
+            # When save_final_only is true, only plot on the last iteration
+            should_plot = if save_final_only
+                it == sim_steps || t_rel == vis.t_skip
+            else
+                mod(t_rel - vis.t_skip, vis.up_int) == 0 && t_rel >= vis.t_skip
+            end
+            
+            if should_plot
+                @info "time: $t_rel, plotting flow field"
                 Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
                 rel_vel = Z[:,:,1]
                 if any(isnan, rel_vel)

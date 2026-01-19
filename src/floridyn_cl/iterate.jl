@@ -219,21 +219,21 @@ end
 Perform an in-place circular shift down by one row and restore initial states.
 """
 function _circshift_and_restore!(data::AbstractMatrix, initial_states::AbstractMatrix, start_indices::AbstractMatrix, buffer::AbstractMatrix)
-    @inbounds for j in 1:size(data, 2)
+    @inbounds for j in axes(data, 2)
         # Copy to buffer
-        for i in 1:size(data, 1)
+        for i in axes(data, 1)
             buffer[i, j] = data[i, j]
         end
         
         # Shift down by one row
         data[1, j] = buffer[end, j]
-        for i in 2:size(data, 1)
+        for i in firstindex(data, 1)+1:lastindex(data, 1)
             data[i, j] = buffer[i-1, j]
         end
     end
     
     # Restore initial states
-    @inbounds for i in 1:size(start_indices, 2)
+    @inbounds for i in axes(start_indices, 2)
         start_idx = start_indices[1, i]
         @views data[start_idx, :] .= initial_states[i, :]
     end

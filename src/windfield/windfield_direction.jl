@@ -66,7 +66,7 @@ end
 # % ======= Input ======
 # % WindDir.Data   = float, wind direction
 # % WindDir.ColSig = nT x nT, col(Covariance Matrix)
-# % iT        = Index/Indeces of the turbines
+# % iT        = Index/Indices of the turbines
 
 # phi = ones(size(iT))*WindDir.Data;
 # phi = phi + (randn(1,length(phi))*WindDir.CholSig)';
@@ -241,7 +241,7 @@ function getWindDirT(::Direction_InterpTurbine, wind::Wind, iT, t)
     # Interpolate for all turbines at time t
     times = wind_dir[:, 1]
     phis = wind_dir[:, 2:end]  # Each column is a turbine
-    phi_out = [interp(times, phis[:, j], t) for j in 1:size(phis, 2)]
+    phi_out = [interp(times, phis[:, j], t) for j in axes(phis, 2)]
 
     # Select requested turbines
     return phi_out[iT]

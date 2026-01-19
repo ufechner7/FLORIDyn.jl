@@ -9,3 +9,4 @@ if [[ $(basename $(pwd)) == "bin" ]]; then
 fi
 
 cd docs/src && pandoc optimize_inductions.md --bibliography=references.bib --citeproc -o optimize_inductions.pdf
+pandoc optimize_inductions.md --bibliography=references.bib --citeproc -s -o optimize_inductions.tex

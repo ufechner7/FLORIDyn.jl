@@ -59,28 +59,31 @@ function plot_induction(vis, optimal_correction::Vector{Float64})
 end
 
 """
-    plot_correction_curve(optimal_correction::Vector{Float64})
+    plot_correction_curve(optimal_correction::Vector{Float64}, spline_positions)
 
 Plot the correction curve from the piecewise cubic Hermite spline interpolation over s=0..1.
 
 # Arguments
 - `optimal_correction::Vector{Float64}`: Optimal correction parameters from optimization
+- `spline_positions`: Positions of the spline control points
 
 # Description
 Plots the piecewise cubic Hermite spline interpolation curve showing how the correction
 factor varies across the normalized parameter s from 0 to 1. Uses the first CONTROL_POINTS
-elements of `optimal_correction` as control points evenly spaced from s = 0 to s = 1.0.
+elements of `optimal_correction` as control points at the positions specified by `spline_positions`.
 """
-function plot_correction_curve(optimal_correction::Vector{Float64})
+function plot_correction_curve(optimal_correction::Vector{Float64}, spline_positions; t1=0.0, t2=0.0)
     # Create s vector from 0 to 1
     s_vec = 0.0:0.01:1.0
+    # s_vec = spline_positions
+    t_vec = t1 .+ s_vec .* (t2 - t1)
     n_points = length(s_vec)
     
     # Calculate correction_result for each s value
     correction_values = zeros(n_points)
     
     for (i, s) in enumerate(s_vec)
-        correction_values[i] = interpolate_hermite_spline(s, optimal_correction[1:CONTROL_POINTS])
+        correction_values[i] = interpolate_hermite_spline(s, optimal_correction[1:CONTROL_POINTS], spline_positions)
     end
     
     # Print diagnostic information
@@ -91,12 +94,47 @@ function plot_correction_curve(optimal_correction::Vector{Float64})
     println("======================================\n")
     
     # Plot
-    plot_rmt(collect(s_vec), correction_values;
-             xlabel="Normalized Parameter s [-]",
-             ylabel="Correction Factor [-]",
-             title="Hermite Spline Interpolation Correction Curve",
-             fig="Correction Curve",
-             pltctrl=pltctrl)
+    if t1 != t2
+        if isnothing(pltctrl)
+            plot_rmt(collect(t_vec), correction_values;
+                    xlabel="Time [s]",
+                    ylabel="Correction Factor [-]",
+                    title="Hermite Spline Interpolation Correction Curve",
+                    fig="Correction Curve",
+                    pltctrl=pltctrl)
+        else
+            plt.figure("Hermite Spline Interpolation Correction and Control Points")
+            points = optimal_correction[1:CONTROL_POINTS]
+            # s_vec1=(0:CONTROL_POINTS-1)./(CONTROL_POINTS-1)
+            s_vec1 = spline_positions
+            t_vec1 = t1 .+ s_vec1 .* (t2 - t1)
+            plt.plot(t_vec1, points, label="Control Points",marker="x", linestyle="None")
+            # Create s vector from 0 to 1
+            s_vec1 = 0.0:0.01:1.0
+            n_points = length(s_vec1)
+            
+            # Calculate correction_result for each s value
+            correction_values = zeros(n_points)
+            
+            for (i, s) in enumerate(s_vec1)
+                correction_values[i] = interpolate_hermite_spline(s, optimal_correction[1:CONTROL_POINTS], spline_positions)
+            end
+            plt.plot(collect(t_vec), correction_values, label="Interpolated", linestyle="--")
+            plt.xlabel("Time [s]")
+            plt.ylabel("Correction Factor [-]")
+            plt.title("Hermite Spline Interpolation Correction and Control Points")
+            plt.legend()
+            plt.grid(true, color = "#DDDDDD")
+            plt.show()
+        end      
+    else
+        plot_rmt(collect(s_vec), correction_values;
+                xlabel="Normalized Parameter s [-]",
+                ylabel="Correction Factor [-]",
+                title="Hermite Spline Interpolation Correction Curve",
+                fig="Correction Curve",
+                pltctrl=pltctrl)
+    end
 end
 function plot_correction2(optimal_correction::Vector{Float64})
     plt.figure("Hermite Spline Interpolation Correction and Control Points")
@@ -122,7 +160,7 @@ function plot_correction2(optimal_correction::Vector{Float64})
     plt.show()
 end
 
-function plot_power_and_demand(time_vector, rel_power, rel_power_ref, demand_values; vis, pltctrl)
+function plot_power_and_demand(time_vector, rel_power, demand_values, rel_power_ref; vis, pltctrl)
     if GROUP_CONTROL
         plot_rmt(time_vector, [rel_power[1:length(time_vector)] .* 100, rel_power_ref[1:length(time_vector)] .* 100, demand_values .* 100]; xlabel="Time [s]", xlims=(vis.t_skip, time_vector[end]),
                 ylabel="Rel. Power Output [%]", labels=["rel_power", "rel_power_ref", "rel_demand"], title="Rel. Power and Demand "*string(GROUPS)*" TGs", fig="Rel. Power and Demand", pltctrl)
@@ -155,14 +193,23 @@ function plot_axial_induction()
     
     # Create group labels dynamically
     group_labels = ["Group $i" for i in 1:GROUPS]
-    
-    plot_rmt(time_vec_ind, group_data;
-             xlabel="Time [s]",
-             ylabel="Axial Induction Factor [-]",
-             title="Average Axial Induction Factor vs Time by Turbine Group",
-             labels=group_labels,
-             fig="Induction by Group",
-             pltctrl=pltctrl)
+    if GROUPS > 1
+        plot_rmt(time_vec_ind, group_data;
+                xlabel="Time [s]",
+                ylabel="Axial Induction Factor [-]",
+                title="Average Axial Induction Factor vs Time by Turbine Group",
+                labels=group_labels,
+                fig="Induction by Group",
+                pltctrl=pltctrl)
+    else
+                plot_rmt(time_vec_ind, group_data;
+                xlabel="Time [s]",
+                ylabel="Axial Induction Factor [-]",
+                # title="Average Axial Induction Factor vs Time by Turbine Group",
+                # labels=group_labels,
+                fig="Axial Induction Factor over Time",
+                pltctrl=pltctrl)
+    end
     
     # Create bar plot of average induction factor per group
     avg_induction = [isempty(group_data[g]) ? 0.0 : mean(group_data[g]) for g in 1:GROUPS]
@@ -174,7 +221,7 @@ function plot_axial_induction()
         base_colors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", "#8c564b", "#e377c2", "#7f7f7f"]
         colors = [base_colors[mod1(i, length(base_colors))] for i in 1:GROUPS]
         
-        bars = plt.bar(1:GROUPS, avg_induction, color=colors)
+        plt.bar(1:GROUPS, avg_induction, color=colors)
         plt.xlabel("Turbine Group", fontsize=12)
         plt.ylabel("Average Axial Induction Factor [-]", fontsize=12)
         plt.title("Average Axial Induction Factor by Turbine Group", fontsize=14)
@@ -187,4 +234,98 @@ function plot_axial_induction()
             plt.text(i, v, @sprintf("%.3f", v), ha="center", va="bottom", fontsize=10)
         end
     end
+end
+
+function plot_power_per_group(md, time_step; vis, pltctrl)
+    # Plot total power per turbine group vs time
+    # md is the metadata DataFrame from run_floridyn with columns: Time, PowerGen, etc.
+    # Data structure: For each time point, there are nT consecutive rows (one per turbine)
+    
+    n_turbines = size(ta.pos, 1)
+    
+    # Get unique time points from the metadata
+    time_points = sort(unique(md.Time))
+    
+    # Calculate relative time (subtract start time)
+    rel_time = time_points .- time_points[1]
+    
+    # Initialize storage for power per group at each time point
+    group_power_data = [Float64[] for _ in 1:GROUPS]
+    
+    # Extract power data by time and turbine
+    # md has structure: [T1@t1, T2@t1, ..., TN@t1, T1@t2, T2@t2, ..., TN@t2, ...]
+    power_data = reshape(md.PowerGen, n_turbines, :)  # reshape to (nT × n_timesteps)
+    
+    # For each time point, sum power by group
+    for (t_idx, t) in enumerate(time_points)
+        for g in 1:GROUPS
+            # Get turbines in this group
+            group_turbines = [i for i in 1:n_turbines if FLORIDyn.turbine_group(ta, i) == g]
+            
+            # Sum power for turbines in this group at this time
+            group_power = sum(power_data[group_turbines, t_idx])
+            push!(group_power_data[g], group_power)
+        end
+    end
+    
+    # Create group labels
+    group_labels = ["Group $i" for i in 1:GROUPS]
+    
+    # Plot power per group vs time
+    plot_rmt(rel_time, group_power_data;
+             xlabel="Time [s]",
+             xlims=(vis.t_skip, rel_time[end]),
+             ylabel="Power Output [MW]",
+             title="Power Output vs Time by Turbine Group",
+             labels=group_labels,
+             fig="Power by Group",
+             pltctrl=pltctrl)
+end
+
+function plot_power_per_wind_farm(md, time_step; vis, pltctrl, n_farms=3, turbines_per_farm=54)
+    # Plot total power per wind farm vs time
+    # md is the metadata DataFrame from run_floridyn with columns: Time, PowerGen, etc.
+    # Data structure: For each time point, there are nT consecutive rows (one per turbine)
+    # Assumes turbines are organized sequentially by wind farm (1-54 = farm 1, 55-108 = farm 2, etc.)
+    
+    n_turbines = size(ta.pos, 1)
+    
+    # Get unique time points from the metadata
+    time_points = sort(unique(md.Time))
+    
+    # Calculate relative time (subtract start time)
+    rel_time = time_points .- time_points[1]
+    
+    # Initialize storage for power per wind farm at each time point
+    farm_power_data = [Float64[] for _ in 1:n_farms]
+    
+    # Extract power data by time and turbine
+    # md has structure: [T1@t1, T2@t1, ..., TN@t1, T1@t2, T2@t2, ..., TN@t2, ...]
+    power_data = reshape(md.PowerGen, n_turbines, :)  # reshape to (nT × n_timesteps)
+    
+    # For each time point, sum power by wind farm
+    for t_idx in 1:length(time_points)
+        for farm_id in 1:n_farms
+            # Get turbine range for this farm
+            start_turbine = (farm_id - 1) * turbines_per_farm + 1
+            end_turbine = farm_id * turbines_per_farm
+            
+            # Sum power for turbines in this wind farm at this time
+            farm_power = sum(power_data[start_turbine:end_turbine, t_idx])
+            push!(farm_power_data[farm_id], farm_power)
+        end
+    end
+    
+    # Create farm labels
+    farm_labels = ["Wind Farm $i" for i in 1:n_farms]
+    
+    # Plot power per wind farm vs time
+    plot_rmt(rel_time, farm_power_data;
+             xlabel="Time [s]",
+             xlims=(vis.t_skip, rel_time[end]),
+             ylabel="Power Output [MW]",
+             title="Power Output vs Time by Wind Farm",
+             labels=farm_labels,
+             fig="Power by Wind Farm",
+             pltctrl=pltctrl)
 end

@@ -7,7 +7,7 @@ using FLORIDyn, ControlPlots, YAML
 
 settings_file = get_default_project()[2]
 
-GROUPS = 6
+GROUPS = 9
 
 function plot_turbines(ta::TurbineArray, turbine_groups)
     # Extract x and y coordinates from the position matrix
@@ -30,7 +30,7 @@ function plot_turbines(ta::TurbineArray, turbine_groups)
         end
         
         group_turbines = group["turbines"]
-        group_name = group["name"]
+        group_name = replace(group["name"], "group_" => "TG")
         group_id = group["id"]
         
         # Get coordinates for this group
@@ -50,7 +50,7 @@ function plot_turbines(ta::TurbineArray, turbine_groups)
     end
     
     # Add turbine IDs as labels
-    for i in 1:length(x_coords)
+    for i in eachindex(x_coords)
         plt.annotate("T$i", (x_coords[i], y_coords[i]), xytext=(5, 5), 
                     textcoords="offset points", fontsize=8, 
                     bbox=Dict("boxstyle"=>"round,pad=0.2", "facecolor"=>"white", "alpha"=>0.7))
@@ -61,7 +61,7 @@ function plot_turbines(ta::TurbineArray, turbine_groups)
     n_groups = length([g for g in turbine_groups if g["name"] != "all"])
     plt.title("Wind Farm Layout - $n_groups Turbine Groups by X Coordinate")
     plt.grid(true, alpha=0.3)
-    plt.legend(loc="lower right")
+    plt.legend(loc="upper center", bbox_to_anchor=(0.69, 0.4))
     
     # Set axis limits to reduce unused space
     y_min = minimum(y_coords)
