@@ -281,7 +281,7 @@ function calc_axial_induction2(vis, time, correction::Vector; group_id=nothing)
     
     return corrected_induction, distance
 end
-using PyPlot; pyimport("matplotlib"); matplotlib.use("Qt5Agg")
+
 function calc_induction_matrix2(vis, ta, time_step, t_end; correction)
     # Create time vector from 0 to t_end with time_step intervals
     time_vector = 0:time_step:t_end
