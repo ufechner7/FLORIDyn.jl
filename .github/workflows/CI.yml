@@ -140,9 +140,7 @@ jobs:
       - name: Install Python (Homebrew)
         run: brew install python
       - name: Install matplotlib (pip)
-        run: |
-          python3 -m pip install --upgrade pip --break-system-packages
-          python3 -m pip install matplotlib --break-system-packages
+        run: python3 -m pip install matplotlib --break-system-packages
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1' # latest stable Julia
