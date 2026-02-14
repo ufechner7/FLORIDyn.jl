@@ -29,9 +29,9 @@ The code uses the Gaussian wake model derived in [\[3\]](#ref3).
 - The model is highly configurable, allowing users to test different modeling approaches and optimize the trade-off between computational accuracy and simulation speed.
 
 ## Future development
-- modelling of wind farm clusters is planned
+- an example for modelling of wind farm clusters has been added, but it needs validation against LES simulations
+- simulating wind veer (change of wind direction with the height) has been implemented, but it is not yet merged into the main branch. This is needed to take the influence of the coriolis force into account
 - integration with a mesoscale meteorological model is under consideration
-- there are ideas to extend the model to take wind veer into account (change of wind direction with the height)
 
 ## Status
 All examples work, most key examples are selectable via a menu:
