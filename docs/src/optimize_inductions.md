@@ -1,0 +1,205 @@
+# Optimization of the turbine induction factors of a wind farm for time-shifting the power output
+
+## Introduction
+In the literature you can find some research results on dynamic induction factor control with the goal to reduce wake effects and to increase the power output [@Frederik2020], [@Munters2018]. But the question if and how much the power of a wind farm or of a wind farm cluster can be shifted in time by using dynamic induction control has not yet been investigated. Here, we try to find an answer to this question.
+
+## Test case
+As test case the NordseeOne wind farm at a free flow wind speed of $8.2 m/s$ and a turbulence intensity of 6.2 % at turbine height was used. A constant wind direction, directly from the west is assumed.
+
+The wind farm layout, using six turbine groups is shown in Fig. \ref{fig:windfarm_6T}:
+
+![Wind farm NordseeOne\label{fig:windfarm_6T}](windfarm_6T.png){width=100%}
+
+The goal of the optimization is, that the production matches the demand as close as possible. In this test case
+we assume a constant demand of 40% of the power at free-flow wind speed at the beginning, that starts to rise at
+1740s simulation time, rises to 80% at 2460s and then stays constant again (see Fig. \ref{fig:power-demand-1t}).
+
+## Collective turbine control
+The most simple way to match production and demand is to control the induction factor of the turbines of the wind farm cluster, assuming all use the same induction factor.
+
+We assume
+\begin{equation}
+\label{eq:cp-max}
+C_{\text{p,max}} = \frac{16}{27}
+\end{equation}
+
+Furthermore, we assume that the relative demand (relative to the power at free-flow velocity) is given as
+\begin{equation}
+\label{eq:demand-rel}
+p_{\text{d,rel}} = d(t)
+\end{equation}
+At the beginning, the demand is 40%. At $t=t_\text{start}$ the demand starts to rise, and at $t=t_\text{end}$ it reaches 
+80% and then stays constant. In the first test case we use $t_\text{start}=1740s$ and $t_\text{end}=2460s$. The resulting
+demand profile is shown in Fig. \ref{fig:power-demand-1t}. 
+
+The power coefficient of an ideal wind turbine is related to the induction factor following
+\begin{equation}
+\label{eq:cp-induction}
+C_{\text{p}} = 4a(1-a)^2
+\end{equation}
+The inverse relationship $a(C_{\text{p}})$ is obtained by numerically solving this equation for $a \in [0, 1/3]$.
+
+By combining Eqs. \eqref{eq:cp-max}, \eqref{eq:demand-rel} and \eqref{eq:cp-induction}, and applying $C_{\text{p}} = d(t) \cdot C_{\text{p,max}}$ we can 
+determine the set value of the induction factor of the turbines as
+\begin{equation}
+\label{eq:induction-time}
+a = f(d(t))
+\end{equation}
+
+This would be correct without wakes. Because of the wake effects, we need to increase the
+set-power of the turbines with a correction factor. This - time dependent - correction factor
+is defined as a cubic Hermite spline [@Fageot2020], based on $n$ control points. The first control point defines the correction 
+for $t <= t_\text{start}$, the last control point defines the correction for $t >= t_\text{end}$, and the additional 
+control points are distributed evenly between the first and the last point. In mathematical notation:
+
+\begin{equation}
+\label{eq:correction-func}
+c(t) = \begin{cases}
+c_1 & \text{if } t \leq t_{\text{start}} \\
+H_i(s) & \text{if } t_{\text{start}} < t < t_{\text{end}} \\
+c_n & \text{if } t \geq t_{\text{end}}
+\end{cases}
+\end{equation}
+
+where $s = \frac{t - t_{\text{start}}}{t_{\text{end}} - t_{\text{start}}}$ is the normalized time parameter $s \in [0, 1]$, and $H_i(s)$ is the cubic Hermite interpolation between control points $c_i$ at positions $s_i = \frac{i-1}{n-1}$ for $i = 1, \ldots, n$.
+
+For each segment between control points, the Hermite spline is given by:
+\begin{equation}
+\label{eq:hermite-spline}
+H_i(s) = h_{00}(u) \cdot c_i + h_{10}(u) \cdot m_i \cdot \Delta s + h_{01}(u) \cdot c_{i+1} + h_{11}(u) \cdot m_{i+1} \cdot \Delta s
+\end{equation}
+
+where $u = \frac{s - s_i}{\Delta s}$ with $\Delta s = \frac{1}{n-1}$, and the Hermite basis functions are:
+\begin{align}
+h_{00}(u) &= 2u^3 - 3u^2 + 1 \\
+h_{10}(u) &= u^3 - 2u^2 + u \\
+h_{01}(u) &= -2u^3 + 3u^2 \\
+h_{11}(u) &= u^3 - u^2
+\end{align}
+
+The tangents $m_i$ at each control point are computed using central differences:
+\begin{equation}
+\label{eq:tangents}
+m_i = \begin{cases}
+\frac{c_2 - c_1}{\Delta s} & \text{if } i = 1 \\
+\frac{c_{i+1} - c_{i-1}}{2\Delta s} & \text{if } 1 < i < n \\
+\frac{c_n - c_{n-1}}{\Delta s} & \text{if } i = n
+\end{cases}
+\end{equation}
+
+To obtain the vector of the control points
+\begin{equation}
+\label{eq:control_points}
+\mathbf{c} = (c_1, \ldots, c_n)
+\end{equation}
+
+we solve the following optimization problem using the NOMAD [@montoison-pascal-salomon-nomad-2020] optimizer:
+\begin{equation}
+\label{eq:optimization}
+\min_{\mathbf{c}} \sum_{t=t_{\text{start}}}^{t_{\text{end}}+t_{\text{extra}}} \left(p(t) - d(t) \right)^2
+\end{equation}
+where $p(t)$ is the relative wind park power output at time $t$, $t_{\text{start}}$ is the time when the demand starts to increase, $t_{\text{end}}$ the time when it reaches its maximum and $t_{\text{extra}}$ the time the wind field needs to reach its equilibrium.
+
+Fig. \ref{fig:correction-factor} shows optimal correction factors as a function of the normalized parameter $s$ as determined by the optimizer. The curve is rising when the demand is rising. This makes sense, because a higher demand causes higher induction factors, which cause more wake losses that need to be compensated.
+
+![Correction factor for the set value of the power of the turbines\label{fig:correction-factor}](Scaling_Curve.png){width=70%}
+
+If we combine Eq. \ref{eq:induction-time} and Eq. \ref{eq:correction-func}, we get
+\begin{equation}
+\label{eq:induction-time-corrected}
+a = f(c(t) * d(t))
+\end{equation}
+
+Using this equation, we can calculate the vector of the induction factors
+\begin{equation}
+\mathbf{a} = (a_1, \ldots, a_m)
+\end{equation}
+for each time step of the simulation. Fig. \ref{fig:induction-factor} shows optimal induction factors as a function of time as calculated by the optimizer.
+
+![Induction factor, collective turbine control\label{fig:induction-factor}](Induction_by_Group.png){width=70%}
+
+Using these induction factors as input, the result of the FLORIDyn [@becker2022floridyn] simulation is the vector
+\begin{equation}
+\mathbf{p} = (p_1, \ldots, p_m)
+\end{equation}
+of the relative wind park power (relative to the power without wakes at free-flow wind speed).
+
+Fig. \ref{fig:power-demand-1t} shows the resulting relative wind park power and relative demand as a function of time:
+
+![Relative Power and Demand\label{fig:power-demand-1t}](Rel_Power_and_Demand_1T.png){width=70%}
+
+The Root Mean Square Error (RMSE) between demand and production is 3.86%. 
+
+
+## Turbine group (TG) control
+To improve the tracking between production and demand, the turbines are now divided in (approximately) equal sized groups. The grouping is done depending on the coordinate of each turbine in the mean wind direction, such that the most upwind group of turbines has number one. 
+
+The axial induction factor $a$ of each turbine group shall be controlled to achieve the best match between power demand and power production. To achieve this goal, in addition to the vector $\mathbf{c}$ as defined in Eq. \ref{eq:control_points} we need a second vector that controls the power distribution of the turbine groups. We define the vector $\mathbf{e}$ with $u$ elements as
+\begin{equation}
+\mathbf{e} = (e_1, \ldots, e_\text{u}), \quad 1 \leq e_i \leq 3
+\end{equation}
+with $u$ being the number of turbine groups and
+\begin{equation}
+e_\text{u} = \frac{3}{2} u - \sum_{i=1}^{u-1} e_i
+\end{equation}
+With this definition we achieve the goal that the mean of the elements of $\mathbf{e}$ is $1.5$ and thus constant. Changing $e_1 .. e_{u-1}$ shall only modify the distribution of the power between the turbine groups, but not the total free-stream power. The variables $e_1 .. e_{u-1}$ are the additional free variables that need to be optimized.
+
+The optimization problem (Eq. \ref{eq:optimization}) needs to be extended to include the vector e and now looks like:
+\begin{equation}
+\label{eq:optimization_tg}
+\min_{\mathbf{c,~e}} \sum_{t=t_{\text{start}}}^{t_{\text{end}}+t_{\text{extra}}} \left(p(t) - d(t) \right)^2
+\end{equation} .
+
+Eq. \ref{eq:induction-time-corrected} must be extended, too. We do this in two steps: First, we calculate the power that a turbine group shall contribute to the total power. We do that such that for $e_\text{i}=0$ the turbine group works at full power all the time, for $e_\text{i}=1$ it contributes exactly the free-stream power that would mach the demand, for higher values of $e_\text{i}$ it contributes less, and for values above two the contribution at the beginning is zero and the turbine starts to operate later. We do this because we know that at the end of the rise of the demand all available power is needed, and at the beginning some of the turbine groups should produce nothing or less than their full share.
+\begin{equation}
+p_\text{set,i} = c(t) \big(p_\text{max} - e_\text{i} (p_\text{max} - d(t))\big)
+\end{equation}
+We use the same, time dependent correction function $c(t)$ for all turbine groups, but the required relative power per turbine group is corrected using the formula given above.
+
+The correction function based on the optimized values of $\mathbf{c}$ is shown in Fig. \ref{fig:correction-6t}:
+
+![Correction function for six turbine groups.\label{fig:correction-6t}](Scaling_Curve_6T.png){width=70%}
+
+This value is than limited to the valid range between zero and one and finally used to calculate the required induction factor. Using the helper function
+\begin{equation}
+\text{clamp}(x,a,b) = \min(\max(x,a),b)
+\end{equation}
+we define:
+
+\begin{equation}
+\label{eq:induction_tg}
+\mathbf{a}_\text{i} = f(\text{clamp}(p_\text{set,i}, 0, 1))
+\end{equation}
+
+In Fig. \ref{fig:induction-by-group-6t}, the resulting time series of the induction factors per turbine group are shown:
+
+![Induction by turbine group; the blue line is behind the green line.\label{fig:induction-by-group-6t}](Induction_by_Group_6T.png){width=70%}
+
+Using this matrix of induction factors as input, the result of the FLORIDyn [@becker2022floridyn] simulation is the vector
+\begin{equation}
+\mathbf{p} = (p_1, \ldots, p_m)
+\end{equation}
+of the relative wind park power (relative to the power without wakes at free-flow wind speed).
+
+Fig. \ref{fig:power-demand-6TG} shows the resulting relative wind park power and relative demand as a function of time:
+
+![Relative Power and Demand, optimized result for six turbine groups\label{fig:power-demand-6TG}](Rel_Power_and_Demand_6T.png){width=70%}
+
+The Root Mean Square Error (RMSE) between demand and production is 2.61% (down from 3.86% without turbine group control). 
+The estimated storage time at 100% power is 23.08s. This means, for about 10 minutes more than 2% additional power is available, compared to collective turbine control. This energy was stored as kinetic energy in the wind field.
+
+## Optimization software
+The model and the optimization software used are available under an open source license at [@fechner_2025_17287772].
+Use the command `include("examples/mpc.jl")` at the Julia prompt to reproduce the results, presented here.
+
+The optimization for collective turbine control required about 500 simulations, the optimization with six turbine groups about 1400 simulations to converge, where one simulation needs about 3s on a Laptop with an Ryzen 7840U CPU.
+
+## Conclusions and outlook
+The simulations indicate that a slight increase in power when it is needed most is possible, for example 2% more for 10 minutes for a single wind farm. Perhaps larger values can be achieved when controlling a wind farm cluster. Next steps are:
+
+- use a second test case with a time varying wind speed (impulse shaped)
+- simulate a wind farm cluster
+- investigate the sensitivity of the result regarding wind speed and wind direction
+- further verify the simulation model using LES simulation
+
+# References

@@ -127,6 +127,18 @@ using FLORIDyn, Test, LinearAlgebra
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
+        # Test input_vel == "Interpolation" with wind.vel not an AbstractMatrix
+        # This tests lines 164-178 of prepare_simulation.jl
+        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
+        wind.input_vel = "Interpolation"
+        wind.vel = nothing  # Ensure wind.vel is not an AbstractMatrix
+        set = Settings(wind, sim, con)
+        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+        @test isa(wind.vel, AbstractMatrix)
+        @test size(wind.vel, 2) == 2  # time column + wind velocity value
+        @test wind.vel isa Matrix{Float64}
+        @test size(wind.vel, 1) > 0  # Should have at least one row
+
         # wind.input_shear == "Interpolation"
         wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
         wind.input_shear = "Interpolation"

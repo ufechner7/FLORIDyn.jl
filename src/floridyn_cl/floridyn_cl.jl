@@ -723,6 +723,18 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
 end
 
 """
+    get_demand(con::Con, sim::Sim, time::Float64) -> Float64
+
+Retrieve the demand value for a given simulation time step.
+This function calculates the appropriate index in the demand data array based on the current simulation time
+and the defined time step, ensuring the index stays within valid bounds.
+"""
+function get_demand(con, sim, time)
+    index = Int(clamp(floor(time / sim.time_step) + 1, 1, sim.n_sim_steps + 1))
+    return con.demand_data[index]
+end
+
+"""
     runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris;
                 rmt_plot_fn=nothing, msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
 
@@ -766,7 +778,7 @@ applying control strategies and updating turbine states over time.
 
 """
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris; rmt_plot_fn=nothing, 
-                          msr=VelReduction, debug=nothing)
+                          msr=VelReduction, debug=nothing, save_final_only=false)
     nT = wf.nT
     sim_steps = sim.n_sim_steps
     ma = zeros(sim_steps * nT, 6)
@@ -819,7 +831,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         vm_int[it] = wf.red_arr
 
         # ========== wind field corrections ==========
-        wf, wind = correctVel(set.cor_vel_mode, set, wf, wind, sim_time, floris, @view(tmpM[1:nT, :]))
+        wf, wind = correctVel!(set.cor_vel_mode, set, wf, wind, sim_time, floris, @view(tmpM[1:nT, :]))
         correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
         correctTI!(set.cor_turb_mode, set, wf, wind, sim_time)
 
@@ -828,9 +840,9 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
 
         # ========== Get Control settings ==========
         wf.States_T[wf.StartI, 2] = (
-            wf.States_WF[wf.StartI, 2] .-
-            getYaw(set.control_mode, con.yaw_data, (1:nT), sim_time)'
+            wf.States_WF[wf.StartI, 2] .- getYaw(set.control_mode, con, (1:nT), sim_time)'
         )
+        wf.States_T[wf.StartI, 1] = getInduction(set.induction_mode, con, (1:nT), sim_time-sim.start_time)'
 
         # ========== Calculate Power ==========
         P = getPower(wf, @view(tmpM[1:nT, :]), floris, con)
@@ -839,14 +851,31 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         # ========== Live Plotting ============
         if vis.online
             t_rel = sim_time - sim.start_time
-            if mod(t_rel, vis.up_int) == 0
+            if ! isnothing(con.demand_data)
+                demand = get_demand(con, sim, t_rel)
+                vis.subtitle = "demand: $(round(demand*100, digits=2)) %"
+            end
+            # When save_final_only is true, only plot on the last iteration
+            should_plot = if save_final_only
+                it == sim_steps || t_rel == vis.t_skip
+            else
+                mod(t_rel - vis.t_skip, vis.up_int) == 0 && t_rel >= vis.t_skip
+            end
+            
+            if should_plot
+                @info "time: $t_rel, plotting flow field"
                 Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
+                rel_vel = Z[:,:,1]
+                if any(isnan, rel_vel)
+                    @warn "NaN values found in relative velocity field!"
+                    display(sparse(isnan.(rel_vel)))
+                end
                 if isnothing(rmt_plot_fn)
-                    plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel; msr)
+                    plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel - vis.t_skip; msr)
                     plt.pause(0.01)
                 else
                     # @info "time: $t_rel, plotting with rmt_plot_fn"
-                    @spawnat 2 rmt_plot_fn(wf, X, Y, Z, vis, t_rel; msr=msr)
+                    @spawnat 2 rmt_plot_fn(wf, X, Y, Z, vis, t_rel - vis.t_skip; msr=msr)
                 end
             end
         end

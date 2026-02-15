@@ -20,10 +20,11 @@ X_ref = vars["X"]
 Y_ref = vars["Y"]
 Z_ref = vars["Z"]
 
-function rel_err(a, b)
-    return norm(a - b) / norm(b)
+if ! isdefined(Main, :rel_err)
+    function rel_err(a, b)
+        return norm(a - b) / norm(b)
+    end
 end
-
 # Load vis settings from YAML file
 vis = Vis(vis_file)
 
@@ -58,7 +59,6 @@ turbines_wf = wf.turbines
     msr = 1
     A = Z_ref[:,:,msr]
     B = Z[:,:,msr]
-    A = Z_ref[:,:,msr]
     @test rel_err(A, B) < 0.001
 end
 

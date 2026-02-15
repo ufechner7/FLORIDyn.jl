@@ -61,7 +61,12 @@ all_test_files = [
     "test_floris.jl",
     "test_getDataVel_branches.jl",
     "test_correction.jl",
+    "test_direction_none.jl",
+    "test_direction_influence.jl",
+    "test_velocity_influence.jl",
+    "test_ti_influence.jl",
     "test_controller.jl",
+    "test_splines.jl",
     "test_settings.jl",
     "test_high_res_time.jl",
     "test_visualisation.jl",
@@ -92,6 +97,7 @@ suppress_warning_files = [
     # average iteration currently produces no warnings; keep separate if needed later
     "test_floridyn_cl.jl",
     "test_prepare_simulation.jl",
+    "test_getDataVel_branches.jl",
     "test_visualisation.jl",
 ]
 

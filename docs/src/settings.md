@@ -254,6 +254,13 @@ Measurement
 The Settings struct and functions related to examples and settings.
 
 ```@docs
+
+Settings
+Settings(wind::Wind, sim::Sim, con::Con)
+```
+
+## Helper functions
+```@docs
 install_examples
 copy_examples
 copy_model_settings
@@ -261,9 +268,8 @@ copy_bin
 copy_files
 cp_fun
 setup
-Settings
-Settings(wind::Wind, sim::Sim, con::Con)
 getTurbineData
 parse_measurements
 parse_flow_fields
+turbine_group
 ```

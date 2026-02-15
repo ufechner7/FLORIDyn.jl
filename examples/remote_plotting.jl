@@ -5,15 +5,17 @@ if Threads.nthreads() > 1
     function init_plotting()
         # Only add a worker if we don't have any dedicated worker processes
         if nprocs() < 2  # nprocs() counts main + workers, so < 2 means no dedicated workers
-            println("No dedicated workers found, adding 1 worker...")
             if workers() < [2]
-                addprocs(1; exeflags=["-t 1", "--project", "--gcthreads=1,0"])
+                sleep(0.5)
+                if workers() < [2]
+                    println("No dedicated workers found, adding 1 worker...")
+                    addprocs(1; exeflags=["-t 1", "--project", "--gcthreads=1,0"])
+                end
             end
             if workers() != [2]
-                sleep(1)
                 @warn "workers: $(workers()), nthreads: $(Threads.nthreads())"
             end
-            @assert workers() == [2]  # Ensure we have exactly one worker now
+            @assert workers() >= [2]  # Ensure we have at least two workers now
             @spawnat 2 eval(:(using ControlPlots))
             @eval @everywhere using FLORIDyn      # Ensure FLORIDyn (including WindFarm) is available on all workers
             
@@ -48,11 +50,18 @@ if Threads.nthreads() > 1
                 display(p)  # Ensure the plot is displayed
                 nothing
             end
-            @everywhere function rmt_plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+            @everywhere function rmt_plot(X, Ys...; xlabel, ylabel, ylabels=nothing, labels, xlims, ylims, ann, scatter, title, fig, ysize)
                 if isnothing(labels)
-                    p = pltctrl.plot(X, Ys; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+                    p = ControlPlots.plot(X, Ys[1]; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+                elseif isnothing(ylabels)
+                    p = ControlPlots.plot(X, Ys[1]; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
                 else
-                    p = pltctrl.plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+                    try
+                        p = ControlPlots.plot(X, Ys...; xlabel, ylabels, labels, title, fig, ysize)
+                    catch e
+                        @error "Error in rmt_plot: $e"
+                        rethrow(e)
+                    end
                 end
                 display(p)  # Ensure the plot is displayed
                 nothing

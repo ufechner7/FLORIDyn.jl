@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
+# script to create a pdf documentation of the mathematical background
+# requires pandoc to be installed
+
+if [[ $(basename $(pwd)) == "bin" ]]; then
+    cd ..
+fi
+
+cd docs/src && pandoc optimize_inductions.md --bibliography=references.bib --citeproc -o optimize_inductions.pdf
+pandoc optimize_inductions.md --bibliography=references.bib --citeproc -s -o optimize_inductions.tex

@@ -600,6 +600,434 @@ vis:
         end
     end
 
+    @testset "turbine_group function" begin
+        @testset "Basic functionality" begin
+            # Test with 54-turbine configuration
+            @testset "54-turbine configuration" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                
+                # Test that function returns correct group IDs for known turbines
+                @test turbine_group(ta, 1) == 1    # Should be in group1 (westernmost)
+                @test turbine_group(ta, 15) == 2   # Should be in group2
+                @test turbine_group(ta, 30) == 4   # Should be in group4
+                @test turbine_group(ta, 45) == 3   # Should be in group3
+                @test turbine_group(ta, 54) == 1   # Should be in group1
+                
+                # Test that all turbines have valid group assignments
+                for turbine_id in 1:54
+                    group_id = turbine_group(ta, turbine_id)
+                    @test isa(group_id, Int)
+                    @test group_id >= 0  # Group IDs should be non-negative
+                    
+                    # Verify that the group actually exists
+                    group_found = false
+                    for group in ta.groups
+                        if group.id == group_id
+                            group_found = true
+                            @test turbine_id in group.turbines
+                            break
+                        end
+                    end
+                    @test group_found
+                end
+            end
+            
+            # Test with 9-turbine configuration
+            @testset "9-turbine configuration" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_9T_Data.yaml")
+                
+                # Test specific turbine-group mappings for 9T layout
+                @test turbine_group(ta, 1) == 1    # Should be in row1
+                @test turbine_group(ta, 2) == 1    # Should be in row1  
+                @test turbine_group(ta, 3) == 1    # Should be in row1
+                @test turbine_group(ta, 4) == 2    # Should be in row2
+                @test turbine_group(ta, 5) == 2    # Should be in row2
+                @test turbine_group(ta, 6) == 2    # Should be in row2
+                @test turbine_group(ta, 7) == 3    # Should be in row3
+                @test turbine_group(ta, 8) == 3    # Should be in row3
+                @test turbine_group(ta, 9) == 3    # Should be in row3
+                
+                # Test that all turbines have valid group assignments
+                for turbine_id in 1:9
+                    group_id = turbine_group(ta, turbine_id)
+                    @test isa(group_id, Int)
+                    @test group_id >= 0
+                    
+                    # Verify the group exists and contains the turbine
+                    group_found = false
+                    for group in ta.groups
+                        if group.id == group_id
+                            group_found = true
+                            @test turbine_id in group.turbines
+                            break
+                        end
+                    end
+                    @test group_found
+                end
+            end
+        end
+        
+        @testset "Error handling" begin
+            # Test with 54-turbine configuration for error cases
+            wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+            
+            # Test invalid turbine numbers
+            @testset "Out of bounds turbine numbers" begin
+                # Test turbine number too low
+                err = @test_throws ArgumentError turbine_group(ta, 0)
+                @test occursin("out of bounds", err.value.msg)
+                @test occursin("Valid range: 1-54", err.value.msg)
+                
+                # Test turbine number too high
+                err = @test_throws ArgumentError turbine_group(ta, 55)
+                @test occursin("out of bounds", err.value.msg)
+                @test occursin("Valid range: 1-54", err.value.msg)
+                
+                # Test negative turbine number
+                err = @test_throws ArgumentError turbine_group(ta, -1)
+                @test occursin("out of bounds", err.value.msg)
+                
+                # Test very large turbine number
+                err = @test_throws ArgumentError turbine_group(ta, 1000)
+                @test occursin("out of bounds", err.value.msg)
+            end
+            
+            # Test with 9-turbine configuration for different bounds
+            @testset "9-turbine bounds checking" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_9T_Data.yaml")
+                
+                # Test valid range
+                for i in 1:9
+                    @test_nowarn turbine_group(ta, i)
+                end
+                
+                # Test invalid ranges
+                err = @test_throws ArgumentError turbine_group(ta, 0)
+                @test occursin("Valid range: 1-9", err.value.msg)
+                
+                err = @test_throws ArgumentError turbine_group(ta, 10)
+                @test occursin("Valid range: 1-9", err.value.msg)
+            end
+        end
+        
+        @testset "Group priority behavior" begin
+            # Test that the function prioritizes specific groups over "all" group
+            wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+            
+            @testset "Prioritizes specific groups" begin
+                # Every turbine should belong to the "all" group, but function should
+                # return specific group IDs when available
+                for turbine_id in [1, 15, 30, 45, 54]
+                    group_id = turbine_group(ta, turbine_id)
+                    
+                    # Should not return the "all" group ID (0) for these turbines
+                    # since they also belong to specific spatial groups
+                    @test group_id != 0
+                    
+                    # Verify the turbine is in both the specific group and "all" group
+                    found_in_specific = false
+                    found_in_all = false
+                    
+                    for group in ta.groups
+                        if group.id == group_id && turbine_id in group.turbines
+                            found_in_specific = true
+                            @test group.name != "all"  # Should be a specific group
+                        end
+                        if group.name == "all" && turbine_id in group.turbines
+                            found_in_all = true
+                        end
+                    end
+                    
+                    @test found_in_specific
+                    @test found_in_all
+                end
+            end
+        end
+        
+        @testset "Edge cases and robustness" begin
+            @testset "Consistency across multiple calls" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                
+                # Test that multiple calls return the same result
+                for turbine_id in [1, 10, 25, 40, 54]
+                    group_id1 = turbine_group(ta, turbine_id)
+                    group_id2 = turbine_group(ta, turbine_id)
+                    group_id3 = turbine_group(ta, turbine_id)
+                    
+                    @test group_id1 == group_id2 == group_id3
+                end
+            end
+            
+            @testset "All turbines are assigned to groups" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                
+                # Test that every turbine can be assigned to a group
+                assigned_groups = Set{Int}()
+                for turbine_id in 1:54
+                    group_id = turbine_group(ta, turbine_id)
+                    push!(assigned_groups, group_id)
+                end
+                
+                # Should have found multiple groups (not just one)
+                @test length(assigned_groups) > 1
+                
+                # All group IDs should correspond to actual groups
+                existing_group_ids = Set([group.id for group in ta.groups])
+                @test issubset(assigned_groups, existing_group_ids)
+            end
+            
+            @testset "Group distribution makes sense" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                
+                # Count turbines per group
+                group_counts = Dict{Int, Int}()
+                for turbine_id in 1:54
+                    group_id = turbine_group(ta, turbine_id)
+                    group_counts[group_id] = get(group_counts, group_id, 0) + 1
+                end
+                
+                # Should have reasonable distribution (no group should have all turbines
+                # unless there's only one specific group)
+                total_specific_groups = length([g for g in ta.groups if g.name != "all"])
+                if total_specific_groups > 1
+                    for count in values(group_counts)
+                        @test count < 54  # No single group should have all turbines
+                        @test count > 0   # Every group should have some turbines
+                    end
+                end
+                
+                # Total should add up to 54
+                @test sum(values(group_counts)) == 54
+            end
+        end
+        
+        @testset "Integration with TurbineArray structure" begin
+            @testset "Validates against actual group definitions" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                
+                # For each turbine, verify it's actually in the returned group
+                for turbine_id in 1:54
+                    group_id = turbine_group(ta, turbine_id)
+                    
+                    # Find the group with this ID
+                    target_group = nothing
+                    for group in ta.groups
+                        if group.id == group_id
+                            target_group = group
+                            break
+                        end
+                    end
+                    
+                    @test target_group !== nothing
+                    @test turbine_id in target_group.turbines
+                end
+            end
+            
+            @testset "Works with different TurbineArray configurations" begin
+                # Test both configurations to ensure function is generic
+                configs = [
+                    ("data/2021_54T_NordseeOne.yaml", 54),
+                    ("data/2021_9T_Data.yaml", 9)
+                ]
+                
+                for (config_file, num_turbines) in configs
+                    wind, sim, con, floris, floridyn, ta = setup(config_file)
+                    
+                    # Test a few representative turbines
+                    test_turbines = [1, div(num_turbines, 2), num_turbines]
+                    for turbine_id in test_turbines
+                        @test_nowarn turbine_group(ta, turbine_id)
+                        group_id = turbine_group(ta, turbine_id)
+                        @test isa(group_id, Int)
+                        
+                        # Verify group exists
+                        group_exists = any(group.id == group_id for group in ta.groups)
+                        @test group_exists
+                    end
+                end
+            end
+        end
+        
+        @testset "Performance characteristics" begin
+            wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+            
+            @testset "Reasonable performance for typical usage" begin
+                # Time multiple calls to ensure performance is reasonable
+                # This is not a strict performance test, but ensures no obvious bottlenecks
+                times = Float64[]
+                
+                for _ in 1:100
+                    turbine_id = rand(1:54)
+                    time_start = time_ns()
+                    turbine_group(ta, turbine_id)
+                    time_end = time_ns()
+                    push!(times, (time_end - time_start) / 1e6)  # Convert to milliseconds
+                end
+                
+                # Function should be fast for typical wind farm sizes
+                # Allow generous time limit since test systems vary
+                avg_time = sum(times) / length(times)
+                @test avg_time < 0.1  # Should average less than 0.1ms (100μs) per call
+                
+                # No call should be extremely slow
+                max_time = maximum(times)
+                @test max_time < 10.0  # No call should take more than 10ms
+            end
+        end
+    end
+
+    @testset "create_n_groups function" begin
+        @testset "Basic functionality" begin
+            @testset "Create 8 groups from 54 turbines" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                ta_grouped = create_n_groups(ta, 8)
+                
+                # Check that result is a TurbineArray
+                @test isa(ta_grouped, TurbineArray)
+                
+                # Check that position data is preserved
+                @test ta_grouped.pos == ta.pos
+                @test ta_grouped.type == ta.type
+                @test ta_grouped.init_States == ta.init_States
+                
+                # Check number of groups (8 specific groups + 1 "all" group)
+                @test length(ta_grouped.groups) == 9
+                
+                # Check that there are exactly 8 specific groups
+                specific_groups = [g for g in ta_grouped.groups if g.name != "all"]
+                @test length(specific_groups) == 8
+                
+                # Check group IDs are correct
+                for (i, group) in enumerate(specific_groups)
+                    @test group.id == i
+                    @test group.name == "group_$i"
+                end
+                
+                # Check that "all" group exists and has correct properties
+                all_group = findfirst(g -> g.name == "all", ta_grouped.groups)
+                @test all_group !== nothing
+                @test ta_grouped.groups[all_group].id == 0
+                @test length(ta_grouped.groups[all_group].turbines) == 54
+                @test ta_grouped.groups[all_group].turbines == collect(1:54)
+                
+                # Check that all turbines are assigned
+                assigned_turbines = Set{Int}()
+                for group in specific_groups
+                    union!(assigned_turbines, group.turbines)
+                end
+                @test length(assigned_turbines) == 54
+                @test assigned_turbines == Set(1:54)
+                
+                # Check that groups don't overlap (each turbine in exactly one specific group)
+                for i in 1:8
+                    for j in i+1:8
+                        overlap = intersect(specific_groups[i].turbines, specific_groups[j].turbines)
+                        @test isempty(overlap)
+                    end
+                end
+            end
+            
+            @testset "Create 4 groups from 54 turbines" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                ta_grouped = create_n_groups(ta, 4)
+                
+                @test length(ta_grouped.groups) == 5  # 4 + "all"
+                specific_groups = [g for g in ta_grouped.groups if g.name != "all"]
+                @test length(specific_groups) == 4
+                
+                # Check distribution (54/4 = 13.5, so some groups have 14, some 13)
+                group_sizes = [length(g.turbines) for g in specific_groups]
+                @test sum(group_sizes) == 54
+                @test all(13 .<= group_sizes .<= 14)
+            end
+            
+            @testset "Create 12 groups from 54 turbines" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                ta_grouped = create_n_groups(ta, 12)
+                
+                @test length(ta_grouped.groups) == 13  # 12 + "all"
+                specific_groups = [g for g in ta_grouped.groups if g.name != "all"]
+                @test length(specific_groups) == 12
+                
+                # Check distribution (54/12 = 4.5, so some groups have 5, some 4)
+                group_sizes = [length(g.turbines) for g in specific_groups]
+                @test sum(group_sizes) == 54
+                @test all(4 .<= group_sizes .<= 5)
+                # First 6 groups should have 5 turbines (54 % 12 = 6)
+                @test count(==(5), group_sizes) == 6
+                @test count(==(4), group_sizes) == 6
+            end
+        end
+        
+        @testset "Sorting by X coordinate" begin
+            @testset "Groups are ordered by X coordinate" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                ta_grouped = create_n_groups(ta, 8)
+                
+                specific_groups = [g for g in ta_grouped.groups if g.name != "all"]
+                
+                # Get average X coordinate for each group
+                avg_x_coords = Float64[]
+                for group in specific_groups
+                    x_coords = [ta_grouped.pos[t, 1] for t in group.turbines]
+                    push!(avg_x_coords, mean(x_coords))
+                end
+                
+                # Check that groups are ordered by increasing X coordinate
+                @test issorted(avg_x_coords)
+                
+                # Check that first group has turbines with smallest X coords
+                first_group_x = [ta_grouped.pos[t, 1] for t in specific_groups[1].turbines]
+                last_group_x = [ta_grouped.pos[t, 1] for t in specific_groups[end].turbines]
+                @test maximum(first_group_x) <= minimum(last_group_x)
+            end
+        end
+        
+        @testset "Works with different configurations" begin
+            @testset "9-turbine configuration" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_9T_Data.yaml")
+                ta_grouped = create_n_groups(ta, 3)
+                
+                @test length(ta_grouped.groups) == 4  # 3 + "all"
+                specific_groups = [g for g in ta_grouped.groups if g.name != "all"]
+                
+                # Each group should have exactly 3 turbines
+                for group in specific_groups
+                    @test length(group.turbines) == 3
+                end
+                
+                # All turbines assigned
+                all_turbines = Set{Int}()
+                for group in specific_groups
+                    union!(all_turbines, group.turbines)
+                end
+                @test all_turbines == Set(1:9)
+            end
+        end
+        
+        @testset "Integration with turbine_group function" begin
+            @testset "turbine_group returns correct IDs for new groups" begin
+                wind, sim, con, floris, floridyn, ta = setup("data/2021_54T_NordseeOne.yaml")
+                ta_grouped = create_n_groups(ta, 8)
+                
+                # Test that turbine_group returns correct group IDs
+                for turbine_id in 1:54
+                    group_id = turbine_group(ta_grouped, turbine_id)
+                    
+                    # Verify turbine is in the returned group
+                    found = false
+                    for group in ta_grouped.groups
+                        if group.id == group_id && turbine_id in group.turbines
+                            found = true
+                            break
+                        end
+                    end
+                    @test found
+                end
+            end
+        end
+    end
+
     @testset "MSR default functions" begin
         @testset "get_default_msr and set_default_msr" begin
             mktempdir() do tmp

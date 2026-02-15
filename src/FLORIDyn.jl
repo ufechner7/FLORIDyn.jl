@@ -14,9 +14,11 @@ import Base: show
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
 using Statistics, StaticArrays, Pkg, DistributedNext, Dates
 using REPL.TerminalMenus
+using SparseArrays
 
 export MSR, toMSR, VelReduction, AddedTurbulence, EffWind
-export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray, TurbineData
+export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray, TurbineData, turbine_group, create_n_groups
+export set_yaw!, set_induction!
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
 export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
@@ -37,14 +39,15 @@ export Velocity_Influence, Velocity_None
 export TI_Influence, TI_None
 export IterateOPs_average, IterateOPs_basic, IterateOPs_buffer, IterateOPs_maximum, IterateOPs_weighted
 export Yaw_Constant, Yaw_InterpTurbine, Yaw_SOWFA
+export Induction_Constant, Induction_TGC
 
 export getWindDirT, getWindDirT_EnKF
 export getWindShearT
 export getWindTiT
 export getWindSpeedT, getWindSpeedT_EnKF
 export getDataDir, getDataTI, getDataVel
-export correctDir!
-export getYaw
+export correctDir!, correctTI!, correctVel!
+export getYaw, getInduction
 
 export discretizeRotor, calcCt, States
 export prepareSimulation, importSOWFAFile, centerline!, angSOWFA2world, initSimulation
@@ -61,6 +64,7 @@ export UnifiedBuffers, create_unified_buffers
 export get_default_project
 export select_project
 export get_default_msr, set_default_msr, select_measurement
+export interpolate_hermite_spline
 
 """
     MSR `VelReduction` `AddedTurbulence` `EffWind`
@@ -205,6 +209,7 @@ mutable struct Settings
     cor_turb_mode
     iterate_mode
     control_mode
+    induction_mode
     parallel::Bool
     threading::Bool
 end
@@ -275,12 +280,56 @@ end
 """
     WindDirTriple
 
-A structure representing a wind direction triple. 
+A structure containing the three key parameters for wind direction modeling with mean reversion.
+
+This struct is specifically designed for the `Direction_RW_with_Mean` wind direction mode, 
+which implements a random walk with mean reversion model. The model captures both 
+stochastic wind direction variability and the tendency for wind to return to prevailing 
+climatological directions over time.
 
 # Fields
-- Init::Vector{Float64}:    Mean direction (vector or scalar)
-- CholSig::Matrix{Float64}: Cholesky factor of covariance matrix (nT x nT)
-- MeanPull::Float64:        Scalar mean reversion factor
+- `Init::Vector{Float64}`: Target/equilibrium wind directions for each turbine [°].
+  These represent the long-term average or expected wind directions 
+  that the system tends to revert toward. Each element corresponds to one turbine.
+  
+- `CholSig::Matrix{Float64}`: Cholesky decomposition of the covariance matrix (nT × nT).
+  This matrix encodes both the magnitude of random fluctuations and the spatial 
+  correlations between turbines. It allows for:
+  - Different noise levels for different turbines (diagonal elements)
+  - Cross-correlations between nearby turbines (off-diagonal elements)
+  
+- `MeanPull::Float64`: Mean reversion strength parameter [0, 1].
+  Controls how strongly wind directions are pulled back toward their target values:
+  - `0.0`: No mean reversion (pure random walk)
+  - `1.0`: Maximum reversion (immediate return to target)
+  - Typical values: `0.1` to `0.3` for realistic wind behavior
+
+# Mathematical Model
+The wind direction evolves according to:
+    φ(t+1) = φ(t) + CholSig × ε + MeanPull × (Init - φ(t))
+where `ε` is a vector of independent standard normal random variables.
+
+# Physical Interpretation
+- **Meteorological realism**: `Init` represents seasonal/geographic wind patterns
+- **Spatial correlation**: `CholSig` models how wind direction changes are correlated across the wind farm
+- **Temporal persistence**: `MeanPull` controls how quickly wind returns to prevailing patterns
+
+# Constructor Example
+    # Three turbines with westerly prevailing winds
+    wind_triple = WindDirTriple(
+        Init=[270.0, 275.0, 270.0],           # Slightly different targets per turbine
+        CholSig=0.5 * I(3) + 0.2 * ones(3,3), # 0.5° individual + 0.2° shared noise
+        MeanPull=0.15                         # 15% reversion per time step
+    )
+
+# Usage
+This struct is used with the `Direction_RW_with_Mean` mode in wind field configurations:
+    wind = Wind(
+        input\\_dir="RW\\_with\\_Mean",
+        dir=wind\\_triple
+    )
+
+See also: [`Direction_RW_with_Mean`](@ref), [`Wind`](@ref)
 """
 struct WindDirTriple
     Init::Vector{Float64}      # Mean direction (vector or scalar)
@@ -392,6 +441,7 @@ include("correction/turbulence.jl")
 include("floridyn_cl/prepare_simulation.jl")
 include("floridyn_cl/iterate.jl")
 
+include("controller/splines.jl")
 include("controller/controller.jl")
 include("visualisation/calc_flowfield.jl")
 include("visualisation/calc_power.jl")
@@ -425,12 +475,12 @@ for running FLORIDyn simulations with appropriate plotting callbacks.
 # Returns
 - Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
 """
-function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction)
+function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction, save_final_only=false)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Multi-threading mode: use remote plotting callback
         # The rmt_plot_flow_field function should be defined via remote_plotting.jl
         try
-            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr)
+            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr, save_final_only)
         catch e
             if isa(e, UndefVarError)
                 error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
@@ -440,7 +490,7 @@ function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=V
         end
     else
         # Single-threading mode: no plotting callback
-        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr)
+        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
     end
 end
 

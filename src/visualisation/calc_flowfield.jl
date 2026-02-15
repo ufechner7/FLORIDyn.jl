@@ -241,7 +241,7 @@ function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, f
     
     if length(buffers.thread_buffers) == 1
         # Single-threaded loop when only one buffer is provided
-        for iGP in 1:length(mx)
+        for iGP in eachindex(mx)
             # Use the single available buffer
             GP = buffers.thread_buffers[1]
             unified_buffers = buffers.thread_unified_buffers[1]
@@ -258,7 +258,7 @@ function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, f
             GP.posNac[end, 3] = zh
 
             # Reset the grid point state
-            for j in 1:size(GP.States_T, 2)
+            for j in axes(GP.States_T, 2)
                 GP.States_T[end, j] = 0.0
             end
 
@@ -277,7 +277,7 @@ function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, f
         end
     else
         # Parallel loop using @threads
-        @threads :static for iGP in 1:length(mx)
+        @threads :static for iGP in eachindex(mx)
             # Get thread-local buffers
             tid = threadid()
             GP = buffers.thread_buffers[tid]
@@ -296,7 +296,7 @@ function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, f
             GP.posNac[end, 3] = zh
             
             # Reset the grid point state (thread-safe element-wise assignment)
-            for j in 1:size(GP.States_T, 2)
+            for j in axes(GP.States_T, 2)
                 GP.States_T[end, j] = 0.0
             end
             

@@ -104,6 +104,11 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
     if Int64(msr) > size(mz, 3)
         error("msr ($msr) exceeds number of measurements ($(size(mz, 3)))")
     end
+
+    scale_factor = 1.0
+    if maximum(mx) > 50000.0
+        scale_factor = 2.5
+    end
     
     # Get the 2D slice
     mz_2d = mz[:, :, Int(msr)]
@@ -139,14 +144,18 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             time_str = lpad(time_str, 4, '0')  # Pad to 4 digits with leading zeros
             title = title * ", t: " * time_str * " s"
         end
+        if length(vis.subtitle) > 0
+            title = title * "; " * vis.subtitle
+        end
         
         # Initialize or update plot state
         if state === nothing
             # First call - create new figure and all elements
-            size = 0.84
+            size = 0.84 * scale_factor
             ratio = (minimum(mx) - maximum(mx)) / (minimum(my) - maximum(my))
             wide = ratio > 2.0
             if wide
+                ratio /= scale_factor
                 size *= 2.5
                 fig = plt.figure(figure_name, figsize=(7.25size+0.5, 7.25size/ratio))
             else

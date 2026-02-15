@@ -137,81 +137,216 @@ function plot_x(times, plot_data...; ylabels=nothing, labels=nothing,
 end
 
 """
-    plot_rmt(X, Ys; xlabel="", ylabel="", labels=nothing, xlims=nothing, ylims=nothing, 
-             ann=nothing, scatter=false, title="", fig="", ysize=14, pltctrl=nothing)
+    plot_rmt(X, Ys...; xlabel="", ylabel="", ylabels=nothing, labels=nothing, 
+             xlims=nothing, ylims=nothing, ann=nothing, scatter=false, title="", 
+             fig="", ysize=14, pltctrl=nothing) -> Nothing
 
-Smart plotting function for remote or sequential execution based on threading/processing environment.
+Smart plotting function that automatically dispatches between remote parallel plotting 
+and sequential plotting based on Julia's threading and multiprocessing environment.
 
-This function automatically chooses between parallel plotting (using remote workers) and 
-sequential plotting (using ControlPlots) based on the current Julia threading and 
-multiprocessing configuration.
+This function provides a unified interface for creating line plots or scatter plots
+that adapts to the available computational resources. It supports both single and 
+multiple data series with comprehensive labeling and styling options.
 
 # Arguments
-- `X`: X-axis data (typically a vector)
-- `Ys`: Y-axis data. Can be a single vector or vector of vectors for multiple series
+- `X`: X-axis data vector (e.g., time points, wind directions, positions)
+- `Ys...`: Variable number of Y-axis data vectors. Each should have the same length as `X`.
+  Can be passed in two ways:
+  - **Splatted vectors** (for multiple Y-axes): `plot_rmt(X, Y1, Y2, ...; ylabels=[...], ...)`
+  - **Vector of vectors** (for single shared Y-axis): `plot_rmt(X, [Y1, Y2]; ylabel="...", ...)`
 - `xlabel::String=""`: Label for the X-axis
-- `ylabel::String=""`: Label for the Y-axis  
-- `labels::Union{Nothing,Vector{String}}=nothing`: Labels for each data series (for legend)
-- `xlims::Union{Nothing,Tuple}=nothing`: X-axis limits as (xmin, xmax)
-- `ylims::Union{Nothing,Tuple}=nothing`: Y-axis limits as (ymin, ymax)
+- `ylabel::String=""`: Label for the Y-axis (only valid for single Y-axis shared by all series)
+- `ylabels::Union{Nothing,Vector{String}}=nothing`: Y-axis labels for multiple Y-axes (one per series)
+- `labels::Union{Nothing,Vector{String}}=nothing`: Legend labels for each data series
+- `xlims::Union{Nothing,Tuple{Real,Real}}=nothing`: X-axis limits as `(xmin, xmax)`
+- `ylims::Union{Nothing,Tuple{Real,Real}}=nothing`: Y-axis limits as `(ymin, ymax)`
 - `ann::Union{Nothing,Vector}=nothing`: Annotations to add to the plot
-- `scatter::Bool=false`: Whether to create a scatter plot instead of line plot
-- `title::String=""`: Plot title
-- `fig::String=""`: Figure window title/identifier
-- `ysize::Int=14`: Size of y-axis labels in points
-- `pltctrl::Union{Nothing,Module}=nothing`: ControlPlots module for sequential plotting
+- `scatter::Bool=false`: Create scatter plot if `true`, line plot if `false`
+- `title::String=""`: Plot title displayed at the top
+- `fig::String=""`: Figure window title/identifier for window management
+- `ysize::Int=14`: Font size for y-axis labels in points
+- `pltctrl::Union{Nothing,Module}=nothing`: ControlPlots module instance for sequential plotting
 
-# Behavior
-- **Multithreaded + Multiprocessing**: Uses `@spawnat 2 Main.rmt_plot()` for parallel execution
-- **Single-threaded or Single-process**: Uses `pltctrl.plot()` for sequential execution
+# Returns
+- `Nothing`: Function executes for side effects (displays plot)
 
-# Threading Requirements
-- **Parallel mode**: Requires `Threads.nthreads() > 1`, `nprocs() > 1`, and `pltctrl === nothing`
-- **Sequential mode**: Requires `pltctrl` to be the ControlPlots module
+# Execution Modes
 
-# Examples
+## Parallel Mode (Remote Plotting)
+**Conditions**: `Threads.nthreads() > 1` AND `nprocs() > 1` AND `pltctrl === nothing`
+- Executes plotting on remote worker process 2 using `@spawnat 2 Main.rmt_plot(...)`
+- Reduces main process computational load for large datasets
+
+## Sequential Mode (Local Plotting)  
+**Conditions**: Single-threaded OR single-process OR `pltctrl` provided
+- Uses provided `pltctrl` (ControlPlots module) for local execution
+- Required for unit testing and environments without multiprocessing
+- Calls `pltctrl.plot(...)` with appropriate parameter combinations
+
+# Parameter Validation
+- **Length consistency**: All `Ys` vectors must match `X` length
+- **Label compatibility**: 
+  - `ylabel` (single Y-axis) is used when passing a vector of vectors: `plot_rmt(X, [Y1, Y2]; ylabel="...")`
+  - `ylabels` (multiple Y-axes) is used when splatting vectors: `plot_rmt(X, Y1, Y2; ylabels=["...", "..."])`
+  - Cannot use `ylabel` with multiple splatted series
+- **Required arguments**: `pltctrl` is mandatory for sequential mode
+
+# Multiple Y Series: Two Approaches
+
+## Approach 1: Vector of Vectors (Single Shared Y-axis)
+Use when all series share the same Y-axis label and scale:
 ```julia
-# Sequential plotting (single-threaded)
-using ControlPlots
-wind_dirs = [180.0, 200.0, 220.0, 240.0]
-powers = [0.85, 0.92, 0.88, 0.76]
-plot_rmt(wind_dirs, powers; xlabel="Wind Direction (deg)", ylabel="Relative Power", 
-         title="Power vs Wind Direction", pltctrl=ControlPlots)
+time = 1:10
+series1 = rand(10)
+series2 = rand(10)
 
-# Multiple data series
-power_data = [[0.85, 0.92, 0.88, 0.76], [0.80, 0.89, 0.85, 0.72]]
-plot_rmt(wind_dirs, power_data; xlabel="Wind Direction (deg)", ylabel="Relative Power",
-         labels=["Configuration A", "Configuration B"], pltctrl=ControlPlots)
-
-# Parallel plotting (multithreaded + multiprocessing)
-# Automatically uses remote worker when threads > 1 and processes > 1
-plot_rmt(wind_dirs, powers; xlabel="Wind Direction (deg)", ylabel="Relative Power")
+# Pass as a vector of vectors - all series share one Y-axis
+plot_rmt(time, [series1, series2]; 
+         xlabel="Time", 
+         ylabel="Values",  # Single ylabel for shared axis
+         labels=["Series 1", "Series 2"], 
+         pltctrl=ControlPlots)
 ```
 
-# Notes
-- The function returns `nothing` and displays the plot as a side effect
-- In parallel mode, plotting occurs on worker process 2 via `@spawnat`
-- In sequential mode, the plot is displayed using `display(p)` 
-- Error handling ensures appropriate `pltctrl` parameter for sequential execution
+## Approach 2: Splatted Vectors (Two Y-axes)
+Use when each series needs its own Y-axis label:
+```julia
+wind_dirs = [180, 200, 220, 240, 260, 280]
+power = [0.85, 0.92, 0.88, 0.76, 0.65, 0.58]
+thrust = [120, 135, 142, 138, 125, 110]
+
+# Pass as separate arguments with splatting - each gets its own Y-axis
+plot_rmt(wind_dirs, power, thrust;
+         xlabel="Wind Direction (°)", 
+         ylabels=["Power (MW)", "Thrust (kN)"],  # Separate label per Y-axis
+         labels=["Power", "Thrust"], 
+         pltctrl=ControlPlots)
+```
+
+# Examples
+
+## Single Data Series
+```julia
+using ControlPlots
+time = 0:0.1:10
+power = sin.(time) .+ 1
+plot_rmt(time, power; 
+         xlabel="Time (s)", ylabel="Power (MW)", 
+         title="Turbine Power Output", pltctrl=ControlPlots)
+```
+
+## Multiple Series on Shared Y-axis (Vector of Vectors)
+```julia
+using ControlPlots
+time = 1:10
+series1 = rand(10)
+series2 = rand(10)
+
+plot_rmt(time, [series1, series2]; 
+         xlabel="Time", 
+         ylabel="Values",
+         labels=["Series 1", "Series 2"], 
+         title="Two Time Series",
+         pltctrl=ControlPlots)
+```
+
+## Multiple Series with Separate Y-axes (Splatted)
+```julia
+using ControlPlots
+wind_dirs = [180, 200, 220, 240, 260, 280]
+power_t1 = [0.85, 0.92, 0.88, 0.76, 0.65, 0.58]
+power_t2 = [0.80, 0.89, 0.85, 0.72, 0.61, 0.55]
+
+plot_rmt(wind_dirs, power_t1, power_t2;
+         xlabel="Wind Direction (°)", 
+         ylabels=["Power T1 (MW)", "Power T2 (MW)"],
+         labels=["Turbine 1", "Turbine 2"], 
+         title="Power vs Wind Direction",
+         xlims=(175, 285), pltctrl=ControlPlots)
+```
+
+## Scatter Plot with Annotations
+```julia
+x_pos = [0, 500, 1000, 1500]
+y_pos = [0, 200, -100, 300]
+plot_rmt(x_pos, y_pos; 
+         xlabel="X Position (m)", ylabel="Y Position (m)",
+         scatter=true, title="Turbine Layout",
+         ann=["T1", "T2", "T3", "T4"], pltctrl=ControlPlots)
+```
+
+## Automatic Parallel Execution
+```julia
+# When Julia started with: julia -p 2 -t 4
+# Automatically uses remote plotting (no pltctrl needed)
+plot_rmt(wind_speeds, power_curve; 
+         xlabel="Wind Speed (m/s)", ylabel="Power (MW)",
+         title="Power Curve")
+```
+
+# Error Handling
+- `ArgumentError`: Length mismatch between `X` and any `Ys` vector
+- `ArgumentError`: Using `ylabel` with multiple splatted series (use `ylabels` instead)
+- `ErrorException`: Missing `pltctrl` in sequential mode
+
+# Implementation Details
+The function uses conditional dispatch based on Julia's threading and multiprocessing state:
+1. Checks `Threads.nthreads() > 1 && nprocs() > 1 && pltctrl === nothing`
+2. **If true**: Parallel execution via `@spawnat 2 Main.rmt_plot(...)`
+3. **If false**: Sequential execution via `pltctrl.plot(...)` with parameter branching
 
 # See Also
-[`plot_x`](@ref), [`plot_flow_field`](@ref), [`plot_measurements`](@ref)
+- [`plot_x`](@ref): Time series plotting with automatic subplot generation
+- [`plot_flow_field`](@ref): 2D/3D flow field visualization
+- [`plot_measurements`](@ref): Wind farm measurement data plotting
+- [`ControlPlots.plot`]: Underlying plotting function for sequential mode
 """
-function plot_rmt(X, Ys; xlabel="", ylabel="", labels=nothing, xlims=nothing, ylims=nothing, ann=nothing, 
+function plot_rmt(X, Ys...; xlabel="", ylabel="", ylabels=nothing, labels=nothing, xlims=nothing, ylims=nothing, ann=nothing, 
     scatter=false, title="", fig="", ysize=14, pltctrl=nothing)
+    
+    # Parameter validation: Ensure X and each Y in Ys have compatible dimensions
+    if length(Ys) > 1
+        # Multiple Y series detected
+        for (i, Y) in pairs(Ys)
+            if length(X) != length(Y)
+                throw(ArgumentError("Length of X ($(length(X))) does not match length of Ys[$i] ($(length(Y)))."))
+            end
+        end
+    else
+        # Single Y series detected
+        if length(Ys) == 1 && !isa(Ys[1], AbstractArray{<:AbstractArray})
+            Y = Ys[1]
+            if length(X) != length(Y)
+                throw(ArgumentError("Length of X ($(length(X))) does not match length of Ys[1] ($(length(Y)))."))
+            end
+        else
+            for (i, Y) in pairs(Ys[1])
+                 if length(X) != length(Y)
+                    throw(ArgumentError("Length of X ($(length(X))) does not match length of Ys[1][$i] ($(length(Y)))."))
+                end
+            end
+        end
+    end
+    # Validate ylabel vs multiple Y series
+    if ylabel != "" && length(Ys) > 1
+        throw(ArgumentError("Cannot use ylabel with multiple Y series (detected $(length(Ys))). Use ylabels instead, e.g. ylabels=[\"Series 1\", \"Series 2\"]."))
+    end
 
     if Threads.nthreads() > 1 && nprocs() > 1 && pltctrl === nothing
         # Use parallel plotting with remote worker
-        @spawnat 2 Main.rmt_plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+
+        @spawnat 2 Main.rmt_plot(X, Ys...; xlabel, ylabel, ylabels, labels, xlims, ylims, ann, scatter, title, fig, ysize)
     else
         # Use sequential plotting
         if pltctrl === nothing
             error("pltctrl argument is required for sequential plotting (threads=$(Threads.nthreads()), procs=$(nprocs())). Pass the ControlPlots module as pltctrl keyword.")
         end
-        if isnothing(labels)
-            p = pltctrl.plot(X, Ys; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+        if isnothing(labels) && length(Ys) == 1
+            p = pltctrl.plot(X, Ys...; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+        elseif isnothing(ylabels)
+            p = pltctrl.plot(X, Ys...; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
         else
-            p = pltctrl.plot(X, Ys; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+            p = pltctrl.plot(X, Ys...; xlabel, ylabels, labels, title, fig, ysize)
         end
         
         display(p)  # Ensure the plot is displayed

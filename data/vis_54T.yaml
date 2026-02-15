@@ -6,6 +6,7 @@ vis:
   print_filenames: false # If true, print the names of the saved files
   video_folder: "video"  # Relative video folder path
   fps: 12                # Frames per second for video output
+  t_skip: 1500.0         # Time in seconds to skip at beginning of simulation for visualization
   output_folder: "out"   # Relative output folder path
   unique_output_folder: true # If true, a unique output folder is created for each simulation run
   skip_flow_fields: false    # When true, do not create flow field visualizations
@@ -59,6 +60,6 @@ vis:
   rel_v_max: 100.0 # Unit: [%]
   # Maximum turbulence value for added turbulence visualizations (msr=AddedTurbulence)
   # Controls the upper limit for turbulence plots
-  turb_max: 40.0   # Turbulence intensity, Unit: [%]
+  turb_max: 48.0   # Turbulence intensity, Unit: [%]
   up_int: 1        # Update interval - how frequently visualization updates occur  [s]
   unit_test: false # When true, closes plots automatically after 1 second
