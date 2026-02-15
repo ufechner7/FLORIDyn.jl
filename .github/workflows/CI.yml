@@ -59,12 +59,16 @@ jobs:
           mv ${RELEASE_NAME}/ffmpeg ${RELEASE_NAME}/ffprobe /usr/local/bin/
           rm -rf ${RELEASE_NAME}
       - uses: actions/checkout@v5
+      - name: Install system Python and matplotlib
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-matplotlib
       - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}  
       - name: Build PyCall
-        run: julia -e 'ENV["PYTHON"]=""; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
+        run: julia -e 'ENV["PYTHON"]="/usr/bin/python3"; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
         shell: bash
       - name: Install matplotlib
         run: julia -e 'using Pkg; Pkg.add("ControlPlots"); using ControlPlots'
@@ -168,11 +172,13 @@ jobs:
       - name: Wait for dpkg lock
         run: sudo bash -c 'while fuser /var/lib/dpkg/lock-frontend >/dev/null 2>&1; do echo "Waiting for dpkg lock..."; sleep 1; done'
       - name: Install matplotlib
-        run: sudo apt-get install -y python3-matplotlib
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3 python3-matplotlib
       - uses: actions/checkout@v5
       - uses: julia-actions/setup-julia@v2
       - name: Build PyCall
-        run: julia --project=docs/ -e 'ENV["PYTHON"]=""; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); Pkg.build("PyCall")'
+        run: julia --project=docs/ -e 'ENV["PYTHON"]="/usr/bin/python3"; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); Pkg.build("PyCall")'
         shell: bash
       - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
