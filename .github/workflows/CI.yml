@@ -119,7 +119,7 @@ jobs:
       - uses: julia-actions/cache@v2
       - name: Rebuild PyCall
         run: |
-          rm -f $HOME/.julia/packages/PyCall/*/deps/deps.jl
+          Remove-Item -Force -ErrorAction SilentlyContinue $env:USERPROFILE\.julia\packages\PyCall\*\deps\deps.jl
           julia -e 'ENV["PYTHON"]=""; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
       - name: Install matplotlib
         run: julia -e 'using Pkg; Pkg.add("ControlPlots"); using ControlPlots'
