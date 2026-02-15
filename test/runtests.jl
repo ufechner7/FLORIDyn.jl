@@ -55,6 +55,7 @@ all_test_files = [
     "test_tit.jl",
     "test_vel.jl",
     "test_iterate.jl",
+    "test_iterate_average.jl",
     "test_floridyn_cl.jl",
     "test_runfloridyn.jl",
     "test_floris.jl",
@@ -93,6 +94,7 @@ suppress_warning_files = [
     "test_tit.jl", 
     "test_vel.jl",
     "test_iterate.jl",
+    # average iteration currently produces no warnings; keep separate if needed later
     "test_floridyn_cl.jl",
     "test_prepare_simulation.jl",
     "test_getDataVel_branches.jl",
