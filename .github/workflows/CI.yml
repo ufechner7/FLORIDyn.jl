@@ -67,13 +67,15 @@ jobs:
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}  
+      - uses: julia-actions/cache@v2
       - name: Build PyCall
-        run: julia -e 'ENV["PYTHON"]="/usr/bin/python3"; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
+        run: |
+          rm -f ~/.julia/packages/PyCall/*/deps/deps.jl
+          julia -e 'ENV["PYTHON"]="/usr/bin/python3"; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
         shell: bash
       - name: Install matplotlib
         run: julia -e 'using Pkg; Pkg.add("ControlPlots"); using ControlPlots'
         shell: bash
-      - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         if: matrix.threads != 'auto'
@@ -116,7 +118,9 @@ jobs:
           arch: x64
       - uses: julia-actions/cache@v2
       - name: Rebuild PyCall
-        run: julia -e 'ENV["PYTHON"]=""; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
+        run: |
+          rm -f $HOME/.julia/packages/PyCall/*/deps/deps.jl
+          julia -e 'ENV["PYTHON"]=""; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
       - name: Install matplotlib
         run: julia -e 'using Pkg; Pkg.add("ControlPlots"); using ControlPlots'
         shell: bash
@@ -148,9 +152,11 @@ jobs:
       - uses: julia-actions/setup-julia@v2
         with:
           version: '1' # latest stable Julia
-      - name: Set up PyCall to use system Python
-        run: julia -e 'ENV["PYTHON"]="/opt/homebrew/bin/python3"; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
       - uses: julia-actions/cache@v2
+      - name: Set up PyCall to use system Python
+        run: |
+          rm -f ~/.julia/packages/PyCall/*/deps/deps.jl
+          julia -e 'ENV["PYTHON"]="/opt/homebrew/bin/python3"; using Pkg; Pkg.add("PyCall"); Pkg.build("PyCall")'
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
@@ -177,10 +183,12 @@ jobs:
           sudo apt-get install -y python3 python3-matplotlib
       - uses: actions/checkout@v5
       - uses: julia-actions/setup-julia@v2
-      - name: Build PyCall
-        run: julia --project=docs/ -e 'ENV["PYTHON"]="/usr/bin/python3"; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); Pkg.build("PyCall")'
-        shell: bash
       - uses: julia-actions/cache@v2
+      - name: Build PyCall
+        run: |
+          rm -f ~/.julia/packages/PyCall/*/deps/deps.jl
+          julia --project=docs/ -e 'ENV["PYTHON"]="/usr/bin/python3"; using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate(); Pkg.build("PyCall")'
+        shell: bash
       - uses: julia-actions/julia-buildpkg@v1
       - name: Build documentation
         run: |
