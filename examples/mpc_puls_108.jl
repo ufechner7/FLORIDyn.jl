@@ -236,7 +236,7 @@ if isfile(reference_file) && USE_ADVECTION
     demand_ref = ref_data["total_power"]
     # Replace values below 100 MW with last valid value
     let last_valid = 0.0, n_replaced = 0
-        for i in 1:length(demand_ref)
+        for i in eachindex(demand_ref)
             if demand_ref[i] >= 100 && ! isnan(demand_ref[i])
                 last_valid = demand_ref[i]
             elseif last_valid > 0
@@ -269,7 +269,7 @@ end
 
 # Replace values below 100 MW with last valid value
 let last_valid = 0.0, n_replaced = 0
-    for i in 1:length(demand_abs)
+    for i in eachindex(demand_abs)
         if demand_abs[i] >= 100
             last_valid = demand_abs[i]
         elseif last_valid > 0
