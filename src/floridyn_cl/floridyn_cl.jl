@@ -452,7 +452,7 @@ end
 
 function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
     windshear = wind.shear
-    isnothing(windshear) && error("wind.shear must be initialised before calling setUpTmpWFAndRun!.")
+    isnothing(windshear) && error("wind.shear must be initialized before calling setUpTmpWFAndRun!.")
     run_floris_fn = getfield(FLORIDyn, :runFLORIS!)
 
     # Reuse the provided M_buffer instead of allocating new
@@ -736,13 +736,13 @@ and the defined time step, ensuring the index stays within valid bounds.
 """
 function get_demand(con::Con, sim::Sim, time)
     time_step = sim.time_step
-    isnothing(time_step) && error("sim.time_step must be initialised before calling get_demand.")
+    isnothing(time_step) && error("sim.time_step must be initialized before calling get_demand.")
 
     sim_steps = sim.n_sim_steps
-    isnothing(sim_steps) && error("sim.n_sim_steps must be initialised before calling get_demand.")
+    isnothing(sim_steps) && error("sim.n_sim_steps must be initialized before calling get_demand.")
 
     demand_data = con.demand_data
-    isnothing(demand_data) && error("con.demand_data must be initialised before calling get_demand.")
+    isnothing(demand_data) && error("con.demand_data must be initialized before calling get_demand.")
 
     index = Int(clamp(floor(time / time_step) + 1, 1, sim_steps + 1))
     return demand_data[index]
@@ -754,7 +754,7 @@ function create_unified_buffers(wf::WindFarm, floris::Floris)
 
     # Calculate rotor discretization points if wind farm has turbines
     n_rotor_points = if wf.D[end] > 0
-        isnothing(rotor_points) && error("floris.rotor_points must be initialised before creating unified buffers.")
+        isnothing(rotor_points) && error("floris.rotor_points must be initialized before creating unified buffers.")
         RPl, _ = discretize_rotor_fn(rotor_points)
         size(RPl, 1)
     else
@@ -767,10 +767,10 @@ end
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris; rmt_plot_fn=nothing, 
                           msr=VelReduction, debug=nothing, save_final_only=false)
     sim_steps = sim.n_sim_steps
-    isnothing(sim_steps) && error("sim.n_sim_steps must be initialised before calling runFLORIDyn.")
+    isnothing(sim_steps) && error("sim.n_sim_steps must be initialized before calling runFLORIDyn.")
 
     sim_start_time = sim.start_time
-    isnothing(sim_start_time) && error("sim.start_time must be initialised before calling runFLORIDyn.")
+    isnothing(sim_start_time) && error("sim.start_time must be initialized before calling runFLORIDyn.")
 
     nT = wf.nT
     ma = zeros(sim_steps * nT, 6)
@@ -870,7 +870,10 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
                     plt.pause(0.01)
                 else
                     # @info "time: $t_rel, plotting with rmt_plot_fn"
-                    @spawnat 2 rmt_plot_fn(wf, X, Y, Z, vis, t_rel - vis.t_skip; msr=msr)
+                    wf_plot = wf
+                    t_plot = t_rel - vis.t_skip
+                    msr_plot = msr
+                    @spawnat 2 rmt_plot_fn(wf_plot, X, Y, Z, vis, t_plot; msr=msr_plot)
                 end
             end
         end
