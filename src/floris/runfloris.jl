@@ -86,12 +86,16 @@ in the buffers to avoid allocations.
 This function is **private** and intended for internal use only.
 """
 function prepare_rotor_points!(buffers::FLORISBuffers, location_t, states_t, d_rotor, floris::Floris)
-    if d_rotor[end] > 0
-        discretize_rotor_fn = getfield(FLORIDyn, :discretizeRotor)
-        RPl, RPw = discretize_rotor_fn(floris.rotor_points)
+    RPl, RPw = if d_rotor[end] > 0
+        rotor_points = floris.rotor_points
+        if isnothing(rotor_points)
+            error("floris.rotor_points must be initialized before calling runFLORIS!.")
+        else
+            discretize_rotor_fn = getfield(FLORIDyn, :discretizeRotor)
+            discretize_rotor_fn(rotor_points::Int)
+        end
     else
-        RPl = SA[0.0 0.0 0.0]
-        RPw = SA[1.0]
+        (SA[0.0 0.0 0.0], SA[1.0])
     end
     
     # Yaw rotation for last turbine
@@ -139,7 +143,7 @@ function prepare_rotor_points!(buffers::FLORISBuffers, location_t, states_t, d_r
 end
 
 """
-    handle_single_turbine!(buffers::FLORISBuffers, RPl, RPw, location_t, set::Settings, windshear, d_rotor)
+    handle_single_turbine!(buffers::FLORISBuffers, RPl, RPw, location_t, set::Settings, windshear)
 
 Handle the special case when there is only one turbine in the simulation.
 
@@ -153,7 +157,6 @@ the appropriate buffer arrays. It returns early to avoid the multi-turbine wake 
 - `location_t`: Turbine locations matrix
 - `set::Settings`: Simulation settings
 - `windshear`: Wind shear data
-- `d_rotor`: Rotor diameter array
 
 # Returns
 - `nothing` (results stored in buffers)
@@ -162,7 +165,7 @@ the appropriate buffer arrays. It returns early to avoid the multi-turbine wake 
 This function is **private** and intended for internal use only.
 """
 function handle_single_turbine!(buffers::FLORISBuffers, RPl, RPw, location_t, set::Settings, 
-                               windshear, d_rotor)
+                               windshear)
     # Avoid allocating RPl[:,3] and the broadcasted division by using a buffer
     nRP_local = size(RPl, 1)
     if length(buffers.tmp_RPs_r) < nRP_local
@@ -511,7 +514,7 @@ function runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf
     
     # Handle single turbine case
     if length(d_rotor) == 1
-        return handle_single_turbine!(buffers, RPl, RPw, location_t, set, windshear, d_rotor)
+        return handle_single_turbine!(buffers, RPl, RPw, location_t, set, windshear)
     end
     
     # Setup computation buffers

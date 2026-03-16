@@ -786,9 +786,8 @@ The function performs these steps:
 - [`Interpolations.jl`](https://github.com/JuliaMath/Interpolations.jl): Underlying interpolation library
 """
 function cp_fun(filename = "data/DTU_10MW/cp.csv")	
-    local cp_df
-    try
-        cp_df = CSV.read(filename, DataFrame; header=1)
+    cp_df = try
+        CSV.read(filename, DataFrame; header=1)
     catch err
         error("Failed to read CSV file '$(filename)': $(err). Please check that the file exists and is a valid CSV with the expected format.")
     end
@@ -914,12 +913,12 @@ Where:
 - [`TurbineArray`](@ref): Container for multiple turbines with their positions and types
 - [`setup`](@ref): Main configuration loader that creates TurbineProperties instances
 """
-@with_kw mutable struct TurbineProperties
+@with_kw mutable struct TurbineProperties{F}
     name::String = "DTU 10MW"
     gearbox_ratio::Float64 = 50.0
     inertia_total::Float64 = 1.409969209E+08
     rotor_radius::Float64 = 89.2
-    cp_fun::Function
+    cp_fun::F
     fluid_density::Float64 = 1.23
     gearbox_efficiency::Float64 = 1.0
 end
@@ -1274,9 +1273,10 @@ function get_default_project()
     if default_name === nothing
         # Create local data dir and write default.yaml with first project
         mkpath(data_dir_local)
-        open(default_path_local, "w") do io
-            write(io, "default:\n  name: $(first_name)\n  msr: $(string(default_msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
-        end
+        msr_str = string(default_msr)
+        io = open(default_path_local, "w")
+        write(io, "default:\n  name: $(first_name)\n  msr: $(msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+        close(io)
         default_name = first_name
     end
 
@@ -1292,9 +1292,10 @@ function get_default_project()
     if chosen === nothing
         # Fallback to first project and update default.yaml accordingly
         chosen = first_project
-        open(default_path_local, "w") do io
-            write(io, "default:\n  name: $(String(chosen["name"]))\n  msr: $(string(default_msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
-        end
+        msr_str = string(default_msr)
+        io = open(default_path_local, "w")
+        write(io, "default:\n  name: $(String(chosen["name"]))\n  msr: $(msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+        close(io)
     end
 
     # Build settings and vis file paths (prefer local workspace, fall back to package data)
@@ -1347,7 +1348,7 @@ function select_project()
 
     # Create menu options with project names and descriptions
     project_options = String[]
-    for (name, description, vis) in projs
+    for (name, description, _) in projs
         if isempty(description)
             push!(project_options, name)
         else
@@ -1392,9 +1393,10 @@ function select_project()
         end
     end
     
-    open(default_path_local, "w") do io
-        write(io, "default:\n  name: $(chosen_name)\n  msr: $(string(existing_msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
-    end
+    existing_msr_str = string(existing_msr)
+    io = open(default_path_local, "w")
+    write(io, "default:\n  name: $(chosen_name)\n  msr: $(existing_msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+    close(io)
     println("Selected project saved to data/default.yaml: ", chosen_name)
     return chosen_name
 end
@@ -1457,9 +1459,10 @@ function set_default_msr(msr::MSR)
     end
     
     # Write updated file
-    open(default_path_local, "w") do io
-        write(io, "default:\n  name: $(default_name)\n  msr: $(string(msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
-    end
+    msr_str = string(msr)
+    io = open(default_path_local, "w")
+    write(io, "default:\n  name: $(default_name)\n  msr: $(msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+    close(io)
     
     println("Default MSR saved to data/default.yaml: ", string(msr))
 end
