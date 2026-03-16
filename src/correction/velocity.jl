@@ -228,14 +228,16 @@ function getDataVel(set::Settings, wind::Wind, wf::WindFarm, t, tmp_m, floris::F
     if wind.input_vel == "I_and_I"
         u, wind.vel = Base.invokelatest(getWindSpeedT, set.vel_mode, wind.vel, idx, t,
                                         wf.States_WF[wf.StartI, 2], floris.p_p)
-        # I_and_I state fields are not part of Wind.vel's declared union type;
-        # use guarded dynamic access to avoid invalid field access on other variants.
-        if hasproperty(wind.vel, :StartTime) && hasproperty(wind.vel, :WSE)
-            start_time = getproperty(wind.vel, :StartTime)
-            wse = getproperty(wind.vel, :WSE)
-            if hasproperty(wse, :Offset) && (t - start_time) > getproperty(wse, :Offset)
+        # I_and_I state fields are not part of Wind.vel's declared union type.
+        # Access them dynamically and skip wake reduction if unavailable.
+        try
+            start_time = Base.invokelatest(getproperty, wind.vel, :StartTime)
+            wse = Base.invokelatest(getproperty, wind.vel, :WSE)
+            offset = Base.invokelatest(getproperty, wse, :Offset)
+            if (t - start_time) > offset
                 u = u ./ tmp_m[:, 1]
             end
+        catch
         end
     elseif wind.input_vel == "RW_with_Mean"
         u = Base.invokelatest(getWindSpeedT, Velocity_RW_with_Mean(), wf.States_WF[wf.StartI, 1], wind.vel)

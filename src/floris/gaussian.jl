@@ -385,7 +385,7 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
         if wind.input_vel == "I_and_I"
             u = getWindSpeedT(set.vel_mode, wind.vel, iT, startTime)
         elseif wind.input_vel == "ZOH_wErrorCov"
-            u = wind.vel.Init
+            u = getWindSpeedT(set.vel_mode, wind.vel, iT, startTime)
         elseif wind.input_vel == "RW_with_Mean"
             # For RW_with_Mean during initialization, use a default value
             # The actual RW_with_Mean logic will be handled in the correction phase
@@ -490,22 +490,22 @@ f_yaw_constraints = [0.5 × tanh((γ_max - γ) × 50) + 0.5] ×
 - Yaw angles are converted from degrees to radians internally
 """
 function getPower(wf::WindFarm, m::AbstractMatrix, floris::Floris, con::Con)
-    a   = wf.States_T[wf.StartI, 1]
-    yaw = deg2rad.(wf.States_T[wf.StartI, 2])
-    
+    a   = vec(wf.States_T[wf.StartI, 1])
+    yaw = deg2rad.(vec(wf.States_T[wf.StartI, 2]))
+
     Cp = 4a .* (1 .- a).^2
-    ueff = m[:, 3]
+    ueff = vec(m[:, 3])
+    d = vec(wf.D)
+    base_power = 0.5 * floris.airDen * π .* (d ./ 2).^2 .* Cp .* ueff.^3 .* floris.eta .* cos.(yaw).^floris.p_p
 
     if con.tanh_yaw
         yaw_range_max = hasproperty(con, :yawRangeMax) ? getproperty(con, :yawRangeMax) : 90.0
         yaw_range_min = hasproperty(con, :yawRangeMin) ? getproperty(con, :yawRangeMin) : -90.0
-        P = 0.5 * floris.airDen * (wf.D / 2).^2 * π .* Cp' .* ueff.^3 .* floris.eta .* 
-            (cos.(yaw).^floris.p_p)' .* 
-            (0.5 * tanh((-yaw + deg2rad.(yaw_range_max)) * 50) + 0.5) * 
-            (-0.5 * tanh((-yaw + deg2rad.(yaw_range_min)) * 50) + 0.5)
+        upper = 0.5 .* tanh.((-yaw .+ deg2rad(yaw_range_max)) .* 50) .+ 0.5
+        lower = -0.5 .* tanh.((-yaw .+ deg2rad(yaw_range_min)) .* 50) .+ 0.5
+        P = base_power .* upper .* lower
     else
-        P = 0.5 * floris.airDen * (wf.D / 2).^2 * π .* Cp' .* ueff.^3 .* floris.eta .* 
-            (cos.(yaw).^floris.p_p)'
+        P = base_power
     end
 
     return P
