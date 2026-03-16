@@ -42,7 +42,7 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 - `phi`: Vector of wind directions for the selected turbines, including random perturbation
 """
 function getWindDirT(::Direction_Constant_wErrorCov, wind::Wind, iT, t)
-    wind_dir = wind.dir
+    wind_dir = wind.dir::WindDirType
     if isa(iT, AbstractArray)
         n = length(iT)
         indices = iT
@@ -194,7 +194,7 @@ end
 
 # Helper function for 1D linear interpolation
 function interp(x, y, t)
-    idx = searchsortedlast(x, t)
+    idx = Base.searchsortedlast(x, t)
     if idx == length(x)
         return y[end]
     elseif idx == 0

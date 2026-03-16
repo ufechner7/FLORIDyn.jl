@@ -34,7 +34,7 @@ end
 # %   The value is interpolated linearly between the setpoints
 # % ======= Input ======
 # % wind_ti    = (t,TI) pairs between which is linearly interpolated
-# % iT        = Index/Indeces of the turbines
+# % iT        = Index/Indices of the turbines
 # % t         = time of request
 # % ======================================================================= %
 
@@ -87,7 +87,7 @@ function getWindTiT(::TI_Interpolation, wind_ti::AbstractMatrix, iT, t)
 
     # Linear interpolation
     # Search for the interval
-    idx = searchsortedlast(times, t)
+    idx = Base.searchsortedlast(times, t)
     if idx == length(times)
         Ti_val = TIs[end]
     elseif times[idx] == t
@@ -115,11 +115,11 @@ end
 # %   requires a .csv in the simulation folder called WindTITurbine.csv
 # %   where each row is a
 # %       time, TI_T0, TI_T1, ... TI_Tn
-# %   setpoint in time. The values are interploated linearly between the
+# %   setpoint in time. The values are interpolated linearly between the
 # %   setpoints.
 # % ======= Input ======
 # % wind_ti    = (t,TI_T0, TI_T1, ... TI_Tn)
-# % iT        = Index/Indeces of the turbines
+# % iT        = Index/Indices of the turbines
 # % t         = time of request
 # % ======================================================================= %
 
