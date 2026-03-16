@@ -311,11 +311,11 @@ function create_unified_buffers(wf::WindFarm, rotor_points=50)
     # Create FLORIS buffers with specified number of rotor points
     n_floris_points = max(rotor_points, 1)
     
-    # Try to create FLORISBuffers if available, otherwise use nothing
+    # Create FLORIS buffers; downstream code requires this to succeed.
     floris_buffers = try
-    FLORISBuffers(n_floris_points)
-    catch
-        nothing
+        FLORISBuffers(n_floris_points)
+    catch err
+        error("Failed to initialize FLORISBuffers: $(err)")
     end
     
     # Prepare a WindFarm buffer for grid-point computations (GP)
