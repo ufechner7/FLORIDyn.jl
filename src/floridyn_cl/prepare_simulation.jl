@@ -16,6 +16,8 @@ The main prepareSimulation function handles:
 - Control system configuration (yaw control)
 - Simulation parameter configuration =#
 
+function prepareSimulation end
+function importSOWFAFile end
 """
     readCovMatrix(cov_data, nT, name)
 

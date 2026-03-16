@@ -21,6 +21,25 @@ using SparseArrays
 function create_thread_buffers end
 function getMeasurements end
 function calcFlowField end
+function getDataDir end
+function create_unified_buffers end
+function copy_model_settings end
+function discretizeRotor end
+function runFLORIS! end
+function runFLORIDyn end
+function run_floridyn end
+function setUpTmpWFAndRun! end
+function prepareSimulation end
+function importSOWFAFile end
+function select_project end
+function createAllVideos end
+function copy_examples end
+function copy_bin end
+function install_examples end
+function get_default_project end
+function get_default_msr end
+function set_default_msr end
+function select_measurement end
 
 """
     MSR `VelReduction` `AddedTurbulence` `EffWind`
@@ -686,11 +705,16 @@ end
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
         settings_file = joinpath(path, "2021_9T_Data.yaml")
-        wind, sim, con, floris, floridyn, ta, tp = Base.invokelatest(setup, settings_file)
+        setup_fn = getfield(FLORIDyn, :setup)
+        prepare_simulation_fn = getfield(FLORIDyn, :prepareSimulation)
+        init_simulation_fn = getfield(FLORIDyn, :initSimulation)
+        run_floridyn_fn = getfield(FLORIDyn, :runFLORIDyn)
+
+        wind, sim, con, floris, floridyn, ta, tp = Base.invokelatest(setup_fn, settings_file)
         set = Settings(wind, sim, con)
-        wf, wind, sim, con, floris = Base.invokelatest(prepareSimulation, set, wind, con, floridyn, floris, ta, sim)
-        wf = Base.invokelatest(initSimulation, wf, sim)
-        Base.invokelatest(runFLORIDyn, nothing, set, wf, wind, sim, con, vis, floridyn, floris)
+        wf, wind, sim, con, floris = Base.invokelatest(prepare_simulation_fn, set, wind, con, floridyn, floris, ta, sim)
+        wf = Base.invokelatest(init_simulation_fn, wf, sim)
+        Base.invokelatest(run_floridyn_fn, nothing, set, wf, wind, sim, con, vis, floridyn, floris)
     end
 
 end

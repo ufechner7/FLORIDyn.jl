@@ -26,6 +26,12 @@ from initialization through time-stepping to final state saving. All functions a
 optimized for performance with minimal memory allocations during the simulation loop.
 =#
 
+function setUpTmpWFAndRun! end
+function runFLORIS! end
+function create_unified_buffers end
+function discretizeRotor end
+function runFLORIDyn end
+
 """
     angSOWFA2world(deg_SOWFA) -> Float64
 
@@ -453,6 +459,7 @@ end
 function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
     windshear = wind.shear
     isnothing(windshear) && error("wind.shear must be initialised before calling setUpTmpWFAndRun!.")
+    run_floris_fn = getfield(FLORIDyn, :runFLORIS!)
 
     # Reuse the provided M_buffer instead of allocating new
     ub.M_buffer .= 0.0  # Clear the buffer
@@ -483,7 +490,7 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
 
         if isempty(wf.dep[iT])
             # Single turbine case - use pre-allocated FLORIS buffers
-            runFLORIS!(
+            run_floris_fn(
                 ub.floris_buffers,
                 set,
                 (wf.posBase[iT,:] +wf.posNac[iT,:])',
@@ -590,7 +597,7 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
         tmp_Tpos_view = @view ub.tmp_Tpos_buffer[1:tmp_nT, :]
         tmp_WF_view = @view ub.tmp_WF_buffer[1:tmp_nT, :]
         tmp_Tst_view = @view ub.tmp_Tst_buffer[1:tmp_nT, :]
-        runFLORIS!(ub.floris_buffers, set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, windshear)
+        run_floris_fn(ub.floris_buffers, set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, windshear)
         T_red_arr, T_aTI_arr, T_weight = ub.floris_buffers.T_red_arr, ub.floris_buffers.T_aTI_arr, ub.floris_buffers.T_weight
 
         T_red = prod(T_red_arr)
@@ -749,11 +756,12 @@ end
 
 function create_unified_buffers(wf::WindFarm, floris::Floris)
     rotor_points = floris.rotor_points
+    discretize_rotor_fn = getfield(FLORIDyn, :discretizeRotor)
 
     # Calculate rotor discretization points if wind farm has turbines
     n_rotor_points = if wf.D[end] > 0
         isnothing(rotor_points) && error("floris.rotor_points must be initialised before creating unified buffers.")
-        RPl, _ = discretizeRotor(rotor_points)
+        RPl, _ = discretize_rotor_fn(rotor_points)
         size(RPl, 1)
     else
         1
@@ -792,8 +800,11 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
     plot_state = nothing  # Initialize animation state
     
     buffers = FLORIDyn.IterateOPsBuffers(wf)
+    create_unified_buffers_fn = getfield(FLORIDyn, :create_unified_buffers)
+    setup_tmp_wf_and_run_fn = getfield(FLORIDyn, :setUpTmpWFAndRun!)
+    calc_flow_field_fn = getfield(FLORIDyn, :calcFlowField)
     # Create unified buffers for all operations with FLORIS parameters
-    unified_buffers = create_unified_buffers(wf, floris)
+    unified_buffers = create_unified_buffers_fn(wf, floris)
     # Create buffers for interpolateOPs! (will be resized as needed)
     intOPs_buffers = [Matrix{Float64}(undef, 0, 4) for _ in 1:wf.nT]
     
@@ -824,7 +835,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         if sim_steps == 1 && ! isnothing(debug)
             debug[1] = deepcopy(wf)
         end
-        setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
+        setup_tmp_wf_and_run_fn(unified_buffers, wf, set, floris, wind)
         tmpM = unified_buffers.M_buffer
 
         ma[(it - 1) * nT + 1 : it * nT, 2:4] .= @view tmpM[1:nT, :]
@@ -867,7 +878,6 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
             
             if should_plot
                 @info "time: $t_rel, plotting flow field"
-                calc_flow_field_fn = getfield(FLORIDyn, :calcFlowField)
                 Z, X, Y = Base.invokelatest(calc_flow_field_fn, set, wf, wind, floris; plt, vis)
                 rel_vel = Z[:,:,1]
                 if any(isnan, rel_vel)

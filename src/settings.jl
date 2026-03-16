@@ -46,6 +46,12 @@ Turbine specifications are loaded from data/turbine_specs.yaml for extensibility
 # Forward declarations avoid early-binding world-age diagnostics in static analysis.
 function getTurbineData end
 function importSOWFAFile end
+function list_projects end
+function get_default_project end
+function select_project end
+function get_default_msr end
+function set_default_msr end
+function select_measurement end
 
 """
     WindPerturbation
