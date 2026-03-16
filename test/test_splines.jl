@@ -75,8 +75,8 @@ import FLORIDyn: interpolate_hermite_spline
             vals = [interpolate_hermite_spline(s, correction) for s in 0.0:0.1:1.0]
             
             # Check that values are generally increasing (allowing for small numerical variations)
-            for i in 2:length(vals)
-                @test vals[i] >= vals[i-1] - 1e-10
+            for (prev_val, val) in zip(vals, @view vals[2:end])
+                @test val >= prev_val - 1e-10
             end
         end
     end

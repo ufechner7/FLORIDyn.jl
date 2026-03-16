@@ -47,7 +47,7 @@ function open_documentation()
             println("Please manually open: $doc_url")
         end
         println("Documentation URL: $doc_url")
-    catch e
+    catch
         println("Could not open browser automatically.")
         println("Please manually open: $doc_url")
     end
