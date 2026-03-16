@@ -603,7 +603,7 @@ function _resolve_data_path(filename::String)
     if isfile(filename)
         return filename
     end
-    pkg_root = joinpath(dirname(pathof(@__MODULE__)), "..")
+    pkg_root = PACKAGE_ROOT
     candidates = [
         joinpath(pwd(), filename),                 # relative to CWD
         joinpath(pwd(), "data", filename),        # under local data/
@@ -1104,7 +1104,7 @@ function getTurbineData(names::Vector{String})
 end
 
 function importSOWFAFile(filename, data_lines = 2:typemax(Int))
-    pkg_path = joinpath(dirname(pathof(@__MODULE__)), "..")
+    pkg_path = PACKAGE_ROOT
     if ! isfile(filename)
         filename = joinpath(pkg_path, filename)
     end
@@ -1203,7 +1203,7 @@ Lookup strategy:
 """
 function get_default_project()
     # Resolve package root for read fallbacks
-    pkg_root = joinpath(dirname(pathof(@__MODULE__)), "..")
+    pkg_root = PACKAGE_ROOT
 
     # Paths (prefer local workspace data dir)
     data_dir_local = joinpath(pwd(), "data")
@@ -1305,7 +1305,7 @@ Return a list of available projects as tuples `(name, description, vis)` using t
 projects.yaml discovery logic as `get_default_project()`.
 """
 function list_projects()
-    pkg_root = joinpath(dirname(pathof(@__MODULE__)), "..")
+    pkg_root = PACKAGE_ROOT
     projects_path_local = joinpath(pwd(), "data", "projects.yaml")
     projects_path = isfile(projects_path_local) ? projects_path_local : joinpath(pkg_root, "data", "projects.yaml")
     if !isfile(projects_path)

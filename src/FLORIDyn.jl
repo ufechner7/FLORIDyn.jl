@@ -17,6 +17,8 @@ using Dates, DistributedNext, Pkg, StaticArrays, Statistics
 using REPL.TerminalMenus
 using SparseArrays
 
+const PACKAGE_ROOT = normpath(joinpath(@__DIR__, ".."))
+
 """
     MSR `VelReduction` `AddedTurbulence` `EffWind`
 
@@ -117,7 +119,7 @@ end
 function str2type(name)
     typename = Symbol(name)
     t = getfield(FLORIDyn, typename)
-    instance = t()
+    t()
 end
 
 # marker structs
@@ -150,17 +152,17 @@ A mutable struct that holds configuration parameters for the FLORIDyn simulation
 - `parallel::Bool`:  Run plotting in a separate process.
 - `threading::Bool`: Enable threading for parallel computation within a single process
 """
-mutable struct Settings
-    vel_mode::VelModel
-    dir_mode::DirModel
-    turb_mode
-    shear_mode
-    cor_dir_mode
-    cor_vel_mode
-    cor_turb_mode
-    iterate_mode
-    control_mode
-    induction_mode
+mutable struct Settings{VM<:VelModel, DM<:DirModel, TM, SM, CDM, CVM, CTM, IM, CM, INM}
+    vel_mode::VM
+    dir_mode::DM
+    turb_mode::TM
+    shear_mode::SM
+    cor_dir_mode::CDM
+    cor_vel_mode::CVM
+    cor_turb_mode::CTM
+    iterate_mode::IM
+    control_mode::CM
+    induction_mode::INM
     parallel::Bool
     threading::Bool
 end
@@ -448,15 +450,13 @@ function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=V
     if Threads.nthreads() > 1 && nprocs() > 1
         # Multi-threading mode: use remote plotting callback
         # The rmt_plot_flow_field function should be defined via remote_plotting.jl
-        try
-            return run_floridyn_core_fn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr, save_final_only)
-        catch e
-            if isa(e, UndefVarError)
-                error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
-            else
-                rethrow(e)
-            end
+        callback_name = Symbol("rmt_plot_flow_field")
+        if !isdefined(Main, callback_name)
+            error("$(callback_name) function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
         end
+
+        rmt_plot_flow_field_fn = getfield(Main, callback_name)
+        return run_floridyn_core_fn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=rmt_plot_flow_field_fn, msr, save_final_only)
     else
         # Single-threading mode: no plotting callback
         return run_floridyn_core_fn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
@@ -495,13 +495,13 @@ function copy_model_settings()
     copy_files("data", files)
     
     # Copy the 2021_9T_Data directory and all its contents
-    src_data_dir = joinpath(dirname(pathof(@__MODULE__)), "..", "data", "2021_9T_Data")
+    src_data_dir = joinpath(PACKAGE_ROOT, "data", "2021_9T_Data")
     dst_data_dir = joinpath(pwd(), "data", "2021_9T_Data")
     
     if isdir(src_data_dir)
         cp(src_data_dir, dst_data_dir, force=true)
         # Set permissions for all copied files in the directory
-        for (root, dirs, files_in_dir) in walkdir(dst_data_dir)
+        for (root, _, files_in_dir) in walkdir(dst_data_dir)
             for file in files_in_dir
                 chmod(joinpath(root, file), 0o774)
             end
@@ -555,7 +555,7 @@ function copy_bin()
     if ! isdir(PATH) 
         mkdir(PATH)
     end
-    src_path = joinpath(dirname(pathof(@__MODULE__)), "..", PATH)
+    src_path = joinpath(PACKAGE_ROOT, PATH)
     cp(joinpath(src_path, "run_julia"), joinpath(PATH, "run_julia"), force=true)
     chmod(joinpath(PATH, "run_julia"), 0o774)
 end
@@ -572,7 +572,7 @@ function copy_examples()
     if ! isdir(PATH) 
         mkdir(PATH)
     end
-    src_path = joinpath(dirname(pathof(@__MODULE__)), "..", PATH)
+    src_path = joinpath(PACKAGE_ROOT, PATH)
     copy_files("examples", readdir(src_path))
 end
 
@@ -658,7 +658,7 @@ function copy_files(relpath, files)
     if ! isdir(relpath) 
         mkdir(relpath)
     end
-    src_path = joinpath(dirname(pathof(@__MODULE__)), "..", relpath)
+    src_path = joinpath(PACKAGE_ROOT, relpath)
     for file in files
         cp(joinpath(src_path, file), joinpath(relpath, file), force=true)
         chmod(joinpath(relpath, file), 0o774)
@@ -669,8 +669,7 @@ end
 @setup_workload begin
     # Putting some things in `@setup_workload` instead of `@compile_workload` can reduce the size of the
     # precompile file and potentially make loading faster.
-    path = dirname(pathof(@__MODULE__))
-    path = (joinpath(path, "..", "data"))
+    path = joinpath(PACKAGE_ROOT, "data")
     vis = Vis(online=false)
     @compile_workload begin
         # all calls in this block will be precompiled, regardless of whether

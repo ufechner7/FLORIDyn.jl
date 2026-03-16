@@ -120,6 +120,24 @@ using FLORIDyn, Test, LinearAlgebra
         set = Settings(wind, sim, con)
         wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 
+        # Headered CSVs should also load for wErrorCov branches.
+        mktempdir() do tmpdir
+            data_dir = joinpath(tmpdir, "headered_data")
+            cp(joinpath("data", "2021_9T_Data"), data_dir)
+            write(joinpath(data_dir, "WindDir.csv"), "time,phi\n0,255\n20600,255\n20900,195\n21200,195\n")
+            write(joinpath(data_dir, "WindDirCovariance.csv"), "sigma\n0.2\n")
+
+            wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
+            wind.input_dir = "Interpolation_wErrorCov"
+            sim.path_to_data = data_dir
+            set = Settings(wind, sim, con)
+            wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+
+            @test wind.dir isa WindDirMatrix
+            @test wind.dir.Data == [0.0 255.0; 20600.0 255.0; 20900.0 195.0; 21200.0 195.0]
+            @test size(wind.dir.CholSig) == (9, 9)
+        end
+
         # input_ti == "InterpTurbine"
         # TODO: Check that the changes to the function interpid() are correct
         wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
