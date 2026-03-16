@@ -17,6 +17,11 @@ using Dates, DistributedNext, Pkg, StaticArrays, Statistics
 using REPL.TerminalMenus
 using SparseArrays
 
+# Forward declarations for functions referenced before their include files are loaded.
+function create_thread_buffers end
+function getMeasurements end
+function calcFlowField end
+
 """
     MSR `VelReduction` `AddedTurbulence` `EffWind`
 

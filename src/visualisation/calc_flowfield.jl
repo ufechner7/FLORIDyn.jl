@@ -3,6 +3,12 @@
 
 using Base.Threads
 
+# Forward declarations avoid early-binding world-age diagnostics in static analysis.
+function create_thread_buffers end
+function update_thread_buffers! end
+function getMeasurements end
+function calcFlowField end
+
 """
     ThreadBuffers
 
