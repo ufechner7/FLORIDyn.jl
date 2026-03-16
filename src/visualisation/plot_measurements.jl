@@ -62,6 +62,11 @@ function plotMeasurements(plt, wf::WindFarm, md::DataFrame, vis::Vis; separated=
     # Subtract start time
     rel_time = md.Time .- md.Time[1]
 
+    data_column = ""
+    title = "Measurements"
+    ylabel = "Value"
+    msr_name = "measurements"
+
     # Determine measurement type based on msr parameter
     if msr == VelReduction
         data_column = "ForeignReduction"
@@ -202,13 +207,13 @@ function prepare_large_plot_inputs(wf::WindFarm, md::DataFrame, data_column::Abs
     turbine_labels = String[]
     subplot_labels = Vector{String}[]
     turbine_idx = 1
-    for row in 1:rows
+    for _ in 1:rows
         if turbine_idx > n_turbines
             break
         end
         lines_in_subplot = Vector{Vector{Float64}}()
         labels_in_subplot = String[]
-        for line in 1:lines
+        for _ in 1:lines
             if turbine_idx <= n_turbines
                 push!(lines_in_subplot, msr_matrix[:, turbine_idx])
                 push!(labels_in_subplot, "T$(turbines[turbine_idx])")

@@ -395,7 +395,8 @@ function init_states(set::Settings, wf::WindFarm, wind::Wind, init_turb, floris:
         end
 
         if wind.input_dir == "RW_with_Mean"
-            phi_s = wind.dir.Init[iT]
+            wind_dir_triple = wind.dir::WindDirTriple
+            phi_s = wind_dir_triple.Init[iT]
         else
             phi_s = getWindDirT(set.dir_mode, wind, iT, startTime)
         end
@@ -496,10 +497,12 @@ function getPower(wf::WindFarm, m::AbstractMatrix, floris::Floris, con::Con)
     ueff = m[:, 3]
 
     if con.tanh_yaw
+        yaw_range_max = hasproperty(con, :yawRangeMax) ? getproperty(con, :yawRangeMax) : 90.0
+        yaw_range_min = hasproperty(con, :yawRangeMin) ? getproperty(con, :yawRangeMin) : -90.0
         P = 0.5 * floris.airDen * (wf.D / 2).^2 * π .* Cp' .* ueff.^3 .* floris.eta .* 
             (cos.(yaw).^floris.p_p)' .* 
-            (0.5 * tanh((-yaw + deg2rad.(con.yawRangeMax)) * 50) + 0.5) * 
-            (-0.5 * tanh((-yaw + deg2rad.(con.yawRangeMin)) * 50) + 0.5)
+            (0.5 * tanh((-yaw + deg2rad.(yaw_range_max)) * 50) + 0.5) * 
+            (-0.5 * tanh((-yaw + deg2rad.(yaw_range_min)) * 50) + 0.5)
     else
         P = 0.5 * floris.airDen * (wf.D / 2).^2 * π .* Cp' .* ueff.^3 .* floris.eta .* 
             (cos.(yaw).^floris.p_p)'
