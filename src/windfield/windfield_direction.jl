@@ -88,7 +88,7 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 - `phi`: Wind direction(s) at time `t` for turbine(s) `iT` [°]
 """
 function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind::Wind, iT, t)
-    wind_dir = wind.dir
+    wind_dir = wind.dir::Matrix{Float64}
     times = wind_dir[:, 1]
     n_turbines = size(wind_dir, 2) - 1
 
@@ -128,7 +128,7 @@ Returns:
 - phi: Vector of wind directions for each turbine in iT [°]
 """
 function getWindDirT(::Direction_Interpolation, wind::Wind, iT, t)
-    wind_dir = wind.dir
+    wind_dir = wind.dir::Matrix{Float64}
     times = wind_dir[:, 1]
     phis = wind_dir[:, 2]
 
@@ -164,7 +164,7 @@ Returns:
 - phi: Vector of wind directions for each turbine in iT [°]
 """
 function getWindDirT(::Direction_Interpolation_wErrorCov, wind::Wind, iT, t)
-    wind_dir = wind.dir
+    wind_dir = wind.dir::WindDirMatrix
 
     # Ensure t is within bounds
     if t < wind_dir.Data[1, 1]
@@ -226,6 +226,7 @@ function getWindDirT(::Direction_InterpTurbine, wind::Wind, iT, t)
     if wind_dir === nothing
         error("wind_dir data is missing for Direction_InterpTurbine mode. Please provide wind direction data or use a different mode.")
     end
+    wind_dir = wind_dir::Matrix{Float64}
     
     # Check time bounds
     tmin = wind_dir[1, 1]
@@ -261,7 +262,7 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 - `phi`: Wind direction(s) for requested turbine(s), perturbed with noise. [°]
 """
 function getWindDirT(::Direction_InterpTurbine_wErrorCov, wind::Wind, iT, t)
-    wind_dir = wind.dir
+    wind_dir = wind.dir::WindDirMatrix
     times = wind_dir.Data[:, 1]
     nTurbines = size(wind_dir.Data, 2) - 1
 
@@ -302,7 +303,7 @@ Returns the wind direction at the respective turbine(s).
 - `phi`: Updated wind direction(s) (vector) [°]
 """
 function getWindDirT(::Direction_RW_with_Mean, wind_dir_now, wind_dir::Wind)
-    wind_dir_triple = wind_dir.dir    
+    wind_dir_triple = wind_dir.dir::WindDirTriple
     # Random walk model with mean implementation
     # Generate random normal vector
     weightedRandN = randn(RNG,1, length(wind_dir_now))
@@ -360,7 +361,7 @@ wind_dir_triple = WindDirTriple(
 ```
 """
 function getWindDirT(::Direction_RW_with_Mean, wind::Wind, iT, t)
-    wind_dir_triple = wind.dir
+    wind_dir_triple = wind.dir::WindDirTriple
     if isa(iT, AbstractArray)
         n = length(iT)
         indices = iT
