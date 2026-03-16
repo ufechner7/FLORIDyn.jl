@@ -30,12 +30,12 @@ function calc_rel_power(settings_file; dt=350, wind_dir=nothing, ti=0.062)
 
     vis = Vis()
     vis.online = false
-    wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
+    wf, md, _ = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
 
     data_column = "ForeignReduction"
     ylabel = "Rel. Wind Speed [%]"
 
-    times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
+    times, plot_data, _, _ = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
     nT = wf.nT
     rel_power = zeros(length(times))
     for iT in 1:nT
