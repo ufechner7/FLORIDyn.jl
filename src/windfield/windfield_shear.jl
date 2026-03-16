@@ -38,7 +38,7 @@ function getWindShearT(::Shear_Interpolation, wind_shear::AbstractMatrix, z)
 
     # Linear interpolation
     itp = linear_interpolation(heights, speeds, extrapolation_bc=Flat())
-    shear = itp(z_clamped)
+    return itp(z_clamped)
 end
 
 # function shear = getWindShearT(WindShear,z_norm)

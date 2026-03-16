@@ -41,7 +41,7 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 # Returns
 - `phi`: Vector of wind directions for the selected turbines, including random perturbation
 """
-function getWindDirT(::Direction_Constant_wErrorCov, wind::Wind, iT, t)
+function getWindDirT(::Direction_Constant_wErrorCov, wind::Wind, iT, _)
     wind_dir = wind.dir::WindDirType
     if isa(iT, AbstractArray)
         n = length(iT)
@@ -193,8 +193,8 @@ function getWindDirT(::Direction_Interpolation_wErrorCov, wind::Wind, iT, t)
 end
 
 # Helper function for 1D linear interpolation
-function interp(x, y, t)
-    idx = Base.searchsortedlast(x, t)
+function interp(x::AbstractVector{<:Real}, y::AbstractVector{<:Real}, t::Real)
+    idx = Int(Base.searchsortedlast(x, t))
     if idx == length(x)
         return y[end]
     elseif idx == 0
@@ -231,18 +231,22 @@ function getWindDirT(::Direction_InterpTurbine, wind::Wind, iT, t)
     # Check time bounds
     tmin = wind_dir[1, 1]
     tmax = wind_dir[end, 1]
-    if t < tmin
-        @warn "The time $t is out of bounds, will use $tmin instead."
-        t = tmin
-    elseif t > tmax
-        @warn "The time $t is out of bounds, will use $tmax instead."
-        t = tmax
+    t_eval = t
+    if t_eval < tmin
+        @warn "The time $t_eval is out of bounds, will use $tmin instead."
+        t_eval = tmin
+    elseif t_eval > tmax
+        @warn "The time $t_eval is out of bounds, will use $tmax instead."
+        t_eval = tmax
     end
 
     # Interpolate for all turbines at time t
     times = wind_dir[:, 1]
     phis = wind_dir[:, 2:end]  # Each column is a turbine
-    phi_out = [interp(times, phis[:, j], t) for j in axes(phis, 2)]
+    phi_out = Vector{Float64}(undef, size(phis, 2))
+    for j in axes(phis, 2)
+        phi_out[j] = interp(times, phis[:, j], t_eval)
+    end
 
     # Select requested turbines
     return phi_out[iT]
@@ -267,16 +271,20 @@ function getWindDirT(::Direction_InterpTurbine_wErrorCov, wind::Wind, iT, t)
     nTurbines = size(wind_dir.Data, 2) - 1
 
     # Clamp t to available time range, with warning
-    if t < times[1]
-        @warn "The time $t is out of bounds, will use $(times[1]) instead."
-        t = times[1]
-    elseif t > times[end]
-        @warn "The time $t is out of bounds, will use $(times[end]) instead."
-        t = times[end]
+    t_eval = t
+    if t_eval < times[1]
+        @warn "The time $t_eval is out of bounds, will use $(times[1]) instead."
+        t_eval = times[1]
+    elseif t_eval > times[end]
+        @warn "The time $t_eval is out of bounds, will use $(times[end]) instead."
+        t_eval = times[end]
     end
 
     # Interpolate for each turbine at time t
-    phi_out = [Interpolations.linear_interpolation(times, wind_dir.Data[:, j+1])(t) for j in 1:nTurbines]
+    phi_out = Vector{Float64}(undef, nTurbines)
+    for j in 1:nTurbines
+        phi_out[j] = Interpolations.linear_interpolation(times, wind_dir.Data[:, j+1])(t_eval)
+    end
 
     # Select requested turbines
     phi = phi_out[iT]
@@ -360,7 +368,7 @@ wind_dir_triple = WindDirTriple(
 )
 ```
 """
-function getWindDirT(::Direction_RW_with_Mean, wind::Wind, iT, t)
+function getWindDirT(::Direction_RW_with_Mean, wind::Wind, iT, _)
     wind_dir_triple = wind.dir::WindDirTriple
     if isa(iT, AbstractArray)
         n = length(iT)

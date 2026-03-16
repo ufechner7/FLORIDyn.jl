@@ -73,30 +73,31 @@ Interpolates the wind turbulence intensity (TI) at a given time `t` using the sp
 function getWindTiT(::TI_Interpolation, wind_ti::AbstractMatrix, iT, t)
 
     # Extract time and TI columns
-    times = wind_ti[:, 1]
-    TIs = wind_ti[:, 2]
+    times = wind_ti[:, 1]::Vector{Float64}
+    TIs = wind_ti[:, 2]::Vector{Float64}
 
     # Clamp t to the bounds, with warnings
-    if t < times[1]
-        @warn("The time $t is out of bounds, will use $(times[1]) instead.")
-        t = times[1]
-    elseif t > times[end]
-        @warn("The time $t is out of bounds, will use $(times[end]) instead.")
-        t = times[end]
+    t_eval = t
+    if t_eval < times[1]
+        @warn("The time $t_eval is out of bounds, will use $(times[1]) instead.")
+        t_eval = times[1]
+    elseif t_eval > times[end]
+        @warn("The time $t_eval is out of bounds, will use $(times[end]) instead.")
+        t_eval = times[end]
     end
 
     # Linear interpolation
     # Search for the interval
-    idx = Base.searchsortedlast(times, t)
+    idx = Int(Base.searchsortedlast(times, t_eval))
     if idx == length(times)
         Ti_val = TIs[end]
-    elseif times[idx] == t
+    elseif times[idx] == t_eval
         Ti_val = TIs[idx]
     else
         # Linear interpolation
         t0, t1 = times[idx], times[idx+1]
         ti0, ti1 = TIs[idx], TIs[idx+1]
-        Ti_val = ti0 + (ti1 - ti0) * (t - t0) / (t1 - t0)
+        Ti_val = ti0 + (ti1 - ti0) * (t_eval - t0) / (t1 - t0)
     end
 
     # Output: ones(size(iT)) * Ti_val
@@ -159,16 +160,20 @@ function getWindTiT(::TI_InterpTurbine, wind_ti::AbstractMatrix, iT, t)
     n_turbines = size(wind_ti, 2) - 1
 
     # Clamp t to the bounds of times
-    if t < times[1]
-        @warn "The time $t is out of bounds, will use $(times[1]) instead."
-        t = times[1]
-    elseif t > times[end]
-        @warn "The time $t is out of bounds, will use $(times[end]) instead."
-        t = times[end]
+    t_eval = t
+    if t_eval < times[1]
+        @warn "The time $t_eval is out of bounds, will use $(times[1]) instead."
+        t_eval = times[1]
+    elseif t_eval > times[end]
+        @warn "The time $t_eval is out of bounds, will use $(times[end]) instead."
+        t_eval = times[end]
     end
 
     # Interpolate for each turbine
-    Ti_out = [interp1d(times, wind_ti[:, j+1], t) for j in 1:n_turbines]
+    Ti_out = Vector{Float64}(undef, n_turbines)
+    for j in 1:n_turbines
+        Ti_out[j] = interp1d(times, wind_ti[:, j+1], t_eval)
+    end
 
     # Return value(s) for the requested turbine(s)
     return Ti_out[iT]
