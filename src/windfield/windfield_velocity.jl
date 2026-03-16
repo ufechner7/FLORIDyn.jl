@@ -180,22 +180,22 @@ function getWindSpeedT(::Velocity_I_and_I, wind_vel, iT, t, wind_dir, p_p)
 
     # Run I&I estimator from last time step to current one
     for i in indPrev:indCurr
+        idx = (1:nT) .+ nT * (i - 1)
         try
-            idx = (1:nT) .+ nT * (i-1)
             Rotor_Speed = wind_vel.WSE.rotorSpeed[idx, 3]
+            Blade_pitch = wind_vel.WSE.bladePitch[idx, 3]
+            Gen_Torque  = wind_vel.WSE.genTorque[idx, 3]
+
+            yaw = deg2rad.(wind_dir .- wind_vel.WSE.nacelleYaw[idx, 3])
+
+            # Run estimator (assumes WindSpeedEstimatorIandI_FLORIDyn is implemented elsewhere)
+            _, wind_vel.WSE = WindSpeedEstimatorIandI_FLORIDyn(
+                wind_vel.WSE, Rotor_Speed, Blade_pitch, Gen_Torque, yaw, p_p
+            )
         catch
             println("Failed to get Wind Speed")
-            # Optionally break or continue, depending on the desired error handling
+            continue
         end
-        Blade_pitch = wind_vel.WSE.bladePitch[idx, 3]
-        Gen_Torque  = wind_vel.WSE.genTorque[idx, 3]
-
-        yaw = deg2rad.(wind_dir .- wind_vel.WSE.nacelleYaw[idx, 3])
-
-        # Run estimator (assumes WindSpeedEstimatorIandI_FLORIDyn is implemented elsewhere)
-        V_out, wind_vel.WSE = WindSpeedEstimatorIandI_FLORIDyn(
-            wind_vel.WSE, Rotor_Speed, Blade_pitch, Gen_Torque, yaw, p_p
-        )
     end
 
     # Update previous time
@@ -362,28 +362,30 @@ function getWindSpeedT(::Velocity_InterpTurbine_wErrorCov, wind_vel::WindVelMatr
     # Bounds check (clamp t)
     t_min = times[1]
     t_max = times[end]
-    if t < t_min
-        @warn "The time $t is out of bounds, will use $t_min instead."
-        t = t_min
-    elseif t > t_max
-        @warn "The time $t is out of bounds, will use $t_max instead."
-        t = t_max
+    t_eval = t
+    if t_eval < t_min
+        @warn "The time $t_eval is out of bounds, will use $t_min instead."
+        t_eval = t_min
+    elseif t_eval > t_max
+        @warn "The time $t_eval is out of bounds, will use $t_max instead."
+        t_eval = t_max
     end
 
-    # Create individual interpolants for each turbine column
+    # Interpolate each turbine column at t_eval
     n_turbines = size(speeds, 2)
-    interpolants = [interpolate((times,), speeds[:, i], Gridded(Linear())) for i in 1:n_turbines]
+    wind_vel_out = Vector{Float64}(undef, n_turbines)
+    for i in 1:n_turbines
+        itp = interpolate((times,), speeds[:, i], Gridded(Linear()))
+        wind_vel_out[i] = itp(t_eval)
+    end
 
-    # Evaluate all turbines at time `t`
-    wind_vel_out = [itp(t) for itp in interpolants]
-
-    vel = wind_vel_out[iT]               # select turbine(s) of interest
+    iT_vec = isa(iT, Integer) ? [iT] : iT
+    vel = wind_vel_out[iT_vec]               # select turbine(s) of interest
 
     # Add random error with given covariance (via Cholesky factor)
-    # Simulate a noise vector (randn) multiplied by Cholesky factor
-    noise = (wind_vel.CholSig * randn(RNG, length(vel)))
-    vel_noisy = vel + noise
-    return vel_noisy
+    chol_sub = wind_vel.CholSig[iT_vec, iT_vec]
+    noise = chol_sub * randn(RNG, length(iT_vec))
+    return vel .+ noise
 end
 
 # The following code cannot work, because the original Matlab function is not well defined.
