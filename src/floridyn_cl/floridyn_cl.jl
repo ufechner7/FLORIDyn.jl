@@ -733,9 +733,18 @@ Retrieve the demand value for a given simulation time step.
 This function calculates the appropriate index in the demand data array based on the current simulation time
 and the defined time step, ensuring the index stays within valid bounds.
 """
-function get_demand(con, sim, time)
-    index = Int(clamp(floor(time / sim.time_step) + 1, 1, sim.n_sim_steps + 1))
-    return con.demand_data[index]
+function get_demand(con::Con, sim::Sim, time)
+    time_step = sim.time_step
+    isnothing(time_step) && error("sim.time_step must be initialised before calling get_demand.")
+
+    sim_steps = sim.n_sim_steps
+    isnothing(sim_steps) && error("sim.n_sim_steps must be initialised before calling get_demand.")
+
+    demand_data = con.demand_data
+    isnothing(demand_data) && error("con.demand_data must be initialised before calling get_demand.")
+
+    index = Int(clamp(floor(time / time_step) + 1, 1, sim_steps + 1))
+    return demand_data[index]
 end
 
 function create_unified_buffers(wf::WindFarm, floris::Floris)
@@ -768,13 +777,18 @@ Create unified buffers with FLORIS-specific rotor discretization.
 
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris; rmt_plot_fn=nothing, 
                           msr=VelReduction, debug=nothing, save_final_only=false)
-    nT = wf.nT
     sim_steps = sim.n_sim_steps
+    isnothing(sim_steps) && error("sim.n_sim_steps must be initialised before calling runFLORIDyn.")
+
+    sim_start_time = sim.start_time
+    isnothing(sim_start_time) && error("sim.start_time must be initialised before calling runFLORIDyn.")
+
+    nT = wf.nT
     ma = zeros(sim_steps * nT, 6)
     ma[:, 1] .= 1.0  # Set first column to 1
     vm_int   = Vector{Matrix{Float64}}(undef, sim_steps)
 
-    sim_time = sim.start_time
+    sim_time = sim_start_time
     plot_state = nothing  # Initialize animation state
     
     buffers = FLORIDyn.IterateOPsBuffers(wf)
@@ -831,7 +845,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         wf.States_T[wf.StartI, 2] = (
             wf.States_WF[wf.StartI, 2] .- getYaw(set.control_mode, con, (1:nT), sim_time)'
         )
-        wf.States_T[wf.StartI, 1] = getInduction(set.induction_mode, con, (1:nT), sim_time-sim.start_time)'
+        wf.States_T[wf.StartI, 1] = getInduction(set.induction_mode, con, (1:nT), sim_time - sim_start_time)'
 
         # ========== Calculate Power ==========
         P = getPower(wf, @view(tmpM[1:nT, :]), floris, con)
@@ -839,7 +853,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
 
         # ========== Live Plotting ============
         if vis.online
-            t_rel = sim_time - sim.start_time
+            t_rel = sim_time - sim_start_time
             if ! isnothing(con.demand_data)
                 demand = get_demand(con, sim, t_rel)
                 vis.subtitle = "demand: $(round(demand*100, digits=2)) %"
