@@ -12,7 +12,7 @@ correction. Used when `set.cor_vel_mode isa Velocity_None`.
 """
 function correctVel!(::Velocity_None, set, wf, Wind, SimTime, paramFLORIS, tmpM)
     # Get data
-    U, Wind = getDataVel(set, Wind, wf, SimTime, tmpM, paramFLORIS)
+    U, Wind = Base.invokelatest(getDataVel, set, Wind, wf, SimTime, tmpM, paramFLORIS)
 
     # Correct Velocity
     wf.States_WF[wf.StartI, 1] = U
@@ -107,7 +107,7 @@ This correction method is not properly tested. Use at your own risk!
 """
 function correctVel!(::Velocity_Influence, set::Settings, wf::WindFarm, wind::Wind, t, floris, tmpM)
     # Base free wind speeds (may update wind state depending on mode)
-    u, wind = getDataVel(set, wind, wf, t, tmpM, floris)
+    u, wind = Base.invokelatest(getDataVel, set, wind, wf, t, tmpM, floris)
 
     nT = wf.nT
     has_dep = !isempty(wf.dep)
@@ -226,17 +226,17 @@ function getDataVel(set::Settings, wind::Wind, wf::WindFarm, t, tmp_m, floris::F
     idx = 1:wf.nT  # avoid temporary allocation from collect
     u = nothing
     if wind.input_vel == "I_and_I"
-        u, wind.vel = getWindSpeedT(set.vel_mode, wind.vel, idx, t,
-                                    wf.States_WF[wf.StartI, 2], floris.p_p)
+        u, wind.vel = Base.invokelatest(getWindSpeedT, set.vel_mode, wind.vel, idx, t,
+                                        wf.States_WF[wf.StartI, 2], floris.p_p)
         if (t - wind.vel.StartTime) > wind.vel.WSE.Offset
             u = u ./ tmp_m[:, 1]
         end
     elseif wind.input_vel == "RW_with_Mean"
-        u = getWindSpeedT(Velocity_RW_with_Mean(), wf.States_WF[wf.StartI, 1], wind.vel)
+        u = Base.invokelatest(getWindSpeedT, Velocity_RW_with_Mean(), wf.States_WF[wf.StartI, 1], wind.vel)
     elseif wind.input_vel == "EnKF_InterpTurbine"
-        u = getWindSpeedT_EnKF(Velocity_EnKF_InterpTurbine(), wind.vel, idx, t)
+        u = Base.invokelatest(getWindSpeedT_EnKF, Velocity_EnKF_InterpTurbine(), wind.vel, idx, t)
     else
-        u = getWindSpeedT(set.vel_mode, wind.vel, idx, t)
+        u = Base.invokelatest(getWindSpeedT, set.vel_mode, wind.vel, idx, t)
     end
     return u, wind
 end
