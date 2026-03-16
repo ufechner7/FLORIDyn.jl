@@ -6,33 +6,36 @@ $(DocStringExtensions.README)
 """
 module FLORIDyn
 
-using PrecompileTools: @setup_workload, @compile_workload
+using PrecompileTools: @compile_workload, @setup_workload
 using LaTeXStrings
 import DocStringExtensions, LoggingExtras
 import Base: show
 
-using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
-using Statistics, StaticArrays, Pkg, DistributedNext, Dates
+using CSV, DataFrames, DelimitedFiles, Interpolations, JLD2, LinearAlgebra, Parameters,
+      Random, StructMapping, YAML
+using Dates, DistributedNext, Pkg, StaticArrays, Statistics
 using REPL.TerminalMenus
 using SparseArrays
 
-export MSR, toMSR, VelReduction, AddedTurbulence, EffWind
-export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray, TurbineData, turbine_group, create_n_groups
-export set_yaw!, set_induction!
+export AddedTurbulence, EffWind, MSR, VelReduction, toMSR
+export Settings, TurbineArray, TurbineData, Vis, create_n_groups, getTurbineData,
+       initSimulation, setup, turbine_group
+export set_induction!, set_yaw!
 
 export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
-export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
+export Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov,
+       Direction_Interpolation_wErrorCov
 export Direction_RW_with_Mean
 export Shear_Interpolation, Shear_PowerLaw, WindShear
-export TI_Constant, TI_EnKF_InterpTurbine, TI_Interpolation, TI_InterpTurbine
+export TI_Constant, TI_EnKF_InterpTurbine, TI_InterpTurbine, TI_Interpolation
 export Velocity_Constant, Velocity_Constant_wErrorCov, Velocity_EnKF_InterpTurbine
 export Velocity_I_and_I, Velocity_Interpolation, Velocity_Interpolation_wErrorCov
 export Velocity_InterpTurbine, Velocity_InterpTurbine_wErrorCov, Velocity_RW_with_Mean
 export Velocity_ZOH_wErrorCov
 
-export WindDirType, WindDirMatrix, WindDirTriple
-export WindVelType, WindVelMatrix, WindFarm
-export Floris, FloriDyn, Wind, Sim, Con, IterateOPsBuffers
+export WindDirMatrix, WindDirTriple, WindDirType
+export WindFarm, WindVelMatrix, WindVelType
+export Con, FloriDyn, Floris, IterateOPsBuffers, Sim, Wind
 
 export Direction_All, Direction_Influence, Direction_None
 export Velocity_Influence, Velocity_None
@@ -47,17 +50,21 @@ export getWindTiT
 export getWindSpeedT, getWindSpeedT_EnKF
 export getDataDir, getDataTI, getDataVel
 export correctDir!, correctTI!, correctVel!
-export getYaw, getInduction
+export getInduction, getYaw
 
-export discretizeRotor, calcCt, States
-export prepareSimulation, importSOWFAFile, centerline!, angSOWFA2world, initSimulation
-export runFLORIS!, init_states, getUadv
-export runFLORIDyn, iterateOPs!, setUpTmpWFAndRun!, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
+export States, calcCt, discretizeRotor
+export angSOWFA2world, centerline!, importSOWFAFile, initSimulation, prepareSimulation
+export getUadv, init_states, runFLORIS!
+export findTurbineGroups, interpolateOPs!, iterateOPs!, perturbationOfTheWF!, runFLORIDyn,
+       setUpTmpWFAndRun!
 export getVars!
-export getMeasurements, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples, calc_rel_power
-export run_floridyn, plot_flow_field, plot_measurements, plot_x, plot_rmt, close_all, turbines
-export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
-export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_results, find_floridyn_runs, compare_dataframes
+export calcFlowField, calc_rel_power, getMeasurements, get_layout, install_examples,
+       plotFlowField, plotMeasurements
+export close_all, plot_flow_field, plot_measurements, plot_rmt, plot_x, run_floridyn,
+       turbines
+export cleanup_video_folder, createAllVideos, createVideo, natural_sort_key
+export compare_dataframes, delete_results, find_floridyn_runs, now_microseconds,
+       now_nanoseconds, precise_now, unique_name
 export isdelftblue, Measurement, parse_measurements
 export FlowField, parse_flow_fields
 export UnifiedBuffers, create_unified_buffers
