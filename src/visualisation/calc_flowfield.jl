@@ -264,7 +264,7 @@ allowing wake effects to be captured in the flow field visualization.
 """ getMeasurements
 
 function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
-                       _plt=nothing, vis=nothing)
+                       vis=nothing)
     get_measurements_fn = getfield(FLORIDyn, :getMeasurements)
     # Preallocate field
     nM = 3
@@ -321,7 +321,7 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
 end
 
 @doc """
-    calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing)
+    calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; vis=nothing)
 
 Generate full flow field plot data by calculating measurements across a grid.
 
@@ -336,7 +336,6 @@ performed in parallel if `set.threading` is true.
 - `floris::Floris`: FLORIS model parameters
 
 # Keyword Arguments
-- `plt=nothing`: Plot object for garbage collection control.
 - `vis=nothing`: Visualization configuration object containing field limits and resolution settings.
 
 # Returns

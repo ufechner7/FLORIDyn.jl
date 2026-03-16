@@ -27,7 +27,7 @@ wf = initSimulation(wf, sim)
 
 vis.online = false
 @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-@time Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+@time Z, X, Y = calcFlowField(set, wf, wind, floris)
 
 # Single line plotting - automatically dispatches based on available resources
 @time plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)

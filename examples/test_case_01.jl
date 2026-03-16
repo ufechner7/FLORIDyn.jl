@@ -50,7 +50,7 @@ turbines_wf = wf.turbines
 df1, df2 = compare_dataframes(turbines_wf, turbines_ref)
 println("Number of differing rows found: ", size(df1, 1), " out of ", size(turbines_wf, 1))
 
-@time Z, X, Y    = calcFlowField(set, wf, wind, floris; plt)
+@time Z, X, Y    = calcFlowField(set, wf, wind, floris)
 
 msr = 1
 A = Z_ref[:,:,msr]

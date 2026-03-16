@@ -55,7 +55,7 @@ run_timed_floridyn(args...; kwargs...) = @time run_floridyn(args...; kwargs...)
 function run_mode1_flow_field(plt, set, wf, wind, sim, con, vis, floridyn, floris)
     vis.online = false
     wf_mode1, _, _ = run_timed_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    @time Z, X, Y = calcFlowField(set, wf_mode1, wind, floris; plt, vis)
+    @time Z, X, Y = calcFlowField(set, wf_mode1, wind, floris; vis)
     @time plot_flow_field(wf_mode1, X, Y, Z, vis; msr=get_default_msr(), plt)
     nothing
 end
