@@ -468,11 +468,12 @@ export get_default_msr, select_measurement, set_default_msr
 export interpolate_hermite_spline
 
 function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction, save_final_only=false)
+    run_floridyn_core_fn = getfield(FLORIDyn, :runFLORIDyn)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Multi-threading mode: use remote plotting callback
         # The rmt_plot_flow_field function should be defined via remote_plotting.jl
         try
-            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr, save_final_only)
+            return run_floridyn_core_fn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr, save_final_only)
         catch e
             if isa(e, UndefVarError)
                 error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
@@ -482,7 +483,7 @@ function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=V
         end
     else
         # Single-threading mode: no plotting callback
-        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
+        return run_floridyn_core_fn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
     end
 end
 
@@ -637,9 +638,10 @@ After running this function, you can:
 See also: [`copy_examples`](@ref), [`copy_bin`](@ref), [`copy_model_settings`](@ref)
 """
 function install_examples(add_packages=true)
+    copy_model_settings_fn = getfield(FLORIDyn, :copy_model_settings)
     copy_examples()
     copy_bin()
-    copy_model_settings()
+    copy_model_settings_fn()
     if add_packages
         Pkg.add(["LaTeXStrings", "Timers", "TerminalPager", "DistributedNext", "ControlPlots"])
     end

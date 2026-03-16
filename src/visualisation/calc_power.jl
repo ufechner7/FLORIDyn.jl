@@ -18,7 +18,8 @@ function calc_rel_power(settings_file; dt=350, wind_dir=nothing, ti=0.062)
         set.control_mode = Yaw_Constant()
     end
 
-    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+    prepare_simulation_fn = getfield(FLORIDyn, :prepareSimulation)
+    wf, wind, sim, con, floris = prepare_simulation_fn(set, wind, con, floridyn, floris, ta, sim)
     if fixed_wind_dir
         wind.dir_fixed = wind_dir
         con.yaw_fixed  = wind_dir

@@ -120,6 +120,8 @@ end
 function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriDyn, 
                            floris::Floris, turbProp, sim::Sim)
     loadDataWarnings = String[]
+    import_sowfa_file_fn = getfield(FLORIDyn, :importSOWFAFile)
+    get_turbine_data_fn = getfield(FLORIDyn, :getTurbineData)
     pkg_path = joinpath(dirname(pathof(@__MODULE__)), "..")
 
     # ========== WIND: Velocity ==========
@@ -312,7 +314,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     wf.posBase = turbProp.pos
     wf.nT = size(turbProp.pos, 1)
         
-    t_data = getTurbineData(turbProp.type)
+    t_data = get_turbine_data_fn(turbProp.type)
     wf.posNac = t_data.nac_pos
     wf.D = t_data.rotor_diameter
 
@@ -353,7 +355,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
             push!(loadDataWarnings, "Control_YawInterpolation.csv not found.")
         end
     elseif yaw_method == "SOWFA"
-        nacelleYaw = importSOWFAFile(joinpath(vel_file_dir, "SOWFA_nacelleYaw.csv"))
+        nacelleYaw = import_sowfa_file_fn(joinpath(vel_file_dir, "SOWFA_nacelleYaw.csv"))
         con.yaw_data = condenseSOWFAYaw([nacelleYaw[1:wf.nT:end, 2] reshape(nacelleYaw[:,3],wf.nT, :)'])
     else
         error("Unknown yaw method: $yaw_method")

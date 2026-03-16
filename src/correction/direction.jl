@@ -106,7 +106,8 @@ end
 """
 function correctDir!(::Direction_All, set, wf, wind, t)
     # Get Data
-    phi = Base.invokelatest(getDataDir, set, wind, wf, t)
+    get_data_dir_fn = getfield(FLORIDyn, :getDataDir)
+    phi = Base.invokelatest(get_data_dir_fn, set, wind, wf, t)
     # Correct
     wf.States_WF[:, 2] .= phi[1]
     # OP Orientation = turbine wind direction
@@ -179,7 +180,8 @@ end
 """
 function correctDir!(::Direction_None, set, wf, wind, t)
     # Get Data
-    phi = Base.invokelatest(getDataDir, set, wind, wf, t)
+    get_data_dir_fn = getfield(FLORIDyn, :getDataDir)
+    phi = Base.invokelatest(get_data_dir_fn, set, wind, wf, t)
     # Correct
     wf.States_WF[wf.StartI, 2] .= phi[1]
     # OP Orientation = turbine wind direction
@@ -275,7 +277,8 @@ function correctDir!(::Direction_Influence, set::Settings, wf, wind, t)
     #    (the MATLAB code assigns all StartI rows each iteration; final value equals
     #    last turbine's direction – likely unintended side effect).
 
-    phi = Base.invokelatest(getDataDir, set, wind, wf, t)  # base ambient directions per turbine
+    get_data_dir_fn = getfield(FLORIDyn, :getDataDir)
+    phi = Base.invokelatest(get_data_dir_fn, set, wind, wf, t)  # base ambient directions per turbine
 
     nT = wf.nT
     has_dep        = !isempty(wf.dep)

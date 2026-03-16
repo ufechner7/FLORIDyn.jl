@@ -87,7 +87,8 @@ This function is **private** and intended for internal use only.
 """
 function prepare_rotor_points!(buffers::FLORISBuffers, location_t, states_t, d_rotor, floris::Floris)
     if d_rotor[end] > 0
-        RPl, RPw = discretizeRotor(floris.rotor_points)
+        discretize_rotor_fn = getfield(FLORIDyn, :discretizeRotor)
+        RPl, RPw = discretize_rotor_fn(floris.rotor_points)
     else
         RPl = SA[0.0 0.0 0.0]
         RPw = SA[1.0]

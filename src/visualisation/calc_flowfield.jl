@@ -27,12 +27,13 @@ end
 
 function create_thread_buffers(wf::WindFarm, nth::Int, floris::Floris)
     # Pre-allocate unified buffers for each thread (contains GP)
+    create_unified_buffers_fn = getfield(FLORIDyn, :create_unified_buffers)
     thread_unified_buffers = Vector{UnifiedBuffers}(undef, nth)
     thread_buffers = Vector{WindFarm}(undef, nth)
 
     for tid in 1:nth
         # Create unified buffers with proper FLORIS parameters for this thread
-        ub = create_unified_buffers(wf, floris)
+        ub = create_unified_buffers_fn(wf, floris)
         thread_unified_buffers[tid] = ub
         # Use the prebuilt GP from unified buffers as the thread's WindFarm buffer
         thread_buffers[tid] = ub.gp
@@ -43,12 +44,13 @@ end
 
 function create_thread_buffers(wf::WindFarm, nth::Int)
     # Pre-allocate unified buffers for each thread (contains GP)
+    create_unified_buffers_fn = getfield(FLORIDyn, :create_unified_buffers)
     thread_unified_buffers = Vector{UnifiedBuffers}(undef, nth)
     thread_buffers = Vector{WindFarm}(undef, nth)
 
     for tid in 1:nth
         # Create unified buffers with default rotor discretization
-        ub = create_unified_buffers(wf, 50)
+        ub = create_unified_buffers_fn(wf, 50)
         thread_unified_buffers[tid] = ub
         # Use the prebuilt GP from unified buffers as the thread's WindFarm buffer
         thread_buffers[tid] = ub.gp
@@ -138,6 +140,7 @@ end
 
 
 function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
+    setup_tmp_wf_and_run_fn = getfield(FLORIDyn, :setUpTmpWFAndRun!)
     size_mx = size(mx)
     mz = zeros(size_mx[1], size_mx[2], nM)
     
@@ -166,7 +169,7 @@ function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, f
 
             interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
-            setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
+            setup_tmp_wf_and_run_fn(unified_buffers, GP, set, floris, wind)
             tmpM = unified_buffers.M_buffer
 
             @views gridPointResult = tmpM[end, :]
@@ -205,7 +208,7 @@ function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, f
             # Recalculate interpolated OPs for the updated geometry (non-allocating)
             interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
-            setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
+            setup_tmp_wf_and_run_fn(unified_buffers, GP, set, floris, wind)
             tmpM = unified_buffers.M_buffer
             
             # Extract only the result for the grid point (last "turbine")
@@ -268,6 +271,7 @@ allowing wake effects to be captured in the flow field visualization.
 
 function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
                        plt=nothing, vis=nothing)
+    get_measurements_fn = getfield(FLORIDyn, :getMeasurements)
     # Preallocate field
     nM = 3
 
@@ -302,7 +306,7 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
         try
             # Create thread-local buffers using the new function with FLORIS parameters
             buffers = create_thread_buffers(wf, nthreads() + 1, floris)
-            Z = getMeasurements(buffers, X, Y, nM, zh, wf, set, floris, wind)
+            Z = get_measurements_fn(buffers, X, Y, nM, zh, wf, set, floris, wind)
         finally
             # Re-enable garbage collection after multithreading if not parallel
             if ! set.parallel
@@ -312,7 +316,7 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
     else
         # Single-threaded path using getMeasurements with a single buffer
         buffers = create_thread_buffers(wf, 1, floris)
-        Z = getMeasurements(buffers, X, Y, nM, zh, wf, set, floris, wind)
+        Z = get_measurements_fn(buffers, X, Y, nM, zh, wf, set, floris, wind)
     end
 
     return Z, X, Y
