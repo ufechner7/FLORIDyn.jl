@@ -226,8 +226,8 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
             push!(loadDataWarnings, "WindDir.csv not found.")
         end
     elseif wind.input_dir == "InterpTurbine"
+        path = joinpath(data_path, "WindDirTurbine.csv")
         try
-            path = joinpath(data_path, "WindDirTurbine.csv")
             if !isfile(path)
                 path = joinpath(pkg_path, path)
             end
@@ -272,7 +272,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         try
             df = CSV.read(path, DataFrame)
             wind.ti = Matrix{Float64}(df)
-        catch e
+        catch
             push!(loadDataWarnings, "WindTI.csv not found.")
             generateDemoCSV(data_path, "WindTI.csv", 2, nT, [0.0, 0.0], [100.0, 100.0])
             df = CSV.read(path, DataFrame)
@@ -286,7 +286,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         try
             df = CSV.read(path, DataFrame)
             wind.ti = Matrix{Float64}(df)
-        catch e
+        catch
             push!(loadDataWarnings, "WindTITurbine.csv not found.")
             generateDemoCSV(data_path, "WindTITurbine.csv", 3, nT, [0.0, 0.06], [100.0, 0.06])
             df = CSV.read(path, DataFrame)
@@ -300,7 +300,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
             end
             df = CSV.read(path, DataFrame; header=false)
             wind.ti = df[1,1]
-        catch e
+        catch
             push!(loadDataWarnings, "WindTIConstant.csv not found.")
         end
     else
@@ -327,7 +327,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         try
             df = CSV.read(path, DataFrame)
             wind.shear = Matrix{Float64}(df)
-        catch e
+        catch
             push!(loadDataWarnings, "WindShearProfile.csv not found.")
             generateDemoCSV(data_path, "WindShearProfile.csv", 2, nT, [0.0, 0.08], [100.0, 0.08])
             df = CSV.read(path, DataFrame)
