@@ -65,12 +65,12 @@ export close_all, plot_flow_field, plot_measurements, plot_rmt, plot_x, run_flor
 export cleanup_video_folder, createAllVideos, createVideo, natural_sort_key
 export compare_dataframes, delete_results, find_floridyn_runs, now_microseconds,
        now_nanoseconds, precise_now, unique_name
-export isdelftblue, Measurement, parse_measurements
+export Measurement, isdelftblue, parse_measurements
 export FlowField, parse_flow_fields
 export UnifiedBuffers, create_unified_buffers
 export get_default_project
 export select_project
-export get_default_msr, set_default_msr, select_measurement
+export get_default_msr, select_measurement, set_default_msr
 export interpolate_hermite_spline
 
 """
@@ -580,6 +580,21 @@ function copy_bin()
 end
 
 """
+    copy_examples()
+
+Copy all example scripts to the folder "examples"
+(it will be created if it doesn't exist).
+"""
+function copy_examples()
+    PATH = "examples"
+    if ! isdir(PATH) 
+        mkdir(PATH)
+    end
+    src_path = joinpath(dirname(pathof(@__MODULE__)), "..", PATH)
+    copy_files("examples", readdir(src_path))
+end
+
+"""
     install_examples(add_packages=true)
 
 Install example files, executables, and data files for the FLORIDyn.jl package.
@@ -616,21 +631,6 @@ function install_examples(add_packages=true)
     if add_packages
         Pkg.add(["LaTeXStrings", "Timers", "TerminalPager", "DistributedNext", "ControlPlots"])
     end
-end
-
-"""
-    copy_examples()
-
-Copy all example scripts to the folder "examples"
-(it will be created if it doesn't exist).
-"""
-function copy_examples()
-    PATH = "examples"
-    if ! isdir(PATH) 
-        mkdir(PATH)
-    end
-    src_path = joinpath(dirname(pathof(@__MODULE__)), "..", PATH)
-    copy_files("examples", readdir(src_path))
 end
 
 """

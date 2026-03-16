@@ -735,6 +735,30 @@ function get_demand(con, sim, time)
 end
 
 """
+    create_unified_buffers(wf::WindFarm, floris::Floris) -> UnifiedBuffers
+
+Create unified buffers with FLORIS-specific rotor discretization.
+
+# Arguments
+- `wf::WindFarm`: Wind farm object to determine buffer sizes  
+- `floris::Floris`: FLORIS parameters to determine rotor discretization buffer size
+
+# Returns
+- `UnifiedBuffers`: Struct containing all pre-allocated buffers with proper FLORIS buffers
+"""
+function create_unified_buffers(wf::WindFarm, floris::Floris)
+    # Calculate rotor discretization points if wind farm has turbines
+    n_rotor_points = if wf.D[end] > 0
+        RPl, _ = discretizeRotor(floris.rotor_points)
+        size(RPl, 1)
+    else
+        1
+    end
+    
+    return create_unified_buffers(wf, n_rotor_points)
+end
+
+"""
     runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris;
                 rmt_plot_fn=nothing, msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
 
@@ -888,29 +912,4 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
     )
     mi = hcat(md.Time, hcat(vm_int...)')
     return wf, md, mi
-end
-
-# Method dispatch for create_unified_buffers with Floris objects
-"""
-    create_unified_buffers(wf::WindFarm, floris::Floris) -> UnifiedBuffers
-
-Create unified buffers with FLORIS-specific rotor discretization.
-
-# Arguments
-- `wf::WindFarm`: Wind farm object to determine buffer sizes  
-- `floris::Floris`: FLORIS parameters to determine rotor discretization buffer size
-
-# Returns
-- `UnifiedBuffers`: Struct containing all pre-allocated buffers with proper FLORIS buffers
-"""
-function create_unified_buffers(wf::WindFarm, floris::Floris)
-    # Calculate rotor discretization points if wind farm has turbines
-    n_rotor_points = if wf.D[end] > 0
-        RPl, _ = discretizeRotor(floris.rotor_points)
-        size(RPl, 1)
-    else
-        1
-    end
-    
-    return create_unified_buffers(wf, n_rotor_points)
 end
