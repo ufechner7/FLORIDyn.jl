@@ -17,62 +17,6 @@ using Dates, DistributedNext, Pkg, StaticArrays, Statistics
 using REPL.TerminalMenus
 using SparseArrays
 
-export AddedTurbulence, EffWind, MSR, VelReduction, toMSR
-export Settings, TurbineArray, TurbineData, Vis, create_n_groups, getTurbineData,
-       initSimulation, setup, turbine_group
-export set_induction!, set_yaw!
-
-export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
-export Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov,
-       Direction_Interpolation_wErrorCov
-export Direction_RW_with_Mean
-export Shear_Interpolation, Shear_PowerLaw, WindShear
-export TI_Constant, TI_EnKF_InterpTurbine, TI_InterpTurbine, TI_Interpolation
-export Velocity_Constant, Velocity_Constant_wErrorCov, Velocity_EnKF_InterpTurbine
-export Velocity_I_and_I, Velocity_Interpolation, Velocity_Interpolation_wErrorCov
-export Velocity_InterpTurbine, Velocity_InterpTurbine_wErrorCov, Velocity_RW_with_Mean
-export Velocity_ZOH_wErrorCov
-
-export WindDirMatrix, WindDirTriple, WindDirType
-export WindFarm, WindVelMatrix, WindVelType
-export Con, FloriDyn, Floris, IterateOPsBuffers, Sim, Wind
-
-export Direction_All, Direction_Influence, Direction_None
-export Velocity_Influence, Velocity_None
-export TI_Influence, TI_None
-export IterateOPs_average, IterateOPs_basic, IterateOPs_buffer, IterateOPs_maximum, IterateOPs_weighted
-export Yaw_Constant, Yaw_InterpTurbine, Yaw_SOWFA
-export Induction_Constant, Induction_TGC
-
-export getWindDirT, getWindDirT_EnKF
-export getWindShearT
-export getWindTiT
-export getWindSpeedT, getWindSpeedT_EnKF
-export getDataDir, getDataTI, getDataVel
-export correctDir!, correctTI!, correctVel!
-export getInduction, getYaw
-
-export States, calcCt, discretizeRotor
-export angSOWFA2world, centerline!, importSOWFAFile, initSimulation, prepareSimulation
-export getUadv, init_states, runFLORIS!
-export findTurbineGroups, interpolateOPs!, iterateOPs!, perturbationOfTheWF!, runFLORIDyn,
-       setUpTmpWFAndRun!
-export getVars!
-export calcFlowField, calc_rel_power, getMeasurements, get_layout, install_examples,
-       plotFlowField, plotMeasurements
-export close_all, plot_flow_field, plot_measurements, plot_rmt, plot_x, run_floridyn,
-       turbines
-export cleanup_video_folder, createAllVideos, createVideo, natural_sort_key
-export compare_dataframes, delete_results, find_floridyn_runs, now_microseconds,
-       now_nanoseconds, precise_now, unique_name
-export Measurement, isdelftblue, parse_measurements
-export FlowField, parse_flow_fields
-export UnifiedBuffers, create_unified_buffers
-export get_default_project
-export select_project
-export get_default_msr, select_measurement, set_default_msr
-export interpolate_hermite_spline
-
 """
     MSR `VelReduction` `AddedTurbulence` `EffWind`
 
@@ -452,12 +396,68 @@ include("controller/splines.jl")
 include("controller/controller.jl")
 include("visualisation/calc_flowfield.jl")
 include("visualisation/calc_power.jl")
+include("visualisation/create_video.jl")
 include("visualisation/plot_flowfield.jl")
 include("visualisation/plot_measurements.jl")
-include("visualisation/create_video.jl")
 include("visualisation/high_res_time.jl")
 include("visualisation/pretty_print.jl")
 include("visualisation/smart_plotting.jl")
+
+export AddedTurbulence, EffWind, MSR, VelReduction, toMSR
+export Settings, TurbineArray, TurbineData, Vis, create_n_groups, getTurbineData,
+       initSimulation, setup, turbine_group
+export set_induction!, set_yaw!
+
+export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
+export Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov,
+       Direction_Interpolation_wErrorCov
+export Direction_RW_with_Mean
+export Shear_Interpolation, Shear_PowerLaw, WindShear
+export TI_Constant, TI_EnKF_InterpTurbine, TI_InterpTurbine, TI_Interpolation
+export Velocity_Constant, Velocity_Constant_wErrorCov, Velocity_EnKF_InterpTurbine
+export Velocity_I_and_I, Velocity_Interpolation, Velocity_Interpolation_wErrorCov
+export Velocity_InterpTurbine, Velocity_InterpTurbine_wErrorCov, Velocity_RW_with_Mean
+export Velocity_ZOH_wErrorCov
+
+export WindDirMatrix, WindDirTriple, WindDirType
+export WindFarm, WindVelMatrix, WindVelType
+export Con, FloriDyn, Floris, IterateOPsBuffers, Sim, Wind
+
+export Direction_All, Direction_Influence, Direction_None
+export Velocity_Influence, Velocity_None
+export TI_Influence, TI_None
+export IterateOPs_average, IterateOPs_basic, IterateOPs_buffer, IterateOPs_maximum, IterateOPs_weighted
+export Yaw_Constant, Yaw_InterpTurbine, Yaw_SOWFA
+export Induction_Constant, Induction_TGC
+
+export getWindDirT, getWindDirT_EnKF
+export getWindShearT
+export getWindTiT
+export getWindSpeedT, getWindSpeedT_EnKF
+export getDataDir, getDataTI, getDataVel
+export correctDir!, correctTI!, correctVel!
+export getInduction, getYaw
+
+export States, calcCt, discretizeRotor
+export angSOWFA2world, centerline!, importSOWFAFile, initSimulation, prepareSimulation
+export getUadv, init_states, runFLORIS!
+export findTurbineGroups, interpolateOPs!, iterateOPs!, perturbationOfTheWF!, runFLORIDyn,
+       setUpTmpWFAndRun!
+export getVars!
+export calcFlowField, calc_rel_power, getMeasurements, get_layout, install_examples,
+       plotFlowField, plotMeasurements
+export close_all, plot_flow_field, plot_measurements, plot_rmt, plot_x, run_floridyn,
+       turbines
+export cleanup_video_folder, createAllVideos, createVideo, natural_sort_key
+export compare_dataframes, delete_results, find_floridyn_runs, now_microseconds,
+       now_nanoseconds, precise_now, unique_name
+export Measurement, isdelftblue, parse_measurements
+export FlowField, parse_flow_fields
+export UnifiedBuffers, create_unified_buffers
+export get_default_project
+export select_project
+export get_default_msr, select_measurement, set_default_msr
+export interpolate_hermite_spline
 
 """
     run_floridyn(plt, set, wf, wind, sim, con, vis, 
