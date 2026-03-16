@@ -19,6 +19,29 @@ Key features:
 - Returns normalized coordinates and weights for integration
 =#
 
+
+"""
+    discretizeRotor(n_rp::Int)
+
+Discretizes the rotor into `n_rp` segments. The algorithm returns the normalized center
+location ∈ [-0.5, 0.5] and the relative area the segment represents.
+
+# Arguments
+- `n_rp::Int`: The number of radial points to discretize the rotor into.
+
+# Returns
+- The tuple `(m_rp, w)` where:
+  - `m_rp`: A matrix of size `(nC, 3)` where `nC` is the number of segments. The first column
+    is all zeros, the second and third columns contain the normalized radial positions.
+  - `w`: A vector of weights corresponding to each segment, summing to approximately 1.
+
+# Notes
+- The isocell algorithm is used, which may not yield exactly `n_rp` cells but aims to achieve
+  a similar number.
+- For details, see the publication by Masset et al.:
+  [Masset et al. (2009)](https://orbi.uliege.be/bitstream/2268/91953/1/masset_isocell_orbi.pdf)
+- The choice of `N1 = 3` is made here, but values of `4` or `5` are also viable options.
+"""
 function discretizeRotor(n_rp::Int)
   cache = _get_discretizeRotor_thread_cache()
   return get!(cache, n_rp) do

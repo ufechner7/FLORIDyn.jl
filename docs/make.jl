@@ -23,6 +23,7 @@ makedocs(;
       canonical = "https://ufechner7.github.io/FLORIDyn.jl/dev/",
       repolink = "https://github.com/ufechner7/FLORIDyn.jl",
       prettyurls=get(ENV, "CI", "false") == "true",
+            size_threshold_warn = 130 * 1024,
     ),
     pages=[
         "Home" => "index.md",

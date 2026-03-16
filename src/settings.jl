@@ -1077,6 +1077,31 @@ function Settings(wind::Wind, sim::Sim, con::Con, parallel=false, threading=fals
              iterate_mode, control_mode, induction_mode, parallel, threading)
 end
 
+
+"""
+        getTurbineData(names::Vector{String}) -> TurbineData
+
+Retrieve nacelle positions and rotor diameters for a given list of wind turbine types.
+
+# Arguments
+- `names::Vector{String}`: A vector of wind turbine type names. Supported types are loaded
+    from the `data/turbine_specs.yaml` file and currently include:
+    - `"DTU 10MW"`, `"DTU 5MW"`, `"Senvion 6.2M"`, `"V116"`, `"V117"`, `"V162"`, `"GE Haliade X"`
+
+# Returns
+- A [`TurbineData`](@ref) struct with the following fields:
+    - `nac_pos::Matrix{Float64}`: An `N × 3` matrix where each row is the (x, y, z) nacelle position.
+    - `rotor_diameter::Vector{Float64}`: A vector of rotor diameters for each turbine.
+
+# Raises
+- `ArgumentError` if an unknown turbine name is encountered.
+
+# Example
+```julia
+names = ["DTU 10MW", "V116"]
+turbine_data = getTurbineData(names)
+```
+"""
 function getTurbineData(names::Vector{String})
     # Load turbine specifications from YAML file
     turbine_specs_file = _resolve_data_path("turbine_specs.yaml")
