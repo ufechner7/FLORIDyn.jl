@@ -567,6 +567,12 @@ Copy the script run_julia to the folder "bin"
 (it will be created if it doesn't exist).
 """ copy_bin
 
+"""
+    copy_examples()
+
+Copy the example scripts from the package to the local `examples` directory
+(it will be created if it doesn't exist).
+"""
 function copy_examples()
     PATH = "examples"
     if ! isdir(PATH) 
