@@ -17,30 +17,6 @@ using Dates, DistributedNext, Pkg, StaticArrays, Statistics
 using REPL.TerminalMenus
 using SparseArrays
 
-# Forward declarations for functions referenced before their include files are loaded.
-function create_thread_buffers end
-function getMeasurements end
-function calcFlowField end
-function getDataDir end
-function create_unified_buffers end
-function copy_model_settings end
-function discretizeRotor end
-function runFLORIS! end
-function runFLORIDyn end
-function run_floridyn end
-function setUpTmpWFAndRun! end
-function prepareSimulation end
-function importSOWFAFile end
-function select_project end
-function createAllVideos end
-function copy_examples end
-function copy_bin end
-function install_examples end
-function get_default_project end
-function get_default_msr end
-function set_default_msr end
-function select_measurement end
-
 """
     MSR `VelReduction` `AddedTurbulence` `EffWind`
 
@@ -599,13 +575,6 @@ function copy_examples()
     src_path = joinpath(dirname(pathof(@__MODULE__)), "..", PATH)
     copy_files("examples", readdir(src_path))
 end
-
-@doc """
-    copy_examples()
-
-Copy all example scripts to the folder "examples"
-(it will be created if it doesn't exist).
-""" copy_examples
 
 """
     install_examples(add_packages=true)

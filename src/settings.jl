@@ -43,16 +43,6 @@ The structures use the @with_kw macro for keyword-based constructors with defaul
 Turbine specifications are loaded from data/turbine_specs.yaml for extensibility.
 =#
 
-# Forward declarations avoid early-binding world-age diagnostics in static analysis.
-function getTurbineData end
-function importSOWFAFile end
-function list_projects end
-function get_default_project end
-function select_project end
-function get_default_msr end
-function set_default_msr end
-function select_measurement end
-
 """
     WindPerturbation
 
@@ -1113,43 +1103,6 @@ function getTurbineData(names::Vector{String})
     return TurbineData(nac_pos, rotor_diameter)
 end
 
-@doc """
-        getTurbineData(names::Vector{String}) -> TurbineData
-
-Retrieve nacelle positions and rotor diameters for a given list of wind turbine types.
-
-# Arguments
-- `names::Vector{String}`: A vector of wind turbine type names. Supported types are loaded
-    from the `data/turbine_specs.yaml` file and currently include:
-    - `"DTU 10MW"`
-    - `"DTU 5MW"`
-    - `"Senvion 6.2M"`
-    - `"V116"`
-    - `"V117"`
-    - `"V162"`
-    - `"GE Haliade X"`
-
-# Returns
-- A [`TurbineData`](@ref) struct with the following fields:
-    - `nac_pos::Matrix{Float64}`: An `N × 3` matrix where each row corresponds to the (x, y, z) coordinates of the nacelle position for each turbine.
-    - `rotor_diameter::Vector{Float64}`: A vector of rotor diameters corresponding to each turbine.
-
-# Raises
-- `ArgumentError` if an unknown or misspelled turbine name is encountered.
-
-# Example
-```julia
-names = ["DTU 10MW", "V116"]
-turbine_data = getTurbineData(names)
-println("Nacelle positions: ", turbine_data.nac_pos)
-println("Rotor diameters: ", turbine_data.rotor_diameter)
-```
-
-# Data Source
-Turbine specifications are loaded from `data/turbine_specs.yaml`. To add new turbine types,
-add entries to this file following the existing format.
-""" getTurbineData
-
 function importSOWFAFile(filename, data_lines = 2:typemax(Int))
     pkg_path = joinpath(dirname(pathof(@__MODULE__)), "..")
     if ! isfile(filename)
@@ -1185,18 +1138,6 @@ function importSOWFAFile(filename, data_lines = 2:typemax(Int))
     nacelleYaw = Matrix(selected_df)
     return nacelleYaw
 end
-
-@doc """
-    importSOWFAFile(filename, data_lines = 2:typemax(Int))
-
-Reads from a custom-formatted text file and extracts columns: Turbine, Times, and nacelle.
-
-- `filename`: The path to the input file.
-- `data_lines`: A single range (e.g., `2:Inf`) or vector of tuple ranges (e.g., `[(2, Inf)]`) for rows to import.
-
-Returns:
-- A Matrix{Float64} with the selected column data.
-""" importSOWFAFile
 
 function condenseSOWFAYaw(YawData::Array{wf,2}) where wf
     # Compute difference between adjacent rows (excluding the first and last rows)
@@ -1432,17 +1373,6 @@ function select_project()
     println("Selected project saved to data/default.yaml: ", chosen_name)
     return chosen_name
 end
-
-@doc """
-    select_project() -> String
-
-Interactive project selector using a terminal menu interface. Displays available projects
-from projects.yaml and allows selection using arrow keys. Writes the chosen name to 
-`data/default.yaml` and returns the selected project name.
-
-Usage:
-    using FLORIDyn; select_project()
-""" select_project
 
 """
     get_default_msr() -> MSR

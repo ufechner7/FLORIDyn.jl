@@ -26,12 +26,6 @@ from initialization through time-stepping to final state saving. All functions a
 optimized for performance with minimal memory allocations during the simulation loop.
 =#
 
-function setUpTmpWFAndRun! end
-function runFLORIS! end
-function create_unified_buffers end
-function discretizeRotor end
-function runFLORIDyn end
-
 """
     angSOWFA2world(deg_SOWFA) -> Float64
 
@@ -769,19 +763,6 @@ function create_unified_buffers(wf::WindFarm, floris::Floris)
     
     return create_unified_buffers(wf, n_rotor_points)
 end
-
-@doc """
-    create_unified_buffers(wf::WindFarm, floris::Floris) -> UnifiedBuffers
-
-Create unified buffers with FLORIS-specific rotor discretization.
-
-# Arguments
-- `wf::WindFarm`: Wind farm object to determine buffer sizes  
-- `floris::Floris`: FLORIS parameters to determine rotor discretization buffer size
-
-# Returns
-- `UnifiedBuffers`: Struct containing all pre-allocated buffers with proper FLORIS buffers
-""" create_unified_buffers
 
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris; rmt_plot_fn=nothing, 
                           msr=VelReduction, debug=nothing, save_final_only=false)

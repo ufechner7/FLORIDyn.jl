@@ -26,33 +26,6 @@ function discretizeRotor(n_rp::Int)
   end
 end
 
-@doc """
-    discretizeRotor(n_rp::Int) -> Tuple{Matrix{Float64}, Vector{Float64}}
-
-Discretizes the rotor into `n_rp` segments using the isocell algorithm.
-
-Memoization: results are cached per thread. Repeated calls with the same `n_rp`
-on the same thread reuse the cached arrays (no lock needed). Do not mutate the
-returned arrays, as they are shared within the thread.
-
-# Arguments
-- `n_rp::Int`: The number of radial points to discretize the rotor into.
-
-# Returns
-- `(m_rp, w)` where:
-  - `m_rp::Matrix{Float64}`: Size `(nC, 3)`; first column zeros, columns 2–3 are
-    normalized coordinates in `[-0.5, 0.5]`.
-  - `w::Vector{Float64}`: Weights per cell that sum to approximately 1.
-
-# Notes
-- Per-thread cache avoids contention; different threads may compute and hold
-  their own cached copies for the same `n_rp`.
-- The isocell algorithm may not yield exactly `n_rp` cells but aims for a similar number.
-- For details, see: Masset et al. (2009)
-  https://orbi.uliege.be/bitstream/2268/91953/1/masset_isocell_orbi.pdf
-- The choice `N1 = 3` is used here; values of 4 or 5 are also viable.
-""" discretizeRotor
-
 # Lock-free per-thread memoization caches.
 # Use a Ref holding a vector of Dicts, initialized to length 0 at load time to
 # avoid baking in the precompile-time thread count.

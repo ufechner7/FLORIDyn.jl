@@ -3,8 +3,6 @@
 
 using Printf
 
-function createAllVideos end
-
 """
     createVideo(prefix::String; video_dir="video", output_dir="video", fps=2, delete_frames=false)
 

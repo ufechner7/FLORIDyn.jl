@@ -1,8 +1,6 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-function getDataDir end
-
 function getDataDir(set::Settings, wind::Wind, wf::WindFarm, t)
     # Reads wind data and returns the current phi for all turbines
 
