@@ -486,44 +486,6 @@ for running FLORIDyn simulations with appropriate plotting callbacks.
 - Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
 """ run_floridyn
 
-"""
-    copy_model_settings()
-
-Copy model configuration files and data directories to the local data directory.
-
-This function copies essential model configuration files and simulation data from the package's 
-data directory to a local `data/` directory in the current working directory. 
-
-# Files and Directories Copied
-
-## Configuration File
-- `2021_9T_Data.yaml`: Main wind farm configuration file containing turbine layout, simulation parameters, 
-  and model settings
-
-## Data Directory  
-- `2021_9T_Data/`: Complete SOWFA simulation data directory containing:
-  - `SOWFA_bladePitch.csv`: Blade pitch angle time series
-  - `SOWFA_generatorPower.csv`: Generator power output data
-  - `SOWFA_generatorTorque.csv`: Generator torque measurements
-  - `SOWFA_nacelleYaw.csv`: Nacelle yaw angle data
-  - `SOWFA_rotorSpeedFiltered.csv`: Filtered rotor speed measurements
-  - `U.csv`, `WindVel.csv`: Wind velocity data
-  - `WindDir.csv`, `WindDirConstant.csv`: Wind direction measurements
-  - `WindTI.csv`, `WindTIConstant.csv`: Turbulence intensity data
-  - Additional covariance and profile files
-
-# Automatic Operations
-The function automatically:
-- Creates the `data/` directory if it doesn't exist
-- Copies the main YAML configuration file using [`copy_files`](@ref)
-- Recursively copies the entire `2021_9T_Data/` subdirectory with all CSV files
-- Sets proper file permissions (0o774) on all copied files
-
-This function is called as part of [`install_examples`](@ref) to set up a complete 
-working environment with all necessary configuration files and simulation data.
-
-See also: [`copy_files`](@ref), [`install_examples`](@ref)
-"""
 function copy_model_settings()
     files = ["2021_9T_Data.yaml"]
     dst_path = abspath(joinpath(pwd(), "data"))
@@ -548,12 +510,45 @@ function copy_model_settings()
     println("Copied $(length(files)) files and 1 directories to $(dst_path) !")
 end
 
-"""
-    copy_bin()
+@doc """
+        copy_model_settings()
 
-Copy the script run_julia to the folder "bin"
-(it will be created if it doesn't exist).
-"""
+Copy model configuration files and data directories to the local data directory.
+
+This function copies essential model configuration files and simulation data from the package's 
+data directory to a local `data/` directory in the current working directory. 
+
+# Files and Directories Copied
+
+## Configuration File
+- `2021_9T_Data.yaml`: Main wind farm configuration file containing turbine layout, simulation parameters, 
+    and model settings
+
+## Data Directory  
+- `2021_9T_Data/`: Complete SOWFA simulation data directory containing:
+    - `SOWFA_bladePitch.csv`: Blade pitch angle time series
+    - `SOWFA_generatorPower.csv`: Generator power output data
+    - `SOWFA_generatorTorque.csv`: Generator torque measurements
+    - `SOWFA_nacelleYaw.csv`: Nacelle yaw angle data
+    - `SOWFA_rotorSpeedFiltered.csv`: Filtered rotor speed measurements
+    - `U.csv`, `WindVel.csv`: Wind velocity data
+    - `WindDir.csv`, `WindDirConstant.csv`: Wind direction measurements
+    - `WindTI.csv`, `WindTIConstant.csv`: Turbulence intensity data
+    - Additional covariance and profile files
+
+# Automatic Operations
+The function automatically:
+- Creates the `data/` directory if it doesn't exist
+- Copies the main YAML configuration file using [`copy_files`](@ref)
+- Recursively copies the entire `2021_9T_Data/` subdirectory with all CSV files
+- Sets proper file permissions (0o774) on all copied files
+
+This function is called as part of [`install_examples`](@ref) to set up a complete 
+working environment with all necessary configuration files and simulation data.
+
+See also: [`copy_files`](@ref), [`install_examples`](@ref)
+""" copy_model_settings
+
 function copy_bin()
     PATH = "bin"
     if ! isdir(PATH) 
@@ -564,12 +559,13 @@ function copy_bin()
     chmod(joinpath(PATH, "run_julia"), 0o774)
 end
 
-"""
-    copy_examples()
+@doc """
+    copy_bin()
 
-Copy all example scripts to the folder "examples"
+Copy the script run_julia to the folder "bin"
 (it will be created if it doesn't exist).
-"""
+""" copy_bin
+
 function copy_examples()
     PATH = "examples"
     if ! isdir(PATH) 
@@ -578,6 +574,13 @@ function copy_examples()
     src_path = joinpath(dirname(pathof(@__MODULE__)), "..", PATH)
     copy_files("examples", readdir(src_path))
 end
+
+@doc """
+    copy_examples()
+
+Copy all example scripts to the folder "examples"
+(it will be created if it doesn't exist).
+""" copy_examples
 
 """
     install_examples(add_packages=true)
