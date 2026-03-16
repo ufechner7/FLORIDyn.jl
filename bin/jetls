@@ -9,16 +9,4 @@ if [[ $(basename $(pwd)) == "bin" ]]; then
     cd ..
 fi
 
-# Suppress world-age banner noise by default; set to 0 to show full output.
-JETLS_SUPPRESS_WORLDAGE_WARNINGS="${JETLS_SUPPRESS_WORLDAGE_WARNINGS:-1}"
-
-if [[ "$JETLS_SUPPRESS_WORLDAGE_WARNINGS" == "1" ]]; then
-    jetls check --root=. src/ 2>&1 | awk '
-        /Detected access to binding `FLORIDyn\./ { skip = 5; next }
-        skip > 0 { skip--; next }
-        { print }
-    '
-    exit ${PIPESTATUS[0]}
-else
-    jetls check --root=. src/
-fi
+jetls check --root=. src/
