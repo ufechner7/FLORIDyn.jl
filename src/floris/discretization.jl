@@ -19,7 +19,14 @@ Key features:
 - Returns normalized coordinates and weights for integration
 =#
 
-"""
+function discretizeRotor(n_rp::Int)
+  cache = _get_discretizeRotor_thread_cache()
+  return get!(cache, n_rp) do
+    _compute_discretizeRotor(n_rp)
+  end
+end
+
+@doc """
     discretizeRotor(n_rp::Int) -> Tuple{Matrix{Float64}, Vector{Float64}}
 
 Discretizes the rotor into `n_rp` segments using the isocell algorithm.
@@ -44,13 +51,7 @@ returned arrays, as they are shared within the thread.
 - For details, see: Masset et al. (2009)
   https://orbi.uliege.be/bitstream/2268/91953/1/masset_isocell_orbi.pdf
 - The choice `N1 = 3` is used here; values of 4 or 5 are also viable.
-"""
-function discretizeRotor(n_rp::Int)
-  cache = _get_discretizeRotor_thread_cache()
-  return get!(cache, n_rp) do
-    _compute_discretizeRotor(n_rp)
-  end
-end
+""" discretizeRotor
 
 # Lock-free per-thread memoization caches.
 # Use a Ref holding a vector of Dicts, initialized to length 0 at load time to

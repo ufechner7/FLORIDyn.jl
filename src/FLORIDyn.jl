@@ -288,22 +288,6 @@ struct WindDirTriple
     MeanPull::Float64          # Scalar mean reversion factor
 end
 
-"""
-    create_unified_buffers(wf::WindFarm, rotor_points=50) -> UnifiedBuffers
-
-Create a unified buffer struct containing all arrays needed by interpolateOPs! and setUpTmpWFAndRun!.
-
-# Arguments
-- `wf::WindFarm`: Wind farm object to determine buffer sizes
-- `rotor_points`: Number of rotor discretization points for FLORIS buffers (defaults to 50)
-
-# Returns
-- `UnifiedBuffers`: Struct containing all pre-allocated buffers including FLORIS computation buffers
-
-# Note
-For optimal performance, use the version that accepts a Floris object to automatically 
-determine the correct rotor discretization size.
-"""
 function create_unified_buffers(wf::WindFarm, rotor_points=50)
     # For interpolateOPs!
     dist_buffer = zeros(wf.nOP)
@@ -459,7 +443,26 @@ export select_project
 export get_default_msr, select_measurement, set_default_msr
 export interpolate_hermite_spline
 
-"""
+function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction, save_final_only=false)
+    if Threads.nthreads() > 1 && nprocs() > 1
+        # Multi-threading mode: use remote plotting callback
+        # The rmt_plot_flow_field function should be defined via remote_plotting.jl
+        try
+            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr, save_final_only)
+        catch e
+            if isa(e, UndefVarError)
+                error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
+            else
+                rethrow(e)
+            end
+        end
+    else
+        # Single-threading mode: no plotting callback
+        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
+    end
+end
+
+@doc """
     run_floridyn(plt, set, wf, wind, sim, con, vis, 
                  floridyn, floris; msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
 
@@ -481,25 +484,7 @@ for running FLORIDyn simulations with appropriate plotting callbacks.
 
 # Returns
 - Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
-"""
-function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction, save_final_only=false)
-    if Threads.nthreads() > 1 && nprocs() > 1
-        # Multi-threading mode: use remote plotting callback
-        # The rmt_plot_flow_field function should be defined via remote_plotting.jl
-        try
-            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr, save_final_only)
-        catch e
-            if isa(e, UndefVarError)
-                error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
-            else
-                rethrow(e)
-            end
-        end
-    else
-        # Single-threading mode: no plotting callback
-        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
-    end
-end
+""" run_floridyn
 
 """
     copy_model_settings()
@@ -693,11 +678,11 @@ end
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
         settings_file = joinpath(path, "2021_9T_Data.yaml")
-        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = Base.invokelatest(setup, settings_file)
         set = Settings(wind, sim, con)
-        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-        wf = initSimulation(wf, sim)
-        runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
+        wf, wind, sim, con, floris = Base.invokelatest(prepareSimulation, set, wind, con, floridyn, floris, ta, sim)
+        wf = Base.invokelatest(initSimulation, wf, sim)
+        Base.invokelatest(runFLORIDyn, nothing, set, wf, wind, sim, con, vis, floridyn, floris)
     end
 
 end
