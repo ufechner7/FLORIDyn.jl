@@ -108,7 +108,7 @@ function update_thread_buffers!(buffers::ThreadBuffers, wf::WindFarm)
 end
 
     @doc """
-        update_thread_buffers!(buffers::ThreadBuffers, wf::WindFarm) -> Nothing
+        update_thread_buffers!(buffers::ThreadBuffers, _wf::WindFarm) -> Nothing
 
     Update wind field states in all thread-local wind farm buffers without allocating memory.
 
@@ -133,7 +133,7 @@ end
 
 
 
-function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
+function getMeasurements(buffers, mx, my, nM, zh, _wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
     setup_tmp_wf_and_run_fn = getfield(FLORIDyn, :setUpTmpWFAndRun!)
     size_mx = size(mx)
     mz = zeros(size_mx[1], size_mx[2], nM)
@@ -264,10 +264,11 @@ allowing wake effects to be captured in the flow field visualization.
 """ getMeasurements
 
 function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
-                       plt=nothing, vis=nothing)
+                       _plt=nothing, vis=nothing)
     get_measurements_fn = getfield(FLORIDyn, :getMeasurements)
     # Preallocate field
     nM = 3
+    Z = nothing
 
     # Use vis struct fields if provided, otherwise fall back to defaults
     if vis !== nothing
@@ -312,6 +313,9 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
         buffers = create_thread_buffers(wf, 1, floris)
         Z = get_measurements_fn(buffers, X, Y, nM, zh, wf, set, floris, wind)
     end
+
+    isnothing(Z) && error("Flow field computation failed before producing output.")
+    Z = Z::Array{Float64, 3}
 
     return Z, X, Y
 end
