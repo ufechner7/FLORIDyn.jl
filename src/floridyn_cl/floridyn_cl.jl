@@ -901,7 +901,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
             
             if should_plot
                 @info "time: $t_rel, plotting flow field"
-                Z, X, Y = Base.invokelatest(calc_flow_field_fn, set, wf, wind, floris; vis)
+                Z, X, Y = calc_flow_field_fn(set, wf, wind, floris; vis)
                 rel_vel = Z[:,:,1]
                 if any(isnan, rel_vel)
                     @warn "NaN values found in relative velocity field!"

@@ -247,11 +247,41 @@ function getDataVel(set::Settings, wind::Wind, wf::WindFarm, t, tmp_m, floris::F
             end
         end
     elseif wind.input_vel == "RW_with_Mean"
-        u = Base.invokelatest(getWindSpeedT, Velocity_RW_with_Mean(), wf.States_WF[wf.StartI, 1], wind.vel)
+        # Keep current behavior explicit until RW_with_Mean API is implemented.
+        throw(MethodError(getWindSpeedT, (Velocity_RW_with_Mean(), wf.States_WF[wf.StartI, 1], wind.vel)))
     elseif wind.input_vel == "EnKF_InterpTurbine"
-        u = Base.invokelatest(getWindSpeedT_EnKF, Velocity_EnKF_InterpTurbine(), wind.vel, idx, t)
+        vel = wind.vel::AbstractMatrix
+        u = getWindSpeedT_EnKF(Velocity_EnKF_InterpTurbine(), vel, idx, t)
     else
-        u = Base.invokelatest(getWindSpeedT, set.vel_mode, wind.vel, idx, t)
+        u = getDataVel_standard(set.vel_mode, wind.vel, idx, t)
     end
     return u, wind
+end
+
+function getDataVel_standard(mode::Velocity_Constant, vel, idx, t)
+    return getWindSpeedT(mode, vel::Number, idx, t)
+end
+
+function getDataVel_standard(mode::Velocity_Interpolation, vel, idx, t)
+    return getWindSpeedT(mode, vel::AbstractMatrix, idx, t)
+end
+
+function getDataVel_standard(mode::Velocity_Constant_wErrorCov, vel, idx, _)
+    return getWindSpeedT(mode, vel::WindVelType, idx)
+end
+
+function getDataVel_standard(mode::Velocity_Interpolation_wErrorCov, vel, idx, t)
+    return getWindSpeedT(mode, vel::WindVelMatrix, idx, t)
+end
+
+function getDataVel_standard(mode::Velocity_InterpTurbine, vel, idx, t)
+    return getWindSpeedT(mode, vel::AbstractMatrix, idx, t)
+end
+
+function getDataVel_standard(mode::Velocity_InterpTurbine_wErrorCov, vel, idx, t)
+    return getWindSpeedT(mode, vel::WindVelMatrix, idx, t)
+end
+
+function getDataVel_standard(mode::Velocity_ZOH_wErrorCov, vel, idx, t)
+    return getWindSpeedT(mode, vel::WindVelType, idx, t)
 end
