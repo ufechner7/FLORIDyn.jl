@@ -1298,8 +1298,11 @@ function get_default_project()
         mkpath(data_dir_local)
         msr_str = string(default_msr)
         io = open(default_path_local, "w")
-        write(io, "default:\n  name: $(first_name)\n  msr: $(msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
-        close(io)
+        try
+            write(io, "default:\n  name: $(first_name)\n  msr: $(msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+        finally
+            close(io)
+        end
         default_name = first_name
     end
 
@@ -1317,8 +1320,11 @@ function get_default_project()
         chosen = first_project
         msr_str = string(default_msr)
         io = open(default_path_local, "w")
-        write(io, "default:\n  name: $(String(chosen["name"]))\n  msr: $(msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
-        close(io)
+        try
+            write(io, "default:\n  name: $(String(chosen["name"]))\n  msr: $(msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+        finally
+            close(io)
+        end
     end
 
     # Build settings and vis file paths (prefer local workspace, fall back to package data)
@@ -1428,8 +1434,11 @@ function select_project()
     
     existing_msr_str = string(existing_msr)
     io = open(default_path_local, "w")
-    write(io, "default:\n  name: $(chosen_name)\n  msr: $(existing_msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
-    close(io)
+    try
+        write(io, "default:\n  name: $(chosen_name)\n  msr: $(existing_msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+    finally
+        close(io)
+    end
     println("Selected project saved to data/default.yaml: ", chosen_name)
     return chosen_name
 end
@@ -1494,8 +1503,11 @@ function set_default_msr(msr::MSR)
     # Write updated file
     msr_str = string(msr)
     io = open(default_path_local, "w")
-    write(io, "default:\n  name: $(default_name)\n  msr: $(msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
-    close(io)
+    try
+        write(io, "default:\n  name: $(default_name)\n  msr: $(msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+    finally
+        close(io)
+    end
     
     println("Default MSR saved to data/default.yaml: ", string(msr))
 end
