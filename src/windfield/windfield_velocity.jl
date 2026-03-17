@@ -82,6 +82,20 @@ function getWindSpeedT(::Velocity_Constant_wErrorCov, wind_vel::WindVelType, iT)
     return Vel
 end
 
+# Lightweight 1D linear interpolation without constructing interpolation objects.
+function interp_linear(x::AbstractVector{<:Real}, y::AbstractVector{<:Real}, t::Real)
+    idx = Int(Base.searchsortedlast(x, t))
+    if idx == length(x)
+        return y[end]
+    elseif idx == 0
+        return y[1]
+    else
+        x0, x1 = x[idx], x[idx + 1]
+        y0, y1 = y[idx], y[idx + 1]
+        return y0 + (y1 - y0) * (t - x0) / (x1 - x0)
+    end
+end
+
 mutable struct TurbineProps
     FluidDensity::Float64
     RotorRadius::Float64
@@ -330,12 +344,11 @@ function getWindSpeedT(::Velocity_InterpTurbine, wind_vel::AbstractMatrix, iT, t
         t = times[end]
     end
 
-    # Create individual 1D interpolations for each turbine column
+    # Interpolate each turbine column at the requested time.
     n_turbines = size(wind_data, 2)
     U_out = similar(wind_data[1, :])
     for j in 1:n_turbines
-        itp = linear_interpolation(times, wind_data[:, j], extrapolation_bc=Flat())
-        U_out[j] = itp(t)
+        U_out[j] = interp_linear(times, wind_data[:, j], t)
     end
 
     # Select the requested turbine(s)
@@ -375,8 +388,7 @@ function getWindSpeedT(::Velocity_InterpTurbine_wErrorCov, wind_vel::WindVelMatr
     n_turbines = size(speeds, 2)
     wind_vel_out = Vector{Float64}(undef, n_turbines)
     for i in 1:n_turbines
-        itp = interpolate((times,), speeds[:, i], Gridded(Linear()))
-        wind_vel_out[i] = itp(t_eval)
+        wind_vel_out[i] = interp_linear(times, speeds[:, i], t_eval)
     end
 
     iT_vec = isa(iT, Integer) ? [iT] : iT
