@@ -352,6 +352,20 @@ using Interpolations
     @testset "getWindSpeedT(Velocity_ZOH_wErrorCov(), ...)" begin
         vel_mode = Velocity_ZOH_wErrorCov()
 
+        @testset "getWindSpeedT supports WindVelType + (iT, t) signature" begin
+            wind = WindVelType(8.0, [0.5 0.0; 0.0 0.25])
+
+            FLORIDyn.set_rng(MersenneTwister(1234))
+            u_scalar = getWindSpeedT(vel_mode, wind, 1, 0.0)
+            @test u_scalar isa Float64
+
+            FLORIDyn.set_rng(MersenneTwister(1234))
+            u_vec = getWindSpeedT(vel_mode, wind, [1, 2], 0.0)
+            @test u_vec isa Vector{Float64}
+            @test length(u_vec) == 2
+            @test isapprox(u_vec[1], u_scalar; atol=1e-12)
+        end
+
         @testset "getWindSpeedT basic behavior" begin
             # Setup: make inputs deterministic for testing
             Vel = [1.0, 2.0]

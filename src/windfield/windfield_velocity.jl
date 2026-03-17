@@ -432,6 +432,29 @@ function getWindSpeedT(:: Velocity_ZOH_wErrorCov, vel::Vector, wind_vel_chol_sig
     vel .+= correlated_noise
 end
 
+"""
+    getWindSpeedT(::Velocity_ZOH_wErrorCov, wind_vel::WindVelType, iT, _)
+
+Computes zero-order-hold wind speed values with spatially correlated noise for
+the requested turbine index/indices `iT`.
+
+# Arguments
+- `::Velocity_ZOH_wErrorCov`: Type indicator for dispatch.
+- `wind_vel::WindVelType`: see [WindVelType](@ref)
+- `iT`: Turbine index or indices.
+- `_`: Unused time argument (kept for API compatibility).
+
+# Returns
+- Scalar wind speed for scalar `iT`, otherwise a vector of wind speeds.
+"""
+function getWindSpeedT(::Velocity_ZOH_wErrorCov, wind_vel::WindVelType, iT, _)
+    iT_vec = isa(iT, Integer) ? [iT] : iT
+    vel = fill(wind_vel.Data, length(iT_vec))
+    noise = wind_vel.CholSig[iT_vec, iT_vec] * randn(RNG, length(iT_vec))
+    vel = vel .+ noise
+    return isa(iT, Integer) ? vel[1] : vel
+end
+
 
 
 
