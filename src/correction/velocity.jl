@@ -12,7 +12,7 @@ correction. Used when `set.cor_vel_mode isa Velocity_None`.
 """
 function correctVel!(::Velocity_None, set, wf, Wind, SimTime, paramFLORIS, tmpM)
     # Get data
-    U, Wind = Base.invokelatest(getDataVel, set, Wind, wf, SimTime, tmpM, paramFLORIS)
+    U, Wind = getDataVel(set, Wind, wf, SimTime, tmpM, paramFLORIS)
 
     # Correct Velocity
     wf.States_WF[wf.StartI, 1] = U
@@ -107,7 +107,7 @@ This correction method is not properly tested. Use at your own risk!
 """
 function correctVel!(::Velocity_Influence, set::Settings, wf::WindFarm, wind::Wind, t, floris, tmpM)
     # Base free wind speeds (may update wind state depending on mode)
-    u, wind = Base.invokelatest(getDataVel, set, wind, wf, t, tmpM, floris)
+    u, wind = getDataVel(set, wind, wf, t, tmpM, floris)
 
     nT = wf.nT
     has_dep = !isempty(wf.dep)
