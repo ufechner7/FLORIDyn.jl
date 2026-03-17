@@ -229,15 +229,22 @@ function getDataVel(set::Settings, wind::Wind, wf::WindFarm, t, tmp_m, floris::F
         u, wind.vel = Base.invokelatest(getWindSpeedT, set.vel_mode, wind.vel, idx, t,
                                         wf.States_WF[wf.StartI, 2], floris.p_p)
         # I_and_I state fields are not part of Wind.vel's declared union type.
-        # Access them dynamically and skip wake reduction if unavailable.
-        try
+        # Access them defensively and log when wake reduction is skipped.
+        if !Base.invokelatest(hasproperty, wind.vel, :StartTime)
+            @debug "Skipping I_and_I wake reduction: missing StartTime" input_vel=wind.input_vel
+        elseif !Base.invokelatest(hasproperty, wind.vel, :WSE)
+            @debug "Skipping I_and_I wake reduction: missing WSE" input_vel=wind.input_vel
+        else
             start_time = Base.invokelatest(getproperty, wind.vel, :StartTime)
             wse = Base.invokelatest(getproperty, wind.vel, :WSE)
-            offset = Base.invokelatest(getproperty, wse, :Offset)
-            if (t - start_time) > offset
-                u = u ./ tmp_m[:, 1]
+            if !Base.invokelatest(hasproperty, wse, :Offset)
+                @debug "Skipping I_and_I wake reduction: missing WSE.Offset" input_vel=wind.input_vel
+            else
+                offset = Base.invokelatest(getproperty, wse, :Offset)
+                if (t - start_time) > offset
+                    u = u ./ tmp_m[:, 1]
+                end
             end
-        catch
         end
     elseif wind.input_vel == "RW_with_Mean"
         u = Base.invokelatest(getWindSpeedT, Velocity_RW_with_Mean(), wf.States_WF[wf.StartI, 1], wind.vel)
