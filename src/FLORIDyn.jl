@@ -445,6 +445,29 @@ export select_project
 export get_default_msr, select_measurement, set_default_msr
 export interpolate_hermite_spline
 
+"""
+    run_floridyn(plt, set, wf, wind, sim, con, vis,
+                 floridyn, floris; msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
+
+Unified function that automatically handles both multi-threading and single-threading modes
+for running FLORIDyn simulations with appropriate plotting callbacks.
+
+# Arguments
+- `plt`: PyPlot instance, usually provided by ControlPlots
+- `set`: Settings object. See: [Settings](@ref)
+- `wf`: WindFarm struct. These are work arrays, not persistent objects. See: [WindFarm](@ref)
+- `wind`: Wind field input settings. See: [Wind](@ref)
+- `sim`: Simulation settings. See: [Sim](@ref)
+- `con`: Controller settings. See: [Con](@ref)
+- `vis`: Visualization settings. See: [Vis](@ref)
+- `floridyn`: FLORIDyn model struct. See: [FloriDyn](@ref)
+- `floris`: Floris model struct. See: [Floris](@ref)
+- `msr`: Measurement index for online flow field plotting (VelReduction, AddedTurbulence or EffWind).
+         Default VelReduction. See: [MSR](@ref)
+
+# Returns
+- Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
+"""
 function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction, save_final_only=false)
     run_floridyn_core_fn = getfield(FLORIDyn, :runFLORIDyn)
     if Threads.nthreads() > 1 && nprocs() > 1
@@ -462,30 +485,6 @@ function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=V
         return run_floridyn_core_fn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
     end
 end
-
-@doc """
-    run_floridyn(plt, set, wf, wind, sim, con, vis, 
-                 floridyn, floris; msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
-
-Unified function that automatically handles both multi-threading and single-threading modes
-for running FLORIDyn simulations with appropriate plotting callbacks.
-
-# Arguments
-- `plt`: PyPlot instance, usually provided by ControlPlots
-- `set`: Settings object. See: [Settings](@ref)
-- `wf`: WindFarm struct. These are work arrays, not persistent objects. See: [WindFarm](@ref)
-- `wind`: Wind field input settings. See: [Wind](@ref)
-- `sim`: Simulation settings. See: [Sim](@ref)
-- `con`: Controller settings. See: [Con](@ref)
-- `vis`: Visualization settings. See: [Vis](@ref)
-- `floridyn`: FLORIDyn model struct. See: [FloriDyn](@ref)
-- `floris`: Floris model struct. See: [Floris](@ref)
-- `msr`: Measurement index for online flow field plotting (VelReduction, AddedTurbulence or EffWind). 
-         Default VelReduction. See: [MSR](@ref)
-
-# Returns
-- Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
-""" run_floridyn
 
 function copy_model_settings()
     files = ["2021_9T_Data.yaml"]
