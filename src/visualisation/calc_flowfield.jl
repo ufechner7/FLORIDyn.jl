@@ -363,7 +363,7 @@ performed in parallel if `set.threading` is true.
 ```julia
 # Calculate flow field with threading and GC control
 set.threading = true
-Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+Z, X, Y = calcFlowField(set, wf, wind, floris; vis=vis)
 
 # Extract velocity reduction field
 velocity_reduction = Z[:, :, 1]
