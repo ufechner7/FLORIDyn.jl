@@ -836,7 +836,8 @@ simulations.
 # Constructors
 ```julia
 # Default constructor with keyword arguments
-tp = TurbineProperties(name="NREL 5MW", rotor_radius=63.0, gearbox_ratio=97.0)
+cp = cp_fun("data/DTU_10MW/cp.csv")
+tp = TurbineProperties(name="NREL 5MW", rotor_radius=63.0, gearbox_ratio=97.0, cp_fun=cp)
 
 # Constructor from power coefficient file
 tp = TurbineProperties("path/to/cp.csv")  # Loads cp_fun from CSV file
