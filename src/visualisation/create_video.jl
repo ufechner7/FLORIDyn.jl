@@ -248,7 +248,35 @@ function natural_sort_key(filename::String)
     return parts
 end
 
-function createAllVideos(; video_dir::String="video", output_dir::String="video", fps::Int=2, delete_frames::Bool=false)
+"""
+    createAllVideos(; video_dir="video", output_dir="video", fps=2, delete_frames=false)
+
+Create videos for all common measurement types found in the video directory.
+
+# Arguments
+- `video_dir::String`: Directory containing the PNG files (default: "video")
+- `output_dir::String`: Directory where output videos will be saved (default: "video")
+- `fps::Int`: Frames per second for output videos (default: 2)
+- `delete_frames::Bool`: Whether to delete PNG files after creating videos (default: false)
+
+# Returns
+- `Vector{String}`: Paths to created video files
+
+# Description
+This convenience function automatically detects common measurement type prefixes in the video
+directory and creates videos for each type found. It looks for the following prefixes:
+- "velocity_reduction"
+- "added_turbulence" 
+- "wind_speed"
+
+# Example
+```julia
+# Create videos for all measurement types found
+video_paths = createAllVideos(fps=4, delete_frames=true)
+println("Created videos: ", video_paths)
+```
+"""
+function createAllVideos(; video_dir="video", output_dir="video", fps=2, delete_frames=false)
     # Common measurement type prefixes
     prefixes = ["ff_velocity_reduction", "ff_added_turbulence", "ff_wind_speed"]
     created_videos = String[]
@@ -273,25 +301,3 @@ function createAllVideos(; video_dir::String="video", output_dir::String="video"
     
     return created_videos
 end
-
-    @doc """
-        createAllVideos(; video_dir="video", output_dir="video", fps=2, delete_frames=false)
-
-    Create videos for all common measurement types found in the video directory.
-
-    # Arguments
-    - `video_dir::String`: Directory containing the PNG files (default: "video")
-    - `output_dir::String`: Directory where output videos will be saved (default: "video")
-    - `fps::Int`: Frames per second for output videos (default: 2)
-    - `delete_frames::Bool`: Whether to delete PNG files after creating videos (default: false)
-
-    # Returns
-    - `Vector{String}`: Paths to created video files
-
-    # Description
-    This convenience function automatically detects common measurement type prefixes in the video
-    directory and creates videos for each type found. It looks for the following prefixes:
-    - "velocity_reduction"
-    - "added_turbulence"
-    - "wind_speed"
-    """ createAllVideos
