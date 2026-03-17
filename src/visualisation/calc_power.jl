@@ -79,7 +79,7 @@ println("Power variability: ", round(power_std, digits=3))
 function calc_rel_power(settings_file; dt=350, wind_dir=nothing, ti=0.062)
     fixed_wind_dir = ! isnothing(wind_dir)
     # get the settings for the wind field, simulator and controller
-    wind, sim, con, floris, floridyn, ta = setup(settings_file)
+    wind, sim, con, floris, floridyn, ta, _ = setup(settings_file)
     sim.end_time += dt
     if fixed_wind_dir
         con.yaw = "Constant"
