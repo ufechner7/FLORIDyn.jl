@@ -486,31 +486,7 @@ function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=V
     end
 end
 
-function copy_model_settings()
-    files = ["2021_9T_Data.yaml"]
-    dst_path = abspath(joinpath(pwd(), "data"))
-    
-    # Copy main configuration file
-    copy_files("data", files)
-    
-    # Copy the 2021_9T_Data directory and all its contents
-    src_data_dir = joinpath(PACKAGE_ROOT, "data", "2021_9T_Data")
-    dst_data_dir = joinpath(pwd(), "data", "2021_9T_Data")
-    
-    if isdir(src_data_dir)
-        cp(src_data_dir, dst_data_dir, force=true)
-        # Set permissions for all copied files in the directory
-        for (root, _, files_in_dir) in walkdir(dst_data_dir)
-            for file in files_in_dir
-                chmod(joinpath(root, file), 0o774)
-            end
-        end
-    end
-    
-    println("Copied $(length(files)) files and 1 directories to $(dst_path) !")
-end
-
-@doc """
+"""
         copy_model_settings()
 
 Copy model configuration files and data directories to the local data directory.
@@ -547,8 +523,37 @@ This function is called as part of [`install_examples`](@ref) to set up a comple
 working environment with all necessary configuration files and simulation data.
 
 See also: [`copy_files`](@ref), [`install_examples`](@ref)
-""" copy_model_settings
+"""
+function copy_model_settings()
+    files = ["2021_9T_Data.yaml"]
+    dst_path = abspath(joinpath(pwd(), "data"))
+    
+    # Copy main configuration file
+    copy_files("data", files)
+    
+    # Copy the 2021_9T_Data directory and all its contents
+    src_data_dir = joinpath(PACKAGE_ROOT, "data", "2021_9T_Data")
+    dst_data_dir = joinpath(pwd(), "data", "2021_9T_Data")
+    
+    if isdir(src_data_dir)
+        cp(src_data_dir, dst_data_dir, force=true)
+        # Set permissions for all copied files in the directory
+        for (root, _, files_in_dir) in walkdir(dst_data_dir)
+            for file in files_in_dir
+                chmod(joinpath(root, file), 0o774)
+            end
+        end
+    end
+    
+    println("Copied $(length(files)) files and 1 directories to $(dst_path) !")
+end
 
+"""
+    copy_bin()
+
+Copy the script run_julia to the folder "bin"
+(it will be created if it doesn't exist).
+"""
 function copy_bin()
     PATH = "bin"
     if ! isdir(PATH) 
@@ -558,13 +563,6 @@ function copy_bin()
     cp(joinpath(src_path, "run_julia"), joinpath(PATH, "run_julia"), force=true)
     chmod(joinpath(PATH, "run_julia"), 0o774)
 end
-
-@doc """
-    copy_bin()
-
-Copy the script run_julia to the folder "bin"
-(it will be created if it doesn't exist).
-""" copy_bin
 
 """
     copy_examples()

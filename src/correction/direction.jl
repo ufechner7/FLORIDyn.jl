@@ -1,19 +1,7 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-function getDataDir(set::Settings, wind::Wind, wf::WindFarm, t)
-    # Reads wind data and returns the current phi for all turbines
-
-    if wind.input_dir == "RW_with_Mean"
-        phi = getWindDirT(set.dir_mode,wf.States_WF[wf.StartI, 2], wind)
-    else
-        phi = getWindDirT(set.dir_mode, wind, 1:wf.nT, t)
-    end
-
-    return phi
-end
-
-@doc """
+"""
     getDataDir(set::Settings, wind::Wind, wf::WindFarm, t)
 
 Retrieve wind direction data for all turbines at the current simulation time.
@@ -31,7 +19,18 @@ Retrieve wind direction data for all turbines at the current simulation time.
 - The function automatically handles different wind input modes through conditional logic
 - For random walk mode, uses existing wind farm state as reference
 - For standard mode, performs temporal interpolation across all turbines
-""" getDataDir
+"""
+function getDataDir(set::Settings, wind::Wind, wf::WindFarm, t)
+    # Reads wind data and returns the current phi for all turbines
+
+    if wind.input_dir == "RW_with_Mean"
+        phi = getWindDirT(set.dir_mode,wf.States_WF[wf.StartI, 2], wind)
+    else
+        phi = getWindDirT(set.dir_mode, wind, 1:wf.nT, t)
+    end
+
+    return phi
+end
 
 """
     correctDir!(::Direction_All, set, wf, wind, t)
