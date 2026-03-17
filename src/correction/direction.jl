@@ -15,10 +15,38 @@ Retrieve wind direction data for all turbines at the current simulation time.
 # Returns
 - `phi`: Wind direction values (in degrees) for all turbines at the specified time
 
+# Description
+This function reads wind direction data and returns the current wind direction angle (phi) for all 
+turbines in the wind farm. The function handles two different input modes:
+
+1. **Random Walk with Mean mode** (`wind.input_dir == "RW_with_Mean"`): Uses the current wind farm 
+   state from `wf.States_WF[wf.StartI, 2]` along with the wind direction data to compute direction.
+
+2. **Standard temporal interpolation mode**: Uses the wind direction data directly with temporal 
+   interpolation for all turbines at the specified simulation time.
+
+The function dispatches to `getWindDirT` with appropriate parameters based on the input mode, 
+ensuring consistent wind direction estimation across different modeling approaches.
+
+# Examples
+```julia
+# Get wind direction for all turbines at current simulation time
+phi = getDataDir(settings, wind_data, wind_farm, 100.0)
+
+# The returned phi contains direction values for all turbines
+direction_turbine_1 = phi[1]
+```
+
 # Notes
 - The function automatically handles different wind input modes through conditional logic
 - For random walk mode, uses existing wind farm state as reference
 - For standard mode, performs temporal interpolation across all turbines
+
+# See also
+- [`getWindDirT`](@ref): Underlying function for wind direction temporal interpolation
+- [`Settings`](@ref): Configuration structure containing direction mode settings
+- [`Wind`](@ref): Wind field data structure containing direction information and input type
+- [`WindFarm`](@ref): Wind farm configuration structure
 """
 function getDataDir(set::Settings, wind::Wind, wf::WindFarm, t)
     # Reads wind data and returns the current phi for all turbines
@@ -95,7 +123,7 @@ end
 - Compatible with different wind input modes (constant, interpolated, random walk)
 
 # See also
-- `getDataDir`: Function for retrieving wind direction data
+- [`getDataDir`](@ref): Function for retrieving wind direction data
 - [`Direction_None`](@ref), [`Direction_Influence`](@ref): Alternative correction strategies
 - [`Settings`](@ref): Simulation settings structure
 - [`WindFarm`](@ref): Wind farm configuration structure
@@ -136,7 +164,7 @@ minimal correction approach that updates turbine base states without affecting d
 operational points.
 
 The function performs these operations:
-1. **Data Retrieval**: Obtains current wind direction via `getDataDir`
+1. **Data Retrieval**: Obtains current wind direction via [`getDataDir`](@ref)
 2. **Selective Assignment**: Sets only turbine starting positions (`wf.StartI`) to `phi[1]`
 3. **Observation Point Sync**: If present, aligns OP orientation with the uniform direction value
 
@@ -172,7 +200,7 @@ end
 
 # See also
 - [`correctDir!`](@ref): Generic direction correction interface
-- `getDataDir`: Wind direction data retrieval
+- [`getDataDir`](@ref): Wind direction data retrieval
 - [`Direction_All`](@ref), [`Direction_Influence`](@ref): Alternative correction strategies
 """
 function correctDir!(::Direction_None, set, wf, wind, t)
@@ -257,7 +285,7 @@ correctDir!(Direction_Influence(), settings, wf, wind, 100.0)
 - Malformed interpolation matrices (wrong dimensions) trigger fallback behavior
 
 # See also
-- `getDataDir`: Function for retrieving ambient wind direction data
+- [`getDataDir`](@ref): Function for retrieving ambient wind direction data
 - [`Direction_None`](@ref), [`Direction_All`](@ref): Simpler correction strategies
 - [`Settings`](@ref): Simulation settings structure containing direction mode
 - [`WindFarm`](@ref): Wind farm configuration structure with dependency data

@@ -451,8 +451,8 @@ function interpolateOPs!(unified_buffers::UnifiedBuffers, intOPs::Vector{Matrix{
 end
 
 """
-        setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, floris::Floris, 
-                                            wind::Wind) -> Nothing
+    setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, floris::Floris, 
+                      wind::Wind) -> Nothing
 
 Non-allocating version that uses a unified buffer struct for wind farm calculations.
 
@@ -463,14 +463,14 @@ needs to be minimized.
 
 # Buffer Arguments
 - `ub::UnifiedBuffers`: Unified buffer struct containing all pre-allocated arrays
-    - `ub.M_buffer`: Pre-allocated buffer for results matrix (size: nT × 3)
-    - `ub.iTWFState_buffer`: Buffer for turbine wind field state
-    - `ub.tmp_Tpos_buffer`: Buffer for temporary turbine positions
-    - `ub.tmp_WF_buffer`: Buffer for temporary wind field states
-    - `ub.tmp_Tst_buffer`: Buffer for temporary turbine states
-    - `ub.dists_buffer`: Buffer for distance calculations
-    - `ub.plot_WF_buffer`: Buffer for plotting wind field data
-    - `ub.plot_OP_buffer`: Buffer for plotting operating point data
+  - `ub.M_buffer`: Pre-allocated buffer for results matrix (size: nT × 3)
+  - `ub.iTWFState_buffer`: Buffer for turbine wind field state
+  - `ub.tmp_Tpos_buffer`: Buffer for temporary turbine positions
+  - `ub.tmp_WF_buffer`: Buffer for temporary wind field states
+  - `ub.tmp_Tst_buffer`: Buffer for temporary turbine states
+  - `ub.dists_buffer`: Buffer for distance calculations
+  - `ub.plot_WF_buffer`: Buffer for plotting wind field data
+  - `ub.plot_OP_buffer`: Buffer for plotting operating point data
 
 # Output Arguments
 - `ub.M_buffer`: Pre-allocated buffer for results matrix (size: nT × 3)
@@ -487,7 +487,7 @@ needs to be minimized.
 
 # Returns
 - nothing: The function modifies `ub.M_buffer`, `wf.Weight`, and `wf.red_arr` in-place, 
-    storing the results of the wind farm calculations
+  storing the results of the wind farm calculations
 
 # Performance Notes
 - Uses in-place operations to minimize memory allocations
@@ -764,8 +764,8 @@ function create_unified_buffers(wf::WindFarm, floris::Floris)
 end
 
 """
-        runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris;
-                                rmt_plot_fn=nothing, msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
+    runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris;
+                rmt_plot_fn=nothing, msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
 
 Main entry point for the FLORIDyn closed-loop simulation.
 
@@ -782,24 +782,24 @@ Main entry point for the FLORIDyn closed-loop simulation.
 
 # Keyword Arguments
 - `rmt_plot_fn`: Optional remote plotting function for intermediate simulation results. When provided, this function 
-    is called remotely (using `@spawnat 2`) to plot flow field visualization on a separate worker process.
-    The function should accept parameters `(wf, X, Y, Z, vis, t_rel; msr=VelReduction)` where `wf` is the wind farm state,
-    `X`, `Y`, `Z` are flow field coordinates and velocities, `vis` contains visualization settings, and `t_rel` 
-    is the relative simulation time. Defaults to `nothing` for local plotting.
+  is called remotely (using `@spawnat 2`) to plot flow field visualization on a separate worker process.
+  The function should accept parameters `(wf, X, Y, Z, vis, t_rel; msr=VelReduction)` where `wf` is the wind farm state,
+  `X`, `Y`, `Z` are flow field coordinates and velocities, `vis` contains visualization settings, and `t_rel` 
+  is the relative simulation time. Defaults to `nothing` for local plotting.
 - `msr`: Measurement type for velocity reduction calculations. Defaults to `VelReduction`.
 
 # Returns
 A tuple `(wf, md, mi)` containing:
 - `wf::WindFarm`: Updated simulation state with final turbine positions, wind field states, and observation point data
 - `md::DataFrame`: Measurement data with columns:
-    - `:Time`: Simulation time steps
-    - `:ForeignReduction`: Wind speed reduction factors (%) due to wake effects from other turbines
-    - `:AddedTurbulence`: Additional turbulence intensity (%) induced by upstream turbines
-    - `:EffWindSpeed`: Effective wind speed (m/s) at each turbine after wake effects
-    - `:FreeWindSpeed`: Free-stream wind speed (m/s) without wake interference
-    - `:PowerGen`: Generated electrical power (MW) for each turbine
+  - `:Time`: Simulation time steps
+  - `:ForeignReduction`: Wind speed reduction factors (%) due to wake effects from other turbines
+  - `:AddedTurbulence`: Additional turbulence intensity (%) induced by upstream turbines
+  - `:EffWindSpeed`: Effective wind speed (m/s) at each turbine after wake effects
+  - `:FreeWindSpeed`: Free-stream wind speed (m/s) without wake interference
+  - `:PowerGen`: Generated electrical power (MW) for each turbine
 - `mi::Matrix`: Interaction matrix combining time data with turbine-to-turbine wake interaction coefficients 
-                                for each simulation step
+                for each simulation step
 
 # Description
 Runs a closed-loop wind farm simulation using the FLORIDyn and FLORIS models, 
