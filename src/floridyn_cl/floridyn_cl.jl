@@ -869,7 +869,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
 
         # ========== wind field corrections ==========
         wf, wind = Base.invokelatest(correctVel!, set.cor_vel_mode, set, wf, wind, sim_time, floris, @view(tmpM[1:nT, :]))
-        Base.invokelatest(correctDir!, set.cor_dir_mode, set, wf, wind, sim_time)
+        correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
         correctTI!(set.cor_turb_mode, set, wf, wind, sim_time)
 
         # Save free wind speed as measurement

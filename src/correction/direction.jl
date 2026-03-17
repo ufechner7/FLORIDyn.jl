@@ -132,7 +132,7 @@ end
 function correctDir!(::Direction_All, set, wf, wind, t)
     # Get Data
     get_data_dir_fn = getfield(FLORIDyn, :getDataDir)
-    phi = Base.invokelatest(get_data_dir_fn, set, wind, wf, t)
+    phi = get_data_dir_fn(set, wind, wf, t)
     # Correct
     wf.States_WF[:, 2] .= phi[1]
     # OP Orientation = turbine wind direction
@@ -206,7 +206,7 @@ end
 function correctDir!(::Direction_None, set, wf, wind, t)
     # Get Data
     get_data_dir_fn = getfield(FLORIDyn, :getDataDir)
-    phi = Base.invokelatest(get_data_dir_fn, set, wind, wf, t)
+    phi = get_data_dir_fn(set, wind, wf, t)
     # Correct
     wf.States_WF[wf.StartI, 2] .= phi[1]
     # OP Orientation = turbine wind direction
@@ -303,7 +303,7 @@ function correctDir!(::Direction_Influence, set::Settings, wf, wind, t)
     #    last turbine's direction – likely unintended side effect).
 
     get_data_dir_fn = getfield(FLORIDyn, :getDataDir)
-    phi = Base.invokelatest(get_data_dir_fn, set, wind, wf, t)  # base ambient directions per turbine
+    phi = get_data_dir_fn(set, wind, wf, t)  # base ambient directions per turbine
 
     nT = wf.nT
     has_dep        = !isempty(wf.dep)

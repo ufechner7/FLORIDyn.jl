@@ -698,10 +698,10 @@ end
         init_simulation_fn = getfield(FLORIDyn, :initSimulation)
         run_floridyn_fn = getfield(FLORIDyn, :runFLORIDyn)
 
-        wind, sim, con, floris, floridyn, ta, tp = Base.invokelatest(setup_fn, settings_file)
+        wind, sim, con, floris, floridyn, ta, tp = setup_fn(settings_file)
         set = Settings(wind, sim, con)
-        wf, wind, sim, con, floris = Base.invokelatest(prepare_simulation_fn, set, wind, con, floridyn, floris, ta, sim)
-        wf = Base.invokelatest(init_simulation_fn, wf, sim)
+        wf, wind, sim, con, floris = prepare_simulation_fn(set, wind, con, floridyn, floris, ta, sim)
+        wf = init_simulation_fn(wf, sim)
         Base.invokelatest(run_floridyn_fn, nothing, set, wf, wind, sim, con, vis, floridyn, floris)
     end
 
