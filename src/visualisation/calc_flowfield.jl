@@ -96,7 +96,7 @@ function create_thread_buffers(wf::WindFarm, nth::Int)
 end
 
 """
-    update_thread_buffers!(buffers::ThreadBuffers, _wf::WindFarm) -> Nothing
+    update_thread_buffers!(buffers::ThreadBuffers, wf::WindFarm) -> Nothing
 
 Update wind field states in all thread-local wind farm buffers without allocating memory.
 
