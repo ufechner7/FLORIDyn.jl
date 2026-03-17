@@ -96,23 +96,23 @@ function interp_linear(x::AbstractVector{<:Real}, y::AbstractVector{<:Real}, t::
     end
 end
 
-mutable struct TurbineProps
+mutable struct TurbineProps{F<:Function}
     FluidDensity::Float64
     RotorRadius::Float64
     GearboxRatio::Float64
     GearboxEff::Float64
     InertiaTotal::Float64
-    CpFun::Function
+    CpFun::F
 end
 
-mutable struct WSEStruct
+mutable struct WSEStruct{F<:Function}
     V::Vector{Float64}
     Ee::Vector{Float64}
     omega::Vector{Float64}
     beta::Float64
     gamma::Float64
     dt_SOWF::Float64
-    T_prop::TurbineProps
+    T_prop::TurbineProps{F}
 end
 
 function WindSpeedEstimatorIandI_FLORIDyn(WSE, Rotor_Speed, Blade_pitch, Gen_Torque, yaw, p_p)
