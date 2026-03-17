@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 """
-        calc_rel_power(settings_file; dt=350, wind_dir=180.0, ti=0.062)
+    calc_rel_power(settings_file; dt=350, wind_dir=180.0, ti=0.062)
 
 Calculate relative power output for a wind farm simulation over time.
 
@@ -14,9 +14,9 @@ power output compared to undisturbed wind conditions.
 - `settings_file::String`: Path to the YAML configuration file containing wind farm settings
 - `dt::Real=350`: Additional simulation time in seconds beyond the base configuration
 - `wind_dir::Union{Real,Nothing}=180.0`: Wind direction in degrees. If `nothing`, uses 
-    variable wind direction from the settings file. If a number, uses constant wind direction.
+  variable wind direction from the settings file. If a number, uses constant wind direction.
 - `ti::Union{Real,Nothing}=0.062`: Turbulence intensity (TI) as a decimal (e.g., 0.062 = 6.2%). 
-    If `nothing`, uses the turbulence intensity from the settings file.
+  If `nothing`, uses the turbulence intensity from the settings file.
 
 # Returns
 A tuple containing:
@@ -56,15 +56,15 @@ When `ti` is specified (not `nothing`):
 ```julia
 # Variable wind direction with default turbulence intensity
 times, rel_power, set, wf, wind, floris = calc_rel_power("data/2021_9T_Data.yaml"; 
-                                                                                                                 dt=200, wind_dir=nothing)
+                                                         dt=200, wind_dir=nothing)
 
 # Fixed wind direction with custom turbulence intensity
 times, rel_power, set, wf, wind, floris = calc_rel_power("data/2021_9T_Data.yaml"; 
-                                                                                                                 dt=100, wind_dir=270.0, ti=0.10)
+                                                         dt=100, wind_dir=270.0, ti=0.10)
 
 # Low turbulence case study
 times, rel_power, set, wf, wind, floris = calc_rel_power("data/2021_9T_Data.yaml"; 
-                                                                                                                 dt=150, wind_dir=180.0, ti=0.02)
+                                                         dt=150, wind_dir=180.0, ti=0.02)
 
 # Analyze results
 mean_power = mean(rel_power)

@@ -507,6 +507,100 @@ function compute_final_wind_shear!(buffers::FLORISBuffers, RPl, RPw, location_t,
     nothing
 end
 
+"""
+    runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
+               floris, windshear::Union{Matrix, WindShear})
+
+Execute the FLORIS (FLOw Redirection and Induction in Steady State) wake model simulation for wind farm analysis.
+
+This is the main orchestrating function that coordinates the FLORIS wake model execution through 
+a series of specialized sub-functions. It performs wake analysis using the Gaussian wake model to 
+calculate velocity reductions, turbulence intensity additions, and effective wind speeds at turbine 
+locations, accounting for wake interactions, rotor discretization, wind shear effects, and turbulence propagation.
+
+# Arguments
+- `buffers::FLORISBuffers`: Pre-allocated buffer arrays for computation and output storage (see [`FLORISBuffers`](@ref))
+- `set::Settings`: Simulation settings containing configuration options for wind shear modeling
+- `location_t`: Matrix of turbine positions [x, y, z] coordinates for each turbine [m]
+- `states_wf`: Wind field state matrix containing velocity, direction, and turbulence data
+- `states_t`: Turbine state matrix with axial induction factors, yaw angles, and turbulence intensities
+- `d_rotor`: Vector of rotor diameters for each turbine [m]
+- `floris`: FLORIS model parameters containing wake model coefficients and rotor discretization settings (see [`Floris`](@ref))
+- `windshear`: Wind shear profile data for vertical wind speed variation modeling, either a matrix or of type [`WindShear`](@ref)
+
+# Returns
+- `nothing`. Results are written into fields of `buffers`:
+    - `buffers.T_red_arr`: Velocity reduction factors for each turbine
+    - `buffers.T_aTI_arr`: Added turbulence intensity values
+    - `buffers.T_Ueff`: Effective wind speeds  
+    - `buffers.T_weight`: Wake weighting factors
+
+# Implementation Structure
+The function is implemented as a high-level orchestrator that calls specialized sub-functions:
+
+1. **[`prepare_rotor_points!`](@ref)**: Handles rotor discretization, scaling, rotation, and translation
+2. **[`handle_single_turbine!`](@ref)**: Optimized path for single turbine simulations (wind shear only)
+3. **[`setup_computation_buffers!`](@ref)**: Initializes and configures computation buffers and views
+4. **[`compute_wake_effects!`](@ref)**: Core wake computation loop for each upstream turbine
+5. **[`compute_final_wind_shear!`](@ref)**: Final wind shear and effective wind speed calculation
+
+# Computational Process
+## Single Turbine Case
+For single turbine simulations, the function uses an optimized path that only calculates 
+wind shear effects without wake interactions, providing significant performance benefits.
+
+## Multi-Turbine Wake Analysis
+For multi-turbine wind farms, the function performs:
+
+### Rotor Point Preparation
+- Discretizes rotor planes using the isocell algorithm
+- Applies yaw rotation transformations and coordinate translations
+- Handles both active turbines (d_rotor > 0) and placeholder turbines
+
+### Wake Interaction Calculations
+For each upstream turbine affecting downstream turbines:
+- **Coordinate Transformations**: Aligns coordinates with wind direction and turbine yaw
+- **Wake Variable Calculations**: Computes wake expansion, deflection, and potential core dimensions
+- **Velocity Deficit Modeling**: Applies Gaussian wake theory with yaw corrections
+- **Turbulence Enhancement**: Calculates added turbulence using empirical correlations
+- **Superposition**: Combines effects from multiple upstream turbines
+
+### Final Integration
+- Applies vertical wind shear corrections to the downstream turbine
+- Combines all wake effects with wind shear for final effective wind speed
+
+# Mathematical Models
+The function implements state-of-the-art wake modeling based on:
+- **Gaussian Wake Theory**: For velocity deficit calculations with yaw corrections
+- **Analytical Deflection Models**: For wake steering in yawed conditions
+- **Empirical Turbulence Models**: For wake-added turbulence intensity
+- **Linear Superposition**: For combining multiple wake interactions
+
+# Performance Characteristics
+- **Computational Complexity**: O(N²) for N turbines due to wake interactions
+- **Memory Efficiency**: Uses pre-allocated buffers to avoid runtime allocations
+- **Optimization**: Single turbine case bypasses multi-turbine calculations
+- **Vectorization**: Leverages SIMD operations where possible
+
+# Notes
+- Uses SOWFA (Simulator for Offshore Wind Farm Applications) coordinate conventions
+- Supports both research and engineering applications for wind farm optimization
+- Requires proper initialization of turbine states and wind field conditions
+- Buffer sizes must be compatible with rotor discretization settings
+
+# References
+- Bastankhah, M. and Porté-Agel, F. (2016). Experimental and theoretical study of wind turbine wakes in yawed conditions
+- Niayifar, A. and Porté-Agel, F. (2016). Analytical modeling of wind farms: A new approach for power prediction
+
+# See Also
+- [`prepare_rotor_points!`](@ref): Rotor point preparation and transformation
+- [`handle_single_turbine!`](@ref): Single turbine optimization path
+- [`setup_computation_buffers!`](@ref): Buffer initialization and setup
+- [`compute_wake_effects!`](@ref): Core wake interaction calculations
+- [`compute_final_wind_shear!`](@ref): Final wind shear integration
+- [`FLORISBuffers`](@ref): Buffer structure documentation
+- [`Floris`](@ref): FLORIS model parameters
+"""
 function runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, floris, 
                    windshear::Union{Matrix, WindShear})
     # Prepare rotor points (RPl, RPw)
@@ -534,98 +628,3 @@ function runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf
     
     nothing
 end
-
-    @doc """
-        runFLORIS!(buffers::FLORISBuffers, set::Settings, location_t, states_wf, states_t, d_rotor, 
-                   floris, windshear::Union{Matrix, WindShear})
-
-    Execute the FLORIS (FLOw Redirection and Induction in Steady State) wake model simulation for wind farm analysis.
-
-    This is the main orchestrating function that coordinates the FLORIS wake model execution through 
-    a series of specialized sub-functions. It performs wake analysis using the Gaussian wake model to 
-    calculate velocity reductions, turbulence intensity additions, and effective wind speeds at turbine 
-    locations, accounting for wake interactions, rotor discretization, wind shear effects, and turbulence propagation.
-
-    # Arguments
-    - `buffers::FLORISBuffers`: Pre-allocated buffer arrays for computation and output storage (see [`FLORISBuffers`](@ref))
-    - `set::Settings`: Simulation settings containing configuration options for wind shear modeling
-    - `location_t`: Matrix of turbine positions [x, y, z] coordinates for each turbine [m]
-    - `states_wf`: Wind field state matrix containing velocity, direction, and turbulence data
-    - `states_t`: Turbine state matrix with axial induction factors, yaw angles, and turbulence intensities
-    - `d_rotor`: Vector of rotor diameters for each turbine [m]
-    - `floris`: FLORIS model parameters containing wake model coefficients and rotor discretization settings (see [`Floris`](@ref))
-    - `windshear`: Wind shear profile data for vertical wind speed variation modeling, either a matrix or of type [`WindShear`](@ref)
-
-    # Returns
-    - `nothing`. Results are written into fields of `buffers`:
-        - `buffers.T_red_arr`: Velocity reduction factors for each turbine
-        - `buffers.T_aTI_arr`: Added turbulence intensity values
-        - `buffers.T_Ueff`: Effective wind speeds  
-        - `buffers.T_weight`: Wake weighting factors
-
-    # Implementation Structure
-    The function is implemented as a high-level orchestrator that calls specialized sub-functions:
-
-    1. **[`prepare_rotor_points!`](@ref)**: Handles rotor discretization, scaling, rotation, and translation
-    2. **[`handle_single_turbine!`](@ref)**: Optimized path for single turbine simulations (wind shear only)
-    3. **[`setup_computation_buffers!`](@ref)**: Initializes and configures computation buffers and views
-    4. **[`compute_wake_effects!`](@ref)**: Core wake computation loop for each upstream turbine
-    5. **[`compute_final_wind_shear!`](@ref)**: Final wind shear and effective wind speed calculation
-
-    # Computational Process
-    ## Single Turbine Case
-    For single turbine simulations, the function uses an optimized path that only calculates 
-    wind shear effects without wake interactions, providing significant performance benefits.
-
-    ## Multi-Turbine Wake Analysis
-    For multi-turbine wind farms, the function performs:
-
-    ### Rotor Point Preparation
-    - Discretizes rotor planes using the isocell algorithm
-    - Applies yaw rotation transformations and coordinate translations
-    - Handles both active turbines (d_rotor > 0) and placeholder turbines
-
-    ### Wake Interaction Calculations
-    For each upstream turbine affecting downstream turbines:
-    - **Coordinate Transformations**: Aligns coordinates with wind direction and turbine yaw
-    - **Wake Variable Calculations**: Computes wake expansion, deflection, and potential core dimensions
-    - **Velocity Deficit Modeling**: Applies Gaussian wake theory with yaw corrections
-    - **Turbulence Enhancement**: Calculates added turbulence using empirical correlations
-    - **Superposition**: Combines effects from multiple upstream turbines
-
-    ### Final Integration
-    - Applies vertical wind shear corrections to the downstream turbine
-    - Combines all wake effects with wind shear for final effective wind speed
-
-    # Mathematical Models
-    The function implements state-of-the-art wake modeling based on:
-    - **Gaussian Wake Theory**: For velocity deficit calculations with yaw corrections
-    - **Analytical Deflection Models**: For wake steering in yawed conditions
-    - **Empirical Turbulence Models**: For wake-added turbulence intensity
-    - **Linear Superposition**: For combining multiple wake interactions
-
-    # Performance Characteristics
-    - **Computational Complexity**: O(N²) for N turbines due to wake interactions
-    - **Memory Efficiency**: Uses pre-allocated buffers to avoid runtime allocations
-    - **Optimization**: Single turbine case bypasses multi-turbine calculations
-    - **Vectorization**: Leverages SIMD operations where possible
-
-    # Notes
-    - Uses SOWFA (Simulator for Offshore Wind Farm Applications) coordinate conventions
-    - Supports both research and engineering applications for wind farm optimization
-    - Requires proper initialization of turbine states and wind field conditions
-    - Buffer sizes must be compatible with rotor discretization settings
-
-    # References
-    - Bastankhah, M. and Porté-Agel, F. (2016). Experimental and theoretical study of wind turbine wakes in yawed conditions
-    - Niayifar, A. and Porté-Agel, F. (2016). Analytical modeling of wind farms: A new approach for power prediction
-
-    # See Also
-    - [`prepare_rotor_points!`](@ref): Rotor point preparation and transformation
-    - [`handle_single_turbine!`](@ref): Single turbine optimization path
-    - [`setup_computation_buffers!`](@ref): Buffer initialization and setup
-    - [`compute_wake_effects!`](@ref): Core wake interaction calculations
-    - [`compute_final_wind_shear!`](@ref): Final wind shear integration
-    - [`FLORISBuffers`](@ref): Buffer structure documentation
-    - [`Floris`](@ref): FLORIS model parameters
-    """ runFLORIS!

@@ -290,6 +290,22 @@ struct WindDirTriple
     MeanPull::Float64          # Scalar mean reversion factor
 end
 
+"""
+    create_unified_buffers(wf::WindFarm, rotor_points=50) -> UnifiedBuffers
+
+Create a unified buffer struct containing all arrays needed by interpolateOPs! and setUpTmpWFAndRun!.
+
+# Arguments
+- `wf::WindFarm`: Wind farm object to determine buffer sizes
+- `rotor_points`: Number of rotor discretization points for FLORIS buffers (defaults to 50)
+
+# Returns
+- `UnifiedBuffers`: Struct containing all pre-allocated buffers including FLORIS computation buffers
+
+# Note
+For optimal performance, use the version that accepts a Floris object to automatically 
+determine the correct rotor discretization size.
+"""
 function create_unified_buffers(wf::WindFarm, rotor_points=50)
     # For interpolateOPs!
     dist_buffer = zeros(wf.nOP)
@@ -487,7 +503,7 @@ function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=V
 end
 
 """
-        copy_model_settings()
+    copy_model_settings()
 
 Copy model configuration files and data directories to the local data directory.
 
@@ -498,19 +514,19 @@ data directory to a local `data/` directory in the current working directory.
 
 ## Configuration File
 - `2021_9T_Data.yaml`: Main wind farm configuration file containing turbine layout, simulation parameters, 
-    and model settings
+  and model settings
 
 ## Data Directory  
 - `2021_9T_Data/`: Complete SOWFA simulation data directory containing:
-    - `SOWFA_bladePitch.csv`: Blade pitch angle time series
-    - `SOWFA_generatorPower.csv`: Generator power output data
-    - `SOWFA_generatorTorque.csv`: Generator torque measurements
-    - `SOWFA_nacelleYaw.csv`: Nacelle yaw angle data
-    - `SOWFA_rotorSpeedFiltered.csv`: Filtered rotor speed measurements
-    - `U.csv`, `WindVel.csv`: Wind velocity data
-    - `WindDir.csv`, `WindDirConstant.csv`: Wind direction measurements
-    - `WindTI.csv`, `WindTIConstant.csv`: Turbulence intensity data
-    - Additional covariance and profile files
+  - `SOWFA_bladePitch.csv`: Blade pitch angle time series
+  - `SOWFA_generatorPower.csv`: Generator power output data
+  - `SOWFA_generatorTorque.csv`: Generator torque measurements
+  - `SOWFA_nacelleYaw.csv`: Nacelle yaw angle data
+  - `SOWFA_rotorSpeedFiltered.csv`: Filtered rotor speed measurements
+  - `U.csv`, `WindVel.csv`: Wind velocity data
+  - `WindDir.csv`, `WindDirConstant.csv`: Wind direction measurements
+  - `WindTI.csv`, `WindTIConstant.csv`: Turbulence intensity data
+  - Additional covariance and profile files
 
 # Automatic Operations
 The function automatically:

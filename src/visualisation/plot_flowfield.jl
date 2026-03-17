@@ -431,7 +431,7 @@ createVideo()
 
 # See Also
 - [`createVideo`](@ref): Create MP4 video from PNG frames
-- `createAllVideos`: Create videos for all measurement types
+- [`createAllVideos`](@ref): Create videos for all measurement types
 """
 function cleanup_video_folder()
     # Clean up any existing PNG files in video folder before starting

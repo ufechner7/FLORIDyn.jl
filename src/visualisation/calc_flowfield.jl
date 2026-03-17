@@ -58,6 +58,26 @@ function create_thread_buffers(wf::WindFarm, nth::Int, floris::Floris)
     return ThreadBuffers(thread_buffers, thread_unified_buffers)
 end
 
+"""
+    create_thread_buffers(wf::WindFarm, nth::Int) -> ThreadBuffers
+
+Create thread-local buffers for parallel flow field computation.
+
+This function pre-allocates all necessary data structures for each thread to avoid
+race conditions and memory allocations during the parallel computation loop.
+
+# Arguments
+- `wf::WindFarm`: Original wind farm object to use as template
+- `nth::Int`: Number of threads to create buffers for
+
+# Returns
+- `ThreadBuffers`: Struct containing all thread-local buffers
+
+# Performance Notes
+- Each thread gets its own copy of the WindFarm structure
+- Pre-allocates all arrays to minimize allocations during computation
+- Sets up dependency structure for virtual turbines at grid points
+"""
 function create_thread_buffers(wf::WindFarm, nth::Int)
     # Pre-allocate unified buffers for each thread (contains GP)
     create_unified_buffers_fn = getfield(FLORIDyn, :create_unified_buffers)
@@ -80,9 +100,10 @@ end
 
 Update wind field states in all thread-local wind farm buffers without allocating memory.
 
-This function efficiently updates the wind field states (`States_WF`) and optional interpolation
-coefficients (`C_Vel`, `C_Dir`) in all thread-local WindFarm objects to match the current
-wind conditions from the master WindFarm object.
+This function efficiently updates the wind field states (`States_WF`) and optional interpolation 
+coefficients (`C_Vel`, `C_Dir`) in all thread-local WindFarm objects to match the current 
+wind conditions from the master WindFarm object. This is useful when wind conditions change 
+during simulation and the thread buffers need to be synchronized.
 
 # Arguments
 - `buffers::ThreadBuffers`: Thread-local buffers containing WindFarm copies for each thread
@@ -94,9 +115,28 @@ wind conditions from the master WindFarm object.
 - Updates all threads' buffers to maintain consistency
 - Handles optional interpolation coefficient matrices when present
 
+# Fields Updated
+- `States_WF`: Wind field states matrix (velocity, direction, turbulence intensity)
+- `C_Vel`: Velocity interpolation coefficients (if present in WindFarm type)  
+- `C_Dir`: Direction interpolation coefficients (if present in WindFarm type)
+
+# Example
+```julia
+# Create thread buffers
+buffers = create_thread_buffers(wf, nthreads())
+
+# ... wind conditions change ...
+
+# Update all thread buffers with new wind states (non-allocating)
+update_thread_buffers!(buffers, wf)
+
+# Continue with flow field computation using updated buffers
+Z = getMeasurements(buffers, X, Y, nM, zh, wf, set, floris, wind)
+```
+
 # See Also
-- `create_thread_buffers`: Create initial thread-local buffers
-- `getMeasurements`: Parallel flow field computation using thread buffers
+- [`create_thread_buffers`](@ref): Create initial thread-local buffers
+- [`getMeasurements`](@ref): Parallel flow field computation using thread buffers
 """
 function update_thread_buffers!(buffers::ThreadBuffers, wf::WindFarm)
     # Update wind field states in all thread-local WindFarm objects
@@ -144,10 +184,14 @@ allowing wake effects to be captured in the flow field visualization.
 - `buffers::ThreadBuffers`: Pre-allocated thread-local buffers created with [`create_thread_buffers`](@ref);
     for Julia 1.12 use `create_thread_buffers(wf, nthreads() + 1, floris)`; for single-thread use `create_thread_buffers(wf, 1, floris)`
 - `mx::Matrix`: X-coordinates of grid points (m)
-- `my::Matrix`: Y-coordinates of grid points (m)
+- `my::Matrix`: Y-coordinates of grid points (m)  
 - `nM::Int`: Number of measurements to compute (typically 3)
 - `zh::Real`: Hub height for measurements (m)
 - `wf::WindFarm`: Wind farm object containing turbine data. See: [`WindFarm`](@ref)
+  - `wf.nT`: Number of real turbines
+  - `wf.StartI`: Starting indices for turbine data
+  - `wf.posBase`, `wf.posNac`: Turbine positions
+  - `wf.States_*`: Turbine state matrices
 - `set::Settings`: Settings object containing simulation parameters. See: [`Settings`](@ref)
 - `floris::Floris`: FLORIS model parameters for wake calculations. See: [`Floris`](@ref)
 - `wind::Wind`: Wind field configuration. See: [`Wind`](@ref)
@@ -158,6 +202,13 @@ allowing wake effects to be captured in the flow field visualization.
   - `mz[:,:,2]`: Added turbulence intensity
   - `mz[:,:,3]`: Effective wind speed
 
+# Algorithm
+For each grid point:
+1. Creates a temporary wind farm with all original turbines plus one virtual turbine at the grid point
+2. Sets the virtual turbine to depend on all real turbines (to capture wake effects)
+3. Runs the FLORIS simulation to compute wake-affected flow properties
+4. Extracts the result for the virtual turbine position
+
 # Performance Notes
 - Multi-threaded implementation using `@threads` for parallel processing of grid points when more than one buffer is provided
 - With a single buffer (`length(buffers.thread_buffers) == 1`), runs in a single-threaded loop
@@ -165,8 +216,24 @@ allowing wake effects to be captured in the flow field visualization.
 - Uses thread-local buffers created by [`create_thread_buffers`](@ref) to avoid race conditions
 - On Julia 1.12 create `nthreads() + 1` buffers to accommodate thread indexing
 
+# Example
+```julia
+# Create a 10x10 grid from 0 to 1000m
+x_range = 0:100:1000
+y_range = 0:100:1000
+mx = repeat(collect(x_range)', length(y_range), 1)
+my = repeat(collect(y_range), 1, length(x_range))
+
+# Calculate 3 measurements at 90m hub height (single-thread)
+buffers = create_thread_buffers(wind_farm, 1, floris_model)
+mz = getMeasurements(buffers, mx, my, 3, 90.0, wind_farm, settings, floris_model, wind_config)
+
+# Extract effective wind speed field
+wind_speed_field = mz[:, :, 3]
+```
+
 # See Also
-- `calcFlowField`: Higher-level function that uses this to create complete flow field data
+- [`calcFlowField`](@ref): Higher-level function that uses this to create complete flow field data
 - [`setUpTmpWFAndRun!`](@ref): Underlying simulation function used for each grid point
 """
 function getMeasurements(buffers, mx, my, nM, zh, _wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
@@ -268,20 +335,45 @@ performed in parallel if `set.threading` is true.
 
 # Arguments
 - `set::Settings`: Settings object containing simulation parameters
+  - `set.threading`: If true, uses multi-threaded computation with `@threads`
+  - `set.parallel`: If true, enables parallel-specific optimizations
 - `wf::WindFarm`: Wind farm object containing turbine data
 - `wind::Wind`: Wind field configuration
 - `floris::Floris`: FLORIS model parameters
 
 # Keyword Arguments
 - `vis=nothing`: Visualization configuration object containing field limits and resolution settings.
+  If provided, uses `vis.field_limits_min`, `vis.field_limits_max`, and `vis.field_resolution` 
+  to define the computational grid. If not provided, defaults to domain [0,0,0] to [3000,3000,400] 
+  meters with 20m resolution.
 
 # Returns
 - `Z::Array{Float64,3}`: 3D array of flow field measurements with dimensions `(ny, nx, 3)`
+  - `Z[:,:,1]`: Velocity reduction factor
+  - `Z[:,:,2]`: Added turbulence intensity  
+  - `Z[:,:,3]`: Effective wind speed (m/s)
 - `X::Matrix{Float64}`: X-coordinate grid (m)
 - `Y::Matrix{Float64}`: Y-coordinate grid (m)
 
+# Notes
+- Grid resolution and domain are configurable via the `vis` parameter, or use default values for backward compatibility
+- Hub height is taken from the first turbine in the wind farm
+
+# Example
+```julia
+# Calculate flow field with threading and GC control
+set.threading = true
+Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+
+# Extract velocity reduction field
+velocity_reduction = Z[:, :, 1]
+
+# Extract effective wind speed field  
+wind_speed = Z[:, :, 3]
+```
+
 # See Also
-- `getMeasurements`: Function used internally to compute the flow field
+- [`getMeasurements`](@ref): Function used internally to compute the flow field
 - [`plotFlowField`](@ref): Visualization function for the generated data
 """
 function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
