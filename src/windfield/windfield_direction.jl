@@ -41,8 +41,8 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 # Returns
 - `phi`: Vector of wind directions for the selected turbines, including random perturbation
 """
-function getWindDirT(::Direction_Constant_wErrorCov, wind::Wind, iT, t)
-    wind_dir = wind.dir
+function getWindDirT(::Direction_Constant_wErrorCov, wind::Wind, iT, _)
+    wind_dir = wind.dir::WindDirType
     if isa(iT, AbstractArray)
         n = length(iT)
         indices = iT
@@ -88,7 +88,7 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 - `phi`: Wind direction(s) at time `t` for turbine(s) `iT` [°]
 """
 function getWindDirT_EnKF(::Direction_EnKF_InterpTurbine, wind::Wind, iT, t)
-    wind_dir = wind.dir
+    wind_dir = wind.dir::Matrix{Float64}
     times = wind_dir[:, 1]
     n_turbines = size(wind_dir, 2) - 1
 
@@ -128,7 +128,7 @@ Returns:
 - phi: Vector of wind directions for each turbine in iT [°]
 """
 function getWindDirT(::Direction_Interpolation, wind::Wind, iT, t)
-    wind_dir = wind.dir
+    wind_dir = wind.dir::Matrix{Float64}
     times = wind_dir[:, 1]
     phis = wind_dir[:, 2]
 
@@ -164,7 +164,7 @@ Returns:
 - phi: Vector of wind directions for each turbine in iT [°]
 """
 function getWindDirT(::Direction_Interpolation_wErrorCov, wind::Wind, iT, t)
-    wind_dir = wind.dir
+    wind_dir = wind.dir::WindDirMatrix
 
     # Ensure t is within bounds
     if t < wind_dir.Data[1, 1]
@@ -193,8 +193,8 @@ function getWindDirT(::Direction_Interpolation_wErrorCov, wind::Wind, iT, t)
 end
 
 # Helper function for 1D linear interpolation
-function interp(x, y, t)
-    idx = searchsortedlast(x, t)
+function interp(x::AbstractVector{<:Real}, y::AbstractVector{<:Real}, t::Real)
+    idx = Int(Base.searchsortedlast(x, t))
     if idx == length(x)
         return y[end]
     elseif idx == 0
@@ -226,22 +226,27 @@ function getWindDirT(::Direction_InterpTurbine, wind::Wind, iT, t)
     if wind_dir === nothing
         error("wind_dir data is missing for Direction_InterpTurbine mode. Please provide wind direction data or use a different mode.")
     end
+    wind_dir = wind_dir::Matrix{Float64}
     
     # Check time bounds
     tmin = wind_dir[1, 1]
     tmax = wind_dir[end, 1]
-    if t < tmin
-        @warn "The time $t is out of bounds, will use $tmin instead."
-        t = tmin
-    elseif t > tmax
-        @warn "The time $t is out of bounds, will use $tmax instead."
-        t = tmax
+    t_eval = t
+    if t_eval < tmin
+        @warn "The time $t_eval is out of bounds, will use $tmin instead."
+        t_eval = tmin
+    elseif t_eval > tmax
+        @warn "The time $t_eval is out of bounds, will use $tmax instead."
+        t_eval = tmax
     end
 
     # Interpolate for all turbines at time t
     times = wind_dir[:, 1]
     phis = wind_dir[:, 2:end]  # Each column is a turbine
-    phi_out = [interp(times, phis[:, j], t) for j in axes(phis, 2)]
+    phi_out = Vector{Float64}(undef, size(phis, 2))
+    for j in axes(phis, 2)
+        phi_out[j] = interp(times, phis[:, j], t_eval)
+    end
 
     # Select requested turbines
     return phi_out[iT]
@@ -261,21 +266,25 @@ Return wind direction in SOWFA-deg for the requested turbine(s).
 - `phi`: Wind direction(s) for requested turbine(s), perturbed with noise. [°]
 """
 function getWindDirT(::Direction_InterpTurbine_wErrorCov, wind::Wind, iT, t)
-    wind_dir = wind.dir
+    wind_dir = wind.dir::WindDirMatrix
     times = wind_dir.Data[:, 1]
     nTurbines = size(wind_dir.Data, 2) - 1
 
     # Clamp t to available time range, with warning
-    if t < times[1]
-        @warn "The time $t is out of bounds, will use $(times[1]) instead."
-        t = times[1]
-    elseif t > times[end]
-        @warn "The time $t is out of bounds, will use $(times[end]) instead."
-        t = times[end]
+    t_eval = t
+    if t_eval < times[1]
+        @warn "The time $t_eval is out of bounds, will use $(times[1]) instead."
+        t_eval = times[1]
+    elseif t_eval > times[end]
+        @warn "The time $t_eval is out of bounds, will use $(times[end]) instead."
+        t_eval = times[end]
     end
 
     # Interpolate for each turbine at time t
-    phi_out = [Interpolations.linear_interpolation(times, wind_dir.Data[:, j+1])(t) for j in 1:nTurbines]
+    phi_out = Vector{Float64}(undef, nTurbines)
+    for j in 1:nTurbines
+        phi_out[j] = Interpolations.linear_interpolation(times, wind_dir.Data[:, j+1])(t_eval)
+    end
 
     # Select requested turbines
     phi = phi_out[iT]
@@ -302,7 +311,7 @@ Returns the wind direction at the respective turbine(s).
 - `phi`: Updated wind direction(s) (vector) [°]
 """
 function getWindDirT(::Direction_RW_with_Mean, wind_dir_now, wind_dir::Wind)
-    wind_dir_triple = wind_dir.dir    
+    wind_dir_triple = wind_dir.dir::WindDirTriple
     # Random walk model with mean implementation
     # Generate random normal vector
     weightedRandN = randn(RNG,1, length(wind_dir_now))
@@ -359,8 +368,8 @@ wind_dir_triple = WindDirTriple(
 )
 ```
 """
-function getWindDirT(::Direction_RW_with_Mean, wind::Wind, iT, t)
-    wind_dir_triple = wind.dir
+function getWindDirT(::Direction_RW_with_Mean, wind::Wind, iT, _)
+    wind_dir_triple = wind.dir::WindDirTriple
     if isa(iT, AbstractArray)
         n = length(iT)
         indices = iT

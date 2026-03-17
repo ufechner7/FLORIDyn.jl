@@ -495,6 +495,10 @@ needs to be minimized.
 - Thread-safe when each thread uses its own set of buffers
 """
 function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
+    windshear = wind.shear
+    isnothing(windshear) && error("wind.shear must be initialized before calling setUpTmpWFAndRun!.")
+    run_floris_fn = getfield(FLORIDyn, :runFLORIS!)
+
     # Reuse the provided M_buffer instead of allocating new
     ub.M_buffer .= 0.0  # Clear the buffer
     wf.Weight = [Float64[] for _ in 1:wf.nT]
@@ -524,7 +528,7 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
 
         if isempty(wf.dep[iT])
             # Single turbine case - use pre-allocated FLORIS buffers
-            runFLORIS!(
+            run_floris_fn(
                 ub.floris_buffers,
                 set,
                 (wf.posBase[iT,:] +wf.posNac[iT,:])',
@@ -532,7 +536,7 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
                 wf.States_T[wf.StartI[iT], :]',
                 wf.D[iT],
                 floris,
-                wind.shear
+                windshear
             )
             # Buffers now hold a length-1 vector for the single-turbine reduction
             T_red_scalar = ub.floris_buffers.T_red_arr[1]
@@ -631,7 +635,7 @@ function setUpTmpWFAndRun!(ub::UnifiedBuffers, wf::WindFarm, set::Settings, flor
         tmp_Tpos_view = @view ub.tmp_Tpos_buffer[1:tmp_nT, :]
         tmp_WF_view = @view ub.tmp_WF_buffer[1:tmp_nT, :]
         tmp_Tst_view = @view ub.tmp_Tst_buffer[1:tmp_nT, :]
-        runFLORIS!(ub.floris_buffers, set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, wind.shear)
+        run_floris_fn(ub.floris_buffers, set, tmp_Tpos_view, tmp_WF_view, tmp_Tst_view, tmp_D, floris, windshear)
         T_red_arr, T_aTI_arr, T_weight = ub.floris_buffers.T_red_arr, ub.floris_buffers.T_aTI_arr, ub.floris_buffers.T_weight
 
         T_red = prod(T_red_arr)
@@ -729,9 +733,34 @@ Retrieve the demand value for a given simulation time step.
 This function calculates the appropriate index in the demand data array based on the current simulation time
 and the defined time step, ensuring the index stays within valid bounds.
 """
-function get_demand(con, sim, time)
-    index = Int(clamp(floor(time / sim.time_step) + 1, 1, sim.n_sim_steps + 1))
-    return con.demand_data[index]
+function get_demand(con::Con, sim::Sim, time)
+    time_step = sim.time_step
+    isnothing(time_step) && error("sim.time_step must be initialized before calling get_demand.")
+
+    sim_steps = sim.n_sim_steps
+    isnothing(sim_steps) && error("sim.n_sim_steps must be initialized before calling get_demand.")
+
+    demand_data = con.demand_data
+    isnothing(demand_data) && error("con.demand_data must be initialized before calling get_demand.")
+
+    index = Int(clamp(floor(time / time_step) + 1, 1, sim_steps + 1))
+    return demand_data[index]
+end
+
+function create_unified_buffers(wf::WindFarm, floris::Floris)
+    rotor_points = floris.rotor_points
+    discretize_rotor_fn = getfield(FLORIDyn, :discretizeRotor)
+
+    # Calculate rotor discretization points if wind farm has turbines
+    n_rotor_points = if wf.D[end] > 0
+        isnothing(rotor_points) && error("floris.rotor_points must be initialized before creating unified buffers.")
+        RPl, _ = discretize_rotor_fn(rotor_points)
+        size(RPl, 1)
+    else
+        1
+    end
+    
+    return create_unified_buffers(wf, n_rotor_points)
 end
 
 """
@@ -779,18 +808,26 @@ applying control strategies and updating turbine states over time.
 """
 function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis, floridyn, floris; rmt_plot_fn=nothing, 
                           msr=VelReduction, debug=nothing, save_final_only=false)
-    nT = wf.nT
     sim_steps = sim.n_sim_steps
+    isnothing(sim_steps) && error("sim.n_sim_steps must be initialized before calling runFLORIDyn.")
+
+    sim_start_time = sim.start_time
+    isnothing(sim_start_time) && error("sim.start_time must be initialized before calling runFLORIDyn.")
+
+    nT = wf.nT
     ma = zeros(sim_steps * nT, 6)
     ma[:, 1] .= 1.0  # Set first column to 1
     vm_int   = Vector{Matrix{Float64}}(undef, sim_steps)
 
-    sim_time = sim.start_time
+    sim_time = sim_start_time
     plot_state = nothing  # Initialize animation state
     
     buffers = FLORIDyn.IterateOPsBuffers(wf)
+    create_unified_buffers_fn = getfield(FLORIDyn, :create_unified_buffers)
+    setup_tmp_wf_and_run_fn = getfield(FLORIDyn, :setUpTmpWFAndRun!)
+    calc_flow_field_fn = getfield(FLORIDyn, :calcFlowField)
     # Create unified buffers for all operations with FLORIS parameters
-    unified_buffers = create_unified_buffers(wf, floris)
+    unified_buffers = create_unified_buffers_fn(wf, floris)
     # Create buffers for interpolateOPs! (will be resized as needed)
     intOPs_buffers = [Matrix{Float64}(undef, 0, 4) for _ in 1:wf.nT]
     
@@ -821,7 +858,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         if sim_steps == 1 && ! isnothing(debug)
             debug[1] = deepcopy(wf)
         end
-        setUpTmpWFAndRun!(unified_buffers, wf, set, floris, wind)
+        setup_tmp_wf_and_run_fn(unified_buffers, wf, set, floris, wind)
         tmpM = unified_buffers.M_buffer
 
         ma[(it - 1) * nT + 1 : it * nT, 2:4] .= @view tmpM[1:nT, :]
@@ -831,7 +868,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         vm_int[it] = wf.red_arr
 
         # ========== wind field corrections ==========
-        wf, wind = correctVel!(set.cor_vel_mode, set, wf, wind, sim_time, floris, @view(tmpM[1:nT, :]))
+        wf, wind = Base.invokelatest(correctVel!, set.cor_vel_mode, set, wf, wind, sim_time, floris, @view(tmpM[1:nT, :]))
         correctDir!(set.cor_dir_mode, set, wf, wind, sim_time)
         correctTI!(set.cor_turb_mode, set, wf, wind, sim_time)
 
@@ -842,7 +879,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
         wf.States_T[wf.StartI, 2] = (
             wf.States_WF[wf.StartI, 2] .- getYaw(set.control_mode, con, (1:nT), sim_time)'
         )
-        wf.States_T[wf.StartI, 1] = getInduction(set.induction_mode, con, (1:nT), sim_time-sim.start_time)'
+        wf.States_T[wf.StartI, 1] = getInduction(set.induction_mode, con, (1:nT), sim_time - sim_start_time)'
 
         # ========== Calculate Power ==========
         P = getPower(wf, @view(tmpM[1:nT, :]), floris, con)
@@ -850,7 +887,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
 
         # ========== Live Plotting ============
         if vis.online
-            t_rel = sim_time - sim.start_time
+            t_rel = sim_time - sim_start_time
             if ! isnothing(con.demand_data)
                 demand = get_demand(con, sim, t_rel)
                 vis.subtitle = "demand: $(round(demand*100, digits=2)) %"
@@ -864,7 +901,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
             
             if should_plot
                 @info "time: $t_rel, plotting flow field"
-                Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
+                Z, X, Y = calc_flow_field_fn(set, wf, wind, floris; vis)
                 rel_vel = Z[:,:,1]
                 if any(isnan, rel_vel)
                     @warn "NaN values found in relative velocity field!"
@@ -875,7 +912,10 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
                     plt.pause(0.01)
                 else
                     # @info "time: $t_rel, plotting with rmt_plot_fn"
-                    @spawnat 2 rmt_plot_fn(wf, X, Y, Z, vis, t_rel - vis.t_skip; msr=msr)
+                    wf_plot = wf
+                    t_plot = t_rel - vis.t_skip
+                    msr_plot = msr
+                    @spawnat 2 rmt_plot_fn(wf_plot, X, Y, Z, vis, t_plot; msr=msr_plot)
                 end
             end
         end
@@ -888,29 +928,4 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
     )
     mi = hcat(md.Time, hcat(vm_int...)')
     return wf, md, mi
-end
-
-# Method dispatch for create_unified_buffers with Floris objects
-"""
-    create_unified_buffers(wf::WindFarm, floris::Floris) -> UnifiedBuffers
-
-Create unified buffers with FLORIS-specific rotor discretization.
-
-# Arguments
-- `wf::WindFarm`: Wind farm object to determine buffer sizes  
-- `floris::Floris`: FLORIS parameters to determine rotor discretization buffer size
-
-# Returns
-- `UnifiedBuffers`: Struct containing all pre-allocated buffers with proper FLORIS buffers
-"""
-function create_unified_buffers(wf::WindFarm, floris::Floris)
-    # Calculate rotor discretization points if wind farm has turbines
-    n_rotor_points = if wf.D[end] > 0
-        RPl, _ = discretizeRotor(floris.rotor_points)
-        size(RPl, 1)
-    else
-        1
-    end
-    
-    return create_unified_buffers(wf, n_rotor_points)
 end

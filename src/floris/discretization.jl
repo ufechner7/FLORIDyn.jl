@@ -19,6 +19,7 @@ Key features:
 - Returns normalized coordinates and weights for integration
 =#
 
+
 """
     discretizeRotor(n_rp::Int) -> Tuple{Matrix{Float64}, Vector{Float64}}
 

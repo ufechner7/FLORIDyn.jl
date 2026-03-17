@@ -5,7 +5,7 @@
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
 tic()
-using FLORIDyn, TerminalPager, DistributedNext
+using DistributedNext, FLORIDyn, TerminalPager
 if Threads.nthreads() == 1
     using ControlPlots  # Only load ControlPlots (PyPlot) when single-threaded
 end
@@ -16,9 +16,9 @@ end
 # PLT=5: Measurements plot (combined)
 # PLT=6: Velocity reduction plot with online visualization
 # PLT=7: Create videos from saved frames
-if !  @isdefined PLT; PLT=1; end
-if PLT == 6; NEW_PLT = 1; else NEW_PLT = PLT; end
-if ! @isdefined LAST_PLT; LAST_PLT=Set(NEW_PLT); end
+get_plt_mode() = isdefined(@__MODULE__, :PLT) ? getfield(@__MODULE__, :PLT) : 1
+NEW_PLT = get_plt_mode() == 6 ? 1 : get_plt_mode()
+get_last_plt() = isdefined(@__MODULE__, :LAST_PLT) ? getfield(@__MODULE__, :LAST_PLT) : Set([NEW_PLT])
 
 settings_file, vis_file = get_default_project()[2:3]
 
@@ -39,15 +39,25 @@ include("remote_plotting.jl")
 
 function get_parameters(vis)
     # get the settings for the wind field, simulator and controller
-    wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
+    wind, sim, con, floris, floridyn, ta, _ = setup(settings_file)
 
     # create settings struct with automatic parallel/threading detection
     set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
 
     wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)  
     wf = initSimulation(wf, sim)
-    wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
+    wf, md, _ = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
     return wf, md, set, floris, wind 
+end
+
+run_timed_floridyn(args...; kwargs...) = @time run_floridyn(args...; kwargs...)
+
+function run_mode1_flow_field(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    vis.online = false
+    wf_mode1, _, _ = run_timed_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+    @time Z, X, Y = calcFlowField(set, wf_mode1, wind, floris; vis)
+    @time plot_flow_field(wf_mode1, X, Y, Z, vis; msr=get_default_msr(), plt)
+    nothing
 end
 
 # get the settings for the wind field, simulator and controller
@@ -63,31 +73,28 @@ wf = initSimulation(wf, sim)
 @info "Initial conditions done, starting simulation..."
 toc()
 
-if NEW_PLT in LAST_PLT
+if NEW_PLT in get_last_plt()
     # If the new plot was displayed before, close all plots
     close_all(plt)
 end
 
-if PLT == 1
-    vis.online = false
-    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris)
-    @time Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
-    @time plot_flow_field(wf, X, Y, Z, vis; msr=get_default_msr(), plt)
-elseif PLT == 4
+if get_plt_mode() == 1
+    run_mode1_flow_field(plt, set, wf, wind, sim, con, vis, floridyn, floris)
+elseif get_plt_mode() == 4
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
     @time plot_measurements(wf, md, vis; separated=true, msr=get_default_msr(), plt, pltctrl)
-elseif PLT == 5
+elseif get_plt_mode() == 5
     vis.online = false
     wf, md, set, floris, wind = get_parameters(vis)
     @time plot_measurements(wf, md, vis; separated=false, msr=get_default_msr(), plt, pltctrl)
-elseif PLT == 6
+elseif get_plt_mode() == 6
     vis.online = true
     # Clean up any existing PNG files in video folder before starting
     cleanup_video_folder()
-    @time wf, md, mi = run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; 
-                                    msr=get_default_msr())
-elseif PLT == 7
+    wf_mode6, md_mode6, mi_mode6 = run_timed_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris;
+                                                      msr=get_default_msr())
+elseif get_plt_mode() == 7
     # Create videos from saved plot frames
     println("Creating videos from saved plot frames...")
     if isdir("video")
@@ -104,5 +111,7 @@ elseif PLT == 7
         println("No 'video' directory found. Run simulation with vis.save=true to generate frames first.")
     end
 end
-push!(LAST_PLT, NEW_PLT)
+last_plt = get_last_plt()
+push!(last_plt, NEW_PLT)
+global LAST_PLT = last_plt
 nothing

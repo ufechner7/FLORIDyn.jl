@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, Test
+using FLORIDyn, Test, Statistics
 
 @testset verbose=true "settings" begin
     @testset "getTurbineData" begin
@@ -86,8 +86,8 @@ using FLORIDyn, Test
                     # Should return project name as first element
                     @test project_name == "2021_9T_Data"
                     # Should resolve to package data files (no local settings/vis exist)
-                    @test settings_file == joinpath(pkg_data, "2021_9T_Data.yaml")
-                    @test vis_file == joinpath(pkg_data, "vis_default.yaml")
+                    @test abspath(settings_file) == abspath(joinpath(pkg_data, "2021_9T_Data.yaml"))
+                    @test abspath(vis_file) == abspath(joinpath(pkg_data, "vis_default.yaml"))
                 end
             end
         end
@@ -102,8 +102,8 @@ using FLORIDyn, Test
                     end
                     project_name, settings_file, vis_file = FLORIDyn.get_default_project()
                     @test project_name == "2021_54T_NordseeOne"
-                    @test settings_file == joinpath(pkg_data, "2021_54T_NordseeOne.yaml")
-                    @test vis_file == joinpath(pkg_data, "vis_54T.yaml")
+                    @test abspath(settings_file) == abspath(joinpath(pkg_data, "2021_54T_NordseeOne.yaml"))
+                    @test abspath(vis_file) == abspath(joinpath(pkg_data, "vis_54T.yaml"))
                 end
             end
         end
@@ -120,8 +120,8 @@ using FLORIDyn, Test
                     project_name, settings_file, vis_file = FLORIDyn.get_default_project()
                     # Should fall back to first project and rewrite default.yaml
                     @test project_name == "2021_9T_Data"
-                    @test settings_file == joinpath(pkg_data, "2021_9T_Data.yaml")
-                    @test vis_file == joinpath(pkg_data, "vis_default.yaml")
+                    @test abspath(settings_file) == abspath(joinpath(pkg_data, "2021_9T_Data.yaml"))
+                    @test abspath(vis_file) == abspath(joinpath(pkg_data, "vis_default.yaml"))
                     def_content = read(joinpath("data", "default.yaml"), String)
                     @test occursin("name: 2021_9T_Data", def_content)
                 end

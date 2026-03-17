@@ -46,7 +46,14 @@ video_path = createVideo("added_turbulence"; video_dir="custom_plots", output_di
 - If no matching files are found, the function returns an empty string
 - FFmpeg parameters are optimized for good quality and reasonable file size
 """
-function createVideo(prefix::String; video_dir="video", output_dir="video", postfix="", fps=2, delete_frames=false)
+function createVideo(
+    prefix::String;
+    video_dir::String="video",
+    output_dir::String="video",
+    postfix::String="",
+    fps::Int=2,
+    delete_frames::Bool=false
+)
     # Check if video directory exists
     if !isdir(video_dir)
         @warn "Video directory '$video_dir' does not exist"

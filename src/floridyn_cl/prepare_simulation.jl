@@ -71,48 +71,81 @@ cov_mat, chol = readCovMatrix([0.1, 0.2, 0.3], 3, "WindVel")
 cov_mat, chol = readCovMatrix([0.1 0.05; 0.05 0.2], 2, "WindVel")
 ```
 """
+function readNumericCSV(path::AbstractString)
+    try
+        raw = readdlm(path, ',', Float64)
+        if raw isa Tuple && length(raw) >= 1 && raw[1] isa AbstractMatrix
+            return Matrix{Float64}(raw[1])
+        end
+        return Matrix{Float64}(raw)
+    catch err
+        raw = try
+            readdlm(path, ',', Float64; header=true)
+        catch header_err
+            throw(ErrorException("Failed to read numeric CSV '$(path)': $(header_err)"))
+        end
+
+        if raw isa Tuple && length(raw) >= 1 && raw[1] isa AbstractMatrix
+            return Matrix{Float64}(raw[1])
+        end
+
+        throw(ErrorException("Failed to read numeric CSV '$(path)': $(err)"))
+    end
+end
+
 function readCovMatrix(cov_data, nT, name)
+    if cov_data isa Tuple
+        if length(cov_data) == 0 || !(cov_data[1] isa AbstractArray)
+            error("$(name)Covariance.csv could not be parsed as numeric data.")
+        end
+        cov_data = cov_data[1]
+    end
+
     data_size = size(cov_data)
     
     # Check if it's a scalar (either single element or 1x1 matrix)
     if length(cov_data) == 1
         # Single scalar value - create diagonal covariance matrix with same variance
         var_val = cov_data[1]
-        cov_matrix = var_val * I(nT)
-        chol_factor = sqrt(var_val) * I(nT)
+        cov_matrix = Matrix(var_val * I(nT))
+        chol_factor = Matrix(sqrt(var_val) * I(nT))
+        return cov_matrix, chol_factor
         
     # Check if it's a 1D vector with nT elements
     elseif ndims(cov_data) == 1 && length(cov_data) == nT
         # Vector of individual variances - create diagonal matrix
         cov_matrix = diagm(cov_data)
         chol_factor = diagm(sqrt.(cov_data))
+        return cov_matrix, chol_factor
         
     # Check if it's a row vector with nT elements (1×nT)
     elseif length(data_size) >= 2 && data_size[1] == 1 && data_size[2] == nT
         # Vector of individual variances - create diagonal matrix
         cov_matrix = diagm(vec(cov_data))
         chol_factor = diagm(sqrt.(vec(cov_data)))
+        return cov_matrix, chol_factor
         
     # Check if it's a column vector with nT elements (nT×1)
     elseif length(data_size) >= 2 && data_size[1] == nT && data_size[2] == 1
         # Vector of individual variances - create diagonal matrix
         cov_matrix = diagm(vec(cov_data))
         chol_factor = diagm(sqrt.(vec(cov_data)))
+        return cov_matrix, chol_factor
         
     # Check if it's an nT×nT matrix
     elseif length(data_size) >= 2 && data_size[1] == nT && data_size[2] == nT
         # Full covariance matrix - use directly
         cov_matrix = cov_data
         chol_factor = cholesky(cov_matrix).L
+        return cov_matrix, chol_factor
         
     else
         # Wrong dimension - doesn't match any expected format
         error("$(name)Covariance.csv has the wrong size, should contain either " *
               "a 1×$(nT) matrix, a $(nT)×$(nT) matrix or a single value.")
     end
-    
-    return cov_matrix, chol_factor
 end
+
 
 
 """
@@ -147,7 +180,9 @@ Prepares the simulation environment for a wind farm analysis using the provided 
 function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriDyn, 
                            floris::Floris, turbProp, sim::Sim)
     loadDataWarnings = String[]
-    pkg_path = joinpath(dirname(pathof(@__MODULE__)), "..")
+    import_sowfa_file_fn = getfield(FLORIDyn, :importSOWFAFile)
+    get_turbine_data_fn = getfield(FLORIDyn, :getTurbineData)
+    pkg_path = PACKAGE_ROOT
 
     # ========== WIND: Velocity ==========
     vel_file_dir = sim.path_to_data
@@ -156,9 +191,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     input_vel = wind.input_vel
 
     if input_vel == "I_and_I"
-        wind.vel.WSE = WSEParameters(nT, sim.path_to_data, sim.TimeStep)
-        wind.vel.TimePrev = sim.start_time
-        wind.vel.start_time = sim.start_time
+        error("Velocity_I_and_I setup is not implemented yet.")
     elseif input_vel == "Interpolation"
         # Only read from file if wind.vel is not already set as a matrix
         if !isa(wind.vel, AbstractMatrix)
@@ -170,7 +203,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
                 if !isfile(path)
                     @error "WindVel.csv not found in $vel_file_dir"
                 else
-                    wind.vel = readdlm(path, ',', Float64)
+                    wind.vel = readNumericCSV(path)
                 end
             catch
                 push!(loadDataWarnings, "WindVel.csv not found.")
@@ -218,41 +251,41 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
             if !isfile(path)
                 path = joinpath(pkg_path, path)
             end
-            wind.dir = readdlm(path, ',', Float64)
+            wind.dir = readNumericCSV(path)
         catch
             push!(loadDataWarnings, "WindDir.csv not found.")
         end
     elseif wind.input_dir == "InterpTurbine"
+        path = joinpath(data_path, "WindDirTurbine.csv")
         try
-            path = joinpath(data_path, "WindDirTurbine.csv")
             if !isfile(path)
                 path = joinpath(pkg_path, path)
             end
-            wind.dir = readdlm(path, ',', Float64)
+            wind.dir = readNumericCSV(path)
         catch
             push!(loadDataWarnings, "WindDirTurbine.csv not found")
             # Generate demo CSV file for InterpTurbine mode
             generateDemoCSV(data_path, "WindDirTurbine.csv", 3, nT, [0.0, 270.0], [100.0, 270.0])
-            wind.dir = readdlm(path, ',', Float64)
+            wind.dir = readNumericCSV(path)
         end
     elseif wind.input_dir == "Constant"
         # use fixed direction from settings if provided, wind.dir_fixed
     elseif wind.input_dir == "Interpolation_wErrorCov"
-        data = readdlm(joinpath(data_path, "WindDir.csv"), ',', Float64)
-        DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
+        data = readNumericCSV(joinpath(data_path, "WindDir.csv"))
+        DirCov = readNumericCSV(joinpath(data_path, "WindDirCovariance.csv"))
         _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
         wind.dir = WindDirMatrix(data, cholsig)
     elseif wind.input_dir == "InterpTurbine_wErrorCov"
-        data = readdlm(joinpath(data_path, "WindDirTurbine.csv"), ',', Float64)
-        DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
+        data = readNumericCSV(joinpath(data_path, "WindDirTurbine.csv"))
+        DirCov = readNumericCSV(joinpath(data_path, "WindDirCovariance.csv"))
         _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
         wind.dir = WindDirMatrix(data, cholsig)
     elseif wind.input_dir == "Constant_wErrorCov"
-        DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
+        DirCov = readNumericCSV(joinpath(data_path, "WindDirCovariance.csv"))
         _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
         wind.dir = WindDirType(wind.dir_fixed, cholsig)
     elseif wind.input_dir == "RW_with_Mean"
-        DirCov = readdlm(joinpath(data_path, "WindDirCovariance.csv"), ',', Float64)
+        DirCov = readNumericCSV(joinpath(data_path, "WindDirCovariance.csv"))
         _, cholsig = readCovMatrix(DirCov, nT, "WindDir")
         init_values = fill(wind.dir_fixed, nT)  # Create vector of initial values for all turbines
         wind.dir = WindDirTriple(init_values, cholsig, 1.0)  # MeanPull = 1.0
@@ -269,7 +302,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         try
             df = CSV.read(path, DataFrame)
             wind.ti = Matrix{Float64}(df)
-        catch e
+        catch
             push!(loadDataWarnings, "WindTI.csv not found.")
             generateDemoCSV(data_path, "WindTI.csv", 2, nT, [0.0, 0.0], [100.0, 100.0])
             df = CSV.read(path, DataFrame)
@@ -283,7 +316,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         try
             df = CSV.read(path, DataFrame)
             wind.ti = Matrix{Float64}(df)
-        catch e
+        catch
             push!(loadDataWarnings, "WindTITurbine.csv not found.")
             generateDemoCSV(data_path, "WindTITurbine.csv", 3, nT, [0.0, 0.06], [100.0, 0.06])
             df = CSV.read(path, DataFrame)
@@ -297,7 +330,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
             end
             df = CSV.read(path, DataFrame; header=false)
             wind.ti = df[1,1]
-        catch e
+        catch
             push!(loadDataWarnings, "WindTIConstant.csv not found.")
         end
     else
@@ -324,7 +357,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
         try
             df = CSV.read(path, DataFrame)
             wind.shear = Matrix{Float64}(df)
-        catch e
+        catch
             push!(loadDataWarnings, "WindShearProfile.csv not found.")
             generateDemoCSV(data_path, "WindShearProfile.csv", 2, nT, [0.0, 0.08], [100.0, 0.08])
             df = CSV.read(path, DataFrame)
@@ -339,7 +372,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
     wf.posBase = turbProp.pos
     wf.nT = size(turbProp.pos, 1)
         
-    t_data = getTurbineData(turbProp.type)
+    t_data = get_turbine_data_fn(turbProp.type)
     wf.posNac = t_data.nac_pos
     wf.D = t_data.rotor_diameter
 
@@ -380,7 +413,7 @@ function prepareSimulation(set::Settings, wind::Wind, con::Con, floridyn::FloriD
             push!(loadDataWarnings, "Control_YawInterpolation.csv not found.")
         end
     elseif yaw_method == "SOWFA"
-        nacelleYaw = importSOWFAFile(joinpath(vel_file_dir, "SOWFA_nacelleYaw.csv"))
+        nacelleYaw = import_sowfa_file_fn(joinpath(vel_file_dir, "SOWFA_nacelleYaw.csv"))
         con.yaw_data = condenseSOWFAYaw([nacelleYaw[1:wf.nT:end, 2] reshape(nacelleYaw[:,3],wf.nT, :)'])
     else
         error("Unknown yaw method: $yaw_method")

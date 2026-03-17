@@ -32,11 +32,17 @@ if !isdefined(Main, :init_plotting)
 end
 
 # get the settings for the wind field, simulator and controller
-wind, sim, con, floris, floridyn, ta = setup(settings_file)
+wind, sim, con, floris, floridyn, ta, _ = setup(settings_file)
+
+# Configure correction mode before creating strongly typed Settings.
+wind.correction = FLORIDyn.WindCorrection(
+    vel=wind.correction.vel,
+    dir="Influence",
+    ti=wind.correction.ti,
+)
 
 # create settings struct
 set = Settings(wind, sim, con, Threads.nthreads() > 1, Threads.nthreads() > 1)
-set.cor_dir_mode=Direction_Influence()
 
 wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
 

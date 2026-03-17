@@ -112,6 +112,10 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
     
     # Get the 2D slice
     mz_2d = mz[:, :, Int(msr)]
+    figure_name = "Flow Field"
+    label = ""
+    lev_min = minimum(mz_2d)
+    lev_max = maximum(mz_2d)
     
     # Try to use ControlPlots if available
     try
@@ -223,7 +227,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
                 for collection in state.contour_collection.collections
                     collection.remove()
                 end
-            catch e
+            catch
                 try
                     plt.close(state.fig)
                 catch

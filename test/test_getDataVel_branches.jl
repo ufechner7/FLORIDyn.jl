@@ -3,6 +3,16 @@
 
 using Test
 using FLORIDyn
+using Logging
+
+mutable struct _FakeIandIVel <: AbstractMatrix{Float64}
+    StartTime::Float64
+    TimePrev::Float64
+    WSE::Any
+end
+
+Base.size(::_FakeIandIVel) = (0, 0)
+Base.getindex(::_FakeIandIVel, ::Int, ::Int) = 0.0
 
 # Helper to build a minimal WindFarm for tests
 function _minimal_wf(nT::Int)
@@ -91,6 +101,33 @@ end
         set = _settings(Velocity_I_and_I())
         # Expect a failure until implementation is completed
         @test_broken getDataVel(set, wind, wf, 5.0, tmp_m, floris)
+    end
+
+    @testset "I_and_I branch skips wake reduction when WSE.Offset missing" begin
+        fake_wse = (V=fill(10.0, nT),)
+        fake_vel = _FakeIandIVel(5.0, 5.0, fake_wse)
+        wind = Wind(
+            input_vel="I_and_I",
+            input_dir="Constant",
+            input_ti="Constant",
+            input_shear="PowerLaw",
+            correction=FLORIDyn.WindCorrection(vel="None", dir="None", ti="None"),
+            perturbation=FLORIDyn.WindPerturbation(vel=false, vel_sigma=0.0, dir=false, dir_sigma=0.0, ti=false, ti_sigma=0.0),
+            vel=fake_vel,
+            dir=nothing,
+            ti=0.05,
+            shear=nothing
+        )
+        set = _settings(Velocity_I_and_I())
+        wf.States_WF[:,2] .= 270.0
+
+        test_logger = Test.TestLogger(min_level=Logging.Debug)
+        with_logger(test_logger) do
+            u, wind2 = getDataVel(set, wind, wf, 5.0, tmp_m, floris)
+            @test wind2 === wind
+            @test all(isapprox.(u, fill(10.0, nT); atol=1e-8))
+        end
+        @test any(log -> log.level == Logging.Debug && occursin("missing WSE.Offset", String(log.message)), test_logger.logs)
     end
 
     # 3. RW_with_Mean branch (currently non-functional in source: call signature to getWindSpeedT has no matching method)

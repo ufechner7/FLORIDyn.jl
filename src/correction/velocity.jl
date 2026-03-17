@@ -226,17 +226,62 @@ function getDataVel(set::Settings, wind::Wind, wf::WindFarm, t, tmp_m, floris::F
     idx = 1:wf.nT  # avoid temporary allocation from collect
     u = nothing
     if wind.input_vel == "I_and_I"
-        u, wind.vel = getWindSpeedT(set.vel_mode, wind.vel, idx, t,
-                                    wf.States_WF[wf.StartI, 2], floris.p_p)
-        if (t - wind.vel.StartTime) > wind.vel.WSE.Offset
-            u = u ./ tmp_m[:, 1]
+        u, wind.vel = Base.invokelatest(getWindSpeedT, set.vel_mode, wind.vel, idx, t,
+                                        wf.States_WF[wf.StartI, 2], floris.p_p)
+        # I_and_I state fields are not part of Wind.vel's declared union type.
+        # Access them defensively and log when wake reduction is skipped.
+        if !Base.invokelatest(hasproperty, wind.vel, :StartTime)
+            @debug "Skipping I_and_I wake reduction: missing StartTime" input_vel=wind.input_vel
+        elseif !Base.invokelatest(hasproperty, wind.vel, :WSE)
+            @debug "Skipping I_and_I wake reduction: missing WSE" input_vel=wind.input_vel
+        else
+            start_time = Base.invokelatest(getproperty, wind.vel, :StartTime)
+            wse = Base.invokelatest(getproperty, wind.vel, :WSE)
+            if !Base.invokelatest(hasproperty, wse, :Offset)
+                @debug "Skipping I_and_I wake reduction: missing WSE.Offset" input_vel=wind.input_vel
+            else
+                offset = Base.invokelatest(getproperty, wse, :Offset)
+                if (t - start_time) > offset
+                    u = u ./ tmp_m[:, 1]
+                end
+            end
         end
     elseif wind.input_vel == "RW_with_Mean"
-        u = getWindSpeedT(Velocity_RW_with_Mean(), wf.States_WF[wf.StartI, 1], wind.vel)
+        # Keep current behavior explicit until RW_with_Mean API is implemented.
+        throw(MethodError(getWindSpeedT, (Velocity_RW_with_Mean(), wf.States_WF[wf.StartI, 1], wind.vel)))
     elseif wind.input_vel == "EnKF_InterpTurbine"
-        u = getWindSpeedT_EnKF(Velocity_EnKF_InterpTurbine(), wind.vel, idx, t)
+        vel = wind.vel::AbstractMatrix
+        u = getWindSpeedT_EnKF(Velocity_EnKF_InterpTurbine(), vel, idx, t)
     else
-        u = getWindSpeedT(set.vel_mode, wind.vel, idx, t)
+        u = getDataVel_standard(set.vel_mode, wind.vel, idx, t)
     end
     return u, wind
+end
+
+function getDataVel_standard(mode::Velocity_Constant, vel, idx, t)
+    return getWindSpeedT(mode, vel::Number, idx, t)
+end
+
+function getDataVel_standard(mode::Velocity_Interpolation, vel, idx, t)
+    return getWindSpeedT(mode, vel::AbstractMatrix, idx, t)
+end
+
+function getDataVel_standard(mode::Velocity_Constant_wErrorCov, vel, idx, _)
+    return getWindSpeedT(mode, vel::WindVelType, idx)
+end
+
+function getDataVel_standard(mode::Velocity_Interpolation_wErrorCov, vel, idx, t)
+    return getWindSpeedT(mode, vel::WindVelMatrix, idx, t)
+end
+
+function getDataVel_standard(mode::Velocity_InterpTurbine, vel, idx, t)
+    return getWindSpeedT(mode, vel::AbstractMatrix, idx, t)
+end
+
+function getDataVel_standard(mode::Velocity_InterpTurbine_wErrorCov, vel, idx, t)
+    return getWindSpeedT(mode, vel::WindVelMatrix, idx, t)
+end
+
+function getDataVel_standard(mode::Velocity_ZOH_wErrorCov, vel, idx, t)
+    return getWindSpeedT(mode, vel::WindVelType, idx, t)
 end

@@ -61,13 +61,19 @@ yaw_oob = getYaw(Yaw_SOWFA(), con, 1, 5.0)  # Returns 20.0° with warning
 """
 function getYaw(::Yaw_SOWFA, con::Con, iT, t)  
     con_yaw_data = con.yaw_data
-    if t < con_yaw_data[1, 1]
-        @warn "The time $t is out of bounds, will use $(con_yaw_data[1, 1]) instead."
-        t = con_yaw_data[1, 1]
-    elseif t > con_yaw_data[end, 1]
-        @warn "The time $t is out of bounds, will use $(con_yaw_data[end, 1]) instead."
-        t = con_yaw_data[end, 1]
+    if con_yaw_data === nothing
+        error("getYaw(Yaw_SOWFA): con.yaw_data is nothing. Provide yaw interpolation data.")
     end
+    con_yaw_data = con_yaw_data::Matrix{Float64}
+
+    first_time = con_yaw_data[1, 1]
+    last_time = con_yaw_data[end, 1]
+    if t < first_time
+        @warn "The time $t is out of bounds, will use $first_time instead."
+    elseif t > last_time
+        @warn "The time $t is out of bounds, will use $last_time instead."
+    end
+    t_eval = clamp(t, first_time, last_time)
 
     time = con_yaw_data[:, 1]
     yaw_data = con_yaw_data[:, 2:end]
@@ -88,16 +94,16 @@ function getYaw(::Yaw_SOWFA, con::Con, iT, t)
 
     # Get interpolated yaw(s)
     if isa(iT, Integer)
-        return interp_funcs[iT](t)
+        return interp_funcs[iT](t_eval)
     elseif isa(iT, AbstractVector{<:Integer})
-        return [interp_funcs[i](t) for i in iT]
+        return [interp_funcs[i](t_eval) for i in iT]
     else
         error("Invalid type for iT. Should be Integer or Vector of Integers.")
     end
 end
 
 """
-    getYaw(::Yaw_Constant, con::Con, iT, t) -> Float64 or Vector{Float64}
+    getYaw(::Yaw_Constant, con::Con, iT, _) -> Float64 or Vector{Float64}
 
 Return a single constant yaw angle for one or multiple turbines.
 
@@ -135,7 +141,7 @@ yaws = getYaw(Yaw_Constant(), con, [1, 2, 3], 50.0)  # Returns [270.0°, 270.0°
 - [`Yaw_Constant`](@ref): Controller type for constant yaw control
 - [`Con`](@ref): Controller configuration struct
 """
-function getYaw(::Yaw_Constant, con::Con, iT, t)
+function getYaw(::Yaw_Constant, con::Con, iT, _)
     yaw = con.yaw_fixed
     if isa(iT, Integer)
         return yaw
@@ -147,7 +153,7 @@ function getYaw(::Yaw_Constant, con::Con, iT, t)
 end
 
 """
-    getInduction(::Induction_Constant, con::Con, iT, t) -> Float64 or Vector{Float64}
+    getInduction(::Induction_Constant, con::Con, iT, _) -> Float64 or Vector{Float64}
 
 Return a single constant induction factor for one or multiple turbines.
 
@@ -185,7 +191,7 @@ inductions = getInduction(Induction_Constant(), con, [1, 2, 3], 50.0)  # Returns
 - [`Induction_Constant`](@ref): Controller type for constant induction control
 - [`Con`](@ref): Controller configuration struct
 """
-function getInduction(::Induction_Constant, con::Con, iT, t)
+function getInduction(::Induction_Constant, con::Con, iT, _)
     induction = con.induction_fixed
     if isa(iT, Integer)
         return induction
@@ -257,13 +263,19 @@ induction_oob = getInduction(Induction_TGC(), con, 1, 5.0)  # Returns 0.40 with 
 """
 function getInduction(::Induction_TGC, con::Con, iT, t) 
     con_induction_data = con.induction_data
-    if t < con_induction_data[1, 1]
-        @warn "The time $t is out of bounds, will use $(con_induction_data[1, 1]) instead."
-        t = con_induction_data[1, 1]
-    elseif t > con_induction_data[end, 1]
-        @warn "The time $t is out of bounds, will use $(con_induction_data[end, 1]) instead."
-        t = con_induction_data[end, 1]
+    if con_induction_data === nothing
+        error("getInduction(Induction_TGC): con.induction_data is nothing. Provide induction interpolation data.")
     end
+    con_induction_data = con_induction_data::Matrix{Float64}
+
+    first_time = con_induction_data[1, 1]
+    last_time = con_induction_data[end, 1]
+    if t < first_time
+        @warn "The time $t is out of bounds, will use $first_time instead."
+    elseif t > last_time
+        @warn "The time $t is out of bounds, will use $last_time instead."
+    end
+    t_eval = clamp(t, first_time, last_time)
 
     time = con_induction_data[:, 1]
     induction_data = con_induction_data[:, 2:end]
@@ -285,9 +297,9 @@ function getInduction(::Induction_TGC, con::Con, iT, t)
 
     # Get interpolated induction(s)
     if isa(iT, Integer)
-        return interp_funcs[iT](t)
+        return interp_funcs[iT](t_eval)
     elseif isa(iT, AbstractVector{<:Integer})
-        return [interp_funcs[i](t) for i in iT]
+        return [interp_funcs[i](t_eval) for i in iT]
     else
         error("Invalid type for iT. Should be Integer or Vector of Integers.")
     end

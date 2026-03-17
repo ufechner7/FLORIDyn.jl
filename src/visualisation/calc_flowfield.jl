@@ -21,10 +21,11 @@ end
 
 """
     create_thread_buffers(wf::WindFarm, nth::Int, floris::Floris) -> ThreadBuffers
+    create_thread_buffers(wf::WindFarm, nth::Int) -> ThreadBuffers
 
-Create thread-local buffers for parallel flow field computation with FLORIS parameters.
+Create thread-local buffers for parallel flow field computation.
 
-This function pre-allocates all necessary data structures for each thread to avoid
+These methods pre-allocate all necessary data structures for each thread to avoid
 race conditions and memory allocations during the parallel computation loop.
 
 # Arguments
@@ -42,12 +43,13 @@ race conditions and memory allocations during the parallel computation loop.
 """
 function create_thread_buffers(wf::WindFarm, nth::Int, floris::Floris)
     # Pre-allocate unified buffers for each thread (contains GP)
+    create_unified_buffers_fn = getfield(FLORIDyn, :create_unified_buffers)
     thread_unified_buffers = Vector{UnifiedBuffers}(undef, nth)
     thread_buffers = Vector{WindFarm}(undef, nth)
 
     for tid in 1:nth
         # Create unified buffers with proper FLORIS parameters for this thread
-        ub = create_unified_buffers(wf, floris)
+        ub = create_unified_buffers_fn(wf, floris)
         thread_unified_buffers[tid] = ub
         # Use the prebuilt GP from unified buffers as the thread's WindFarm buffer
         thread_buffers[tid] = ub.gp
@@ -78,12 +80,13 @@ race conditions and memory allocations during the parallel computation loop.
 """
 function create_thread_buffers(wf::WindFarm, nth::Int)
     # Pre-allocate unified buffers for each thread (contains GP)
+    create_unified_buffers_fn = getfield(FLORIDyn, :create_unified_buffers)
     thread_unified_buffers = Vector{UnifiedBuffers}(undef, nth)
     thread_buffers = Vector{WindFarm}(undef, nth)
 
     for tid in 1:nth
         # Create unified buffers with default rotor discretization
-        ub = create_unified_buffers(wf, 50)
+        ub = create_unified_buffers_fn(wf, 50)
         thread_unified_buffers[tid] = ub
         # Use the prebuilt GP from unified buffers as the thread's WindFarm buffer
         thread_buffers[tid] = ub.gp
@@ -166,8 +169,6 @@ function update_thread_buffers!(buffers::ThreadBuffers, wf::WindFarm)
     return nothing
 end
 
-
-
 """
     getMeasurements(buffers::ThreadBuffers, mx::Matrix, my::Matrix, nM::Int, zh::Real,
                     wf::WindFarm, set::Settings, floris::Floris, wind::Wind) -> Array{Float64,3}
@@ -235,10 +236,11 @@ wind_speed_field = mz[:, :, 3]
 - [`calcFlowField`](@ref): Higher-level function that uses this to create complete flow field data
 - [`setUpTmpWFAndRun!`](@ref): Underlying simulation function used for each grid point
 """
-function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
+function getMeasurements(buffers, mx, my, nM, zh, _wf::WindFarm, set::Settings, floris::Floris, wind::Wind)
+    setup_tmp_wf_and_run_fn = getfield(FLORIDyn, :setUpTmpWFAndRun!)
     size_mx = size(mx)
     mz = zeros(size_mx[1], size_mx[2], nM)
-    
+
     if length(buffers.thread_buffers) == 1
         # Single-threaded loop when only one buffer is provided
         for iGP in eachindex(mx)
@@ -264,7 +266,7 @@ function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, f
 
             interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
-            setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
+            setup_tmp_wf_and_run_fn(unified_buffers, GP, set, floris, wind)
             tmpM = unified_buffers.M_buffer
 
             @views gridPointResult = tmpM[end, :]
@@ -303,7 +305,7 @@ function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, f
             # Recalculate interpolated OPs for the updated geometry (non-allocating)
             interpolateOPs!(unified_buffers, GP.intOPs, GP)
 
-            setUpTmpWFAndRun!(unified_buffers, GP, set, floris, wind)
+            setup_tmp_wf_and_run_fn(unified_buffers, GP, set, floris, wind)
             tmpM = unified_buffers.M_buffer
             
             # Extract only the result for the grid point (last "turbine")
@@ -322,9 +324,8 @@ function getMeasurements(buffers, mx, my, nM, zh, wf::WindFarm, set::Settings, f
 
     return mz
 end
-
 """
-    calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; plt=nothing)
+    calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris; vis=nothing)
 
 Generate full flow field plot data by calculating measurements across a grid.
 
@@ -337,14 +338,10 @@ performed in parallel if `set.threading` is true.
   - `set.threading`: If true, uses multi-threaded computation with `@threads`
   - `set.parallel`: If true, enables parallel-specific optimizations
 - `wf::WindFarm`: Wind farm object containing turbine data
-- `wind::Wind`: Wind field configuration  
+- `wind::Wind`: Wind field configuration
 - `floris::Floris`: FLORIS model parameters
 
 # Keyword Arguments
-- `plt=nothing`: Plot object for garbage collection control. If provided and `set.parallel` is true,
-  automatically calls `plt.GC.enable(false)` before multithreading and `plt.GC.enable(true)` 
-  after completion to prevent PyCall-related segmentation faults during parallel execution with
-  ControlPlots loaded. To take full advantage of multithreading, executed the plotting in a separate process.
 - `vis=nothing`: Visualization configuration object containing field limits and resolution settings.
   If provided, uses `vis.field_limits_min`, `vis.field_limits_max`, and `vis.field_resolution` 
   to define the computational grid. If not provided, defaults to domain [0,0,0] to [3000,3000,400] 
@@ -366,7 +363,7 @@ performed in parallel if `set.threading` is true.
 ```julia
 # Calculate flow field with threading and GC control
 set.threading = true
-Z, X, Y = calcFlowField(set, wf, wind, floris; plt)
+Z, X, Y = calcFlowField(set, wf, wind, floris; vis=vis)
 
 # Extract velocity reduction field
 velocity_reduction = Z[:, :, 1]
@@ -380,9 +377,11 @@ wind_speed = Z[:, :, 3]
 - [`plotFlowField`](@ref): Visualization function for the generated data
 """
 function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
-                       plt=nothing, vis=nothing)
+                       vis=nothing)
+    get_measurements_fn = getfield(FLORIDyn, :getMeasurements)
     # Preallocate field
     nM = 3
+    Z = nothing
 
     # Use vis struct fields if provided, otherwise fall back to defaults
     if vis !== nothing
@@ -415,7 +414,7 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
         try
             # Create thread-local buffers using the new function with FLORIS parameters
             buffers = create_thread_buffers(wf, nthreads() + 1, floris)
-            Z = getMeasurements(buffers, X, Y, nM, zh, wf, set, floris, wind)
+            Z = get_measurements_fn(buffers, X, Y, nM, zh, wf, set, floris, wind)
         finally
             # Re-enable garbage collection after multithreading if not parallel
             if ! set.parallel
@@ -425,8 +424,11 @@ function calcFlowField(set::Settings, wf::WindFarm, wind::Wind, floris::Floris;
     else
         # Single-threaded path using getMeasurements with a single buffer
         buffers = create_thread_buffers(wf, 1, floris)
-        Z = getMeasurements(buffers, X, Y, nM, zh, wf, set, floris, wind)
+        Z = get_measurements_fn(buffers, X, Y, nM, zh, wf, set, floris, wind)
     end
+
+    isnothing(Z) && error("Flow field computation failed before producing output.")
+    Z = Z::Array{Float64, 3}
 
     return Z, X, Y
 end

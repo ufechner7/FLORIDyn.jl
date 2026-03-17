@@ -34,6 +34,6 @@ println("\nMean Relative Power Output:  $(round((mean(rel_power) * 100), digits=
 println("Final Relative Power Output: $(round((rel_power[end] * 100), digits=2)) %")
 
 if PLOT_FLOW_FIELD
-    Z, X, Y = calcFlowField(set, wf, wind, floris; plt, vis)
+    Z, X, Y = calcFlowField(set, wf, wind, floris; vis)
     plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt)
 end

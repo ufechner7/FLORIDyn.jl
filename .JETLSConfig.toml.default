@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: 2025 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
+formatter = "JuliaFormatter"
+
+[full_analysis]
+auto_instantiate = false            # boolean, default: true
+
+[diagnostic]
+all_files = false                   # boolean, default: true
+
+[[diagnostic.patterns]]
+pattern = "not concretized"
+match_by = "message"
+match_type = "regex"
+severity = "off"
+
+[[diagnostic.patterns]]
+pattern = "copy!.*Random.TaskLocalRNG.*Nothing"
+match_by = "message"
+match_type = "regex"
+severity = "off"

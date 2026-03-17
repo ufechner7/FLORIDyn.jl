@@ -603,7 +603,7 @@ function _resolve_data_path(filename::String)
     if isfile(filename)
         return filename
     end
-    pkg_root = joinpath(dirname(pathof(@__MODULE__)), "..")
+    pkg_root = PACKAGE_ROOT
     candidates = [
         joinpath(pwd(), filename),                 # relative to CWD
         joinpath(pwd(), "data", filename),        # under local data/
@@ -786,9 +786,8 @@ The function performs these steps:
 - [`Interpolations.jl`](https://github.com/JuliaMath/Interpolations.jl): Underlying interpolation library
 """
 function cp_fun(filename = "data/DTU_10MW/cp.csv")	
-    local cp_df
-    try
-        cp_df = CSV.read(filename, DataFrame; header=1)
+    cp_df = try
+        CSV.read(filename, DataFrame; header=1)
     catch err
         error("Failed to read CSV file '$(filename)': $(err). Please check that the file exists and is a valid CSV with the expected format.")
     end
@@ -837,7 +836,8 @@ simulations.
 # Constructors
 ```julia
 # Default constructor with keyword arguments
-tp = TurbineProperties(name="NREL 5MW", rotor_radius=63.0, gearbox_ratio=97.0)
+cp = cp_fun("data/DTU_10MW/cp.csv")
+tp = TurbineProperties(name="NREL 5MW", rotor_radius=63.0, gearbox_ratio=97.0, cp_fun=cp)
 
 # Constructor from power coefficient file
 tp = TurbineProperties("path/to/cp.csv")  # Loads cp_fun from CSV file
@@ -914,12 +914,12 @@ Where:
 - [`TurbineArray`](@ref): Container for multiple turbines with their positions and types
 - [`setup`](@ref): Main configuration loader that creates TurbineProperties instances
 """
-@with_kw mutable struct TurbineProperties
+@with_kw mutable struct TurbineProperties{F}
     name::String = "DTU 10MW"
     gearbox_ratio::Float64 = 50.0
     inertia_total::Float64 = 1.409969209E+08
     rotor_radius::Float64 = 89.2
-    cp_fun::Function
+    cp_fun::F
     fluid_density::Float64 = 1.23
     gearbox_efficiency::Float64 = 1.0
 end
@@ -1077,6 +1077,7 @@ function Settings(wind::Wind, sim::Sim, con::Con, parallel=false, threading=fals
              iterate_mode, control_mode, induction_mode, parallel, threading)
 end
 
+
 """
     getTurbineData(names::Vector{String}) -> TurbineData
 
@@ -1151,7 +1152,7 @@ Returns:
 - A Matrix{Float64} with the selected column data.
 """
 function importSOWFAFile(filename, data_lines = 2:typemax(Int))
-    pkg_path = joinpath(dirname(pathof(@__MODULE__)), "..")
+    pkg_path = PACKAGE_ROOT
     if ! isfile(filename)
         filename = joinpath(pkg_path, filename)
     end
@@ -1250,7 +1251,7 @@ Lookup strategy:
 """
 function get_default_project()
     # Resolve package root for read fallbacks
-    pkg_root = joinpath(dirname(pathof(@__MODULE__)), "..")
+    pkg_root = PACKAGE_ROOT
 
     # Paths (prefer local workspace data dir)
     data_dir_local = joinpath(pwd(), "data")
@@ -1296,8 +1297,12 @@ function get_default_project()
     if default_name === nothing
         # Create local data dir and write default.yaml with first project
         mkpath(data_dir_local)
-        open(default_path_local, "w") do io
-            write(io, "default:\n  name: $(first_name)\n  msr: $(string(default_msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+        msr_str = string(default_msr)
+        io = open(default_path_local, "w")
+        try
+            write(io, "default:\n  name: $(first_name)\n  msr: $(msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+        finally
+            close(io)
         end
         default_name = first_name
     end
@@ -1314,8 +1319,12 @@ function get_default_project()
     if chosen === nothing
         # Fallback to first project and update default.yaml accordingly
         chosen = first_project
-        open(default_path_local, "w") do io
-            write(io, "default:\n  name: $(String(chosen["name"]))\n  msr: $(string(default_msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+        msr_str = string(default_msr)
+        io = open(default_path_local, "w")
+        try
+            write(io, "default:\n  name: $(String(chosen["name"]))\n  msr: $(msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+        finally
+            close(io)
         end
     end
 
@@ -1352,7 +1361,7 @@ Return a list of available projects as tuples `(name, description, vis)` using t
 projects.yaml discovery logic as `get_default_project()`.
 """
 function list_projects()
-    pkg_root = joinpath(dirname(pathof(@__MODULE__)), "..")
+    pkg_root = PACKAGE_ROOT
     projects_path_local = joinpath(pwd(), "data", "projects.yaml")
     projects_path = isfile(projects_path_local) ? projects_path_local : joinpath(pkg_root, "data", "projects.yaml")
     if !isfile(projects_path)
@@ -1379,7 +1388,7 @@ function select_project()
 
     # Create menu options with project names and descriptions
     project_options = String[]
-    for (name, description, vis) in projs
+    for (name, description, _) in projs
         if isempty(description)
             push!(project_options, name)
         else
@@ -1424,8 +1433,12 @@ function select_project()
         end
     end
     
-    open(default_path_local, "w") do io
-        write(io, "default:\n  name: $(chosen_name)\n  msr: $(string(existing_msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+    existing_msr_str = string(existing_msr)
+    io = open(default_path_local, "w")
+    try
+        write(io, "default:\n  name: $(chosen_name)\n  msr: $(existing_msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+    finally
+        close(io)
     end
     println("Selected project saved to data/default.yaml: ", chosen_name)
     return chosen_name
@@ -1489,8 +1502,12 @@ function set_default_msr(msr::MSR)
     end
     
     # Write updated file
-    open(default_path_local, "w") do io
-        write(io, "default:\n  name: $(default_name)\n  msr: $(string(msr))  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+    msr_str = string(msr)
+    io = open(default_path_local, "w")
+    try
+        write(io, "default:\n  name: $(default_name)\n  msr: $(msr_str)  # valid options: VelReduction, AddedTurbulence, EffWind\n")
+    finally
+        close(io)
     end
     
     println("Default MSR saved to data/default.yaml: ", string(msr))

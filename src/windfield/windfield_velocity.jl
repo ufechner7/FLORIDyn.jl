@@ -82,23 +82,37 @@ function getWindSpeedT(::Velocity_Constant_wErrorCov, wind_vel::WindVelType, iT)
     return Vel
 end
 
-mutable struct TurbineProps
+# Lightweight 1D linear interpolation without constructing interpolation objects.
+function interp_linear(x::AbstractVector{<:Real}, y::AbstractVector{<:Real}, t::Real)
+    idx = Int(Base.searchsortedlast(x, t))
+    if idx == length(x)
+        return y[end]
+    elseif idx == 0
+        return y[1]
+    else
+        x0, x1 = x[idx], x[idx + 1]
+        y0, y1 = y[idx], y[idx + 1]
+        return y0 + (y1 - y0) * (t - x0) / (x1 - x0)
+    end
+end
+
+mutable struct TurbineProps{F<:Function}
     FluidDensity::Float64
     RotorRadius::Float64
     GearboxRatio::Float64
     GearboxEff::Float64
     InertiaTotal::Float64
-    CpFun::Function
+    CpFun::F
 end
 
-mutable struct WSEStruct
+mutable struct WSEStruct{F<:Function}
     V::Vector{Float64}
     Ee::Vector{Float64}
     omega::Vector{Float64}
     beta::Float64
     gamma::Float64
     dt_SOWF::Float64
-    T_prop::TurbineProps
+    T_prop::TurbineProps{F}
 end
 
 function WindSpeedEstimatorIandI_FLORIDyn(WSE, Rotor_Speed, Blade_pitch, Gen_Torque, yaw, p_p)
@@ -180,22 +194,22 @@ function getWindSpeedT(::Velocity_I_and_I, wind_vel, iT, t, wind_dir, p_p)
 
     # Run I&I estimator from last time step to current one
     for i in indPrev:indCurr
+        idx = (1:nT) .+ nT * (i - 1)
         try
-            idx = (1:nT) .+ nT * (i-1)
             Rotor_Speed = wind_vel.WSE.rotorSpeed[idx, 3]
+            Blade_pitch = wind_vel.WSE.bladePitch[idx, 3]
+            Gen_Torque  = wind_vel.WSE.genTorque[idx, 3]
+
+            yaw = deg2rad.(wind_dir .- wind_vel.WSE.nacelleYaw[idx, 3])
+
+            # Run estimator (assumes WindSpeedEstimatorIandI_FLORIDyn is implemented elsewhere)
+            _, wind_vel.WSE = WindSpeedEstimatorIandI_FLORIDyn(
+                wind_vel.WSE, Rotor_Speed, Blade_pitch, Gen_Torque, yaw, p_p
+            )
         catch
             println("Failed to get Wind Speed")
-            # Optionally break or continue, depending on the desired error handling
+            continue
         end
-        Blade_pitch = wind_vel.WSE.bladePitch[idx, 3]
-        Gen_Torque  = wind_vel.WSE.genTorque[idx, 3]
-
-        yaw = deg2rad.(wind_dir .- wind_vel.WSE.nacelleYaw[idx, 3])
-
-        # Run estimator (assumes WindSpeedEstimatorIandI_FLORIDyn is implemented elsewhere)
-        V_out, wind_vel.WSE = WindSpeedEstimatorIandI_FLORIDyn(
-            wind_vel.WSE, Rotor_Speed, Blade_pitch, Gen_Torque, yaw, p_p
-        )
     end
 
     # Update previous time
@@ -330,12 +344,11 @@ function getWindSpeedT(::Velocity_InterpTurbine, wind_vel::AbstractMatrix, iT, t
         t = times[end]
     end
 
-    # Create individual 1D interpolations for each turbine column
+    # Interpolate each turbine column at the requested time.
     n_turbines = size(wind_data, 2)
     U_out = similar(wind_data[1, :])
     for j in 1:n_turbines
-        itp = linear_interpolation(times, wind_data[:, j], extrapolation_bc=Flat())
-        U_out[j] = itp(t)
+        U_out[j] = interp_linear(times, wind_data[:, j], t)
     end
 
     # Select the requested turbine(s)
@@ -362,28 +375,29 @@ function getWindSpeedT(::Velocity_InterpTurbine_wErrorCov, wind_vel::WindVelMatr
     # Bounds check (clamp t)
     t_min = times[1]
     t_max = times[end]
-    if t < t_min
-        @warn "The time $t is out of bounds, will use $t_min instead."
-        t = t_min
-    elseif t > t_max
-        @warn "The time $t is out of bounds, will use $t_max instead."
-        t = t_max
+    t_eval = t
+    if t_eval < t_min
+        @warn "The time $t_eval is out of bounds, will use $t_min instead."
+        t_eval = t_min
+    elseif t_eval > t_max
+        @warn "The time $t_eval is out of bounds, will use $t_max instead."
+        t_eval = t_max
     end
 
-    # Create individual interpolants for each turbine column
+    # Interpolate each turbine column at t_eval
     n_turbines = size(speeds, 2)
-    interpolants = [interpolate((times,), speeds[:, i], Gridded(Linear())) for i in 1:n_turbines]
+    wind_vel_out = Vector{Float64}(undef, n_turbines)
+    for i in 1:n_turbines
+        wind_vel_out[i] = interp_linear(times, speeds[:, i], t_eval)
+    end
 
-    # Evaluate all turbines at time `t`
-    wind_vel_out = [itp(t) for itp in interpolants]
-
-    vel = wind_vel_out[iT]               # select turbine(s) of interest
+    iT_vec = isa(iT, Integer) ? [iT] : iT
+    vel = wind_vel_out[iT_vec]               # select turbine(s) of interest
 
     # Add random error with given covariance (via Cholesky factor)
-    # Simulate a noise vector (randn) multiplied by Cholesky factor
-    noise = (wind_vel.CholSig * randn(RNG, length(vel)))
-    vel_noisy = vel + noise
-    return vel_noisy
+    chol_sub = wind_vel.CholSig[iT_vec, iT_vec]
+    noise = chol_sub * randn(RNG, length(iT_vec))
+    return vel .+ noise
 end
 
 # The following code cannot work, because the original Matlab function is not well defined.
@@ -428,6 +442,29 @@ function getWindSpeedT(:: Velocity_ZOH_wErrorCov, vel::Vector, wind_vel_chol_sig
 
     # Add the correlated noise to Vel
     vel .+= correlated_noise
+end
+
+"""
+    getWindSpeedT(::Velocity_ZOH_wErrorCov, wind_vel::WindVelType, iT, _)
+
+Computes zero-order-hold wind speed values with spatially correlated noise for
+the requested turbine index/indices `iT`.
+
+# Arguments
+- `::Velocity_ZOH_wErrorCov`: Type indicator for dispatch.
+- `wind_vel::WindVelType`: see [WindVelType](@ref)
+- `iT`: Turbine index or indices.
+- `_`: Unused time argument (kept for API compatibility).
+
+# Returns
+- Scalar wind speed for scalar `iT`, otherwise a vector of wind speeds.
+"""
+function getWindSpeedT(::Velocity_ZOH_wErrorCov, wind_vel::WindVelType, iT, _)
+    iT_vec = isa(iT, Integer) ? [iT] : iT
+    vel = fill(wind_vel.Data, length(iT_vec))
+    noise = wind_vel.CholSig[iT_vec, iT_vec] * randn(RNG, length(iT_vec))
+    vel = vel .+ noise
+    return isa(iT, Integer) ? vel[1] : vel
 end
 
 

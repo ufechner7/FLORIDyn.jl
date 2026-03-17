@@ -6,65 +6,18 @@ $(DocStringExtensions.README)
 """
 module FLORIDyn
 
-using PrecompileTools: @setup_workload, @compile_workload
+using PrecompileTools: @compile_workload, @setup_workload
 using LaTeXStrings
 import DocStringExtensions, LoggingExtras
 import Base: show
 
-using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
-using Statistics, StaticArrays, Pkg, DistributedNext, Dates
+using CSV, DataFrames, DelimitedFiles, Interpolations, JLD2, LinearAlgebra, Parameters,
+      Random, StructMapping, YAML
+using Dates, DistributedNext, Pkg, StaticArrays, Statistics
 using REPL.TerminalMenus
 using SparseArrays
 
-export MSR, toMSR, VelReduction, AddedTurbulence, EffWind
-export setup, Settings, Vis, getTurbineData, initSimulation, TurbineArray, TurbineData, turbine_group, create_n_groups
-export set_yaw!, set_induction!
-
-export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
-export Direction_Interpolation_wErrorCov, Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov
-export Direction_RW_with_Mean
-export Shear_Interpolation, Shear_PowerLaw, WindShear
-export TI_Constant, TI_EnKF_InterpTurbine, TI_Interpolation, TI_InterpTurbine
-export Velocity_Constant, Velocity_Constant_wErrorCov, Velocity_EnKF_InterpTurbine
-export Velocity_I_and_I, Velocity_Interpolation, Velocity_Interpolation_wErrorCov
-export Velocity_InterpTurbine, Velocity_InterpTurbine_wErrorCov, Velocity_RW_with_Mean
-export Velocity_ZOH_wErrorCov
-
-export WindDirType, WindDirMatrix, WindDirTriple
-export WindVelType, WindVelMatrix, WindFarm
-export Floris, FloriDyn, Wind, Sim, Con, IterateOPsBuffers
-
-export Direction_All, Direction_Influence, Direction_None
-export Velocity_Influence, Velocity_None
-export TI_Influence, TI_None
-export IterateOPs_average, IterateOPs_basic, IterateOPs_buffer, IterateOPs_maximum, IterateOPs_weighted
-export Yaw_Constant, Yaw_InterpTurbine, Yaw_SOWFA
-export Induction_Constant, Induction_TGC
-
-export getWindDirT, getWindDirT_EnKF
-export getWindShearT
-export getWindTiT
-export getWindSpeedT, getWindSpeedT_EnKF
-export getDataDir, getDataTI, getDataVel
-export correctDir!, correctTI!, correctVel!
-export getYaw, getInduction
-
-export discretizeRotor, calcCt, States
-export prepareSimulation, importSOWFAFile, centerline!, angSOWFA2world, initSimulation
-export runFLORIS!, init_states, getUadv
-export runFLORIDyn, iterateOPs!, setUpTmpWFAndRun!, interpolateOPs!, perturbationOfTheWF!, findTurbineGroups
-export getVars!
-export getMeasurements, calcFlowField, plotFlowField, plotMeasurements, get_layout, install_examples, calc_rel_power
-export run_floridyn, plot_flow_field, plot_measurements, plot_x, plot_rmt, close_all, turbines
-export createVideo, createAllVideos, natural_sort_key, cleanup_video_folder
-export now_microseconds, now_nanoseconds, precise_now, unique_name, delete_results, find_floridyn_runs, compare_dataframes
-export isdelftblue, Measurement, parse_measurements
-export FlowField, parse_flow_fields
-export UnifiedBuffers, create_unified_buffers
-export get_default_project
-export select_project
-export get_default_msr, set_default_msr, select_measurement
-export interpolate_hermite_spline
+const PACKAGE_ROOT = normpath(joinpath(@__DIR__, ".."))
 
 """
     MSR `VelReduction` `AddedTurbulence` `EffWind`
@@ -166,7 +119,7 @@ end
 function str2type(name)
     typename = Symbol(name)
     t = getfield(FLORIDyn, typename)
-    instance = t()
+    t()
 end
 
 # marker structs
@@ -199,17 +152,17 @@ A mutable struct that holds configuration parameters for the FLORIDyn simulation
 - `parallel::Bool`:  Run plotting in a separate process.
 - `threading::Bool`: Enable threading for parallel computation within a single process
 """
-mutable struct Settings
-    vel_mode::VelModel
-    dir_mode::DirModel
-    turb_mode
-    shear_mode
-    cor_dir_mode
-    cor_vel_mode
-    cor_turb_mode
-    iterate_mode
-    control_mode
-    induction_mode
+mutable struct Settings{VM<:VelModel, DM<:DirModel, TM, SM, CDM, CVM, CTM, IM, CM, INM}
+    vel_mode::VM
+    dir_mode::DM
+    turb_mode::TM
+    shear_mode::SM
+    cor_dir_mode::CDM
+    cor_vel_mode::CVM
+    cor_turb_mode::CTM
+    iterate_mode::IM
+    control_mode::CM
+    induction_mode::INM
     parallel::Bool
     threading::Bool
 end
@@ -374,11 +327,11 @@ function create_unified_buffers(wf::WindFarm, rotor_points=50)
     # Create FLORIS buffers with specified number of rotor points
     n_floris_points = max(rotor_points, 1)
     
-    # Try to create FLORISBuffers if available, otherwise use nothing
+    # Create FLORIS buffers; downstream code requires this to succeed.
     floris_buffers = try
-    FLORISBuffers(n_floris_points)
-    catch
-        nothing
+        FLORISBuffers(n_floris_points)
+    catch err
+        error("Failed to initialize FLORISBuffers: $(err)")
     end
     
     # Prepare a WindFarm buffer for grid-point computations (GP)
@@ -445,15 +398,71 @@ include("controller/splines.jl")
 include("controller/controller.jl")
 include("visualisation/calc_flowfield.jl")
 include("visualisation/calc_power.jl")
+include("visualisation/create_video.jl")
 include("visualisation/plot_flowfield.jl")
 include("visualisation/plot_measurements.jl")
-include("visualisation/create_video.jl")
 include("visualisation/high_res_time.jl")
 include("visualisation/pretty_print.jl")
 include("visualisation/smart_plotting.jl")
 
+export AddedTurbulence, EffWind, MSR, VelReduction, toMSR
+export Settings, TurbineArray, TurbineData, Vis, create_n_groups, getTurbineData,
+       initSimulation, setup, turbine_group
+export set_induction!, set_yaw!
+
+export Direction_Constant, Direction_Constant_wErrorCov, Direction_EnKF_InterpTurbine, Direction_Interpolation
+export Direction_InterpTurbine, Direction_InterpTurbine_wErrorCov,
+       Direction_Interpolation_wErrorCov
+export Direction_RW_with_Mean
+export Shear_Interpolation, Shear_PowerLaw, WindShear
+export TI_Constant, TI_EnKF_InterpTurbine, TI_InterpTurbine, TI_Interpolation
+export Velocity_Constant, Velocity_Constant_wErrorCov, Velocity_EnKF_InterpTurbine
+export Velocity_I_and_I, Velocity_Interpolation, Velocity_Interpolation_wErrorCov
+export Velocity_InterpTurbine, Velocity_InterpTurbine_wErrorCov, Velocity_RW_with_Mean
+export Velocity_ZOH_wErrorCov
+
+export WindDirMatrix, WindDirTriple, WindDirType
+export WindFarm, WindVelMatrix, WindVelType
+export Con, FloriDyn, Floris, IterateOPsBuffers, Sim, Wind
+
+export Direction_All, Direction_Influence, Direction_None
+export Velocity_Influence, Velocity_None
+export TI_Influence, TI_None
+export IterateOPs_average, IterateOPs_basic, IterateOPs_buffer, IterateOPs_maximum, IterateOPs_weighted
+export Yaw_Constant, Yaw_InterpTurbine, Yaw_SOWFA
+export Induction_Constant, Induction_TGC
+
+export getWindDirT, getWindDirT_EnKF
+export getWindShearT
+export getWindTiT
+export getWindSpeedT, getWindSpeedT_EnKF
+export getDataDir, getDataTI, getDataVel
+export correctDir!, correctTI!, correctVel!
+export getInduction, getYaw
+
+export States, calcCt, discretizeRotor
+export angSOWFA2world, centerline!, importSOWFAFile, initSimulation, prepareSimulation
+export getUadv, init_states, runFLORIS!
+export findTurbineGroups, interpolateOPs!, iterateOPs!, perturbationOfTheWF!, runFLORIDyn,
+       setUpTmpWFAndRun!
+export getVars!
+export calcFlowField, calc_rel_power, getMeasurements, get_layout, install_examples,
+       plotFlowField, plotMeasurements
+export close_all, plot_flow_field, plot_measurements, plot_rmt, plot_x, run_floridyn,
+       turbines
+export cleanup_video_folder, createAllVideos, createVideo, natural_sort_key
+export compare_dataframes, delete_results, find_floridyn_runs, now_microseconds,
+       now_nanoseconds, precise_now, unique_name
+export Measurement, isdelftblue, parse_measurements
+export FlowField, parse_flow_fields
+export UnifiedBuffers, create_unified_buffers
+export get_default_project
+export select_project
+export get_default_msr, select_measurement, set_default_msr
+export interpolate_hermite_spline
+
 """
-    run_floridyn(plt, set, wf, wind, sim, con, vis, 
+    run_floridyn(plt, set, wf, wind, sim, con, vis,
                  floridyn, floris; msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
 
 Unified function that automatically handles both multi-threading and single-threading modes
@@ -469,28 +478,27 @@ for running FLORIDyn simulations with appropriate plotting callbacks.
 - `vis`: Visualization settings. See: [Vis](@ref)
 - `floridyn`: FLORIDyn model struct. See: [FloriDyn](@ref)
 - `floris`: Floris model struct. See: [Floris](@ref)
-- `msr`: Measurement index for online flow field plotting (VelReduction, AddedTurbulence or EffWind). 
+- `msr`: Measurement index for online flow field plotting (VelReduction, AddedTurbulence or EffWind).
          Default VelReduction. See: [MSR](@ref)
 
 # Returns
 - Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
 """
 function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction, save_final_only=false)
+    run_floridyn_core_fn = getfield(FLORIDyn, :runFLORIDyn)
     if Threads.nthreads() > 1 && nprocs() > 1
         # Multi-threading mode: use remote plotting callback
         # The rmt_plot_flow_field function should be defined via remote_plotting.jl
-        try
-            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr, save_final_only)
-        catch e
-            if isa(e, UndefVarError)
-                error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
-            else
-                rethrow(e)
-            end
+        callback_name = Symbol("rmt_plot_flow_field")
+        if !isdefined(Main, callback_name)
+            error("$(callback_name) function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
         end
+
+        rmt_plot_flow_field_fn = getfield(Main, callback_name)
+        return run_floridyn_core_fn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=rmt_plot_flow_field_fn, msr, save_final_only)
     else
         # Single-threading mode: no plotting callback
-        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
+        return run_floridyn_core_fn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
     end
 end
 
@@ -540,13 +548,13 @@ function copy_model_settings()
     copy_files("data", files)
     
     # Copy the 2021_9T_Data directory and all its contents
-    src_data_dir = joinpath(dirname(pathof(@__MODULE__)), "..", "data", "2021_9T_Data")
+    src_data_dir = joinpath(PACKAGE_ROOT, "data", "2021_9T_Data")
     dst_data_dir = joinpath(pwd(), "data", "2021_9T_Data")
     
     if isdir(src_data_dir)
         cp(src_data_dir, dst_data_dir, force=true)
         # Set permissions for all copied files in the directory
-        for (root, dirs, files_in_dir) in walkdir(dst_data_dir)
+        for (root, _, files_in_dir) in walkdir(dst_data_dir)
             for file in files_in_dir
                 chmod(joinpath(root, file), 0o774)
             end
@@ -567,9 +575,24 @@ function copy_bin()
     if ! isdir(PATH) 
         mkdir(PATH)
     end
-    src_path = joinpath(dirname(pathof(@__MODULE__)), "..", PATH)
+    src_path = joinpath(PACKAGE_ROOT, PATH)
     cp(joinpath(src_path, "run_julia"), joinpath(PATH, "run_julia"), force=true)
     chmod(joinpath(PATH, "run_julia"), 0o774)
+end
+
+"""
+    copy_examples()
+
+Copy the example scripts from the package to the local `examples` directory
+(it will be created if it doesn't exist).
+"""
+function copy_examples()
+    PATH = "examples"
+    if ! isdir(PATH) 
+        mkdir(PATH)
+    end
+    src_path = joinpath(PACKAGE_ROOT, PATH)
+    copy_files("examples", readdir(src_path))
 end
 
 """
@@ -603,27 +626,13 @@ After running this function, you can:
 See also: [`copy_examples`](@ref), [`copy_bin`](@ref), [`copy_model_settings`](@ref)
 """
 function install_examples(add_packages=true)
+    copy_model_settings_fn = getfield(FLORIDyn, :copy_model_settings)
     copy_examples()
     copy_bin()
-    copy_model_settings()
+    copy_model_settings_fn()
     if add_packages
         Pkg.add(["LaTeXStrings", "Timers", "TerminalPager", "DistributedNext", "ControlPlots"])
     end
-end
-
-"""
-    copy_examples()
-
-Copy all example scripts to the folder "examples"
-(it will be created if it doesn't exist).
-"""
-function copy_examples()
-    PATH = "examples"
-    if ! isdir(PATH) 
-        mkdir(PATH)
-    end
-    src_path = joinpath(dirname(pathof(@__MODULE__)), "..", PATH)
-    copy_files("examples", readdir(src_path))
 end
 
 """
@@ -668,7 +677,7 @@ function copy_files(relpath, files)
     if ! isdir(relpath) 
         mkdir(relpath)
     end
-    src_path = joinpath(dirname(pathof(@__MODULE__)), "..", relpath)
+    src_path = joinpath(PACKAGE_ROOT, relpath)
     for file in files
         cp(joinpath(src_path, file), joinpath(relpath, file), force=true)
         chmod(joinpath(relpath, file), 0o774)
@@ -679,18 +688,21 @@ end
 @setup_workload begin
     # Putting some things in `@setup_workload` instead of `@compile_workload` can reduce the size of the
     # precompile file and potentially make loading faster.
-    path = dirname(pathof(@__MODULE__))
-    path = (joinpath(path, "..", "data"))
     vis = Vis(online=false)
     @compile_workload begin
         # all calls in this block will be precompiled, regardless of whether
         # they belong to your package or not (on Julia 1.8 and higher)
-        settings_file = joinpath(path, "2021_9T_Data.yaml")
-        wind, sim, con, floris, floridyn, ta, tp = setup(settings_file)
+        settings_file = joinpath(PACKAGE_ROOT, "data", "2021_9T_Data.yaml")
+        setup_fn = getfield(FLORIDyn, :setup)
+        prepare_simulation_fn = getfield(FLORIDyn, :prepareSimulation)
+        init_simulation_fn = getfield(FLORIDyn, :initSimulation)
+        run_floridyn_fn = getfield(FLORIDyn, :runFLORIDyn)
+
+        wind, sim, con, floris, floridyn, ta, tp = setup_fn(settings_file)
         set = Settings(wind, sim, con)
-        wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
-        wf = initSimulation(wf, sim)
-        runFLORIDyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
+        wf, wind, sim, con, floris = prepare_simulation_fn(set, wind, con, floridyn, floris, ta, sim)
+        wf = init_simulation_fn(wf, sim)
+        Base.invokelatest(run_floridyn_fn, nothing, set, wf, wind, sim, con, vis, floridyn, floris)
     end
 
 end

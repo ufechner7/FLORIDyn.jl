@@ -79,7 +79,7 @@ println("Power variability: ", round(power_std, digits=3))
 function calc_rel_power(settings_file; dt=350, wind_dir=nothing, ti=0.062)
     fixed_wind_dir = ! isnothing(wind_dir)
     # get the settings for the wind field, simulator and controller
-    wind, sim, con, floris, floridyn, ta = setup(settings_file)
+    wind, sim, con, floris, floridyn, ta, _ = setup(settings_file)
     sim.end_time += dt
     if fixed_wind_dir
         con.yaw = "Constant"
@@ -93,7 +93,8 @@ function calc_rel_power(settings_file; dt=350, wind_dir=nothing, ti=0.062)
         set.control_mode = Yaw_Constant()
     end
 
-    wf, wind, sim, con, floris = prepareSimulation(set, wind, con, floridyn, floris, ta, sim)
+    prepare_simulation_fn = getfield(FLORIDyn, :prepareSimulation)
+    wf, wind, sim, con, floris = prepare_simulation_fn(set, wind, con, floridyn, floris, ta, sim)
     if fixed_wind_dir
         wind.dir_fixed = wind_dir
         con.yaw_fixed  = wind_dir
@@ -104,12 +105,12 @@ function calc_rel_power(settings_file; dt=350, wind_dir=nothing, ti=0.062)
 
     vis = Vis()
     vis.online = false
-    wf, md, mi = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
+    wf, md, _ = run_floridyn(nothing, set, wf, wind, sim, con, vis, floridyn, floris)
 
     data_column = "ForeignReduction"
     ylabel = "Rel. Wind Speed [%]"
 
-    times, plot_data, turbine_labels, subplot_labels = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
+    times, plot_data, _, _ = FLORIDyn.prepare_large_plot_inputs(wf, md, data_column, ylabel; simple=true)
     nT = wf.nT
     rel_power = zeros(length(times))
     for iT in 1:nT
