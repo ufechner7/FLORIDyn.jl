@@ -31,7 +31,7 @@ if !isdefined(Main, :init_plotting)
 end
 
 # get the settings for the wind field, simulator and controller
-wind, sim, con, floris, floridyn, ta = setup(settings_file)
+wind, sim, con, floris, floridyn, ta, _ = setup(settings_file)
 
 # Configure correction mode before creating strongly typed Settings.
 wind.correction = FLORIDyn.WindCorrection(
