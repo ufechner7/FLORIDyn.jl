@@ -123,7 +123,7 @@ using FLORIDyn, Test, LinearAlgebra
         # Headered CSVs should also load for wErrorCov branches.
         mktempdir() do tmpdir
             data_dir = joinpath(tmpdir, "headered_data")
-            cp(joinpath("data", "2021_9T_Data"), data_dir)
+            cp(joinpath("data", "2021_9T_Data"), data_dir; force=true)
             write(joinpath(data_dir, "WindDir.csv"), "time,phi\n0,255\n20600,255\n20900,195\n21200,195\n")
             write(joinpath(data_dir, "WindDirCovariance.csv"), "sigma\n0.2\n")
 
