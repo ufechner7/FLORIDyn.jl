@@ -214,6 +214,87 @@ This is the high-performance version of the observation point iteration algorith
 end
 
 """
+    iterateOPs!(::IterateOPs_average, wf::WindFarm, sim::Sim, floris::Floris, floridyn::FloriDyn, buffers::IterateOPsBuffers) -> Nothing
+
+Observation point iteration with wind field state averaging.
+
+This method mirrors the legacy MATLAB `iterateOPs` implementation where the wind
+field (`States_WF`) is advanced using an exponential moving average of the previous
+and newly shifted states controlled by weights `sim.dyn.op_iter_weights`.
+
+Weights convention:
+- `wNew = sim.dyn.op_iter_weights[1]` (weight for newly shifted state)
+- `wOld = sim.dyn.op_iter_weights[2]` (weight for existing state)
+
+The rest of the algorithm (advection, crosswind deflection, coordinate transform,
+reordering) matches the basic iteration behavior.
+"""
+@views function iterateOPs!(::IterateOPs_average, wf::WindFarm, sim::Sim, floris::Floris, floridyn::FloriDyn, 
+                             buffers::IterateOPsBuffers)
+    # Save turbine OP, turbine, and wind-field states at start indices
+    @inbounds for i in 1:size(wf.StartI, 2)
+        start_idx = wf.StartI[1, i]
+        @views buffers.tmpOPStates[i, :] .= wf.States_OP[start_idx, :]
+        @views buffers.tmpTStates[i, :]   .= wf.States_T[start_idx, :]
+        @views buffers.tmpWFStates[i, :]  .= wf.States_WF[start_idx, :]
+    end
+
+    # Downwind step (same as basic)
+    @inbounds @simd for i in 1:size(wf.States_OP, 1)
+        buffers.step_dw[i] = sim.time_step * sim.dyn.advection * wf.States_WF[i, 1]
+    end
+    @inbounds @simd for i in 1:size(wf.States_OP, 1)
+        wf.States_OP[i, 4] += buffers.step_dw[i]
+    end
+
+    # Crosswind deflection (reuse centerline!)
+    centerline!(buffers.deflection, wf.States_OP, wf.States_T, wf.States_WF, floris, wf.D[1])
+    @inbounds for i in 1:size(wf.States_OP, 1)
+        buffers.step_cw[i, 1] = buffers.deflection[i, 1] - wf.States_OP[i, 5]
+        buffers.step_cw[i, 2] = buffers.deflection[i, 2] - wf.States_OP[i, 6]
+        wf.States_OP[i, 5] = buffers.deflection[i, 1]
+        wf.States_OP[i, 6] = buffers.deflection[i, 2]
+    end
+
+    # Transform to world coordinates
+    @inbounds @simd for i in axes(wf.States_OP,1)
+        phiwi = angSOWFA2world(wf.States_WF[i, 2])
+        cphiwi = cos(phiwi)
+        sphiwi = sin(phiwi)
+        ai = buffers.step_cw[i, 1]
+        sdwi = buffers.step_dw[i]
+        wf.States_OP[i, 1] += cphiwi * sdwi - sphiwi * ai
+        wf.States_OP[i, 2] += sphiwi * sdwi + cphiwi * ai
+        wf.States_OP[i, 3] += buffers.step_cw[i, 2]
+    end
+
+    # Circular shift (manual) for OPs and restore turbine starts
+    _circshift_and_restore!(wf.States_OP, buffers.tmpOPStates, wf.StartI, buffers.temp_states_op)
+    _circshift_and_restore!(wf.States_T,  buffers.tmpTStates,  wf.StartI, buffers.temp_states_t)
+
+    # Wind field circular shift with averaging weights
+    wNew, wOld = sim.dyn.op_iter_weights  # Expect length 2 vector
+    # Perform shift into temp buffer
+    _circshift_and_restore!(wf.States_WF, buffers.tmpWFStates, wf.StartI, buffers.temp_states_wf)
+    # Average: existing (already shifted & restored) is treated as "new" part
+    @inbounds @simd for i in 1:size(wf.States_WF, 1)
+        @inbounds for j in 1:size(wf.States_WF, 2)
+            wf.States_WF[i, j] = wOld * buffers.temp_states_wf[i, j] + wNew * wf.States_WF[i, j]
+        end
+    end
+    # Restore the turbine starting rows again (MATLAB restored after averaging)
+    @inbounds for i in 1:size(wf.StartI, 2)
+        start_idx = wf.StartI[1, i]
+        @views wf.States_WF[start_idx, :] .= buffers.tmpWFStates[i, :]
+    end
+
+    # Reorder if downstream positions got unsorted
+    _reorder_ops!(wf, buffers)
+
+    return nothing
+end
+
+"""
     _circshift_and_restore!(data, initial_states, start_indices, buffer)
 
 Perform an in-place circular shift down by one row and restore initial states.
@@ -281,3 +362,67 @@ function _reorder_ops!(wf::WindFarm, buffers::IterateOPsBuffers)
         end
     end
 end
+
+# function T = iterateOPs(T,Sim,paramFLORIS,paramFLORIDyn)
+# %ITERATEOPS propagates the OPs downstream and deletes the oldest ones.
+
+
+# %% Save turbine OPs
+# tmpOPStates = T.States_OP(T.StartI,:);
+# tmpTStates  = T.States_T(T.StartI,:);
+# tmpWFSTates = T.States_WF(T.StartI,:);
+# %% Shift states
+# % Calculate downwind step and apply to wake coordinate system
+# step_dw = Sim.TimeStep * T.States_WF(:,1) * Sim.Dyn.Advection;
+# T.States_OP(:,4) = T.States_OP(:,4) + step_dw;
+
+# % Calculate crosswind step and apply to wake coordinate system
+# %   TODO If turbines with different diameters are used, this has to be run
+# %   individually (in parallel) for all turbines.
+# deflection  = Centerline(...
+#     T.States_OP,T.States_T,T.States_WF,paramFLORIS,T.D(1));
+# step_cw     = (deflection - T.States_OP(:,5:6))*1;
+
+# T.States_OP(:,5:6) = deflection*1;
+
+# % Apply dw and cw step to the world coordinate system
+# phiW = angSOWFA2world(T.States_WF(:,2));
+
+# T.States_OP(:,1) = T.States_OP(:,1) + ...
+#     cos(phiW) .* step_dw - ...
+#     sin(phiW) .* step_cw(:,1);
+# T.States_OP(:,2) = T.States_OP(:,2) + ...
+#     sin(phiW) .* step_dw + ...
+#     cos(phiW) .* step_cw(:,1);
+# T.States_OP(:,3) = T.States_OP(:,3) + step_cw(:,2);
+
+# %% Circshift & Init first OPs
+# %   OPs
+# T.States_OP = circshift(T.States_OP,1);
+# T.States_OP(T.StartI,:) = tmpOPStates;
+# %   Turbines
+# T.States_T  = circshift(T.States_T,1);
+# T.States_T(T.StartI,:)  = tmpTStates;
+# %   Wind Field
+# % Getting weights for averaging
+# wNew = Sim.Dyn.OPiterWeights(1);
+# wOld = Sim.Dyn.OPiterWeights(2);
+# T.States_WF = wOld*T.States_WF + wNew*circshift(T.States_WF,1);
+# T.States_WF(T.StartI,:) = tmpWFSTates;
+
+# %% Check if OPs are in order
+# for iT=1:T.nT
+#     [~,indOP] = sort(T.States_OP(T.StartI(iT)+(0:(T.nOP-1)),4));
+#     if ~issorted(indOP)
+#         warning(['OPs overtaking, consider increasing the weight on ' ...
+#             'the old wind field state in setup > OP / wind field propagation.'])
+#         T.States_OP(T.StartI(iT)+(0:(T.nOP-1)),:) = ...
+#             T.States_OP(T.StartI(iT) + indOP - 1,:);
+#         T.States_T(T.StartI(iT)+(0:(T.nOP-1)),:) = ...
+#             T.States_T(T.StartI(iT) + indOP - 1,:);
+#         T.States_WF(T.StartI(iT)+(0:(T.nOP-1)),:) = ...
+#             T.States_WF(T.StartI(iT) + indOP - 1,:);
+#     end
+# end
+
+# end
