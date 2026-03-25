@@ -451,9 +451,9 @@ include("visualisation/create_video.jl")
 include("visualisation/high_res_time.jl")
 include("visualisation/pretty_print.jl")
 include("visualisation/smart_plotting.jl")
-    copy_model_settings()
 
-Copy model configuration files and data directories to the local data directory.
+"""
+    copy_model_settings()
 
 This function copies essential model configuration files and simulation data from the package's 
 data directory to a local `data/` directory in the current working directory. 
