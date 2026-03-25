@@ -454,45 +454,44 @@ include("visualisation/smart_plotting.jl")
 
 """
     run_floridyn(plt, set, wf, wind, sim, con, vis, 
-                 floridyn, floris; msr=VelReduction) -> (WindFarm, DataFrame, Matrix)
+                 floridyn, floris; msr=VelReduction, save_final_only=false) -> (WindFarm, DataFrame, Matrix)
 
-Unified function that automatically handles both multi-threading and single-threading modes
-for running FLORIDyn simulations with appropriate plotting callbacks.
+Run a FLORIDyn simulation with optional online flow-field plotting.
+
+This is a convenience wrapper around [`runFLORIDyn`](@ref) that selects the
+appropriate execution path depending on whether multi-threading / multi-process
+plotting support is available.
 
 # Arguments
-- `plt`: PyPlot instance, usually provided by ControlPlots
-- `set`: Settings object. See: [Settings](@ref)
-- `wf`: WindFarm struct. These are work arrays, not persistent objects. See: [WindFarm](@ref)
-- `wind`: Wind field input settings. See: [Wind](@ref)
-- `sim`: Simulation settings. See: [Sim](@ref)
-- `con`: Controller settings. See: [Con](@ref)
-- `vis`: Visualization settings. See: [Vis](@ref)
-- `floridyn`: FLORIDyn model struct. See: [FloriDyn](@ref)
-- `floris`: Floris model struct. See: [Floris](@ref)
-- `msr`: Measurement index for online flow field plotting (VelReduction, AddedTurbulence or EffWind). 
-         Default VelReduction. See: [MSR](@ref)
+- `plt`: PyPlot instance, usually provided by ControlPlots.
+- `set`: Simulation settings. See [`Settings`](@ref).
+- `wf`: WindFarm work arrays. See [`WindFarm`](@ref).
+- `wind`: Wind field input settings. See [`Wind`](@ref).
+- `sim`: Simulation settings. See [`Sim`](@ref).
+- `con`: Controller settings. See [`Con`](@ref).
+- `vis`: Visualization settings. See [`Vis`](@ref).
+- `floridyn`: FLORIDyn model struct. See [`FloriDyn`](@ref).
+- `floris`: Floris model struct. See [`Floris`](@ref).
+- `msr`: Measurement representation used for online flow-field plotting.
+  Valid values are [`VelReduction`](@ref), [`AddedTurbulence`](@ref), and
+  [`EffWind`](@ref). Defaults to [`VelReduction`](@ref).
+- `save_final_only`: If `true`, only the final result is saved during the run.
+
+# Behavior
+- If `Threads.nthreads() > 1` and `nprocs() > 1`, the function attempts to use
+  `Main.rmt_plot_flow_field` as a remote plotting callback.
+- Otherwise, it runs in single-threaded mode without a plotting callback.
 
 # Returns
-- Tuple (wf, md, mi): WindFarm, measurement data, and interaction matrix
-"""
-function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction, save_final_only=false)
-    if Threads.nthreads() > 1 && nprocs() > 1
-        # Multi-threading mode: use remote plotting callback
-        # The rmt_plot_flow_field function should be defined via remote_plotting.jl
-        try
-            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr, save_final_only)
-        catch e
-            if isa(e, UndefVarError)
-                error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
-            else
-                rethrow(e)
-            end
-        end
-    else
-        # Single-threading mode: no plotting callback
-        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
-    end
-end
+A tuple `(wf, md, mi)` where:
+- `wf`: updated `WindFarm`
+- `md`: measurement data
+- `mi`: interaction matrix
+
+# Errors
+If multi-threaded execution is selected but `Main.rmt_plot_flow_field` is not
+available, an error is thrown instructing the user to load the remote plotting
+setup first.
 
 """
     copy_model_settings()
