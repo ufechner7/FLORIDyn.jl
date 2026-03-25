@@ -451,49 +451,6 @@ include("visualisation/create_video.jl")
 include("visualisation/high_res_time.jl")
 include("visualisation/pretty_print.jl")
 include("visualisation/smart_plotting.jl")
-
-"""
-    run_floridyn(plt, set, wf, wind, sim, con, vis, 
-                 floridyn, floris; msr=VelReduction, save_final_only=false) -> (WindFarm, DataFrame, Matrix)
-
-Run a FLORIDyn simulation with optional online flow-field plotting.
-
-This is a convenience wrapper around [`runFLORIDyn`](@ref) that selects the
-appropriate execution path depending on whether multi-threading / multi-process
-plotting support is available.
-
-# Arguments
-- `plt`: PyPlot instance, usually provided by ControlPlots.
-- `set`: Simulation settings. See [`Settings`](@ref).
-- `wf`: WindFarm work arrays. See [`WindFarm`](@ref).
-- `wind`: Wind field input settings. See [`Wind`](@ref).
-- `sim`: Simulation settings. See [`Sim`](@ref).
-- `con`: Controller settings. See [`Con`](@ref).
-- `vis`: Visualization settings. See [`Vis`](@ref).
-- `floridyn`: FLORIDyn model struct. See [`FloriDyn`](@ref).
-- `floris`: Floris model struct. See [`Floris`](@ref).
-- `msr`: Measurement representation used for online flow-field plotting.
-  Valid values are [`VelReduction`](@ref), [`AddedTurbulence`](@ref), and
-  [`EffWind`](@ref). Defaults to [`VelReduction`](@ref).
-- `save_final_only`: If `true`, only the final result is saved during the run.
-
-# Behavior
-- If `Threads.nthreads() > 1` and `nprocs() > 1`, the function attempts to use
-  `Main.rmt_plot_flow_field` as a remote plotting callback.
-- Otherwise, it runs in single-threaded mode without a plotting callback.
-
-# Returns
-A tuple `(wf, md, mi)` where:
-- `wf`: updated `WindFarm`
-- `md`: measurement data
-- `mi`: interaction matrix
-
-# Errors
-If multi-threaded execution is selected but `Main.rmt_plot_flow_field` is not
-available, an error is thrown instructing the user to load the remote plotting
-setup first.
-
-"""
     copy_model_settings()
 
 Copy model configuration files and data directories to the local data directory.
