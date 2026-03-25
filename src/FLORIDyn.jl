@@ -453,6 +453,70 @@ include("visualisation/pretty_print.jl")
 include("visualisation/smart_plotting.jl")
 
 """
+    run_floridyn(plt, set, wf, wind, sim, con, vis,
+                 floridyn, floris; msr=VelReduction, save_final_only=false) -> (WindFarm, DataFrame, Matrix)
+
+Run a FLORIDyn simulation with optional online flow-field plotting.
+
+Convenience wrapper around [`runFLORIDyn`](@ref) that selects the appropriate execution
+path depending on whether multi-threading / multi-process plotting support is available.
+
+# Arguments
+- `plt`: Plotting handle, usually provided by ControlPlots.
+- `set::Settings`: Simulation settings. See [`Settings`](@ref).
+- `wf::WindFarm`: Wind farm work arrays. See [`WindFarm`](@ref).
+- `wind::Wind`: Wind field input settings. See [`Wind`](@ref).
+- `sim::Sim`: Simulation time settings. See [`Sim`](@ref).
+- `con::Con`: Controller settings. See [`Con`](@ref).
+- `vis::Vis`: Visualization settings. See [`Vis`](@ref).
+- `floridyn::FloriDyn`: FLORIDyn model struct. See [`FloriDyn`](@ref).
+- `floris::Floris`: FLORIS model struct. See [`Floris`](@ref).
+- `msr::MSR`: Quantity shown during online flow-field plotting. Valid values:
+  [`VelReduction`](@ref), [`AddedTurbulence`](@ref), [`EffWind`](@ref).
+  Defaults to [`VelReduction`](@ref). See [`MSR`](@ref).
+- `save_final_only::Bool`: If `true`, only plots and saves the flow field on the final
+  iteration. Defaults to `false`.
+
+# Returns
+A tuple `(wf, md, mi)` where:
+- `wf::WindFarm`: Updated wind farm state after the simulation.
+- `md::DataFrame`: Measurement data with columns
+  `[:Time, :ForeignReduction, :AddedTurbulence, :EffWindSpeed, :FreeWindSpeed, :PowerGen]`.
+- `mi::Matrix{Float64}`: Wake velocity reduction matrix; first column is simulation time,
+  remaining columns contain the per-turbine velocity reduction values at each time step.
+
+# Behavior
+- If `Threads.nthreads() > 1` and `nprocs() > 1` (from `Distributed`), the function uses
+  `Main.rmt_plot_flow_field` as a remote plotting callback.
+- Otherwise, it runs in single-process mode without a remote plotting callback.
+
+# Errors
+If multi-process execution is selected but `Main.rmt_plot_flow_field` is not available,
+an error is thrown instructing the user to include `remote_plotting.jl` and call
+`init_plotting()` first.
+
+See also: [`runFLORIDyn`](@ref), [`MSR`](@ref), [`Settings`](@ref), [`WindFarm`](@ref)
+"""
+function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction, save_final_only=false)
+    if Threads.nthreads() > 1 && nprocs() > 1
+        # Multi-threading mode: use remote plotting callback
+        # The rmt_plot_flow_field function should be defined via remote_plotting.jl
+        try
+            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr, save_final_only)
+        catch e
+            if isa(e, UndefVarError)
+                error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
+            else
+                rethrow(e)
+            end
+        end
+    else
+        # Single-threading mode: no plotting callback
+        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
+    end
+end
+
+"""
     copy_model_settings()
 
 This function copies essential model configuration files and simulation data from the package's 
