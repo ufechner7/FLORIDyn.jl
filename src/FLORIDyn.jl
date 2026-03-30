@@ -166,7 +166,7 @@ end
 function str2type(name)
     typename = Symbol(name)
     t = getfield(FLORIDyn, typename)
-    instance = t()
+    t()
 end
 
 # marker structs
