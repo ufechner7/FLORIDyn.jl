@@ -1,0 +1,333 @@
+#!/bin/bash -eu
+# Copyright (c) 2026 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Install and configure matplotlib for ControlPlots.jl (via PythonCall).
+#
+# Two backends are supported:
+#   1) System Python: uses matplotlib installed by the OS package manager.
+#   2) CondaPkg: installs matplotlib into a CondaPkg-managed environment.
+#
+# Both options configure the Qt (qtagg) backend for interactive plot windows.
+
+print_usage() {
+    echo "Usage:"
+    echo "  ./bin/install_controlplots [--system | --conda] [-y | --yes] [-h | --help]"
+    echo ""
+    echo "Options:"
+    echo "  --system   Use the system Python and matplotlib"
+    echo "  --conda    Use CondaPkg to install matplotlib"
+    echo "  -y, --yes  Non-interactive; accept defaults"
+    echo "  -h, --help Show this help message"
+}
+
+_backend=""   # "system" or "conda"
+_yes=false
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        --system)
+            _backend="system"
+            shift
+            ;;
+        --conda)
+            _backend="conda"
+            shift
+            ;;
+        -y|--yes)
+            _yes=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            print_usage
+            exit 1
+            ;;
+    esac
+done
+
+if [[ "$(basename "$(pwd)")" == "bin" ]]; then
+    cd ..
+fi
+
+if [[ ! -f "Project.toml" || ! -d "bin" ]]; then
+    echo "Error: run this script from the FLORIDyn.jl repository root or ./bin."
+    exit 1
+fi
+
+if [[ -z "$_backend" ]]; then
+    echo "Which matplotlib backend do you want to use for ControlPlots?"
+    echo ""
+    echo "  1) System Python"
+    echo "     - Requires sudo for package installation"
+    echo "     - Shares the system-wide Python installation"
+    echo ""
+    echo "  2) CondaPkg"
+    echo "     - No sudo required"
+    echo "     - Self-contained environment"
+    echo ""
+    if [[ "$_yes" == true ]]; then
+        _choice="2"
+        echo "Using default: 2 (CondaPkg)"
+    else
+        read -rp "Enter 1 or 2 [default: 2]: " _choice
+    fi
+    case "${_choice:-2}" in
+        1) _backend="system" ;;
+        2) _backend="conda" ;;
+        *)
+            echo "Invalid choice. Please enter 1 or 2."
+            exit 1
+            ;;
+    esac
+fi
+
+echo ""
+echo "Selected backend: $_backend"
+echo ""
+
+_install_matplotlib_condapkg() {
+    echo "Installing matplotlib and pyqt into CondaPkg environment..."
+    julia --project -e '
+using Pkg
+if Base.find_package("CondaPkg") === nothing
+    Pkg.add("CondaPkg")
+end
+using CondaPkg
+CondaPkg.add("matplotlib")
+CondaPkg.add("pyqt")
+CondaPkg.resolve()
+println("matplotlib and pyqt installed in CondaPkg environment.")
+'
+}
+
+_verify_controlplots() {
+    echo "Verifying ControlPlots can be loaded..."
+    if julia --project -e '
+using ControlPlots
+println("ControlPlots loaded successfully.")
+'; then
+        echo ""
+        echo "ControlPlots is working."
+    else
+        echo ""
+        echo "Warning: ControlPlots could not be loaded. Check the error output above."
+        echo "You may need to run this script again with the other backend option."
+        exit 1
+    fi
+}
+
+_set_mplbackend_qtagg() {
+    local _project_dir="$1"
+    local _prefs_file="${_project_dir}/LocalPreferences.toml"
+    if [[ -f "$_prefs_file" ]]; then
+        _tmp=$(mktemp)
+        awk '
+            /^\[ENV\]/ { in_env=1; next }
+            in_env && /^\[/ { in_env=0 }
+            !in_env { print }
+        ' "$_prefs_file" > "$_tmp"
+        mv "$_tmp" "$_prefs_file"
+    fi
+    {
+        echo ""
+        echo "[ENV]"
+        echo "MPLBACKEND = \"qtagg\""
+    } >> "$_prefs_file"
+    echo "Set MPLBACKEND=qtagg in $_prefs_file."
+}
+
+_write_system_python_prefs() {
+    local _project_dir="$1"
+    local _python_exe="$2"
+    local _prefs_file="${_project_dir}/LocalPreferences.toml"
+
+    if [[ -f "$_prefs_file" ]]; then
+        _tmp=$(mktemp)
+        awk '
+            /^\[PythonCall\]/ { in_sec=1; next }
+            /^\[PyCall\]/ { in_sec=1; next }
+            /^\[CondaPkg\]/ { in_sec=1; next }
+            in_sec && /^\[/ { in_sec=0 }
+            !in_sec { print }
+        ' "$_prefs_file" > "$_tmp"
+        mv "$_tmp" "$_prefs_file"
+    fi
+
+    {
+        echo ""
+        echo "[PythonCall]"
+        echo "exe = \"$_python_exe\""
+        echo ""
+        echo "[CondaPkg]"
+        echo "backend = \"Null\""
+    } >> "$_prefs_file"
+    echo "Written system Python settings to $_prefs_file."
+}
+
+_remove_python_backend_prefs() {
+    local _project_dir="$1"
+    local _prefs_file="${_project_dir}/LocalPreferences.toml"
+
+    if [[ -f "$_prefs_file" ]]; then
+        _tmp=$(mktemp)
+        awk '
+            /^\[PythonCall\]/ { in_sec=1; next }
+            /^\[PyCall\]/ { in_sec=1; next }
+            /^\[CondaPkg\]/ { in_sec=1; next }
+            in_sec && /^\[/ { in_sec=0 }
+            !in_sec { print }
+        ' "$_prefs_file" > "$_tmp"
+        if ! diff -q "$_prefs_file" "$_tmp" &>/dev/null; then
+            mv "$_tmp" "$_prefs_file"
+            echo "Removed [PythonCall]/[CondaPkg] sections from $_prefs_file."
+        else
+            rm -f "$_tmp"
+        fi
+    fi
+}
+
+if [[ "$_backend" == "system" ]]; then
+    if [[ "$(uname -s)" == "Linux" ]]; then
+        if grep -qiE "ubuntu|debian" /etc/os-release 2>/dev/null; then
+            if ! dpkg -s python3-matplotlib &>/dev/null 2>&1 || ! dpkg -s python3-pyqt5 &>/dev/null 2>&1; then
+                echo "Installing python3-matplotlib and python3-pyqt5 via apt..."
+                sudo apt install -y python3-matplotlib python3-pyqt5
+            else
+                echo "python3-matplotlib and python3-pyqt5 are already installed."
+            fi
+        elif grep -qi "fedora" /etc/os-release 2>/dev/null; then
+            if ! rpm -q python3-matplotlib &>/dev/null 2>&1 || ! rpm -q python3-pyqt5 &>/dev/null 2>&1; then
+                echo "Installing python3-matplotlib and python3-pyqt5 via dnf..."
+                sudo dnf install -y python3-matplotlib python3-pyqt5
+            else
+                echo "python3-matplotlib and python3-pyqt5 are already installed."
+            fi
+        else
+            echo "Warning: Could not detect Ubuntu/Debian or Fedora."
+            echo "Please ensure python3-matplotlib and PyQt are installed manually before continuing."
+            if [[ "$_yes" == false ]]; then
+                read -rp "Continue anyway? (y/n) [default: y]: " _cont
+                case "${_cont:-y}" in
+                    n|N) echo "Aborted."; exit 1 ;;
+                esac
+            fi
+        fi
+    elif [[ "$(uname -s)" =~ ^(MINGW|MSYS|CYGWIN) ]]; then
+        _pip=""
+        for _pip_candidate in pip3 pip; do
+            if command -v "$_pip_candidate" &>/dev/null; then
+                _pip="$_pip_candidate"
+                break
+            fi
+        done
+        if [[ -n "$_pip" ]]; then
+            if ! "$_pip" show matplotlib &>/dev/null 2>&1 || ! "$_pip" show PyQt5 &>/dev/null 2>&1; then
+                echo "Installing matplotlib and PyQt5 via pip..."
+                "$_pip" install --user matplotlib PyQt5
+            else
+                echo "matplotlib and PyQt5 are already installed."
+            fi
+        else
+            echo "Warning: pip not found. Please install matplotlib and PyQt5 manually."
+            if [[ "$_yes" == false ]]; then
+                read -rp "Continue anyway? (y/n) [default: y]: " _cont
+                case "${_cont:-y}" in
+                    n|N) echo "Aborted."; exit 1 ;;
+                esac
+            fi
+        fi
+    else
+        echo "Warning: System Python backend is intended for Linux or Windows."
+        echo "On this OS ($(uname -s)) you may need to install matplotlib manually."
+        if [[ "$_yes" == false ]]; then
+            read -rp "Continue anyway? (y/n) [default: y]: " _cont
+            case "${_cont:-y}" in
+                n|N) echo "Aborted."; exit 1 ;;
+            esac
+        fi
+    fi
+
+    _syspython=""
+    if [[ "$(uname -s)" =~ ^(MINGW|MSYS|CYGWIN) ]]; then
+        for _candidate in python3 python; do
+            if command -v "$_candidate" &>/dev/null; then
+                _syspython=$(command -v "$_candidate")
+                if "$_syspython" --version &>/dev/null 2>&1; then
+                    break
+                fi
+                _syspython=""
+            fi
+        done
+    else
+        for _candidate in python3 /usr/bin/python3; do
+            if command -v "$_candidate" &>/dev/null; then
+                _syspython=$(command -v "$_candidate")
+                break
+            fi
+        done
+    fi
+    if [[ -z "$_syspython" ]]; then
+        echo "Error: python3 not found on PATH. Please install python3."
+        exit 1
+    fi
+    echo "Found system Python: $_syspython"
+
+    if [[ -d ".CondaPkg" ]]; then
+        echo "Removing .CondaPkg (switching from CondaPkg to system Python)..."
+        rm -rf ".CondaPkg"
+    fi
+    if [[ -d "examples/.CondaPkg" ]]; then
+        echo "Removing examples/.CondaPkg (switching from CondaPkg to system Python)..."
+        rm -rf "examples/.CondaPkg"
+    fi
+    unset JULIA_PYTHONCALL_EXE
+    export JULIA_CONDAPKG_BACKEND="Null"
+    export JULIA_PYTHONCALL_EXE="$_syspython"
+
+    echo ""
+    echo "Saving python_exe=$_syspython to environment preferences..."
+    _write_system_python_prefs "." "$_syspython"
+    _set_mplbackend_qtagg "."
+    if [[ -f "examples/Project.toml" ]]; then
+        _write_system_python_prefs "examples" "$_syspython"
+        _set_mplbackend_qtagg "examples"
+    fi
+
+    _verify_controlplots
+
+    if [[ -d ".CondaPkg" ]]; then
+        echo "Warning: .CondaPkg was created unexpectedly; removing it for system backend."
+        rm -rf ".CondaPkg"
+    fi
+    if [[ -d "examples/.CondaPkg" ]]; then
+        echo "Warning: examples/.CondaPkg was created unexpectedly; removing it for system backend."
+        rm -rf "examples/.CondaPkg"
+    fi
+
+    echo ""
+    echo "Done. ControlPlots will use the system Python matplotlib with the Qt (qtagg) backend."
+
+elif [[ "$_backend" == "conda" ]]; then
+    unset JULIA_CONDAPKG_BACKEND
+    unset JULIA_PYTHONCALL_EXE
+    _remove_python_backend_prefs "."
+    if [[ -f "examples/Project.toml" ]]; then
+        _remove_python_backend_prefs "examples"
+    fi
+
+    _install_matplotlib_condapkg
+
+    _set_mplbackend_qtagg "."
+    if [[ -f "examples/Project.toml" ]]; then
+        _set_mplbackend_qtagg "examples"
+    fi
+    _verify_controlplots
+
+    echo ""
+    echo "Done. ControlPlots will use the CondaPkg-managed matplotlib with the Qt (qtagg) backend."
+fi
