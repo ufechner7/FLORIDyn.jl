@@ -5,7 +5,7 @@
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 
 # Minimal example of how to run a simulation using FLORIDyn.jl
-using FLORIDyn, TerminalPager, DistributedNext, BenchmarkTools
+using FLORIDyn, TerminalPager, BenchmarkTools
 
 settings_file = "data/2021_54T_NordseeOne.yaml"
 vis_file      = "data/vis_54T.yaml"

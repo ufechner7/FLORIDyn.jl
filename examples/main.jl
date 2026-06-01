@@ -5,10 +5,8 @@
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
 tic()
-using FLORIDyn, TerminalPager, DistributedNext
-if Threads.nthreads() == 1
-    using ControlPlots  # Only load ControlPlots (PyPlot) when single-threaded
-end
+using FLORIDyn, TerminalPager
+using ControlPlots
 
 # PLT options:
 # PLT=1: Flow field plot
@@ -28,11 +26,7 @@ if (@isdefined plt) && !isnothing(plt)
 else
     plt = nothing
 end
-pltctrl = nothing
-# Provide ControlPlots module only for pure sequential plotting (single-threaded, no workers)
-if Threads.nthreads() == 1
-    pltctrl = ControlPlots
-end
+pltctrl = ControlPlots
 
 # Automatic parallel/threading setup
 include("remote_plotting.jl")

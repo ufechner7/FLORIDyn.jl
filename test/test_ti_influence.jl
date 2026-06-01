@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, MAT, Test, DistributedNext, LinearAlgebra, Statistics, DataFrames
+using FLORIDyn, MAT, Test, LinearAlgebra, Statistics, DataFrames
 
 if !isdefined(Main, :TestHelpers)
     include("test_helpers.jl")

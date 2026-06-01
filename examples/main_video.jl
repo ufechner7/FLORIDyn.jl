@@ -4,7 +4,7 @@
 # MainFLORIDyn Center-Line model
 # Improved FLORIDyn approach over the gaussian FLORIDyn model
 using Timers
-using FLORIDyn, TerminalPager, DistributedNext
+using FLORIDyn, TerminalPager
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file, vis_file = get_default_project()[2:3]

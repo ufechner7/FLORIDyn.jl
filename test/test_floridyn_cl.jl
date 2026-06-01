@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, Test, Statistics, Parameters, DistributedNext
+using FLORIDyn, Test, Statistics, Parameters
 if Threads.nthreads() == 1; using ControlPlots; end
 if !(@isdefined plt)
     plt = nothing
@@ -180,12 +180,8 @@ end
         # @test minimum(md.ForeignReduction) ≈ 72.57019949691814 # Matlab: 73.8438
         # @test mean(md.ForeignReduction)    ≈ 98.54434468415639 # Matlab: 98.
         sleep(2)
-        if Threads.nthreads() > 1 && nprocs() > 1
-            @spawnat 2 rmt_close_all()
-        else
-            if !isnothing(plt)
-                plt.close("all")
-            end
+        if !isnothing(plt)
+            plt.close("all")
         end
     end
     @testset "runFLORIDyn - zero induction" begin
@@ -214,12 +210,8 @@ end
         @test size(md, 1) > 0
         @test all(isfinite.(md.PowerGen[2:end]))
         
-        if Threads.nthreads() > 1 && nprocs() > 1
-            @spawnat 2 rmt_close_all()
-        else
-            if !isnothing(plt)
-                plt.close("all")
-            end
+        if !isnothing(plt)
+            plt.close("all")
         end
     end
 end

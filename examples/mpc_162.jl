@@ -30,7 +30,7 @@ using Pkg
 if ! ("NOMAD" ∈ keys(Pkg.project().dependencies))
     using TestEnv; TestEnv.activate()
 end
-using FLORIDyn, TerminalPager, DistributedNext, DataFrames, NOMAD, JLD2, Statistics, Printf
+using FLORIDyn, TerminalPager, DataFrames, NOMAD, JLD2, Statistics, Printf
 using FLORIDyn: TurbineGroup, TurbineArray
 if Threads.nthreads() == 1; using ControlPlots; end
 

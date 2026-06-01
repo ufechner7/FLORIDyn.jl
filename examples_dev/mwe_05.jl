@@ -3,7 +3,7 @@
 
 # This script shows how to plot multiple time series in one plot in the remote process (rmt)
 
-using LaTeXStrings, DistributedNext, FLORIDyn
+using LaTeXStrings, FLORIDyn
 if Threads.nthreads() == 1; using ControlPlots; end
 
 if (@isdefined plt) && !isnothing(plt)

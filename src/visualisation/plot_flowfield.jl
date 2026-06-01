@@ -163,9 +163,9 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             end
             ax = plt.gca()
             n = 40
-            levels = range(lev_min, stop=lev_max, length=n+1)
+            levels = n
             # Correct axis order: X=mx (West-East), Y=my (South-North)
-            contour_collection = plt.contourf(mx, my, mz_2d, n; levels, cmap="inferno")
+            contour_collection = plt.contourf(mx, my, mz_2d, n; vmin=lev_min, vmax=lev_max, cmap="inferno")
             if wide
                 cb = plt.colorbar(fraction=0.046, pad=0.01, orientation="vertical")
                 cb.set_label(label, labelpad=0)
@@ -232,7 +232,7 @@ function plotFlowField(state::Union{Nothing, PlotState}, plt, wf, mx, my, mz, vi
             end
             # Create new contour with updated data
             # Correct axis order consistent with initialization
-            state.contour_collection = plt.contourf(mx, my, mz_2d, 40; levels=state.levels, cmap="inferno")
+            state.contour_collection = plt.contourf(mx, my, mz_2d, state.levels; vmin=state.lev_min, vmax=state.lev_max, cmap="inferno")
             end
 
         # Plot the turbine rotors as short, thick lines (as seen from above)

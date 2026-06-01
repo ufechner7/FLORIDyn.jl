@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Example how to plot two time series in one plot with one y axis using plot_rmt().
-using FLORIDyn, DistributedNext
+using FLORIDyn
 using ControlPlots
 
 # Select plotting backend: use ControlPlots only in single-threaded mode; otherwise let plot_rmt handle remote plotting

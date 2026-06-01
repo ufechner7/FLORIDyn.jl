@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # Testcase for bug https://github.com/ufechner7/FLORIDyn.jl/issues/35
-using FLORIDyn, TerminalPager, MAT, ControlPlots, DistributedNext, LinearAlgebra, Statistics, DataFrames
+using FLORIDyn, TerminalPager, MAT, ControlPlots, LinearAlgebra, Statistics, DataFrames
 
 if !isdefined(Main, :TestHelpers)
     include("../test/test_helpers.jl")

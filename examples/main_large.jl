@@ -8,7 +8,7 @@
 # for benchmarking the 54 turbine layout.
 using Timers
 tic()
-using FLORIDyn, TerminalPager, DistributedNext 
+using FLORIDyn, TerminalPager 
 if Threads.nthreads() == 1; using ControlPlots; end
 toc()
 

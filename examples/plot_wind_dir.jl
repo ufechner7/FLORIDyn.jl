@@ -1,12 +1,9 @@
 # Copyright (c) 2025 Marcus Becker, Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, TOML, DistributedNext
-if Threads.nthreads() == 1; 
-    using ControlPlots
-    v = VersionNumber(TOML.parsefile(joinpath(Base.pkgdir(ControlPlots), "Project.toml"))["version"])
-    @assert v >= v"0.2.8" "This script requires ControlPlots version 0.2.8 or higher."
-end
+using FLORIDyn, TOML, ControlPlots
+v = VersionNumber(TOML.parsefile(joinpath(Base.pkgdir(ControlPlots), "Project.toml"))["version"])
+@assert v >= v"0.2.8" "This script requires ControlPlots version 0.2.8 or higher."
 
 settings_file, vis_file = get_default_project()[2:3]
 
@@ -15,8 +12,7 @@ if (@isdefined plt) && !isnothing(plt)
 else
     plt = nothing
 end
-pltctrl = nothing
-if Threads.nthreads() == 1; pltctrl = ControlPlots; end
+    pltctrl = ControlPlots
 
 # Automatic parallel/threading setup
 include("remote_plotting.jl")

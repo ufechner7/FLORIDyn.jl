@@ -12,7 +12,7 @@ import DocStringExtensions, LoggingExtras
 import Base: show
 
 using Interpolations, LinearAlgebra, Random, YAML, StructMapping, Parameters, CSV, DataFrames, DelimitedFiles, JLD2
-using Statistics, StaticArrays, Pkg, DistributedNext, Dates
+using Statistics, StaticArrays, Pkg, Dates
 using REPL.TerminalMenus
 using SparseArrays
 
@@ -486,34 +486,13 @@ A tuple `(wf, md, mi)` where:
   remaining columns contain the per-turbine velocity reduction values at each time step.
 
 # Behavior
-- If `Threads.nthreads() > 1` and `nprocs() > 1` (from `Distributed`), the function uses
-  `Main.rmt_plot_flow_field` as a remote plotting callback.
-- Otherwise, it runs in single-process mode without a remote plotting callback.
-
-# Errors
-If multi-process execution is selected but `Main.rmt_plot_flow_field` is not available,
-an error is thrown instructing the user to include `remote_plotting.jl` and call
-`init_plotting()` first.
+- Runs in local mode without remote plotting callbacks.
 
 See also: [`runFLORIDyn`](@ref), [`MSR`](@ref), [`Settings`](@ref), [`WindFarm`](@ref)
 """
 function run_floridyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr=VelReduction, save_final_only=false)
-    if Threads.nthreads() > 1 && nprocs() > 1
-        # Multi-threading mode: use remote plotting callback
-        # The rmt_plot_flow_field function should be defined via remote_plotting.jl
-        try
-            return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; rmt_plot_fn=Main.rmt_plot_flow_field, msr, save_final_only)
-        catch e
-            if isa(e, UndefVarError)
-                error("rmt_plot_flow_field function not found in Main scope. Make sure to include remote_plotting.jl and call init_plotting() first.")
-            else
-                rethrow(e)
-            end
-        end
-    else
-        # Single-threading mode: no plotting callback
-        return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
-    end
+    # Local plotting mode only: no remote plotting callback
+    return runFLORIDyn(plt, set, wf, wind, sim, con, vis, floridyn, floris; msr, save_final_only)
 end
 
 """
@@ -627,7 +606,7 @@ function install_examples(add_packages=true)
     copy_bin()
     copy_model_settings()
     if add_packages
-        Pkg.add(["LaTeXStrings", "Timers", "TerminalPager", "DistributedNext", "ControlPlots"])
+        Pkg.add(["LaTeXStrings", "Timers", "TerminalPager", "ControlPlots"])
     end
 end
 

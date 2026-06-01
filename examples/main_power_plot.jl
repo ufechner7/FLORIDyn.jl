@@ -3,7 +3,7 @@
 
 # Plot the relative power output of a wind farm over time
 # Optionally, plot the flow field at the end of the simulation
-using FLORIDyn, TerminalPager, DistributedNext, Statistics
+using FLORIDyn, TerminalPager, Statistics
 if Threads.nthreads() == 1; using ControlPlots; end
 
 settings_file = "data/2021_54T_NordseeOne.yaml"

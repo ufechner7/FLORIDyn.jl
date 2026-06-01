@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 
 # This script is used to identify memory allocations
-using FLORIDyn, DistributedNext
+using FLORIDyn
 if Threads.nthreads() == 1; 
     @info "Running in single-threaded mode, using ControlPlots directly"
     using ControlPlots; 

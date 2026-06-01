@@ -753,7 +753,7 @@ Main entry point for the FLORIDyn closed-loop simulation.
 
 # Keyword Arguments
 - `rmt_plot_fn`: Optional remote plotting function for intermediate simulation results. When provided, this function 
-  is called remotely (using `@spawnat 2`) to plot flow field visualization on a separate worker process.
+    is called to plot flow field visualization.
   The function should accept parameters `(wf, X, Y, Z, vis, t_rel; msr=VelReduction)` where `wf` is the wind farm state,
   `X`, `Y`, `Z` are flow field coordinates and velocities, `vis` contains visualization settings, and `t_rel` 
   is the relative simulation time. Defaults to `nothing` for local plotting.
@@ -874,8 +874,7 @@ function runFLORIDyn(plt, set::Settings, wf::WindFarm, wind::Wind, sim, con, vis
                     plot_state = plotFlowField(plot_state, plt, wf, X, Y, Z, vis, t_rel - vis.t_skip; msr)
                     plt.pause(0.01)
                 else
-                    # @info "time: $t_rel, plotting with rmt_plot_fn"
-                    @spawnat 2 rmt_plot_fn(wf, X, Y, Z, vis, t_rel - vis.t_skip; msr=msr)
+                    rmt_plot_fn(wf, X, Y, Z, vis, t_rel - vis.t_skip; msr=msr)
                 end
             end
         end

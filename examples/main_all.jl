@@ -7,7 +7,7 @@
 # Run all visualisations that are defined in vis_default.yaml
 using Timers
 tic()
-using FLORIDyn, TerminalPager, DistributedNext, ControlPlots, JLD2
+using FLORIDyn, TerminalPager, ControlPlots, JLD2
 using Logging, LoggingExtras, Dates
 
 settings_file, vis_file = get_default_project()[2:3]

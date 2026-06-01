@@ -17,7 +17,6 @@ using Test
 using LinearAlgebra
 using Random
 using Suppressor
-using DistributedNext
 
 if basename(pwd()) == "test"
     cd("..")
@@ -105,9 +104,6 @@ function run_file(filepath::String, description::String)
     println("File: $filepath")
     println("="^66); println()
     
-    # Store initial worker count
-    initial_procs = nprocs()
-    
     # Run the file
     success = false
     try   
@@ -122,35 +118,6 @@ function run_file(filepath::String, description::String)
         println("\n❌ $description failed with error:")
         println(e)
         success = false
-    end
-    
-    # Cleanup any workers that were created during test execution
-    if nprocs() > initial_procs
-        println("\nCleaning up $(nprocs() - initial_procs) worker process(es) created during test...")
-        try
-            # Try to interrupt any running tasks on workers first
-            for w in workers()
-                if w > initial_procs  # Only interrupt newly created workers
-                    try
-                        interrupt(w)
-                    catch
-                        # Worker might already be dead
-                    end
-                end
-            end
-            
-            # Brief pause to let interrupts take effect
-            sleep(0.1)
-            
-            # Remove only the newly created workers
-            new_workers = filter(w -> w > initial_procs, workers())
-            if !isempty(new_workers)
-                rmprocs(new_workers; waitfor=0.0)
-            end
-            println("Worker cleanup completed.")
-        catch e
-            println("Worker cleanup encountered issues (this is usually harmless): $e")
-        end
     end
     
     return success

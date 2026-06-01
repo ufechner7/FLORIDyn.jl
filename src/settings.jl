@@ -1569,8 +1569,8 @@ Create n turbine groups by dividing turbines based on their X coordinates.
 
 This function creates a new [`TurbineArray`](@ref) with turbines divided into `n_groups` 
 equal-sized groups based on their X-coordinate positions. Turbines are sorted by X 
-position and then distributed evenly across groups. If the number of turbines doesn't 
-divide evenly, the remainder turbines are distributed to the first groups.
+position and then assigned evenly across groups. If the number of turbines doesn't 
+divide evenly, the remainder turbines are assigned to the first groups.
 
 # Arguments
 - `ta::TurbineArray`: The turbine array containing position data

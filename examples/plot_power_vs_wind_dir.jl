@@ -3,7 +3,7 @@
 
 # Example how to plot the average, relative wind park power
 # Either a fixed or a variable wind direction can be used 
-using FLORIDyn, TerminalPager, DistributedNext, Statistics
+using FLORIDyn, TerminalPager, Statistics
 import JLD2
 if Threads.nthreads() == 1; using ControlPlots; end
 

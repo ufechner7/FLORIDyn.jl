@@ -8,9 +8,6 @@ using DataFrames  # Required for DataFrame functionality in turbines() tests
 if !isdefined(Main, :Statistics)
     using Statistics  # Required for mean, std functions in calc_rel_power tests
 end
-if !isdefined(Main, :DistributedNext)
-    using DistributedNext  # Required for nprocs() function in plot_x tests
-end
 
 if ! isinteractive()
     global pltctrl
@@ -1109,7 +1106,7 @@ if ! isinteractive()
                                    pltctrl=pltctrl)
                 
                 # Test error handling when pltctrl is missing in single-threaded mode
-                if Threads.nthreads() == 1 && nprocs() < 2
+                if Threads.nthreads() == 1
                     @test_throws ErrorException plot_x(times, data)
                 end
             end
@@ -1147,16 +1144,8 @@ if ! isinteractive()
                 data = [1.0, 4.0, 2.0]
                 
                 # Test behavior based on environment
-                if Threads.nthreads() > 1 && nprocs() > 1
-                    # Should use remote plotting (rmt_plotx)
-                    @test_nowarn plot_x(times, data; fig="Multi-threaded Test")
-                else
-                    # Should use sequential plotting (requires pltctrl)
-                    @test_nowarn plot_x(times, data; pltctrl=pltctrl, fig="Single-threaded Test")
-                    
-                    # Should error without pltctrl in single-threaded mode
-                    @test_throws ErrorException plot_x(times, data; fig="Error Test")
-                end
+                @test_nowarn plot_x(times, data; pltctrl=pltctrl, fig="Threaded Test")
+                @test_throws ErrorException plot_x(times, data; fig="Error Test")
             end
             
             @testset "wind direction specific test" begin
@@ -1212,20 +1201,19 @@ if ! isinteractive()
                 bad_data = [1.0, 2.0]  # Different length than times
                 
                 # The function should handle this gracefully or error appropriately
-                if Threads.nthreads() == 1 && nprocs() < 2
+                if Threads.nthreads() == 1
                     # In single-threaded mode, errors from plotx should propagate
                     @test_throws Exception plot_x(times, bad_data; pltctrl=pltctrl)
                 else
-                    # In multi-threaded mode, might be handled by remote worker
-                    # Just test that it doesn't crash the main process
-                    @test_nowarn plot_x(times, bad_data)
+                    # In multi-threaded mode, local plotting path is still used.
+                    @test_throws Exception plot_x(times, bad_data; pltctrl=pltctrl)
                 end
                 
                 # Test with empty data
                 empty_times = Float64[]
                 empty_data = Float64[]
                 
-                if Threads.nthreads() == 1 && nprocs() < 2
+                if Threads.nthreads() == 1
                     @test_throws Exception plot_x(empty_times, empty_data; pltctrl=pltctrl)
                 end
             end
@@ -1241,13 +1229,7 @@ if ! isinteractive()
                 @test_nowarn plot_x(times, data; pltctrl=pltctrl)
                 
                 # Should handle the same threading logic
-                if Threads.nthreads() > 1 && nprocs() > 1
-                    # Should work without plt in multi-threaded mode
-                    @test_nowarn plot_x(times, data)
-                else
-                    # Should require plt in single-threaded mode
-                    @test_throws ErrorException plot_x(times, data)
-                end
+                @test_throws ErrorException plot_x(times, data)
                 
                 # Should return nothing like other smart plotting functions
                 result = plot_x(times, data; pltctrl=pltctrl)
@@ -1312,7 +1294,7 @@ if ! isinteractive()
                 @test_nowarn plot_rmt(X, Y; pltctrl=pltctrl)
                 
                 # Test error handling when pltctrl is missing in single-threaded mode
-                if Threads.nthreads() == 1 && nprocs() < 2
+                if Threads.nthreads() == 1
                     @test_throws ErrorException plot_rmt(X, Y)
                 end
             end
@@ -1345,13 +1327,7 @@ if ! isinteractive()
                 @test_nowarn plot_rmt(X, Y; pltctrl=pltctrl)
                 
                 # Should handle the same threading logic
-                if Threads.nthreads() > 1 && nprocs() > 1
-                    # Should work without pltctrl in multi-threaded mode
-                    @test_nowarn plot_rmt(X, Y)
-                else
-                    # Should require pltctrl in single-threaded mode
-                    @test_throws ErrorException plot_rmt(X, Y)
-                end
+                @test_throws ErrorException plot_rmt(X, Y)
                 
                 # Should return nothing like other smart plotting functions
                 result = plot_rmt(X, Y; pltctrl=pltctrl)

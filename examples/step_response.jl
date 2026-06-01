@@ -7,7 +7,7 @@
 # The step response and the storage capacity a function of the wind direction can be plotted.
 using Timers
 tic()
-using FLORIDyn, TerminalPager, DistributedNext, Statistics
+using FLORIDyn, TerminalPager, Statistics
 using JLD2: jldsave, load
 if Threads.nthreads() == 1; using ControlPlots; end
 

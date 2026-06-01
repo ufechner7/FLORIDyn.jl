@@ -1,6 +1,16 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+function _resolve_pltctrl(pltctrl)
+    if pltctrl !== nothing
+        return pltctrl
+    end
+    if isdefined(Main, :ControlPlots)
+        return getfield(Main, :ControlPlots)
+    end
+    return nothing
+end
+
 """
     plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt=nothing, 
                     fig=nothing) -> Nothing
@@ -20,16 +30,11 @@ sequential plotting based on the number of available threads and processes.
 - nothing
 """
 function plot_flow_field(wf, X, Y, Z, vis; msr=VelReduction, plt=nothing, fig=nothing)
-    if Threads.nthreads() > 1 && nprocs() > 1
-        # Use parallel plotting with remote worker
-        @spawnat 2 Main.rmt_plot_flow_field(wf, X, Y, Z, vis; msr, fig)
-    else
-        # Use sequential plotting
-        if plt === nothing
-            error("plt argument is required for sequential plotting")
-        end
-        plotFlowField(plt, wf, X, Y, Z, vis; msr, fig)
+    # Use sequential plotting
+    if plt === nothing
+        error("plt argument is required for plotting")
     end
+    plotFlowField(plt, wf, X, Y, Z, vis; msr, fig)
     nothing
 end
 
@@ -54,28 +59,24 @@ parallel or sequential plotting based on the number of available threads and pro
 - [`plotMeasurements`](@ref): The underlying plotting function used in sequential mode
 """
 function plot_measurements(wf, md, vis; separated=true, msr::MSR=VelReduction, plt=nothing, pltctrl=nothing)
-    if Threads.nthreads() > 1 && nprocs() > 1
-        # Parallel/remote plotting path (doesn't need local ControlPlots instance)
-        @spawnat 2 Main.rmt_plot_measurements(wf, md, vis; separated, msr)
-    else
-        # Sequential plotting path with backward compatibility
-        # Accept either the new ControlPlots module via pltctrl OR a legacy PyPlot-like plt.
-        local_plt = nothing
-        if pltctrl !== nothing
-            # New style: module ControlPlots passed -> use its internal PyPlot handle
-            try
-                local_plt = pltctrl.plt
-            catch
-                error("pltctrl provided but no .plt field found; pass the ControlPlots module itself")
-            end
-        elseif plt !== nothing
-            # Legacy style: a PyPlot-like object was passed directly
-            local_plt = plt
-        else
-            error("Either pltctrl (ControlPlots module) or plt (legacy PyPlot handle) must be provided for sequential plotting")
+    # Sequential plotting path with backward compatibility
+    # Accept either the new ControlPlots module via pltctrl OR a legacy PyPlot-like plt.
+    local_plt = nothing
+    _pltctrl = _resolve_pltctrl(pltctrl)
+    if _pltctrl !== nothing
+        # New style: module ControlPlots passed -> use its internal PyPlot handle
+        try
+            local_plt = _pltctrl.plt
+        catch
+            error("pltctrl provided but no .plt field found; pass the ControlPlots module itself")
         end
-        plotMeasurements(local_plt, wf, md, vis; separated, msr)
+    elseif plt !== nothing
+        # Legacy style: a PyPlot-like object was passed directly
+        local_plt = plt
+    else
+        error("Either pltctrl (ControlPlots module) or plt (legacy PyPlot handle) must be provided for plotting. If calling from Main, run `using ControlPlots` first.")
     end
+    plotMeasurements(local_plt, wf, md, vis; separated, msr)
     return nothing
 end
 
@@ -120,19 +121,14 @@ plot_x(times, data1, data2; ylabels=["Turbine 1", "Turbine 2"],
 function plot_x(times, plot_data...; ylabels=nothing, labels=nothing, 
                 fig="Wind Direction", xlabel="rel_time [s]", ysize=10, bottom=0.02, 
                 legend_size=nothing, pltctrl=nothing, loc=nothing)
-    if Threads.nthreads() > 1 && nprocs() > 1 && pltctrl === nothing
-        # Use parallel plotting with remote worker
-        @spawnat 2 Main.rmt_plotx(times, plot_data...; ylabels=ylabels, labels=labels,
-                                  fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size, loc=loc)
-    else
-        # Use sequential plotting
-        if pltctrl === nothing
-            error("pltctrl argument is required for sequential plotting (threads=$(Threads.nthreads()), procs=$(nprocs())). Pass the ControlPlots module as pltctrl keyword.")
-        end
-        p = pltctrl.plotx(times, plot_data...; ylabels=ylabels, labels=labels,
-                           fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size, loc=loc)
-        display(p)  # Ensure the plot is displayed
+    # Use sequential plotting
+    _pltctrl = _resolve_pltctrl(pltctrl)
+    if _pltctrl === nothing
+        error("pltctrl argument is required for plotting. Pass the ControlPlots module as pltctrl keyword or run `using ControlPlots` in Main.")
     end
+    p = _pltctrl.plotx(times, plot_data...; ylabels=ylabels, labels=labels,
+                       fig=fig, xlabel=xlabel, ysize=ysize, bottom=bottom, legend_size=legend_size, loc=loc)
+    display(p)  # Ensure the plot is displayed
     nothing
 end
 
@@ -172,15 +168,9 @@ multiple data series with comprehensive labeling and styling options.
 
 # Execution Modes
 
-## Parallel Mode (Remote Plotting)
-**Conditions**: `Threads.nthreads() > 1` AND `nprocs() > 1` AND `pltctrl === nothing`
-- Executes plotting on remote worker process 2 using `@spawnat 2 Main.rmt_plot(...)`
-- Reduces main process computational load for large datasets
-
-## Sequential Mode (Local Plotting)  
-**Conditions**: Single-threaded OR single-process OR `pltctrl` provided
+## Local Mode
+**Conditions**: Always local plotting; `pltctrl` can be provided explicitly
 - Uses provided `pltctrl` (ControlPlots module) for local execution
-- Required for unit testing and environments without multiprocessing
 - Calls `pltctrl.plot(...)` with appropriate parameter combinations
 
 # Parameter Validation
@@ -290,10 +280,7 @@ plot_rmt(wind_speeds, power_curve;
 - `ErrorException`: Missing `pltctrl` in sequential mode
 
 # Implementation Details
-The function uses conditional dispatch based on Julia's threading and multiprocessing state:
-1. Checks `Threads.nthreads() > 1 && nprocs() > 1 && pltctrl === nothing`
-2. **If true**: Parallel execution via `@spawnat 2 Main.rmt_plot(...)`
-3. **If false**: Sequential execution via `pltctrl.plot(...)` with parameter branching
+The function executes locally and uses `pltctrl.plot(...)` with parameter branching.
 
 # See Also
 - [`plot_x`](@ref): Time series plotting with automatic subplot generation
@@ -332,25 +319,20 @@ function plot_rmt(X, Ys...; xlabel="", ylabel="", ylabels=nothing, labels=nothin
         throw(ArgumentError("Cannot use ylabel with multiple Y series (detected $(length(Ys))). Use ylabels instead, e.g. ylabels=[\"Series 1\", \"Series 2\"]."))
     end
 
-    if Threads.nthreads() > 1 && nprocs() > 1 && pltctrl === nothing
-        # Use parallel plotting with remote worker
-
-        @spawnat 2 Main.rmt_plot(X, Ys...; xlabel, ylabel, ylabels, labels, xlims, ylims, ann, scatter, title, fig, ysize)
-    else
-        # Use sequential plotting
-        if pltctrl === nothing
-            error("pltctrl argument is required for sequential plotting (threads=$(Threads.nthreads()), procs=$(nprocs())). Pass the ControlPlots module as pltctrl keyword.")
-        end
-        if isnothing(labels) && length(Ys) == 1
-            p = pltctrl.plot(X, Ys...; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
-        elseif isnothing(ylabels)
-            p = pltctrl.plot(X, Ys...; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
-        else
-            p = pltctrl.plot(X, Ys...; xlabel, ylabels, labels, title, fig, ysize)
-        end
-        
-        display(p)  # Ensure the plot is displayed
+    # Use sequential plotting
+    _pltctrl = _resolve_pltctrl(pltctrl)
+    if _pltctrl === nothing
+        error("pltctrl argument is required for plotting. Pass the ControlPlots module as pltctrl keyword or run `using ControlPlots` in Main.")
     end
+    if isnothing(labels) && length(Ys) == 1
+        p = _pltctrl.plot(X, Ys...; xlabel, ylabel, xlims, ylims, ann, scatter, title, fig, ysize)
+    elseif isnothing(ylabels)
+        p = _pltctrl.plot(X, Ys...; xlabel, ylabel, labels, xlims, ylims, ann, scatter, title, fig, ysize)
+    else
+        p = _pltctrl.plot(X, Ys...; xlabel, ylabels, labels, title, fig, ysize)
+    end
+
+    display(p)  # Ensure the plot is displayed
     nothing
 end
 
@@ -371,9 +353,5 @@ capabilities to close all figures on the remote worker. Otherwise, it directly
 calls `plt.close("all")` to close all figures in the current process.
 """
 function close_all(plt)
-    if Threads.nthreads() > 1 && nprocs() > 1
-        @spawnat 2 Main.rmt_close_all()
-    else
-        plt.close("all")
-    end
+    plt.close("all")
 end

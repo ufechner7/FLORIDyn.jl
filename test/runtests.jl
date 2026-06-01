@@ -7,7 +7,6 @@ using LinearAlgebra
 using MAT
 using Random
 using Suppressor
-using DistributedNext
 
 if basename(pwd()) == "test"
     cd("..")
