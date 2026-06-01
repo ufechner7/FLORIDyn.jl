@@ -2,7 +2,7 @@
 
 julia_version = "1.12.6"
 manifest_format = "2.0"
-project_hash = "8bdf4d349b04646678f8b03caf1deae57c638fe7"
+project_hash = "96e1130313fc2e431faff9d336fa5259b7aef057"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra"]
@@ -113,18 +113,6 @@ deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 version = "1.11.0"
 
-[[deps.DistributedNext]]
-deps = ["PrecompileTools", "Random", "ScopedValues", "Serialization", "Sockets"]
-git-tree-sha1 = "5cb3b6ed7e2490869b157d8bf644da37e2540ea8"
-uuid = "fab6aee4-877b-4bac-a744-3eca44acbb6f"
-version = "1.3.1"
-
-    [deps.DistributedNext.extensions]
-    ReviseExt = "Revise"
-
-    [deps.DistributedNext.weakdeps]
-    Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
-
 [[deps.DocStringExtensions]]
 git-tree-sha1 = "7442a5dfe1ebb773c29cc2962a8980f47221d76c"
 uuid = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
@@ -136,7 +124,7 @@ uuid = "f43a241f-c20a-4ad4-852c-f6b1247861c6"
 version = "1.7.0"
 
 [[deps.FLORIDyn]]
-deps = ["CSV", "DataFrames", "Dates", "DelimitedFiles", "DistributedNext", "DocStringExtensions", "Interpolations", "JLD2", "LaTeXStrings", "LinearAlgebra", "Logging", "LoggingExtras", "Parameters", "Pkg", "PrecompileTools", "Printf", "REPL", "Random", "SparseArrays", "StaticArrays", "Statistics", "StructMapping", "YAML"]
+deps = ["CSV", "DataFrames", "Dates", "DelimitedFiles", "DocStringExtensions", "Interpolations", "JLD2", "LaTeXStrings", "LinearAlgebra", "Logging", "LoggingExtras", "Parameters", "Pkg", "PrecompileTools", "Printf", "REPL", "Random", "SparseArrays", "StaticArrays", "Statistics", "StructMapping", "YAML"]
 path = "."
 uuid = "fc770985-7669-4833-bc54-a38444eb6027"
 version = "0.5.6"
