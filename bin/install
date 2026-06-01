@@ -307,8 +307,28 @@ if [[ -f "docs/Project.toml" ]]; then
     julia --project=docs -e 'using Pkg; Pkg.precompile()'
 fi
 
-echo "Running tests..."
-julia --project -e 'using Pkg; Pkg.test()'
+run_tests=false
+if [[ $_yes_to_all == true ]]; then
+    echo "Skipping tests by default in --yes mode."
+else
+    read -rp "Do you want to run the tests now? N/y: " _run_tests_choice
+    case "${_run_tests_choice:-N}" in
+        y|Y)
+            run_tests=true
+            ;;
+        *)
+            run_tests=false
+            ;;
+    esac
+fi
+
+if [[ $run_tests == true ]]; then
+    echo "Running tests..."
+    julia --project -e 'using Pkg; Pkg.test()'
+else
+    echo "Skipping tests."
+fi
+unset run_tests _run_tests_choice
 
 echo "Running basic import checks..."
 julia --startup-file=no --project -e 'using FLORIDyn'
