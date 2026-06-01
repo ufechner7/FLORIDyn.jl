@@ -10,24 +10,16 @@ if !isdefined(Main, :Statistics)
 end
 
 if ! isinteractive()
-    global pltctrl
+    global plt, pltctrl
     if !isdefined(Main, :FLORIDyn)
         using FLORIDyn
     end
 
     if !isdefined(Main, :ControlPlots)
-        if Threads.nthreads() == 1
-            using ControlPlots; 
-        else 
-            global plt
-            plt = nothing
-        end
+        using ControlPlots
     end
-    pltctrl = nothing
-    if Threads.nthreads() == 1
-        global pltctrl
-        pltctrl = ControlPlots
-    end
+    plt = ControlPlots.plt
+    pltctrl = ControlPlots
 
     function get_parameters()
         settings_file = "data/2021_9T_Data.yaml"
@@ -1105,10 +1097,8 @@ if ! isinteractive()
                                    legend_size=10,
                                    pltctrl=pltctrl)
                 
-                # Test error handling when pltctrl is missing in single-threaded mode
-                if Threads.nthreads() == 1
-                    @test_throws ErrorException plot_x(times, data)
-                end
+                # Test that pltctrl fallback works (ControlPlots is now always available)
+                @test_nowarn plot_x(times, data)
             end
             
             @testset "different data configurations" begin
@@ -1145,7 +1135,8 @@ if ! isinteractive()
                 
                 # Test behavior based on environment
                 @test_nowarn plot_x(times, data; pltctrl=pltctrl, fig="Threaded Test")
-                @test_throws ErrorException plot_x(times, data; fig="Error Test")
+                # pltctrl fallback always available now, so no error expected
+                @test_nowarn plot_x(times, data; fig="Fallback Test")
             end
             
             @testset "wind direction specific test" begin
@@ -1228,8 +1219,8 @@ if ! isinteractive()
                 # Test consistency with other smart plotting functions
                 @test_nowarn plot_x(times, data; pltctrl=pltctrl)
                 
-                # Should handle the same threading logic
-                @test_throws ErrorException plot_x(times, data)
+                # Should handle the same threading logic; pltctrl fallback always available
+                @test_nowarn plot_x(times, data)
                 
                 # Should return nothing like other smart plotting functions
                 result = plot_x(times, data; pltctrl=pltctrl)
@@ -1293,10 +1284,8 @@ if ! isinteractive()
                 # Test with default parameters
                 @test_nowarn plot_rmt(X, Y; pltctrl=pltctrl)
                 
-                # Test error handling when pltctrl is missing in single-threaded mode
-                if Threads.nthreads() == 1
-                    @test_throws ErrorException plot_rmt(X, Y)
-                end
+                # Test that pltctrl fallback works (ControlPlots is now always available)
+                @test_nowarn plot_rmt(X, Y)
             end
             
             @testset "edge cases" begin
@@ -1326,8 +1315,8 @@ if ! isinteractive()
                 # Test consistency with other smart plotting functions
                 @test_nowarn plot_rmt(X, Y; pltctrl=pltctrl)
                 
-                # Should handle the same threading logic
-                @test_throws ErrorException plot_rmt(X, Y)
+                # Should handle the same threading logic; pltctrl fallback always available
+                @test_nowarn plot_rmt(X, Y)
                 
                 # Should return nothing like other smart plotting functions
                 result = plot_rmt(X, Y; pltctrl=pltctrl)

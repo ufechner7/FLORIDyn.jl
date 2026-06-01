@@ -1,11 +1,8 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
-using FLORIDyn, Test, Statistics, Parameters
-if Threads.nthreads() == 1; using ControlPlots; end
-if !(@isdefined plt)
-    plt = nothing
-end
+using FLORIDyn, Test, Statistics, Parameters, ControlPlots
+plt = ControlPlots.plt
 
 @testset verbose=true "floridyncl" begin
     include("test_prepare_simulation.jl")

@@ -1,6 +1,39 @@
 # Copyright (c) 2025 Uwe Fechner
 # SPDX-License-Identifier: BSD-3-Clause
 
+# ── Enforce system Python if install_controlplots selected --system ───────────
+let prefs_file = joinpath(dirname(@__DIR__), "LocalPreferences.toml")
+    if isfile(prefs_file)
+        lines = readlines(prefs_file; keep=true)
+        in_condapkg = false
+        in_pythoncall = false
+        backend_null = false
+        python_exe = ""
+        for line in lines
+            if startswith(line, "[CondaPkg]")
+                in_condapkg = true
+                in_pythoncall = false
+            elseif startswith(line, "[PythonCall]")
+                in_pythoncall = true
+                in_condapkg = false
+            elseif startswith(line, "[")
+                in_condapkg = false
+                in_pythoncall = false
+            elseif in_condapkg && contains(line, "backend") && contains(line, "Null")
+                backend_null = true
+            elseif in_pythoncall && contains(line, "exe")
+                python_exe = strip(split(line, '=')[2], [' ', '"', '\t', '\n', '\r'])
+            end
+        end
+        if backend_null
+            ENV["JULIA_CONDAPKG_BACKEND"] = "Null"
+            if !isempty(python_exe)
+                ENV["JULIA_PYTHONCALL_EXE"] = python_exe
+            end
+        end
+    end
+end
+
 using FLORIDyn
 using Test
 using LinearAlgebra
