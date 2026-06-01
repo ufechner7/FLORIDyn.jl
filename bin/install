@@ -1,0 +1,384 @@
+#!/bin/bash -eu
+# Copyright (c) 2026 Uwe Fechner
+# SPDX-License-Identifier: BSD-3-Clause
+
+_yes_to_all=false
+update=false
+
+print_usage() {
+    echo "Usage:"
+    echo "./bin/install"
+    echo "./bin/install --update"
+    echo "./bin/install -y"
+    echo "./bin/install --yes"
+    echo "./bin/install --update -y"
+    echo "./bin/install -h"
+    echo "./bin/install --help"
+}
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        --update)
+            update=true
+            shift
+            ;;
+        -y|--yes)
+            _yes_to_all=true
+            shift
+            ;;
+        *)
+            echo "Invalid parameter!"
+            print_usage
+            exit 1
+            ;;
+    esac
+done
+
+if [[ $(basename "$(pwd)") == "bin" ]]; then
+    cd ..
+fi
+
+if [[ ! -f "Project.toml" || ! -d "bin" ]]; then
+    echo "Error: run this script from the FLORIDyn.jl repository root or ./bin."
+    exit 1
+fi
+
+if ! command -v juliaup &> /dev/null; then
+    echo "Error: juliaup is not installed. Please install it first."
+    case "$(uname -s)" in
+        Linux|Darwin)
+            echo "  curl -fsSL https://install.julialang.org | sh -s -- --default-channel 1.11"
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            echo "  winget install --name Julia --id 9NJNWW8PVKMN -e -s msstore"
+            ;;
+        *)
+            echo "  See https://github.com/JuliaLang/juliaup for installation instructions."
+            ;;
+    esac
+    exit 1
+fi
+
+# Require at least 5 GB free in home directory.
+_required_kb=$((5 * 1024 * 1024))
+_available_kb=$(df -k "$HOME" | awk 'NR==2 {print $4}')
+if [[ -z "${_available_kb:-}" ]]; then
+    echo "Error: Could not determine free disk space for $HOME."
+    exit 1
+fi
+if (( _available_kb < _required_kb )); then
+    _available_gb=$(awk -v kb="$_available_kb" 'BEGIN {printf "%.2f", kb/1024/1024}')
+    echo "Error: Not enough free disk space in $HOME."
+    echo "At least 5.00 GB required, found ${_available_gb} GB."
+    exit 1
+fi
+unset _required_kb _available_kb _available_gb
+
+if [[ $_yes_to_all == true ]]; then
+    _desired_julia=$(julia --startup-file=no -e 'print("$(VERSION.major).$(VERSION.minor)")')
+    echo "Using currently active Julia ${_desired_julia}..."
+else
+    if juliaup status 2>/dev/null | grep '^\s*\*' | grep -q '1\.12'; then
+        _default_choice=3
+        _default_julia="1.12"
+    elif juliaup status 2>/dev/null | grep '^\s*\*' | grep -q '1\.11'; then
+        _default_choice=2
+        _default_julia="1.11"
+    else
+        _default_choice=1
+        _default_julia="1.10"
+    fi
+
+    echo "Which Julia version do you want to use?"
+    echo "  1) Julia 1.10"
+    echo "  2) Julia 1.11"
+    echo "  3) Julia 1.12"
+    read -rp "Enter 1, 2, or 3 [default: ${_default_choice}]: " _julia_choice
+    case "${_julia_choice}" in
+        1)
+            _desired_julia="1.10"
+            ;;
+        2)
+            _desired_julia="1.11"
+            ;;
+        3)
+            _desired_julia="1.12"
+            ;;
+        "")
+            _desired_julia="${_default_julia}"
+            ;;
+        *)
+            echo "Invalid choice: '${_julia_choice}'. Please enter 1, 2, or 3."
+            exit 1
+            ;;
+    esac
+    echo "Installing and activating Julia ${_desired_julia}..."
+    juliaup add "${_desired_julia}"
+    juliaup default "${_desired_julia}"
+    echo "Julia ${_desired_julia} is now the default."
+fi
+echo
+
+echo "Checking whether Revise is installed in the global Julia environment..."
+julia -e '
+using Pkg
+
+shared_env = Base.load_path_expand("@v#.#")
+Pkg.activate(shared_env; io=devnull)
+
+if haskey(Pkg.project().dependencies, "Revise")
+    println("Revise is already installed in $(shared_env).")
+else
+    println("Installing Revise in $(shared_env)...")
+    Pkg.add("Revise")
+end
+'
+echo
+
+julia_version=$(julia --version | awk '{print($3)}')
+julia_major=${julia_version:0:3}
+if [[ $julia_major == "1.1" ]]; then
+    julia_major=${julia_version:0:4}
+fi
+
+echo "Detected Julia version: $julia_version (major: $julia_major)"
+
+if [[ $julia_major != "1.10" ]] && [[ $julia_major != "1.11" ]] && [[ $julia_major != "1.12" ]]; then
+    echo "Error: Julia $julia_major is not supported."
+    echo "Supported versions: 1.10, 1.11, 1.12"
+    exit 1
+fi
+
+export JULIA_PKG_SERVER_REGISTRY_PREFERENCE=eager
+
+if [[ $update == false ]]; then
+    _default_manifest="Manifest-v${julia_major}.toml.default"
+    _target_manifest="Manifest-v${julia_major}.toml"
+    if [ -f "${_default_manifest}" ]; then
+        cp "${_default_manifest}" "${_target_manifest}"
+        echo "Copied ${_default_manifest} to ${_target_manifest}"
+    else
+        echo "Warning: ${_default_manifest} not found"
+        exit 1
+    fi
+else
+    rm -f Manifest.toml "Manifest-v${julia_major}.toml"
+    echo "--update selected: removed existing manifests for Julia ${julia_major}"
+fi
+
+if [ -L "Manifest.toml" ]; then
+    rm -f Manifest.toml
+    echo "Removed stale symlink Manifest.toml"
+fi
+if [ -L "Manifest-v${julia_major}.toml" ]; then
+    rm -f "Manifest-v${julia_major}.toml"
+    echo "Removed stale symlink Manifest-v${julia_major}.toml"
+fi
+if [ -f "Manifest.toml" ]; then
+    rm -f Manifest.toml
+    echo "Removed stale Manifest.toml"
+fi
+
+normalize_manifest_name() {
+    local manifest_dir="$1"
+    local plain_manifest
+    local target_manifest
+    local display_prefix=""
+
+    if [[ -n "$manifest_dir" ]]; then
+        plain_manifest="${manifest_dir}/Manifest.toml"
+        target_manifest="${manifest_dir}/Manifest-v${julia_major}.toml"
+        display_prefix="${manifest_dir}/"
+    else
+        plain_manifest="Manifest.toml"
+        target_manifest="Manifest-v${julia_major}.toml"
+    fi
+
+    if [ -f "$plain_manifest" ]; then
+        if [ ! -f "$target_manifest" ]; then
+            mv "$plain_manifest" "$target_manifest"
+            echo "Renamed ${display_prefix}Manifest.toml to ${display_prefix}Manifest-v${julia_major}.toml"
+        else
+            rm -f "$plain_manifest"
+            echo "Removed extra ${display_prefix}Manifest.toml (kept ${display_prefix}Manifest-v${julia_major}.toml)"
+        fi
+    fi
+}
+
+run_project_pkg_with_retry() {
+    local project_path="$1"
+    local update_mode="$2"
+    local -a julia_args
+
+    if [[ -n "$project_path" ]]; then
+        julia_args=(--project="$project_path")
+    else
+        julia_args=(--project)
+    fi
+
+    FLORIDYN_INSTALL_UPDATE="$update_mode" julia "${julia_args[@]}" -e '
+using Pkg
+
+const UPDATE_MODE = get(ENV, "FLORIDYN_INSTALL_UPDATE", "false") == "true"
+
+function ensure_general_registry()
+    regs = try
+        Pkg.Registry.reachable_registries()
+    catch
+        Pkg.Registry.update()
+        Pkg.Registry.reachable_registries()
+    end
+    if !any(r -> r.name == "General", regs)
+        Pkg.Registry.add("General")
+    else
+        Pkg.Registry.update()
+    end
+end
+
+function clean_active_manifest!(proj_dir)
+    active_manifest = "Manifest-v$(VERSION.major).$(VERSION.minor).toml"
+    for f in readdir(proj_dir)
+        if f == "Manifest.toml" || f == active_manifest
+            rm(joinpath(proj_dir, f), force=true)
+        end
+    end
+end
+
+try
+    ensure_general_registry()
+    if UPDATE_MODE
+        Pkg.update()
+    else
+        Pkg.resolve()
+    end
+    Pkg.instantiate()
+catch e
+    @warn "Package operation failed, attempting clean retry..." exception=e
+    clean_active_manifest!(dirname(Base.active_project()))
+    ensure_general_registry()
+    if UPDATE_MODE
+        Pkg.update()
+    else
+        Pkg.resolve()
+    end
+    Pkg.instantiate()
+    exit(2)
+end
+'
+}
+
+FAILED_RESOLVES=()
+RETRIED_RESOLVES=()
+
+if [[ $update == true ]]; then
+    echo "Updating main project..."
+else
+    echo "Instantiating main project..."
+fi
+_ec=0; run_project_pkg_with_retry "" "$update" || _ec=$?
+if [[ $_ec -eq 2 ]]; then
+    RETRIED_RESOLVES+=("main project")
+elif [[ $_ec -ne 0 ]]; then
+    FAILED_RESOLVES+=("main project")
+fi
+normalize_manifest_name ""
+
+echo "Precompiling main project..."
+julia --project -e 'using Pkg; Pkg.precompile()'
+
+if [[ -f "docs/Project.toml" ]]; then
+    if [[ $update == true ]]; then
+        echo "Updating docs project..."
+    else
+        echo "Instantiating docs project..."
+    fi
+    _ec=0; run_project_pkg_with_retry "docs" "$update" || _ec=$?
+    if [[ $_ec -eq 2 ]]; then
+        RETRIED_RESOLVES+=("docs project")
+    elif [[ $_ec -ne 0 ]]; then
+        FAILED_RESOLVES+=("docs project")
+    fi
+    normalize_manifest_name "docs"
+    echo "Precompiling docs project..."
+    julia --project=docs -e 'using Pkg; Pkg.precompile()'
+fi
+
+echo "Running tests..."
+julia --project -e 'using Pkg; Pkg.test()'
+
+echo "Running basic import checks..."
+julia --startup-file=no --project -e 'using FLORIDyn'
+if [[ -f "docs/Project.toml" ]]; then
+    julia --startup-file=no --project=docs -e 'using Documenter'
+fi
+
+echo
+if [[ ${#FAILED_RESOLVES[@]} -eq 0 && ${#RETRIED_RESOLVES[@]} -eq 0 ]]; then
+    echo "Resolve/instantiate report: all calls succeeded on the first attempt."
+elif [[ ${#FAILED_RESOLVES[@]} -eq 0 ]]; then
+    echo "Resolve/instantiate report: all calls succeeded, but the following needed a clean retry"
+    echo "  (original pinned package versions were NOT used):"
+    for _label in "${RETRIED_RESOLVES[@]}"; do
+        echo "  - ${_label}"
+    done
+else
+    echo "Resolve/instantiate report: the following calls FAILED:"
+    for _label in "${FAILED_RESOLVES[@]}"; do
+        echo "  - ${_label}"
+    done
+    if [[ ${#RETRIED_RESOLVES[@]} -gt 0 ]]; then
+        echo "  The following needed a clean retry (original pinned package versions were NOT used):"
+        for _label in "${RETRIED_RESOLVES[@]}"; do
+            echo "  - ${_label}"
+        done
+    fi
+fi
+
+echo
+printf "\033[1;32mInstallation complete!\033[0m\n"
+echo
+echo "Start Julia with:"
+echo "./bin/run_julia"
+echo "Then type:"
+echo "menu()"
+
+if [[ "$(uname -s)" == "Linux" && -f ~/.bashrc ]]; then
+    if ! grep -q "alias jl='./bin/run_julia'" ~/.bashrc; then
+        echo "alias jl='./bin/run_julia'" >> ~/.bashrc
+        echo "Added alias 'jl' to ~/.bashrc"
+    fi
+    if ! grep -q "alias jl2='./bin/run_julia2'" ~/.bashrc; then
+        echo "alias jl2='./bin/run_julia2'" >> ~/.bashrc
+        echo "Added alias 'jl2' to ~/.bashrc"
+    fi
+elif [[ "$(uname -s)" == "Darwin" ]]; then
+    _config_file=""
+    if [[ -f ~/.zshrc ]]; then
+        _config_file=~/.zshrc
+    elif [[ -f ~/.bash_profile ]]; then
+        _config_file=~/.bash_profile
+    elif [[ -f ~/.bashrc ]]; then
+        _config_file=~/.bashrc
+    fi
+
+    if [[ -n "$_config_file" ]]; then
+        if ! grep -q "alias jl='./bin/run_julia'" "$_config_file"; then
+            echo "alias jl='./bin/run_julia'" >> "$_config_file"
+            echo "Added alias 'jl' to $_config_file"
+        fi
+        if ! grep -q "alias jl2='./bin/run_julia2'" "$_config_file"; then
+            echo "alias jl2='./bin/run_julia2'" >> "$_config_file"
+            echo "Added alias 'jl2' to $_config_file"
+        fi
+    fi
+    unset _config_file
+fi
+
+mkdir -p output
+
+echo "$julia_version" > "install_version_${julia_major}.txt"
+echo "Recorded Julia version $julia_version to install_version_${julia_major}.txt"
