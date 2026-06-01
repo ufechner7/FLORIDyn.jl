@@ -4,6 +4,30 @@
 
 # Start script for debugging with Infiltrator.jl
 
+# Enforce system Python backend by default (can be overridden by user env).
+_script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_repo_root="$(cd "${_script_dir}/.." && pwd)"
+_prefs_file="${_repo_root}/LocalPreferences.toml"
+
+if [[ -z "${JULIA_CONDAPKG_BACKEND:-}" ]]; then
+	export JULIA_CONDAPKG_BACKEND="Null"
+fi
+
+if [[ -z "${JULIA_PYTHONCALL_EXE:-}" ]]; then
+	_python_from_prefs=""
+	if [[ -f "$_prefs_file" ]]; then
+		_python_from_prefs=$(awk -F'"' '/^exe[[:space:]]*=/ {print $2; exit}' "$_prefs_file")
+	fi
+	if [[ -n "$_python_from_prefs" ]]; then
+		export JULIA_PYTHONCALL_EXE="$_python_from_prefs"
+	elif command -v python3 >/dev/null 2>&1; then
+		export JULIA_PYTHONCALL_EXE="$(command -v python3)"
+	fi
+	unset _python_from_prefs
+fi
+
+unset _prefs_file _repo_root _script_dir
+
 # Install TerminalPager, Timers, Revise, Infiltrator and ControlPlots globally, if not yet installed
 julia -e 'using Pkg;
 globaldependencies() = keys(Pkg.project().dependencies)
