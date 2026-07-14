@@ -41,3 +41,4 @@ docs/src/optimize_inductions.tex
 .JETLSConfig.toml
 install_version_1.12.txt
 LocalPreferences.toml
+data/windFarmProperties.txt
