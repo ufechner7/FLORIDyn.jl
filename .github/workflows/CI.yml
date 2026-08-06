@@ -15,7 +15,7 @@ jobs:
   reuse-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Run REUSE lint
         run: |
           docker run --rm --volume ${{ github.workspace }}:/data fsfe/reuse lint
@@ -58,7 +58,7 @@ jobs:
           tar -xf ${RELEASE_NAME}.tar.xz
           mv ${RELEASE_NAME}/ffmpeg ${RELEASE_NAME}/ffprobe /usr/local/bin/
           rm -rf ${RELEASE_NAME}
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Install system Python and matplotlib
         run: |
           sudo apt-get update
@@ -101,7 +101,7 @@ jobs:
       actions: write
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Cache Chocolatey FFmpeg
         id: cache-ffmpeg-choco
         uses: actions/cache@v5
@@ -140,7 +140,7 @@ jobs:
       actions: write
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - name: Install FFmpeg (Homebrew)
         run: |
           brew update
@@ -181,7 +181,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y python3 python3-matplotlib
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: julia-actions/setup-julia@v2
       - uses: julia-actions/cache@v2
       - name: Build PyCall
